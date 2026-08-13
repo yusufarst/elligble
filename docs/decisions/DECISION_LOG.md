@@ -1,5 +1,40 @@
+**Status:** ACTIVE  
+**Version:** 1.0.0  
+**Canonical:** YES  
+**Used By:** Governance, Discovery, Architecture  
+**Last Reviewed:** 2026-08-14
+
 # ELLIGBLE — Decision Log
 
-No formal architecture/product decisions recorded in this file yet.
+This file records concise canonical decisions. Detailed rationale remains in Recovery/Discovery/ADR sources.
 
-Locked decisions will be added through controlled discovery.
+| ID | Topic | Decision | Status | Source |
+|---|---|---|---|---|
+| DEC-001 | Product identity | ELLIGBLE is a multi-tenant education superapp / education-to-future platform | LOCKED | R2.1–R2.3 |
+| DEC-002 | Academic tenants | SMA/SMK/MA/MAK/sederajat; SMP/MTs excluded from current tenant scope | LOCKED | R2.1 |
+| DEC-003 | Pilot | SMA N 1 Mlati is pilot/reference tenant only | LOCKED | R2.1 |
+| DEC-004 | Assessment | Secure Assessment is flagship and mission-critical | LOCKED | R2.2/R2.14 |
+| DEC-005 | Social direction | Home is operational command center; social Feed/follower graph rejected | LOCKED / DROP old direction | R2.3/R3.1–R3.2 |
+| DEC-006 | Identity | One global Person identity with memberships/assignments/capabilities | LOCKED | R2.5–R2.6 |
+| DEC-007 | Tenant | One school = one academic tenant; organization groups do not bypass isolation | LOCKED | R2.4 |
+| DEC-008 | Architecture | Web-first, mobile-first UX, multi-platform-ready | LOCKED | R2.9 |
+| DEC-009 | Backend | InsForge-first/provider-agnostic; modular monolith initially | LOCKED | R2.10 |
+| DEC-010 | AI | AI is FUTURE/OPTIONAL/NON-BLOCKING; no paid AI required baseline | LOCKED | R2 global/R3.1 |
+| DEC-011 | Profile/Passport | Profile ≠ Passport; Passport is portable and provenance-based | LOCKED | R2.12 |
+| DEC-012 | LPTPAT | LPTPAT is historical lineage, not a standalone ELLIGBLE module | LOCKED | R2.16/R3.2 |
+| DEC-013 | Care | Care ≠ Discipline; private counseling data remains restricted | LOCKED | R2.17 |
+| DEC-014 | Guardian | Parent UI maps to canonical Guardian relationship; no unrestricted child access | LOCKED | R2.18/R3.2 |
+| DEC-015 | Path | Path is Bridging Engine; readiness ≠ prediction; goal ≠ outcome | LOCKED | R2.19 |
+| DEC-016 | Partner | Partner ≠ academic tenant; student data access is consent/purpose limited | LOCKED | R2.20 |
+| DEC-017 | Alumni | Alumni retains same Person/Passport/Path identity | LOCKED | R2.21 |
+| DEC-018 | Communication | Messaging is relationship-scoped; Search is permission-aware | LOCKED | R2.22 |
+| DEC-019 | Support | Every role receives role/context-aware Bantuan & Feedback | LOCKED | R2.25 addendum |
+| DEC-020 | Commercial | School is initial payer; core modules are not artificially paywalled | LOCKED | R2.24 |
+| DEC-021 | Student data | Student database is not sold | PROHIBITED | R2.24 |
+| DEC-022 | Password | Minimum password length = 8 characters | LOCKED | R3.4A |
+| DEC-023 | Split screen | Multi-window/split-screen must be addressed with platform capability honesty | LOCKED requirement | R3.4B |
+| DEC-024 | Cross-domain | One domain owns truth; no silent cross-domain table writes | LOCKED | R3.3 |
+| DEC-025 | Legacy | No legacy code is approved for PORT without file-level audit | LOCKED | R3.4 |
+| DEC-026 | Status semantics | OPEN/PROVISIONAL/FUTURE/DROP/LEGACY have strict meanings | LOCKED | R3.6 |
+| DEC-027 | Build scope | One Build Unit per agent execution; no marathon build | LOCKED | Governance |
+| DEC-028 | Recovery | Recovery frozen and modularized before Discovery | LOCKED | R3.7 |
