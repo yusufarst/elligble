@@ -40,6 +40,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-028 | Recovery | Recovery frozen and modularized before Discovery | LOCKED | R3.7 |
 | DEC-029 | Discovery 01 | Product Vision & Boundaries finalized v1.0.0 | LOCKED | D01.1–D01.7 |
 | DEC-030 | Discovery 02 | Tenant / Organization / Identity / Access Foundation finalized v1.0.0 | LOCKED | D02.1–D02.10 |
+| DEC-031 | Discovery 03 | Academic Core finalized v1.0.0 | LOCKED | D03.1–D03.9 |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -85,3 +86,19 @@ Discovery 02 locked the following (D02.1–D02.10, owner approved):
 - Architecture and Build gates remain closed
 - Agent Skill installation remains NOT YET
 - Next: Discovery 03 — Academic Core
+
+### DEC-031 — Discovery 03 Finalized (2026-08-14)
+
+**Version:** 1.0.0  
+**Status:** LOCKED  
+**Canonical artifact:** `docs/01-discovery/03.01_ACADEMIC_CORE.md`
+
+Discovery 03 locked the following (D03.1–D03.9, owner approved):
+
+- Academic Core = minimum shared academic truth
+- Attendance/general timetable/full gradebook = out of baseline
+- Report-card-supporting data = foundation-ready
+- Full E-Rapor = FUTURE
+- Secure Assessment = next Discovery
+- Architecture/Build gates remain closed
+- Agent Skills remain NOT YET

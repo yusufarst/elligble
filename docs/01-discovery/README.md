@@ -15,6 +15,11 @@ Recovery is frozen. Discovery artifacts are created here one controlled unit at 
 - `02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md`
 - **FINAL / LOCKED v1.0.0**
 
+## Discovery 03 — Academic Core
+
+- `03.01_ACADEMIC_CORE.md`
+- **FINAL / LOCKED v1.0.0**
+
 ## Next
 
-- Discovery 03 — Academic Core
+- Discovery 04 — Secure Assessment

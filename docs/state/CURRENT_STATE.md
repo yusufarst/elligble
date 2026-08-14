@@ -1,8 +1,8 @@
 **Status:** ACTIVE  
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Canonical:** YES  
-**Supersedes:** CURRENT_STATE v1.1.0  
-**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0  
+**Supersedes:** CURRENT_STATE v1.2.0  
+**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-14
 
@@ -14,7 +14,8 @@
 RECOVERY              → COMPLETE / FROZEN v1.0.0
 DISCOVERY 01          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
-DISCOVERY 03          → NEXT
+DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
+DISCOVERY 04          → NEXT
 MASTER BLUEPRINT      → NOT STARTED
 ARCHITECTURE          → NOT STARTED
 BUILD                 → NOT STARTED
@@ -50,11 +51,23 @@ docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md
 
 Decisions D02.1–D02.10 are LOCKED (owner approved).
 
+## Discovery 03 Status
+
+Discovery 03 — Academic Core: **COMPLETE / LOCKED v1.0.0**
+
+Canonical artifact:
+
+```text
+docs/01-discovery/03.01_ACADEMIC_CORE.md
+```
+
+Decisions D03.1–D03.9 are LOCKED (owner approved).
+
 Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-Begin modular Discovery with **Discovery 03 — Academic Core**, following:
+Begin modular Discovery with **Discovery 04 — Secure Assessment**, following:
 
 `docs/00-governance/00.01_DISCOVERY_PROCESS.md`
 
@@ -83,7 +96,7 @@ Local project:
 C:\Projects\ELLIGBLE
 ```
 
-Known structure after Discovery 02:
+Known structure after Discovery 03:
 
 ```text
 AGENTS.md
@@ -129,7 +142,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ```text
 DISCOVERY
-03 — Academic Core
+04 — Secure Assessment
 ```
 
 After each Discovery unit, update this file with the new active unit and prohibited premature work.
