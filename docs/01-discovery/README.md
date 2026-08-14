@@ -10,6 +10,11 @@ Recovery is frozen. Discovery artifacts are created here one controlled unit at 
 - `01.01_PRODUCT_VISION_AND_BOUNDARIES.md`
 - **FINAL / LOCKED v1.0.0**
 
+## Discovery 02 — Tenant / Organization / Identity / Access Foundation
+
+- `02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md`
+- **FINAL / LOCKED v1.0.0**
+
 ## Next
 
-- Discovery 02 — Tenant / Organization / Identity / Access Foundation
+- Discovery 03 — Academic Core

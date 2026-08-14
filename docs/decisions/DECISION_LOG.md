@@ -39,6 +39,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-027 | Build scope | One Build Unit per agent execution; no marathon build | LOCKED | Governance |
 | DEC-028 | Recovery | Recovery frozen and modularized before Discovery | LOCKED | R3.7 |
 | DEC-029 | Discovery 01 | Product Vision & Boundaries finalized v1.0.0 | LOCKED | D01.1–D01.7 |
+| DEC-030 | Discovery 02 | Tenant / Organization / Identity / Access Foundation finalized v1.0.0 | LOCKED | D02.1–D02.10 |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -59,3 +60,28 @@ Discovery 01 locked the following:
 - Proctor Feed Kejadian/Pelanggaran as a required Assessment capability
 - Discovery 02 (Tenant / Organization / Identity / Access Foundation) as next phase
 - Agent Skill installation remains NOT YET
+
+### DEC-030 — Discovery 02 Finalized (2026-08-14)
+
+**Version:** 1.0.0  
+**Status:** LOCKED  
+**Canonical artifact:** `docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md`
+
+Discovery 02 locked the following (D02.1–D02.10, owner approved):
+
+- Canonical identity model: Person ≠ User Account ≠ Membership
+- Organization ≠ Tenant ≠ Organization Group
+- Authorization stack: base access + membership + assignment + capability + scope + policy/context
+- Base access types: PLATFORM_OWNER, PLATFORM_STAFF, SCHOOL_STAFF, STUDENT, GUARDIAN, ALUMNI, PARTNER_STAFF
+- SUPER_ADMIN rejected
+- Guardian = relationship-based access; Alumni = lifecycle/context of same Person
+- ELLIGBLE ID/username + password (min 8 chars) = baseline authentication direction
+- MFA/step-up = risk-based for privileged context
+- Authorization is server-side enforced
+- Import = duplicate-aware + preview + idempotent; silent Person merge prohibited
+- Support never requests password/OTP/token
+- Paid AI is not a baseline dependency
+- OPEN/PROVISIONAL/FUTURE items remain at their declared status
+- Architecture and Build gates remain closed
+- Agent Skill installation remains NOT YET
+- Next: Discovery 03 — Academic Core
