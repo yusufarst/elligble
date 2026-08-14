@@ -1,8 +1,8 @@
 **Status:** LOCKED  
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Canonical:** YES  
 **Supersedes:** Earlier incomplete project summaries  
-**Depends On:** Recovery Freeze 1.0.0  
+**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-14
 
@@ -125,7 +125,28 @@ One human should normally keep one global Person identity through school transfe
 
 One school is one academic tenant.
 
-Academic Core owns canonical school structure such as academic periods, rombel, enrollment, subjects, teaching assignments, schedules, and attendance baseline.
+Academic Core owns the minimum shared academic truth including:
+- academic year / period
+- grade
+- program / major / concentration
+- curriculum context
+- subject
+- subject offering
+- Academic Group / Rombel
+- student enrollment
+- teaching assignment
+- homeroom responsibility where used
+- selected official academic result projection
+- student academic lifecycle
+
+General school timetable / attendance
+→ OUT OF CURRENT BASELINE
+
+Secure Assessment
+→ owns exam timing, exam runtime, exam operational presence/check-in where used
+
+Learn
+→ may own its optional digital activity timing
 
 ## Assessment Reliability
 
@@ -142,6 +163,15 @@ Realtime Proctoring ≠ Answer Persistence
 ```
 
 Split-screen/multi-window is a required anti-cheating capability, but detection strength must be represented honestly per platform.
+
+- baseline question type is single-answer multiple choice A–E
+- text/image/text+image options are supported
+- personal mobile data/hotspot is allowed; school Wi-Fi is not mandatory
+- network change is context/signal, not cheating proof
+- teacher-managed daily/subject assessment may be monitored by its authorized creator teacher within scope without separate School Operator proctor assignment
+- institution-managed/high-stakes exams retain explicit proctor governance
+- baseline unlock is a direct authorized Proctor dashboard action
+- no ordinary student-facing unlock-code dependency
 
 ## Password Baseline
 

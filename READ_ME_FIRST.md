@@ -17,10 +17,12 @@ Before doing anything:
 11. Verify work in the terminal before declaring `DONE`.
 12. If `CURRENT_STATE.md` says a phase has not started, do not jump ahead.
 
-Current project state after this package:
+Current project state:
 
 ```text
-Recovery: FROZEN
-Next: Discovery
+Recovery: FROZEN v1.0.0
+Discovery 01–04: COMPLETE / LOCKED
+Master Blueprint: NEXT
+Architecture: NOT STARTED
 Implementation: NOT AUTHORIZED YET
 ```

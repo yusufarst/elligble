@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.0  
+**Version:** 1.4.1  
 **Canonical:** YES  
-**Supersedes:** CURRENT_STATE v1.3.0  
+**Supersedes:** CURRENT_STATE v1.4.0  
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-14
@@ -129,7 +129,7 @@ Git branch: `main`.
 ```text
 No application framework initialized
 No clean ELLIGBLE backend initialized
-No GitHub remote confirmed
+origin: https://github.com/yusufarst/elligble.git
 No ERD finalized
 No API contract finalized
 No Build Unit active

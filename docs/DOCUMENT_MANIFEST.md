@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-14
 
@@ -32,7 +32,7 @@ NEVER_DEFAULT
 | `docs/state/CURRENT_STATE.md` | Active phase/task guard | Canonical/Dynamic | ALWAYS |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
-| `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | Canonical | PHASE: Discovery |
+| `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
 | `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` | Context loading limits | Canonical | ALWAYS/Agent setup |
 | `docs/00-governance/00.05_BUILD_EXECUTION_RULES.md` | Build execution safety | Canonical | PHASE: Build |
 | `docs/00-governance/00.06_PROACTIVE_GAP_GOVERNANCE.md` | Proactive gap review | Canonical | PHASE/Review |
@@ -56,3 +56,7 @@ NEVER_DEFAULT
 | `docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md` | Discovery 02 — Tenant / Organization / Identity / Access Foundation | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/03.01_ACADEMIC_CORE.md` | Discovery 03 — Academic Core | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/04.01_SECURE_ASSESSMENT.md` | Discovery 04 — Secure Assessment | Canonical / FINAL / LOCKED v1.0.1 | PHASE: Discovery |
+| `README.md` | Repository overview / navigation | non-authoritative | ON_DEMAND |
+| `docs/01-discovery/README.md` | Discovery navigation/index | navigation | PHASE: Discovery |
+| `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
+| `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
