@@ -1,10 +1,10 @@
 **Status:** ACTIVE  
-**Version:** 1.4.3  
+**Version:** 1.4.5  
 **Canonical:** YES  
-**Supersedes:** CURRENT_STATE v1.4.2  
+**Supersedes:** CURRENT_STATE v1.4.4  
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
-**Last Reviewed:** 2026-08-14
+**Last Reviewed:** 2026-08-15
 
 # ELLIGBLE — Current State
 
@@ -17,11 +17,17 @@ DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → IN PROGRESS
-LAST COMPLETED UNIT   → MB-00 Context Resilience Bootstrap / LOCKED v1.0.0
-NEXT UNIT             → MB-01 Platform System Map
-MB-01                 → NOT STARTED
+LAST COMPLETED UNIT   → MB-01 Platform System Map / LOCKED v1.0.0
+ACTIVE UNIT           → NONE
+NEXT UNIT             → MB-02 Domain & Module Map / NOT STARTED / NEXT
+MB-00                 → LOCKED v1.0.0
+MB-01                 → LOCKED v1.0.0
+MB-02                 → NOT STARTED / NEXT
+MB-03–MB-12           → NOT STARTED
 ARCHITECTURE          → NOT STARTED
 BUILD                 → NOT STARTED
+INSFORGE              → NOT YET
+AGENT SKILLS          → NOT YET
 ```
 
 ## Recovery Status
@@ -82,9 +88,9 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-Begin owner-guided MB-01 Platform System Map.
+MB-02 Context Reconstruction / Read Context before drafting Domain & Module Map.
 
-Do NOT automatically begin it.
+Do NOT authorize MB-02.
 
 Do not jump directly to ERD or coding.
 
@@ -112,7 +118,7 @@ Local project:
 C:\Projects\ELLIGBLE
 ```
 
-Known structure after Discovery 04:
+Known relevant repository structure for the current Master Blueprint phase:
 
 ```text
 AGENTS.md
@@ -123,6 +129,7 @@ READ_ME_FIRST.md
 docs/00-governance/
 docs/00-recovery/
 docs/01-discovery/
+docs/02-master-blueprint/
 docs/decisions/
 docs/master/
 docs/state/

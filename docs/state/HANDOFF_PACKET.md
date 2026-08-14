@@ -1,10 +1,10 @@
 **Status:** ACTIVE
-**Version:** 0.1.1
+**Version:** 0.1.3
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** MASTER BLUEPRINT
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
 **Used By:** New Chat / New Agent Context Reconstruction
-**Last Reviewed:** 2026-08-14
+**Last Reviewed:** 2026-08-15
 
 # ELLIGBLE Handoff Packet
 
@@ -66,10 +66,13 @@ MASTER BLUEPRINT
 → IN PROGRESS
 
 LAST COMPLETED UNIT
-→ MB-00 Context Resilience Bootstrap / LOCKED v1.0.0
+→ MB-01 Platform System Map / LOCKED v1.0.0
+
+ACTIVE UNIT
+→ NONE
 
 NEXT UNIT
-→ MB-01 Platform System Map
+→ MB-02 Domain & Module Map / NOT STARTED / NEXT
 
 ARCHITECTURE
 → NOT STARTED
@@ -84,9 +87,9 @@ BUILD
 **Remote:** `origin https://github.com/yusufarst/elligble.git`
 **Repository visibility:** PRIVATE
 
-Last context-setting committed baseline before MB-00 finalization:
+Last verified committed baseline before MB-01 finalization:
 
-`b8ce06b docs(GOV-SYNC-01): synchronize canonical project state`
+`b6d1697 docs(MB-00): lock context resilience bootstrap`
 
 **Git verification rule:**
 A new agent/session must verify current HEAD and working-tree state from Git when repository access is available. HANDOFF_PACKET does not attempt to self-reference the commit that contains its own latest update.
@@ -109,13 +112,14 @@ MB-00
 → COMPLETE / LOCKED v1.0.0
 
 MB-01
-→ NEXT / NOT STARTED
+→ COMPLETE / LOCKED v1.0.0
+
+MB-02
+→ NOT STARTED / NEXT
 
 ## Exact Next Authorized Action
 
-Begin MB-01 Platform System Map only after explicit owner instruction.
-
-DO NOT automatically begin MB-01.
+MB-02 Context Reconstruction.
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -265,10 +269,10 @@ MB-00 Context Resilience Bootstrap
 → LOCKED v1.0.0
 
 MB-01 Platform System Map
-→ NOT STARTED / NEXT
+→ LOCKED v1.0.0
 
 MB-02 Domain & Module Map
-→ NOT STARTED
+→ NOT STARTED / NEXT
 
 MB-03 Actor, Role & Context Map
 → NOT STARTED
@@ -321,7 +325,7 @@ docs(D01): finalize product vision and boundaries v1.0.0
 
 ## Unresolved Risks / Contradictions
 
-Current MB-00 blocking contradiction:
+Current Master Blueprint blocking contradiction:
 NONE CURRENTLY IDENTIFIED
 
 OPEN and PROVISIONAL items are NOT contradictions by themselves.

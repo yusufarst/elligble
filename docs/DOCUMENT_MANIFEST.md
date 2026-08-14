@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.0.2  
+**Version:** 1.0.4  
 **Canonical:** YES  
-**Last Reviewed:** 2026-08-14
+**Last Reviewed:** 2026-08-15
 
 # ELLIGBLE Document Manifest
 
@@ -62,3 +62,4 @@ NEVER_DEFAULT
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
+| `docs/02-master-blueprint/02.01_PLATFORM_SYSTEM_MAP.md` | Authoritative Platform System Map for MB-02 and subsequent Master Blueprint units. | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-01 |
