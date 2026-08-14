@@ -41,6 +41,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-029 | Discovery 01 | Product Vision & Boundaries finalized v1.0.0 | LOCKED | D01.1–D01.7 |
 | DEC-030 | Discovery 02 | Tenant / Organization / Identity / Access Foundation finalized v1.0.0 | LOCKED | D02.1–D02.10 |
 | DEC-031 | Discovery 03 | Academic Core finalized v1.0.0 | LOCKED | D03.1–D03.9 |
+| DEC-032 | Discovery 04 | Secure Assessment finalized v1.0.1 | LOCKED | D04.1–D04.10 |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -100,5 +101,27 @@ Discovery 03 locked the following (D03.1–D03.9, owner approved):
 - Report-card-supporting data = foundation-ready
 - Full E-Rapor = FUTURE
 - Secure Assessment = next Discovery
+- Architecture/Build gates remain closed
+- Agent Skills remain NOT YET
+
+### DEC-032 — Discovery 04 Finalized (2026-08-14)
+
+**Version:** 1.0.1  
+**Status:** LOCKED  
+**Canonical artifact:** `docs/01-discovery/04.01_SECURE_ASSESSMENT.md`
+
+Discovery 04 locked the following (D04.1–D04.10, owner approved):
+
+- PG A–E only baseline; text/image options supported
+- zero-lost-answers layered resilience
+- local recovery + server-authoritative persistence
+- mixed-class Exam Rooms + Seating Plan
+- susulan/retake history continuity
+- scoped Proctor Feed + non-blocking broadcast
+- customizable RINGAN/STANDAR/KETAT
+- camera FUTURE
+- optional permission-based entire-screen high-assurance capture
+- school Wi-Fi OR personal mobile data/hotspot permitted
+- Master Blueprint = NEXT
 - Architecture/Build gates remain closed
 - Agent Skills remain NOT YET

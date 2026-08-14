@@ -20,6 +20,11 @@ Recovery is frozen. Discovery artifacts are created here one controlled unit at 
 - `03.01_ACADEMIC_CORE.md`
 - **FINAL / LOCKED v1.0.0**
 
+## Discovery 04 — Secure Assessment
+
+- `04.01_SECURE_ASSESSMENT.md`
+- **FINAL / LOCKED v1.0.1**
+
 ## Next
 
-- Discovery 04 — Secure Assessment
+- Master Blueprint

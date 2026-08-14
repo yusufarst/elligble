@@ -1,8 +1,8 @@
 **Status:** ACTIVE  
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Canonical:** YES  
-**Supersedes:** CURRENT_STATE v1.2.0  
-**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0  
+**Supersedes:** CURRENT_STATE v1.3.0  
+**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-14
 
@@ -15,8 +15,8 @@ RECOVERY              → COMPLETE / FROZEN v1.0.0
 DISCOVERY 01          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
-DISCOVERY 04          → NEXT
-MASTER BLUEPRINT      → NOT STARTED
+DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
+MASTER BLUEPRINT      → NEXT
 ARCHITECTURE          → NOT STARTED
 BUILD                 → NOT STARTED
 ```
@@ -63,13 +63,23 @@ docs/01-discovery/03.01_ACADEMIC_CORE.md
 
 Decisions D03.1–D03.9 are LOCKED (owner approved).
 
+## Discovery 04 Status
+
+Discovery 04 — Secure Assessment: **COMPLETE / LOCKED v1.0.1**
+
+Canonical artifact:
+
+```text
+docs/01-discovery/04.01_SECURE_ASSESSMENT.md
+```
+
+Decisions D04.1–D04.10 are LOCKED (owner approved).
+
 Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-Begin modular Discovery with **Discovery 04 — Secure Assessment**, following:
-
-`docs/00-governance/00.01_DISCOVERY_PROCESS.md`
+Begin **Master Blueprint**.
 
 Do not jump directly to ERD or coding.
 
@@ -96,7 +106,7 @@ Local project:
 C:\Projects\ELLIGBLE
 ```
 
-Known structure after Discovery 03:
+Known structure after Discovery 04:
 
 ```text
 AGENTS.md
@@ -141,9 +151,8 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 ## Immediate Next Milestone
 
 ```text
-DISCOVERY
-04 — Secure Assessment
+MASTER BLUEPRINT
 ```
 
-After each Discovery unit, update this file with the new active unit and prohibited premature work.
+After each phase, update this file with the new active unit and prohibited premature work.
 
