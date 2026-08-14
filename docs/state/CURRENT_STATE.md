@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.1  
+**Version:** 1.4.3  
 **Canonical:** YES  
-**Supersedes:** CURRENT_STATE v1.4.0  
+**Supersedes:** CURRENT_STATE v1.4.2  
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-14
@@ -16,7 +16,10 @@ DISCOVERY 01          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
-MASTER BLUEPRINT      → NEXT
+MASTER BLUEPRINT      → IN PROGRESS
+LAST COMPLETED UNIT   → MB-00 Context Resilience Bootstrap / LOCKED v1.0.0
+NEXT UNIT             → MB-01 Platform System Map
+MB-01                 → NOT STARTED
 ARCHITECTURE          → NOT STARTED
 BUILD                 → NOT STARTED
 ```
@@ -79,22 +82,25 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-Begin **Master Blueprint**.
+Begin owner-guided MB-01 Platform System Map.
+
+Do NOT automatically begin it.
 
 Do not jump directly to ERD or coding.
 
 ## Do Not Do Yet
 
 ```text
-DO NOT initialize frontend framework
-DO NOT initialize a new InsForge backend randomly
-DO NOT create ERD yet
-DO NOT create API contracts yet
+DO NOT create ERD
+DO NOT create API contracts
+DO NOT create database schema
+DO NOT initialize frontend/backend
+DO NOT create InsForge project
+DO NOT create Build Units
+DO NOT install Agent Skills
 DO NOT define final folder structure yet
-DO NOT create Build Units yet
 DO NOT copy legacy CBT code
 DO NOT re-run legacy migrations
-DO NOT install random agent skills
 DO NOT build FUTURE AI/native/sponsored features
 ```
 

@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.1  
+**Version:** 1.0.2  
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-14
 
@@ -60,3 +60,5 @@ NEVER_DEFAULT
 | `docs/01-discovery/README.md` | Discovery navigation/index | navigation | PHASE: Discovery |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
+| `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
+| `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
