@@ -1,8 +1,8 @@
 **Status:** ACTIVE  
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Canonical:** YES  
-**Supersedes:** Recovery-era Current State notes  
-**Depends On:** Recovery Freeze 1.0.0  
+**Supersedes:** CURRENT_STATE v1.0.0  
+**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-14
 
@@ -11,22 +11,37 @@
 ## Current Phase
 
 ```text
-RECOVERY → COMPLETE / FROZEN
-DISCOVERY → NEXT
-MASTER BLUEPRINT → NOT STARTED
-ARCHITECTURE → NOT STARTED
-BUILD → NOT STARTED
+RECOVERY              → COMPLETE / FROZEN v1.0.0
+DISCOVERY 01          → COMPLETE / LOCKED v1.0.0
+DISCOVERY 02          → NEXT
+MASTER BLUEPRINT      → NOT STARTED
+ARCHITECTURE          → NOT STARTED
+BUILD                 → NOT STARTED
 ```
 
 ## Recovery Status
 
-Recovery Freeze: **1.0.0**
+Recovery Freeze: **v1.0.0**
 
 R2 and R3 reviewed decisions are frozen and modularized.
 
+## Discovery 01 Status
+
+Discovery 01 — Product Vision & Boundaries: **COMPLETE / LOCKED v1.0.0**
+
+Canonical artifact:
+
+```text
+docs/01-discovery/01.01_PRODUCT_VISION_AND_BOUNDARIES.md
+```
+
+Decisions D01.1–D01.7 are LOCKED.
+
+Agent Skill installation checkpoint: **NOT YET**
+
 ## Next Safe Action
 
-Begin modular Discovery with **Product Vision / Product Boundary**, following:
+Begin modular Discovery with **Discovery 02 — Tenant / Organization / Identity / Access Foundation**, following:
 
 `docs/00-governance/00.01_DISCOVERY_PROCESS.md`
 
@@ -55,30 +70,23 @@ Local project:
 C:\Projects\ELLIGBLE
 ```
 
-Known structure before Recovery Freeze:
+Known structure after Discovery 01:
 
 ```text
 AGENTS.md
 README.md
+READ_ME_FIRST.md
 .gitignore
 .agents/skills/
 docs/00-governance/
 docs/00-recovery/
+docs/01-discovery/
 docs/decisions/
 docs/master/
 docs/state/
 ```
 
 Git branch: `main`.
-
-Last known Recovery-era commits:
-
-```text
-5264e9d chore(GOV-00): initialize ELLIGBLE discovery workspace
-21088c7 docs(REC-00.00): add ELLIGBLE master recovery index
-```
-
-Verify local Git state before committing this final documentation package.
 
 ## Current Technical State
 
@@ -108,7 +116,8 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ```text
 DISCOVERY
-01 — Product Vision / Product Boundaries
+02 — Tenant / Organization / Identity / Access Foundation
 ```
 
 After each Discovery unit, update this file with the new active unit and prohibited premature work.
+

@@ -1,10 +1,15 @@
-**Status:** NEXT PHASE  
-**Canonical:** NO SPECIFICATIONS CREATED YET
+**Status:** ACTIVE  
+**Canonical:** YES
 
 # Discovery
 
-Recovery is frozen.
+Recovery is frozen. Discovery artifacts are created here one controlled unit at a time according to `docs/00-governance/00.01_DISCOVERY_PROCESS.md`.
 
-Create Discovery artifacts here one controlled unit at a time according to `docs/00-governance/00.01_DISCOVERY_PROCESS.md`.
+## Discovery 01 — Product Vision & Boundaries
 
-Do not create a monolithic `DISCOVERY.md`.
+- `01.01_PRODUCT_VISION_AND_BOUNDARIES.md`
+- **FINAL / LOCKED v1.0.0**
+
+## Next
+
+- Discovery 02 — Tenant / Organization / Identity / Access Foundation

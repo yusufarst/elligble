@@ -38,3 +38,24 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-026 | Status semantics | OPEN/PROVISIONAL/FUTURE/DROP/LEGACY have strict meanings | LOCKED | R3.6 |
 | DEC-027 | Build scope | One Build Unit per agent execution; no marathon build | LOCKED | Governance |
 | DEC-028 | Recovery | Recovery frozen and modularized before Discovery | LOCKED | R3.7 |
+| DEC-029 | Discovery 01 | Product Vision & Boundaries finalized v1.0.0 | LOCKED | D01.1–D01.7 |
+
+### DEC-029 — Discovery 01 Finalized (2026-08-14)
+
+**Version:** 1.0.0  
+**Status:** LOCKED  
+**Canonical artifact:** `docs/01-discovery/01.01_PRODUCT_VISION_AND_BOUNDARIES.md`
+
+Discovery 01 locked the following:
+
+- Product vision and mission
+- Primary customer (school institution) / primary beneficiary (student)
+- Secure Assessment as initial adoption wedge
+- Product boundaries (not social media, not AI-dependent, not student-data marketplace)
+- ELLIGBLE Talent Assurance strategic direction (mechanism remains FUTURE/PROVISIONAL)
+- Product principles and non-negotiables
+- North-Star direction
+- Risk and anti-goal framework
+- Proctor Feed Kejadian/Pelanggaran as a required Assessment capability
+- Discovery 02 (Tenant / Organization / Identity / Access Foundation) as next phase
+- Agent Skill installation remains NOT YET
