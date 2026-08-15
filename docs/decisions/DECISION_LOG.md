@@ -1,8 +1,8 @@
 **Status:** ACTIVE  
-**Version:** 1.0.0  
+**Version:** 1.0.1
 **Canonical:** YES  
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-08-14
+**Last Reviewed:** 2026-08-15
 
 # ELLIGBLE — Decision Log
 
@@ -42,6 +42,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-030 | Discovery 02 | Tenant / Organization / Identity / Access Foundation finalized v1.0.0 | LOCKED | D02.1–D02.10 |
 | DEC-031 | Discovery 03 | Academic Core finalized v1.0.0 | LOCKED | D03.1–D03.9 |
 | DEC-032 | Discovery 04 | Secure Assessment finalized v1.0.1 | LOCKED | D04.1–D04.10 |
+| DEC-033 | Governance | Context & Governance Continuity Amendment | LOCKED | Owner |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -125,3 +126,24 @@ Discovery 04 locked the following (D04.1–D04.10, owner approved):
 - Master Blueprint = NEXT
 - Architecture/Build gates remain closed
 - Agent Skills remain NOT YET
+
+### DEC-033 — Context & Governance Continuity Amendment (2026-08-15)
+
+**Version:** 1.0.1
+**Status:** LOCKED
+**Canonical artifacts:** `docs/00-governance/00.02_DECISION_HIERARCHY.md`, `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md`
+
+Owner explicitly authorized:
+- deterministic new-agent/new-chat reconstruction;
+- Git working-state inspection before trusting dynamic state as complete current truth;
+- LAST SYNCHRONIZED BASELINE semantics during active units;
+- explicit supersession semantics;
+- evidence-over-summary verification;
+- protection of modified/untracked active work.
+
+This amendment does NOT:
+- reopen MB-01/MB-02/MB-03;
+- lock MB-04;
+- modify product scope;
+- authorize Architecture;
+- authorize Build.

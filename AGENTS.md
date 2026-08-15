@@ -2,23 +2,21 @@
 
 ## Mandatory Read Order
 
-Before acting:
+Before acting, you MUST use `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` as the canonical context-reconstruction protocol.
 
-```text
-READ_ME_FIRST.md
-docs/master/MASTER_CONTEXT.md
-docs/state/CURRENT_STATE.md
-docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md
-docs/00-governance/00.02_DECISION_HIERARCHY.md
-```
-
-Then load only the relevant task/domain context.
+**Core Requirements:**
+- Require Git working-state verification (`git status --short`) before trusting dynamic state files.
+- Include and recognize `CURRENT_STATE.md`, `HANDOFF_PACKET.md`, `DOCUMENT_MANIFEST.md`, and the active phase index as state files that may represent the last synchronized baseline.
+- **Evidence-Over-Summary Rule:** Actual repository file content and Git output ALWAYS beat agent summaries or external reports.
+- **Working-Tree Preservation Rule:** A modified/untracked file is evidence of possible in-progress work. Do NOT perform destructive cleanup merely to make Git appear clean.
 
 ## Never Override Canonical Decisions Silently
 
-Newer `LOCKED` decisions win over old Recovery inventory, legacy CBT terminology, and earlier assumptions.
-
-If a conflict is real, report it and require explicit supersession.
+- A newer decision does NOT win merely because it is newer.
+- Explicit owner-approved canonical supersession wins over the superseded predecessor.
+- Non-superseded LOCKED/FROZEN decisions remain authoritative.
+- If two active canonical decisions conflict and no explicit supersession exists: OWNER DECISION REQUIRED.
+- Follow `docs/00-governance/00.02_DECISION_HIERARCHY.md` for exact authority resolution.
 
 ## Status Handling
 
@@ -33,7 +31,10 @@ LEGACY       → reference only until audited
 
 ## Current Phase Guard
 
-Follow `docs/state/CURRENT_STATE.md`.
+- `CURRENT_STATE.md` is part of the canonical baseline.
+- If the working tree is clean, it may represent current synchronized state subject to normal consistency checks.
+- If the working tree is non-clean, execute the canonical working-state reconstruction protocol in `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` before determining active phase.
+- Never use stale `CURRENT_STATE.md` alone to overwrite/restart authorized in-progress work.
 
 Do not create ERD, API contracts, architecture, backend, frontend, or Build Units before the current phase authorizes them.
 
