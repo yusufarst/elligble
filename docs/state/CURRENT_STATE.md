@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.7  
-**Canonical:** YES  
-**Supersedes:** CURRENT_STATE v1.4.6  
+**Version:** 1.4.9
+**Canonical:** YES
+**Supersedes:** CURRENT_STATE v1.4.8
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-15
@@ -17,15 +17,15 @@ DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → IN PROGRESS
-LAST COMPLETED UNIT   → MB-02 Domain & Module Map / LOCKED v1.0.0
+LAST COMPLETED UNIT   → MB-03 Actor, Role & Context Map / LOCKED v1.0.0
 ACTIVE UNIT           → NONE
-CURRENT STAGE         → NONE
-NEXT SAFE ACTION      → MB-03 CONTEXT RECONSTRUCTION
-NEXT UNIT             → MB-03 Actor, Role & Context Map / NOT STARTED / NEXT
+NEXT SAFE ACTION      → MB-04 CONTEXT RECONSTRUCTION
+NEXT UNIT             → MB-04 Core Journeys & Critical Flows / NOT STARTED / NEXT
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
-MB-03–MB-12           → NOT STARTED
+MB-03                 → LOCKED v1.0.0
+MB-04–MB-12           → NOT STARTED
 ARCHITECTURE          → NOT STARTED
 BUILD                 → NOT STARTED
 INSFORGE              → NOT YET
@@ -90,7 +90,7 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-MB-03 CONTEXT RECONSTRUCTION
+MB-04 CONTEXT RECONSTRUCTION
 
 Do not jump directly to ERD or coding.
 

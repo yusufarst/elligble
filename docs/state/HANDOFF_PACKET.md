@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.5
+**Version:** 0.1.7
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** MASTER BLUEPRINT
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -66,13 +66,13 @@ MASTER BLUEPRINT
 → IN PROGRESS
 
 LAST COMPLETED UNIT
-→ MB-02 Domain & Module Map / LOCKED v1.0.0
+→ MB-03 Actor, Role & Context Map / LOCKED v1.0.0
 
 ACTIVE UNIT
 → NONE
 
 NEXT UNIT
-→ MB-03 Actor, Role & Context Map / NOT STARTED / NEXT
+→ MB-04 Core Journeys & Critical Flows / NOT STARTED / NEXT
 
 ARCHITECTURE
 → NOT STARTED
@@ -87,9 +87,9 @@ BUILD
 **Remote:** `origin https://github.com/yusufarst/elligble.git`
 **Repository visibility:** PRIVATE
 
-Previous committed baseline before the MB-02 lock package:
+Previous committed baseline before the MB-03 lock package:
 
-709d115f4d979bff4cd13dd31929d875254f352c
+6ce2b9e31465ad57224626eb157b3eedb2bbd5c5
 
 **Git verification rule:**
 A new agent/session must verify current HEAD and working-tree state from Git when repository access is available. HANDOFF_PACKET does not attempt to self-reference the commit that contains its own latest update.
@@ -105,6 +105,7 @@ A new agent/session must verify current HEAD and working-tree state from Git whe
 - MB-00 Context Resilience Bootstrap → COMPLETE / LOCKED v1.0.0
 - MB-01 Platform System Map → COMPLETE / LOCKED v1.0.0
 - MB-02 Domain & Module Map → COMPLETE / LOCKED v1.0.0
+- MB-03 Actor, Role & Context Map → COMPLETE / LOCKED v1.0.0
 
 ## Current Active Task
 
@@ -119,9 +120,12 @@ MB-01
 MB-02
 → COMPLETE / LOCKED v1.0.0
 
+MB-03
+→ COMPLETE / LOCKED v1.0.0
+
 ## Exact Next Authorized Action
 
-MB-03 CONTEXT RECONSTRUCTION
+MB-04 CONTEXT RECONSTRUCTION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -277,7 +281,7 @@ MB-02 Domain & Module Map
 → LOCKED v1.0.0
 
 MB-03 Actor, Role & Context Map
-→ NOT STARTED / NEXT
+→ LOCKED v1.0.0
 
 MB-04 Core Journeys & Critical Flows
 → NOT STARTED
