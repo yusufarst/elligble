@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.11
+**Version:** 1.4.12
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.10
+**Supersedes:** CURRENT_STATE v1.4.11
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-15
@@ -17,18 +17,19 @@ DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → IN PROGRESS
-LAST COMPLETED UNIT   → MB-05 Data Trust & Continuity Model / LOCKED v1.0.0
+LAST COMPLETED UNIT   → MB-06 Security, Privacy & Risk Boundaries / LOCKED v1.0.0
 ACTIVE UNIT           → NONE
-NEXT SAFE ACTION      → MB-05 GIT FINALIZATION
-NEXT UNIT             → MB-06 Security, Privacy & Risk / NOT STARTED / NEXT
-NEXT STAGE            → MB-06 CONTEXT RECONSTRUCTION (Requires MB-05 Git finalization)
+NEXT SAFE ACTION      → MB-06 GIT FINALIZATION
+NEXT UNIT             → MB-07 Reliability & Failure Containment / NOT STARTED / NEXT
+NEXT STAGE            → MB-07 CONTEXT RECONSTRUCTION (Requires MB-06 Git finalization)
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
 MB-03                 → LOCKED v1.0.0
 MB-04                 → LOCKED v1.0.0
 MB-05                 → LOCKED v1.0.0
-MB-06–MB-12           → NOT STARTED
+MB-06                 → LOCKED v1.0.0
+MB-07–MB-12           → NOT STARTED
 ARCHITECTURE          → NOT STARTED
 BUILD                 → NOT STARTED
 INSFORGE              → NOT YET
@@ -93,7 +94,7 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-MB-05 GIT FINALIZATION
+MB-06 GIT FINALIZATION
 
 Do not jump directly to ERD or coding.
 

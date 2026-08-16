@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.10
+**Version:** 1.0.11
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-15
 
@@ -67,3 +67,4 @@ NEVER_DEFAULT
 | `docs/02-master-blueprint/02.03_ACTOR_ROLE_AND_CONTEXT_MAP.md` | Actor, Role & Context Map | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-03 |
 | `docs/02-master-blueprint/02.04_CORE_JOURNEYS_AND_CRITICAL_FLOWS.md` | Core Journeys & Critical Flows | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-04 |
 | `docs/02-master-blueprint/02.05_DATA_TRUST_AND_CONTINUITY_MODEL.md` | Data Trust & Continuity Model | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-05 |
+| `docs/02-master-blueprint/02.06_SECURITY_PRIVACY_AND_RISK_BOUNDARIES.md` | Security, Privacy & Risk Boundaries | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-06 |

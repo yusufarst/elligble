@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.9
+**Version:** 0.1.10
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** MASTER BLUEPRINT
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -66,13 +66,13 @@ MASTER BLUEPRINT
 → IN PROGRESS
 
 LAST COMPLETED UNIT
-→ MB-05 Data Trust & Continuity Model / LOCKED v1.0.0
+→ MB-06 Security, Privacy & Risk Boundaries / LOCKED v1.0.0
 
 ACTIVE UNIT
 → NONE
 
 NEXT UNIT
-→ MB-06 Security, Privacy & Risk Boundaries / NOT STARTED / NEXT
+→ MB-07 Reliability & Failure Containment / NOT STARTED / NEXT
 
 ARCHITECTURE
 → NOT STARTED
@@ -108,6 +108,7 @@ A new agent/session must verify current HEAD and working-tree state from Git whe
 - MB-03 Actor, Role & Context Map → COMPLETE / LOCKED v1.0.0
 - MB-04 Core Journeys & Critical Flows → COMPLETE / LOCKED v1.0.0
 - MB-05 Data Trust & Continuity Model → COMPLETE / LOCKED v1.0.0
+- MB-06 Security, Privacy & Risk Boundaries → COMPLETE / LOCKED v1.0.0
 
 ## Current Active Task
 
@@ -131,9 +132,12 @@ MB-04
 MB-05
 → COMPLETE / LOCKED v1.0.0
 
+MB-06
+→ COMPLETE / LOCKED v1.0.0
+
 ## Exact Next Authorized Action
 
-MB-05 GIT FINALIZATION
+MB-06 GIT FINALIZATION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -298,7 +302,7 @@ MB-05 Data Trust & Continuity Model
 → LOCKED v1.0.0
 
 MB-06 Security, Privacy & Risk Boundaries
-→ NOT STARTED
+→ LOCKED v1.0.0
 
 MB-07 Reliability & Failure Containment
 → NOT STARTED
