@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.12
+**Version:** 1.0.13
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-15
 
@@ -69,3 +69,4 @@ NEVER_DEFAULT
 | `docs/02-master-blueprint/02.05_DATA_TRUST_AND_CONTINUITY_MODEL.md` | Data Trust & Continuity Model | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-05 |
 | `docs/02-master-blueprint/02.06_SECURITY_PRIVACY_AND_RISK_BOUNDARIES.md` | Security, Privacy & Risk Boundaries | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-06 |
 | `docs/02-master-blueprint/02.07_RELIABILITY_AND_FAILURE_CONTAINMENT.md` | Reliability & Failure Containment | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-07 |
+| `docs/02-master-blueprint/02.08_CROSS_DOMAIN_CONTRACTS_AND_INTEGRATIONS.md` | Cross-Domain Contracts & Integrations | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-08 |
