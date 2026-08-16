@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.13
+**Version:** 0.1.14
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** MASTER BLUEPRINT
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -66,13 +66,13 @@ MASTER BLUEPRINT
 → IN PROGRESS
 
 LAST COMPLETED UNIT
-→ MB-09 Delivery Sequence & Dependencies / LOCKED v1.0.0
+→ MB-10 Baseline, Future & Exclusions / LOCKED v1.0.0
 
 ACTIVE UNIT
 → NONE
 
 NEXT UNIT
-→ MB-10 Baseline, Future & Exclusions / NOT STARTED / NEXT
+→ MB-11 Traceability / NOT STARTED / NEXT
 
 ARCHITECTURE
 → NOT STARTED
@@ -112,6 +112,7 @@ A new agent/session must verify current HEAD and working-tree state from Git whe
 - MB-07 Reliability & Failure Containment → COMPLETE / LOCKED v1.0.0
 - MB-08 Cross-Domain Contracts & Integrations → COMPLETE / LOCKED v1.0.0
 - MB-09 Delivery Sequence & Dependencies → COMPLETE / LOCKED v1.0.0
+- MB-10 Baseline, Future & Exclusions → COMPLETE / LOCKED v1.0.0
 
 ## Current Active Task
 
@@ -144,9 +145,12 @@ MB-08
 MB-09
 → COMPLETE / LOCKED v1.0.0
 
+MB-10
+→ COMPLETE / LOCKED v1.0.0
+
 ## Exact Next Authorized Action
 
-MB-09 GIT FINALIZATION
+MB-10 GIT FINALIZATION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -329,7 +333,7 @@ MB-09 Delivery Sequence & Dependencies
 → LOCKED v1.0.0
 
 MB-10 Baseline, Future & Exclusions
-→ NOT STARTED
+→ LOCKED v1.0.0
 
 MB-11 Traceability Matrix
 → NOT STARTED
