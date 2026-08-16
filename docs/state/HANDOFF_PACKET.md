@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.12
+**Version:** 0.1.13
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** MASTER BLUEPRINT
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -66,13 +66,13 @@ MASTER BLUEPRINT
 → IN PROGRESS
 
 LAST COMPLETED UNIT
-→ MB-08 Cross-Domain Contracts & Integrations / LOCKED v1.0.0
+→ MB-09 Delivery Sequence & Dependencies / LOCKED v1.0.0
 
 ACTIVE UNIT
 → NONE
 
 NEXT UNIT
-→ MB-09 Delivery Sequence & Dependencies / NOT STARTED / NEXT
+→ MB-10 Baseline, Future & Exclusions / NOT STARTED / NEXT
 
 ARCHITECTURE
 → NOT STARTED
@@ -111,6 +111,7 @@ A new agent/session must verify current HEAD and working-tree state from Git whe
 - MB-06 Security, Privacy & Risk Boundaries → COMPLETE / LOCKED v1.0.0
 - MB-07 Reliability & Failure Containment → COMPLETE / LOCKED v1.0.0
 - MB-08 Cross-Domain Contracts & Integrations → COMPLETE / LOCKED v1.0.0
+- MB-09 Delivery Sequence & Dependencies → COMPLETE / LOCKED v1.0.0
 
 ## Current Active Task
 
@@ -140,9 +141,12 @@ MB-06
 MB-08
 → COMPLETE / LOCKED v1.0.0
 
+MB-09
+→ COMPLETE / LOCKED v1.0.0
+
 ## Exact Next Authorized Action
 
-MB-08 GIT FINALIZATION
+MB-09 GIT FINALIZATION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -165,7 +169,8 @@ MB-08 GIT FINALIZATION
 - general school timetable OUT OF CURRENT BASELINE
 - general school attendance OUT OF CURRENT BASELINE
 - Learn optional
-- Secure Assessment mission-critical
+- Track signal does not automatically create Care Case
+- Secure Assessment mission-critical/adoption priority after minimum foundation
 - No Lost Answers
 - Server-Authoritative Timer
 - Idempotent Submission
@@ -173,6 +178,11 @@ MB-08 GIT FINALIZATION
 - partner has no unrestricted student search
 - student data private by default
 - AI FUTURE / OPTIONAL / NON-BLOCKING
+- DEPENDENCY ≠ DELIVERY CHRONOLOGY
+- LIFECYCLE PREREQUISITE ≠ WHOLE-CAPABILITY DELIVERY ORDER
+- Passport → Opportunity: CANONICAL
+- Opportunity → Path: CANONICAL
+- Path → Opportunity: NOT A CANONICAL CONTRACT
 - SUPER_ADMIN rejected
 - ELLIGBLE is not social media
 
@@ -316,7 +326,7 @@ MB-08 Cross-Domain Contracts & Integrations
 → LOCKED v1.0.0
 
 MB-09 Delivery Sequence & Dependencies
-→ NOT STARTED
+→ LOCKED v1.0.0
 
 MB-10 Baseline, Future & Exclusions
 → NOT STARTED
