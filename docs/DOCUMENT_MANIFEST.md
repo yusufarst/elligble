@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.8
+**Version:** 1.0.9
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-15
 
@@ -65,3 +65,4 @@ NEVER_DEFAULT
 | `docs/02-master-blueprint/02.01_PLATFORM_SYSTEM_MAP.md` | Authoritative Platform System Map for MB-02 and subsequent Master Blueprint units. | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-01 |
 | `docs/02-master-blueprint/02.02_DOMAIN_AND_MODULE_MAP.md` | Domain & Module Map | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-02 |
 | `docs/02-master-blueprint/02.03_ACTOR_ROLE_AND_CONTEXT_MAP.md` | Actor, Role & Context Map | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-03 |
+| `docs/02-master-blueprint/02.04_CORE_JOURNEYS_AND_CRITICAL_FLOWS.md` | Core Journeys & Critical Flows | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-04 |
