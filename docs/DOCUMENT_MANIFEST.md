@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.11
+**Version:** 1.0.12
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-15
 
@@ -68,3 +68,4 @@ NEVER_DEFAULT
 | `docs/02-master-blueprint/02.04_CORE_JOURNEYS_AND_CRITICAL_FLOWS.md` | Core Journeys & Critical Flows | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-04 |
 | `docs/02-master-blueprint/02.05_DATA_TRUST_AND_CONTINUITY_MODEL.md` | Data Trust & Continuity Model | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-05 |
 | `docs/02-master-blueprint/02.06_SECURITY_PRIVACY_AND_RISK_BOUNDARIES.md` | Security, Privacy & Risk Boundaries | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-06 |
+| `docs/02-master-blueprint/02.07_RELIABILITY_AND_FAILURE_CONTAINMENT.md` | Reliability & Failure Containment | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-07 |
