@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.16
+**Version:** 1.0.17
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-17
 
@@ -61,6 +61,7 @@ NEVER_DEFAULT
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
+| `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
 | `docs/02-master-blueprint/02.01_PLATFORM_SYSTEM_MAP.md` | Authoritative Platform System Map for MB-02 and subsequent Master Blueprint units. | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-01 |
 | `docs/02-master-blueprint/02.02_DOMAIN_AND_MODULE_MAP.md` | Domain & Module Map | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-02 |
