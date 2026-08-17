@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.21
+**Version:** 1.4.22
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.20
+**Supersedes:** CURRENT_STATE v1.4.21
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-17
@@ -19,9 +19,9 @@ DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 LAST COMPLETED UNIT   → MB-12 Master Blueprint Exit Gate / LOCKED v1.0.0
 ACTIVE UNIT           → NONE
-NEXT SAFE ACTION      → ARCHITECTURE PHASE INITIALIZATION
-NEXT UNIT             → NONE / MASTER BLUEPRINT UNIT SEQUENCE COMPLETE
-NEXT STAGE            → ARCHITECTURE PHASE INITIALIZATION
+NEXT SAFE ACTION      → ARCHITECTURE PHASE INDEX GIT FINALIZATION
+NEXT UNIT             → NONE / ARCHITECTURE UNIT NAMING NOT YET ESTABLISHED
+NEXT STAGE            → ARCHITECTURE PHASE INDEX GIT FINALIZATION
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
@@ -102,11 +102,20 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-ARCHITECTURE PHASE INITIALIZATION
+ARCHITECTURE PHASE INDEX GIT FINALIZATION
 
 MASTER BLUEPRINT EXIT FINALIZATION: COMPLETE
 
 PRODUCTION BLOCKERS BACKLOG: CREATED / REGISTERED / GIT FINALIZED
+
+ARCHITECTURE PHASE INDEX: ACTIVE / CONTROL BASELINE v0.1.1
+ARCHITECTURE PHASE INDEX PATH: docs/architecture/ARCHITECTURE_PHASE_INDEX.md
+ARCHITECTURE CONTROL WORKSTREAM ORDER: APPROVED
+ARCHITECTURE UNIT NAMING CONVENTION: NOT YET ESTABLISHED
+ACTIVE ARCHITECTURE UNIT: NONE
+SUBSTANTIVE ARCHITECTURE DESIGN: NOT STARTED
+ARCHITECTURE INDEX REGISTRATION: COMPLETE
+ARCHITECTURE INDEX GIT FINALIZATION: NOT YET PERFORMED
 
 PRODUCTION BLOCKER CONTROL ARTIFACT: docs/state/PRODUCTION_BLOCKERS_BACKLOG.md
 BACKLOG STATUS: ACTIVE v0.1.0
@@ -144,7 +153,7 @@ Local project:
 C:\Projects\ELLIGBLE
 ```
 
-Known relevant repository structure for the current Master Blueprint phase:
+Known relevant repository structure for the current Architecture phase:
 
 ```text
 AGENTS.md
@@ -156,6 +165,7 @@ docs/00-governance/
 docs/00-recovery/
 docs/01-discovery/
 docs/02-master-blueprint/
+docs/architecture/
 docs/decisions/
 docs/master/
 docs/state/
@@ -189,7 +199,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-ARCHITECTURE PHASE INITIALIZATION
+ARCHITECTURE PHASE INDEX GIT FINALIZATION
 
 After each phase, update this file with the new active unit and prohibited premature work.
 

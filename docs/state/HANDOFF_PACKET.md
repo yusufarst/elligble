@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.19
+**Version:** 0.1.20
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** ARCHITECTURE
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -125,9 +125,33 @@ ARCHITECTURE
 ACTIVE ARCHITECTURE UNIT:
 NONE
 
+ARCHITECTURE PHASE INDEX:
+ACTIVE / CONTROL BASELINE v0.1.1
+
+PATH:
+docs/architecture/ARCHITECTURE_PHASE_INDEX.md
+
+CONTROL WORKSTREAM ORDER:
+APPROVED
+
+FIXED ARCHITECTURE UNIT IDS:
+NONE
+
+ARCHITECTURE UNIT NAMING CONVENTION:
+NOT YET ESTABLISHED
+
+INDEX REGISTRATION:
+COMPLETE
+
+INDEX GIT FINALIZATION:
+NOT YET PERFORMED
+
+SUBSTANTIVE ARCHITECTURE DESIGN:
+NOT STARTED
+
 ## Exact Next Authorized Action
 
-ARCHITECTURE PHASE INITIALIZATION
+ARCHITECTURE PHASE INDEX GIT FINALIZATION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -339,7 +363,7 @@ docs(D01): finalize product vision and boundaries v1.0.0
 
 ## Unresolved Risks / Contradictions
 
-Current Master Blueprint blocking contradiction:
+Current Architecture blocking contradiction:
 NONE CURRENTLY IDENTIFIED
 
 OPEN and PROVISIONAL items are NOT contradictions by themselves.

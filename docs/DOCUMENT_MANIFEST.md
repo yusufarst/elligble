@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.17
+**Version:** 1.0.18
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-17
 
@@ -58,6 +58,7 @@ NEVER_DEFAULT
 | `docs/01-discovery/04.01_SECURE_ASSESSMENT.md` | Discovery 04 — Secure Assessment | Canonical / FINAL / LOCKED v1.0.1 | PHASE: Discovery |
 | `README.md` | Repository overview / navigation | non-authoritative | ON_DEMAND |
 | `docs/01-discovery/README.md` | Discovery navigation/index | navigation | PHASE: Discovery |
+| `docs/architecture/ARCHITECTURE_PHASE_INDEX.md` | Architecture phase control index, coverage register, Production Blocker Architecture tracking, and control-approved Architecture workstream order. | DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
