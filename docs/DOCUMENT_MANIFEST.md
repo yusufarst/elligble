@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.0.14
+**Version:** 1.0.15
 **Canonical:** YES  
-**Last Reviewed:** 2026-08-15
+**Last Reviewed:** 2026-08-17
 
 # ELLIGBLE Document Manifest
 
@@ -72,3 +72,4 @@ NEVER_DEFAULT
 | `docs/02-master-blueprint/02.08_CROSS_DOMAIN_CONTRACTS_AND_INTEGRATIONS.md` | Cross-Domain Contracts & Integrations | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-08 |
 | `docs/02-master-blueprint/02.09_DELIVERY_SEQUENCE_AND_DEPENDENCIES.md` | Delivery Sequence & Dependencies | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-09 |
 | `docs/02-master-blueprint/02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md` | Baseline, Future & Exclusions | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-10 |
+| `docs/02-master-blueprint/02.11_TRACEABILITY_MATRIX.md` | Traceability Matrix | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-11 |

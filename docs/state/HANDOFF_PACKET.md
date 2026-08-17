@@ -1,10 +1,10 @@
 **Status:** ACTIVE
-**Version:** 0.1.14
+**Version:** 0.1.16
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** MASTER BLUEPRINT
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
 **Used By:** New Chat / New Agent Context Reconstruction
-**Last Reviewed:** 2026-08-15
+**Last Reviewed:** 2026-08-17
 
 # ELLIGBLE Handoff Packet
 
@@ -66,13 +66,13 @@ MASTER BLUEPRINT
 → IN PROGRESS
 
 LAST COMPLETED UNIT
-→ MB-10 Baseline, Future & Exclusions / LOCKED v1.0.0
+→ MB-11 Traceability Matrix / LOCKED v1.0.0
 
 ACTIVE UNIT
 → NONE
 
 NEXT UNIT
-→ MB-11 Traceability / NOT STARTED / NEXT
+→ MB-12 Master Blueprint Exit Gate / NOT STARTED / NEXT
 
 ARCHITECTURE
 → NOT STARTED
@@ -113,6 +113,7 @@ A new agent/session must verify current HEAD and working-tree state from Git whe
 - MB-08 Cross-Domain Contracts & Integrations → COMPLETE / LOCKED v1.0.0
 - MB-09 Delivery Sequence & Dependencies → COMPLETE / LOCKED v1.0.0
 - MB-10 Baseline, Future & Exclusions → COMPLETE / LOCKED v1.0.0
+- MB-11 Traceability Matrix → COMPLETE / LOCKED v1.0.0
 
 ## Current Active Task
 
@@ -139,6 +140,9 @@ MB-05
 MB-06
 → COMPLETE / LOCKED v1.0.0
 
+MB-07 Reliability & Failure Containment
+→ COMPLETE / LOCKED v1.0.0
+
 MB-08
 → COMPLETE / LOCKED v1.0.0
 
@@ -148,9 +152,12 @@ MB-09
 MB-10
 → COMPLETE / LOCKED v1.0.0
 
+MB-11
+→ COMPLETE / LOCKED v1.0.0
+
 ## Exact Next Authorized Action
 
-MB-10 GIT FINALIZATION
+MB-11 GIT FINALIZATION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -336,7 +343,7 @@ MB-10 Baseline, Future & Exclusions
 → LOCKED v1.0.0
 
 MB-11 Traceability Matrix
-→ NOT STARTED
+→ LOCKED v1.0.0
 
 MB-12 Master Blueprint Exit Gate
 → NOT STARTED
