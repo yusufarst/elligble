@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.0.18
+**Version:** 1.0.19
 **Canonical:** YES  
-**Last Reviewed:** 2026-08-17
+**Last Reviewed:** 2026-08-18
 
 # ELLIGBLE Document Manifest
 
@@ -59,6 +59,7 @@ NEVER_DEFAULT
 | `README.md` | Repository overview / navigation | non-authoritative | ON_DEMAND |
 | `docs/01-discovery/README.md` | Discovery navigation/index | navigation | PHASE: Discovery |
 | `docs/architecture/ARCHITECTURE_PHASE_INDEX.md` | Architecture phase control index, coverage register, Production Blocker Architecture tracking, and control-approved Architecture workstream order. | DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES | PHASE: Architecture |
+| `docs/architecture/SYSTEM_AND_DOMAIN_BOUNDARIES.md` | Architecture Sequence 1 system context, logical system/domain responsibility boundaries, source-of-truth ownership boundaries, isolation constraints, and Sequence 1 deferrals. | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |

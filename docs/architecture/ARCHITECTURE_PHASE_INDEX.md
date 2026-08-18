@@ -1,13 +1,13 @@
 **Status:** ACTIVE - CONTROL BASELINE  
-**Version:** 0.1.2  
+**Version:** 0.1.3  
 **Phase:** ARCHITECTURE  
 **Artifact Type:** PHASE CONTROL / INDEX  
 **Authority:** DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES  
 **Canonical Architecture Specification:** NO  
 **Architecture Unit Naming Convention:** NOT YET ESTABLISHED  
-**Substantive Architecture Design:** NOT STARTED  
+**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 1 LOCKED  
 **Build:** NOT AUTHORIZED  
-**Last Reviewed:** 2026-08-17
+**Last Reviewed:** 2026-08-18
 
 # Architecture Phase Index
 
@@ -62,7 +62,7 @@ Architecture will determine HOW only through later controlled units.
 
 The following concerns are REQUIREMENTS TO BE RESOLVED.
 
-1. system/component boundaries: UNRESOLVED / NOT YET DESIGNED
+1. system/component boundaries: RESOLVED / SEQUENCE 1 LOCKED v1.0.0
 2. multi-tenant isolation: UNRESOLVED / NOT YET DESIGNED
 3. Person / User Account / Membership separation: UNRESOLVED / NOT YET DESIGNED
 4. authorization model and scoped capabilities: UNRESOLVED / NOT YET DESIGNED
@@ -188,11 +188,15 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 
 ### SEQUENCE 1: System & Domain Boundaries
 - **Purpose:** system context, component/domain responsibility boundaries, isolation needs.
-- **STATUS:** PENDING
+- **STATUS:** COMPLETE / LOCKED v1.0.0
+- **CANONICAL ARTIFACT:** docs/architecture/SYSTEM_AND_DOMAIN_BOUNDARIES.md
+- **ARTIFACT SHA256:** 9D620722FCC0ED02C104310C6F8F1A66905B7E8769BA8D94676F12E42DD44036
+- **STATE SYNCHRONIZATION:** COMPLETE
+- **GIT FINALIZATION:** NOT YET PERFORMED
 
 ### SEQUENCE 2: Data / Tenancy / Trust Architecture
 - **Purpose:** data ownership, tenant isolation, lifecycle continuity, provenance, consistency requirements.
-- **STATUS:** PENDING
+- **STATUS:** PENDING / NOT STARTED
 
 ### SEQUENCE 3: Identity / Access / Security Architecture
 - **Purpose:** Person/User/Membership separation, scoped authorization, authentication architecture requirements, privacy/security enforcement boundaries.
@@ -250,13 +254,16 @@ These remain unresolved unless later repository authority decides them.
 ## 10. Next Safe Action
 
 - **ACTIVE ARCHITECTURE UNIT:** NONE
+- **ARCHITECTURE UNIT NAMING CONVENTION:** NOT YET ESTABLISHED
 - **ARCHITECTURE INDEX STATUS:** ACTIVE / CONTROL BASELINE
 - **INDEX REGISTRATION:** COMPLETE
 - **INDEX GIT FINALIZATION:** COMPLETE
 - **GIT FINALIZATION COMMIT:** ea671d1413896bf1d64b8bc825839e30593a8593
-- **SEQUENCE 1:** PENDING
-- **SEQUENCE 1 SUBSTANTIVE ARCHITECTURE DESIGN:** NOT STARTED
+- **SEQUENCE 1:** COMPLETE / LOCKED v1.0.0
+- **SEQUENCE 1 STATE SYNCHRONIZATION:** COMPLETE
+- **SEQUENCE 1 GIT FINALIZATION:** NOT YET PERFORMED
+- **SEQUENCE 2:** PENDING / NOT STARTED
 - **CONTROL WORKSTREAM ORDER:** APPROVED
-- **SUBSTANTIVE ARCHITECTURE DESIGN:** NOT STARTED
-- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 1 SCOPE DEFINITION / RECONNAISSANCE
+- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 1 LOCKED
+- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 1 GIT FINALIZATION
 - **BUILD:** NOT AUTHORIZED
