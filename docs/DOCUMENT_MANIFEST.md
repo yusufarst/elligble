@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.24
+**Version:** 1.0.25
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-18
 
@@ -65,6 +65,7 @@ NEVER_DEFAULT
 | `docs/architecture/SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE.md` | Architecture Sequence 4 Secure Assessment Critical Architecture covering mission-critical active-exam continuity, Zero Lost Answers, server-authoritative timer, idempotent submission, reconnect/resume continuity, Participant / Attempt / Session separation, immutable Exam Question Snapshot, authoritative assessment state, failure containment, and assessment risk/security boundaries. (92C79A80FCE277BDA9A537C8D78B03ED8A7CB44F092A61855CD8C78E56A79BEA) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/CROSS_DOMAIN_AND_INTEGRATION_ARCHITECTURE.md` | Architecture Sequence 5 Cross-Domain & Integration Architecture covering canonical cross-domain contracts and external integration boundaries. (DFF344E799EA014C2FB2276505697FA97844505CC66F675A1586CA3CEDB03A24) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/RUNTIME_RELIABILITY_AND_OPERATIONS_ARCHITECTURE.md` | Architecture Sequence 6 Runtime / Reliability / Operations Architecture covering runtime boundaries, failure containment, observability, backup/restore, incident-response hooks, deployment requirements, technology-selection criteria. (63863D539E875190A69610166AB03AE5B212C4879FAAD3C9AD93F559CCD9CDD1) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
+| `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
