@@ -1,11 +1,11 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.6
+**Version:** 0.1.7
 **Canonical:** DYNAMIC PHASE CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Artifact Type:** PHASE CONTROL / INDEX  
 **Authority:** DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES  
 **Canonical Architecture Specification:** NO  
 **Architecture Unit Naming Convention:** NOT YET ESTABLISHED  
-**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 2 FINALIZED / SEQUENCE 3 PENDING  
+**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 3 LOCKED  
 **Build:** NOT AUTHORIZED  
 **Last Reviewed:** 2026-08-18
 
@@ -64,8 +64,8 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 
 1. system/component boundaries: RESOLVED / SEQUENCE 1 LOCKED v1.0.0
 2. multi-tenant isolation: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
-3. Person / User Account / Membership separation: PARTIAL / SEQUENCE 2 LOCKED v1.0.0 (SEQUENCE 3 PENDING)
-4. authorization model and scoped capabilities: UNRESOLVED / NOT YET DESIGNED
+3. Person / User Account / Membership separation: RESOLVED / SEQUENCE 3 LOCKED v1.0.0
+4. authorization model and scoped capabilities: RESOLVED / SEQUENCE 3 LOCKED v1.0.0
 5. Academic Core shared truth: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 6. Secure Assessment mission-critical isolation: UNRESOLVED / NOT YET DESIGNED
 7. No Lost Answers architecture: UNRESOLVED / NOT YET DESIGNED
@@ -74,14 +74,14 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 10. Exam Participant / Exam Attempt / Exam Session separation: UNRESOLVED / NOT YET DESIGNED
 11. immutable Exam Question Snapshot: UNRESOLVED / NOT YET DESIGNED
 12. data trust/provenance boundaries: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
-13. privacy and restricted Care data: PARTIAL / SEQUENCE 2 LOCKED v1.0.0 (SEQUENCE 3 PENDING)
-14. Partner purpose-limited access: PARTIAL / SEQUENCE 2 LOCKED v1.0.0 (SEQUENCE 3 PENDING)
+13. privacy and restricted Care data: PARTIAL / SEQUENCE 3 LOCKED v1.0.0 / CROSS-SEQUENCE COMPLETION REMAINS
+14. Partner purpose-limited access: PARTIAL / SEQUENCE 3 LOCKED v1.0.0 / CROSS-SEQUENCE COMPLETION REMAINS
 15. Student -> Alumni lifecycle continuity: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 16. cross-domain contracts: UNRESOLVED / NOT YET DESIGNED
 17. consistency/transaction boundaries: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 18. reliability/failure containment: UNRESOLVED / NOT YET DESIGNED
 19. backup/restore architecture support: UNRESOLVED / NOT YET DESIGNED
-20. security/incident-readiness architecture support: UNRESOLVED / NOT YET DESIGNED
+20. security/incident-readiness architecture support: PARTIAL / SEQUENCE 3 LOCKED v1.0.0 / SEQUENCE 6 AND PRODUCTION READINESS REMAIN
 21. auditability/observability: UNRESOLVED / NOT YET DESIGNED
 22. external integration boundaries: UNRESOLVED / NOT YET DESIGNED
 23. data retention/deletion architecture hooks: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
@@ -208,7 +208,12 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 
 ### SEQUENCE 3: Identity / Access / Security Architecture
 - **Purpose:** Person/User/Membership separation, scoped authorization, authentication architecture requirements, privacy/security enforcement boundaries.
-- **STATUS:** PENDING
+- **STATUS:** COMPLETE / LOCKED v1.0.0
+- **CANONICAL ARTIFACT:** docs/architecture/IDENTITY_ACCESS_AND_SECURITY_ARCHITECTURE.md
+- **ARTIFACT SHA256:** B14DE48CC1F10F6FC597C3901E2A67CE02073862CF93C7818003152D9D052E6B
+- **STATE SYNCHRONIZATION:** COMPLETE
+- **GIT FINALIZATION:** NOT YET PERFORMED
+- **REPOSITORY FINALIZED:** NO
 
 ### SEQUENCE 4: Secure Assessment Critical Architecture
 - **Purpose:** mission-critical containment, No Lost Answers, timer authority, idempotency, attempt/session/participant distinctions, immutable snapshots.
@@ -274,6 +279,11 @@ These remain unresolved unless later repository authority decides them.
 - **SEQUENCE 1 REPOSITORY PACKAGE:** FINALIZED IN GIT
 - **SEQUENCE 2:** COMPLETE / LOCKED v1.0.0 / REPOSITORY FINALIZED
 - **CONTROL WORKSTREAM ORDER:** APPROVED
-- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 2 FINALIZED / SEQUENCE 3 PENDING
-- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 3 SCOPE DEFINITION / RECONNAISSANCE
+- **SEQUENCE 3:** COMPLETE / LOCKED v1.0.0 / GIT FINALIZATION PENDING
+- **SEQUENCE 3 STATE SYNCHRONIZATION:** COMPLETE
+- **SEQUENCE 3 GIT FINALIZATION:** NOT YET PERFORMED
+- **SEQUENCE 3 REPOSITORY FINALIZED:** NO
+- **SEQUENCE 4:** PENDING / NOT STARTED
+- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 3 LOCKED
+- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 3 GIT FINALIZATION
 - **BUILD:** NOT AUTHORIZED
