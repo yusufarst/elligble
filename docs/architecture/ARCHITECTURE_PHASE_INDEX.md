@@ -1,11 +1,11 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.10
+**Version:** 0.1.11
 **Canonical:** DYNAMIC PHASE CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Artifact Type:** PHASE CONTROL / INDEX  
 **Authority:** DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES  
 **Canonical Architecture Specification:** NO  
 **Architecture Unit Naming Convention:** NOT YET ESTABLISHED  
-**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 4 FINALIZED / SEQUENCE 5 PENDING  
+**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 5 LOCKED  
 **Build:** NOT AUTHORIZED  
 **Last Reviewed:** 2026-08-18
 
@@ -77,13 +77,13 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 13. privacy and restricted Care data: PARTIAL / SEQUENCE 3 LOCKED v1.0.0 / CROSS-SEQUENCE COMPLETION REMAINS
 14. Partner purpose-limited access: PARTIAL / SEQUENCE 3 LOCKED v1.0.0 / CROSS-SEQUENCE COMPLETION REMAINS
 15. Student -> Alumni lifecycle continuity: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
-16. cross-domain contracts: UNRESOLVED / NOT YET DESIGNED
+16. cross-domain contracts: RESOLVED / SEQUENCE 5 LOCKED v1.0.0
 17. consistency/transaction boundaries: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 18. reliability/failure containment: UNRESOLVED / NOT YET DESIGNED
 19. backup/restore architecture support: UNRESOLVED / NOT YET DESIGNED
 20. security/incident-readiness architecture support: PARTIAL / SEQUENCE 3 LOCKED v1.0.0 / SEQUENCE 6 AND PRODUCTION READINESS REMAIN
 21. auditability/observability: UNRESOLVED / NOT YET DESIGNED
-22. external integration boundaries: UNRESOLVED / NOT YET DESIGNED
+22. external integration boundaries: RESOLVED / SEQUENCE 5 LOCKED v1.0.0
 23. data retention/deletion architecture hooks: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 24. deployment/runtime boundaries: UNRESOLVED / NOT YET DESIGNED
 25. technology-selection criteria: UNRESOLVED / NOT YET DESIGNED
@@ -228,7 +228,12 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 
 ### SEQUENCE 5: Cross-Domain & Integration Architecture
 - **Purpose:** canonical cross-domain contracts and external integration boundaries.
-- **STATUS:** PENDING / NOT STARTED
+- **STATUS:** COMPLETE / LOCKED v1.0.0
+- **CANONICAL ARTIFACT:** docs/architecture/CROSS_DOMAIN_AND_INTEGRATION_ARCHITECTURE.md
+- **ARTIFACT SHA256:** DFF344E799EA014C2FB2276505697FA97844505CC66F675A1586CA3CEDB03A24
+- **STATE SYNCHRONIZATION:** COMPLETE
+- **GIT FINALIZATION:** NOT YET PERFORMED
+- **REPOSITORY FINALIZED:** NO
 
 ### SEQUENCE 6: Runtime / Reliability / Operations Architecture
 - **Purpose:** runtime boundaries, failure containment, observability, backup/restore, incident-response hooks, deployment requirements, technology-selection criteria.
@@ -297,7 +302,11 @@ These remain unresolved unless later repository authority decides them.
 - **SEQUENCE 4 GIT FINALIZATION COMMIT:** 7cef6e3345579425389073c85cba1a1f2efe9147
 - **SEQUENCE 4 REPOSITORY PACKAGE:** FINALIZED IN GIT
 - **SEQUENCE 4 REPOSITORY FINALIZED:** YES
-- **SEQUENCE 5:** PENDING / NOT STARTED
-- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 4 FINALIZED / SEQUENCE 5 PENDING
-- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 5 SCOPE DEFINITION / RECONNAISSANCE
+- **SEQUENCE 5:** COMPLETE / LOCKED v1.0.0
+- **SEQUENCE 5 STATE SYNCHRONIZATION:** COMPLETE
+- **SEQUENCE 5 GIT FINALIZATION:** NOT YET PERFORMED
+- **SEQUENCE 5 REPOSITORY FINALIZED:** NO
+- **SEQUENCE 6:** PENDING / NOT STARTED
+- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 5 LOCKED
+- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 5 GIT FINALIZATION
 - **BUILD:** NOT AUTHORIZED
