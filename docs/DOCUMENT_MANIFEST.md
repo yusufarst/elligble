@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.19
+**Version:** 1.0.20
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-18
 
@@ -60,6 +60,7 @@ NEVER_DEFAULT
 | `docs/01-discovery/README.md` | Discovery navigation/index | navigation | PHASE: Discovery |
 | `docs/architecture/ARCHITECTURE_PHASE_INDEX.md` | Architecture phase control index, coverage register, Production Blocker Architecture tracking, and control-approved Architecture workstream order. | DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES | PHASE: Architecture |
 | `docs/architecture/SYSTEM_AND_DOMAIN_BOUNDARIES.md` | Architecture Sequence 1 system context, logical system/domain responsibility boundaries, source-of-truth ownership boundaries, isolation constraints, and Sequence 1 deferrals. | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
+| `docs/architecture/DATA_TENANCY_AND_TRUST_ARCHITECTURE.md` | Architecture Sequence 2 Data / Tenancy / Trust architecture covering data ownership, tenant isolation, lifecycle continuity, provenance/trust, canonical vs derived state, historical continuity, conceptual consistency boundaries, privacy/classification/consent hooks, retention/deletion hooks, and Sequence 2 cross-sequence deferrals. (90C7EC4B393026C31A7FC2F47B040500D82208F1B6B96BAD6244A2B313F2A43A) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |

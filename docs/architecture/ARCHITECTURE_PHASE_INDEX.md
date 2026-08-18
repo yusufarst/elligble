@@ -1,11 +1,11 @@
-**Status:** ACTIVE - CONTROL BASELINE  
-**Version:** 0.1.4  
-**Phase:** ARCHITECTURE  
+**Status:** ACTIVE / CONTROL BASELINE
+**Version:** 0.1.5
+**Canonical:** DYNAMIC PHASE CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Artifact Type:** PHASE CONTROL / INDEX  
 **Authority:** DYNAMIC CONTROL / PHASE INDEX - DOES NOT SUPERSEDE LOCKED/FROZEN SOURCES  
 **Canonical Architecture Specification:** NO  
 **Architecture Unit Naming Convention:** NOT YET ESTABLISHED  
-**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 1 FINALIZED / SEQUENCE 2 PENDING  
+**Substantive Architecture Design:** IN PROGRESS - SEQUENCE 2 LOCKED  
 **Build:** NOT AUTHORIZED  
 **Last Reviewed:** 2026-08-18
 
@@ -63,28 +63,28 @@ Architecture will determine HOW only through later controlled units.
 The following concerns are REQUIREMENTS TO BE RESOLVED.
 
 1. system/component boundaries: RESOLVED / SEQUENCE 1 LOCKED v1.0.0
-2. multi-tenant isolation: UNRESOLVED / NOT YET DESIGNED
-3. Person / User Account / Membership separation: UNRESOLVED / NOT YET DESIGNED
+2. multi-tenant isolation: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
+3. Person / User Account / Membership separation: PARTIAL / SEQUENCE 2 LOCKED v1.0.0 (SEQUENCE 3 PENDING)
 4. authorization model and scoped capabilities: UNRESOLVED / NOT YET DESIGNED
-5. Academic Core shared truth: UNRESOLVED / NOT YET DESIGNED
+5. Academic Core shared truth: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 6. Secure Assessment mission-critical isolation: UNRESOLVED / NOT YET DESIGNED
 7. No Lost Answers architecture: UNRESOLVED / NOT YET DESIGNED
 8. server-authoritative timer: UNRESOLVED / NOT YET DESIGNED
 9. idempotent submission: UNRESOLVED / NOT YET DESIGNED
 10. Exam Participant / Exam Attempt / Exam Session separation: UNRESOLVED / NOT YET DESIGNED
 11. immutable Exam Question Snapshot: UNRESOLVED / NOT YET DESIGNED
-12. data trust/provenance boundaries: UNRESOLVED / NOT YET DESIGNED
-13. privacy and restricted Care data: UNRESOLVED / NOT YET DESIGNED
-14. Partner purpose-limited access: UNRESOLVED / NOT YET DESIGNED
-15. Student -> Alumni lifecycle continuity: UNRESOLVED / NOT YET DESIGNED
+12. data trust/provenance boundaries: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
+13. privacy and restricted Care data: PARTIAL / SEQUENCE 2 LOCKED v1.0.0 (SEQUENCE 3 PENDING)
+14. Partner purpose-limited access: PARTIAL / SEQUENCE 2 LOCKED v1.0.0 (SEQUENCE 3 PENDING)
+15. Student -> Alumni lifecycle continuity: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 16. cross-domain contracts: UNRESOLVED / NOT YET DESIGNED
-17. consistency/transaction boundaries: UNRESOLVED / NOT YET DESIGNED
+17. consistency/transaction boundaries: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 18. reliability/failure containment: UNRESOLVED / NOT YET DESIGNED
 19. backup/restore architecture support: UNRESOLVED / NOT YET DESIGNED
 20. security/incident-readiness architecture support: UNRESOLVED / NOT YET DESIGNED
 21. auditability/observability: UNRESOLVED / NOT YET DESIGNED
 22. external integration boundaries: UNRESOLVED / NOT YET DESIGNED
-23. data retention/deletion architecture hooks: UNRESOLVED / NOT YET DESIGNED
+23. data retention/deletion architecture hooks: RESOLVED / SEQUENCE 2 LOCKED v1.0.0
 24. deployment/runtime boundaries: UNRESOLVED / NOT YET DESIGNED
 25. technology-selection criteria: UNRESOLVED / NOT YET DESIGNED
 26. migration/bootstrap strategy: UNRESOLVED / NOT YET DESIGNED
@@ -198,7 +198,11 @@ The following concerns are REQUIREMENTS TO BE RESOLVED.
 
 ### SEQUENCE 2: Data / Tenancy / Trust Architecture
 - **Purpose:** data ownership, tenant isolation, lifecycle continuity, provenance, consistency requirements.
-- **STATUS:** PENDING / NOT STARTED
+- **STATUS:** COMPLETE / LOCKED v1.0.0
+- **CANONICAL ARTIFACT:** docs/architecture/DATA_TENANCY_AND_TRUST_ARCHITECTURE.md
+- **ARTIFACT SHA256:** 90C7EC4B393026C31A7FC2F47B040500D82208F1B6B96BAD6244A2B313F2A43A
+- **STATE SYNCHRONIZATION:** COMPLETE
+- **GIT FINALIZATION:** NOT YET PERFORMED
 
 ### SEQUENCE 3: Identity / Access / Security Architecture
 - **Purpose:** Person/User/Membership separation, scoped authorization, authentication architecture requirements, privacy/security enforcement boundaries.
@@ -266,8 +270,8 @@ These remain unresolved unless later repository authority decides them.
 - **SEQUENCE 1 GIT FINALIZATION:** COMPLETE
 - **SEQUENCE 1 GIT FINALIZATION COMMIT:** d2c2aecc8a33864c5d006f0c0cba61d014b097d1
 - **SEQUENCE 1 REPOSITORY PACKAGE:** FINALIZED IN GIT
-- **SEQUENCE 2:** PENDING / NOT STARTED
+- **SEQUENCE 2:** COMPLETE / LOCKED v1.0.0
 - **CONTROL WORKSTREAM ORDER:** APPROVED
-- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 1 FINALIZED / SEQUENCE 2 PENDING
-- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 2 SCOPE DEFINITION / RECONNAISSANCE
+- **SUBSTANTIVE ARCHITECTURE DESIGN:** IN PROGRESS - SEQUENCE 2 LOCKED
+- **NEXT SAFE ACTION:** ARCHITECTURE SEQUENCE 2 GIT FINALIZATION
 - **BUILD:** NOT AUTHORIZED
