@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.29
+**Version:** 1.0.30
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-19
 
@@ -68,9 +68,9 @@ NEVER_DEFAULT
 | `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE / CONTROL BASELINE. Version: 0.1.3. (EA0B2D9817FEA2749276D483959897DCC0BAD3DA1EC4AA297D760BA791C4D05F) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE / CONTROL BASELINE. Version: 0.1.4. (F6E2ED07E5EE118ADA4819B321D14CD6ADB7D7846E8A7E2E9BAC3256AB079976) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
 | `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (2952AD2EDC5AA5EA8CA559AD71A441D5FC003357C849548B4CBCB6C6BC3BD5B9) | BUILD UNIT SPEC | PHASE: Build |
-| `docs/build/units/BU-002_SECURE_ASSESSMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-002 Specification - Secure Assessment Core State Persistence Bootstrap. (BB8DD9321DFF959FE3262EE908BCCF3D77958BA7D5AA5BAB46BB71F574E199F4) | BUILD UNIT SPEC | PHASE: Build / ACTIVE UNIT |
+| `docs/build/units/BU-002_SECURE_ASSESSMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-002 Specification - Secure Assessment Core State Persistence Bootstrap. (688A504F7718D15799073FF16B3316C91DFD2373A46AD593F8B318B4366AD86E) | BUILD UNIT SPEC | PHASE: Build / ACTIVE UNIT |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
 | `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |

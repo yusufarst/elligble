@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.40
+**Version:** 0.1.41
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -346,12 +346,21 @@ SUBSTANTIVE ARCHITECTURE DESIGN:
 SEQUENCES 1-7 COMPLETE / LOCKED
 
 BU-002:
-REGISTERED / NOT STARTED
+REGISTERED / READY FOR IMPLEMENTATION
+
+BU-002 REGISTRATION OWNER ACCEPTANCE:
+COMPLETE
+
+BU-002 REGISTRATION GIT FINALIZATION:
+COMPLETE
+
+BU-002 REGISTRATION COMMIT:
+9ec67f1a1a4c782337b69a8d035942afa06b55e1
 
 BU-002 IMPLEMENTATION:
 NOT EXECUTED
 
-BU-002 REPOSITORY FINALIZED:
+BU-002 IMPLEMENTATION REPOSITORY FINALIZED:
 NO
 
 BU-002 DONE:
@@ -361,7 +370,7 @@ Secure Assessment:
 NEXT IMPLEMENTATION PRIORITY / IMPLEMENTATION NOT STARTED
 
 ## EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER AUDIT OF BU-002 REGISTRATION PACKAGE
+BU-002 BOUNDED IMPLEMENTATION EXECUTION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -481,7 +490,11 @@ All AI remains optional/non-blocking future capability.
 - do not implement BU-003;
 - do not expand BU-002 outside its exact registered scope;
 - implementation requires a separate bounded execution after Controller audit / Owner acceptance / registration Git finalization as required;
-- do not start Secure Assessment implementation in this registration execution.
+- BU-002 implementation may proceed only through its separate bounded implementation execution.
+- Keep implementation inside the exact registered four-concept scope.
+- Do not implement BU-003.
+- Do not add answer persistence, timer, submission, snapshots, risk/proctoring, API, frontend, or backend runtime.
+- Verify before progression.
 
 ## Required Entry Files for New Agent
 
