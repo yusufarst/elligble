@@ -1,10 +1,10 @@
 **Status:** ACTIVE
-**Version:** 0.1.35
+**Version:** 0.1.36
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
 **Used By:** New Chat / New Agent Context Reconstruction
-**Last Reviewed:** 2026-08-18
+**Last Reviewed:** 2026-08-19
 
 # ELLIGBLE Handoff Packet
 
@@ -291,8 +291,20 @@ AUTHORIZED / EFFECTIVE
 BUILD:
 AUTHORIZED / NOT STARTED
 
+BUILD PHASE CONTROL:
+ACTIVE
+
+BUILD PHASE INDEX:
+docs/build/BUILD_PHASE_INDEX.md
+
 ACTIVE BUILD UNIT:
-NONE
+BU-001
+
+BU-001:
+REGISTERED / NOT STARTED
+
+BU-001 IMPLEMENTATION:
+NOT EXECUTED
 
 BUILD IMPLEMENTATION STARTED:
 NO
@@ -301,7 +313,7 @@ SUBSTANTIVE ARCHITECTURE DESIGN:
 SEQUENCES 1-7 COMPLETE / LOCKED
 
 ## EXACT NEXT AUTHORIZED ACTION:
-BUILD PHASE ENTRY CONTROL BOOTSTRAP
+OWNER ACCEPTANCE OF BUILD BOOTSTRAP CONTROL PACKAGE AFTER CONTROLLER AUDIT PASS
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -401,7 +413,6 @@ All AI remains optional/non-blocking future capability.
 - final technology stack
 - FK/event strategy
 - Agent Skills/tooling
-- Build Unit IDs
 
 **FUTURE:**
 - all AI capabilities
@@ -428,8 +439,8 @@ DO NOT:
 - create InsForge project
 - create migrations
 - create production application code
-- DO NOT EXECUTE A BUILD UNIT BEFORE BUILD PHASE ENTRY CONTROL BOOTSTRAP.
-  BUILD UNIT DEFINITION / ID / BOUNDED FIRST EXECUTION SCOPE MAY BE ESTABLISHED ONLY BY THE CONTROLLED BUILD PHASE ENTRY BOOTSTRAP.
+- DO NOT EXECUTE BU-001 IMPLEMENTATION BEFORE OWNER ACCEPTANCE AND CONTROLLED GIT FINALIZATION OF THIS BUILD BOOTSTRAP CONTROL PACKAGE.
+  BU-001 DEFINITION / ID / BOUNDED SCOPE IS ESTABLISHED.
 - install random Agent Skills
 - copy legacy CBT wholesale
 - re-run legacy migrations
