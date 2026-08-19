@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.27
+**Version:** 1.0.28
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-19
 
@@ -68,8 +68,8 @@ NEVER_DEFAULT
 | `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE / CONTROL BASELINE. Version: 0.1.1. (664498DDC4947423223F817F7513439C065B72E56A5E8DDDFED32EBAF7A749EF) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
-| `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: IMPLEMENTED / TERMINAL VERIFICATION PASS / AWAITING CONTROLLER AUDIT. (FA7771D30E5B5449653697ABFDF6AD4BB0299090E45DD66A54232072E30F5854) | BUILD UNIT SPEC | PHASE: Build / ACTIVE UNIT |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE / CONTROL BASELINE. Version: 0.1.2. (288A3BFEAA9F500EFF4E14165002E8550F16280A41508D7E8ACA4C715BCE5CA8) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
+| `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (2952AD2EDC5AA5EA8CA559AD71A441D5FC003357C849548B4CBCB6C6BC3BD5B9) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
 | `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |

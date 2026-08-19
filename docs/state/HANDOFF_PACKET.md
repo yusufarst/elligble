@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.38
+**Version:** 0.1.39
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -66,7 +66,10 @@ MASTER BLUEPRINT
 → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 
 LAST COMPLETED UNIT
-→ ARCHITECTURE SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / COMPLETE / LOCKED v1.0.0 / REPOSITORY FINALIZED
+→ BU-001 - Minimum Foundation: Identity/Tenant Persistence Bootstrap / COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
+
+LATEST LOCKED ARCHITECTURE SEQUENCE:
+SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
 
 PRODUCTION BLOCKERS BACKLOG
 → COMPLETE / REGISTERED / GIT FINALIZED AS CONTROL ARTIFACT
@@ -309,14 +312,32 @@ docs/build/BUILD_PHASE_INDEX.md
 BUILD UNIT CONVENTION:
 BU-###
 
-ACTIVE BUILD UNIT:
+LAST COMPLETED BUILD UNIT:
 BU-001
 
+ACTIVE BUILD UNIT:
+NONE
+
 BU-001:
-IMPLEMENTED / TERMINAL VERIFICATION PASS / AWAITING CONTROLLER AUDIT
+COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 
 BU-001 IMPLEMENTATION:
 EXECUTED
+
+BU-001 OWNER ACCEPTANCE:
+COMPLETE
+
+BU-001 REPOSITORY FINALIZED:
+YES
+
+BU-001 GIT FINALIZATION COMMIT:
+40a519c98b32989ab2f7a19792d500a7d81ab71b
+
+BU-001 DONE:
+YES
+
+NEXT BUILD UNIT:
+NOT YET REGISTERED
 
 BUILD IMPLEMENTATION STARTED:
 YES
@@ -324,8 +345,11 @@ YES
 SUBSTANTIVE ARCHITECTURE DESIGN:
 SEQUENCES 1-7 COMPLETE / LOCKED
 
+Secure Assessment:
+NOT STARTED / NEXT IMPLEMENTATION PRIORITY
+
 ## EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER AUDIT OF BU-001 IMPLEMENTATION PACKAGE
+REGISTER THE NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -441,26 +465,15 @@ All AI remains optional/non-blocking future capability.
 
 ## Forbidden Premature Work
 
-DO NOT:
-- create ERD
-- define database schema outside the exact BU-001 registered scope
-- create API contracts
-- define endpoint paths
-- initialize frontend
-- initialize backend
-- create InsForge project
-- create migrations outside the exact BU-001 registered scope
-- create unrelated production application code outside BU-001
-
-BU-001 MAY CREATE ONLY THE PERSISTENCE SCHEMA, VERSIONED MIGRATIONS, AND
-VERIFICATION ARTIFACTS EXPLICITLY AUTHORIZED BY ITS REGISTERED SPECIFICATION.
-- DO NOT IMPLEMENT ANY BUILD UNIT OTHER THAN BU-001.
-- DO NOT EXPAND BU-001 BEYOND ITS REGISTERED SPECIFICATION.
-- BU-001 REQUIRES TERMINAL VERIFICATION BEFORE DONE.
-- install random Agent Skills
-- copy legacy CBT wholesale
-- re-run legacy migrations
-- build FUTURE AI/native/sponsored capabilities
+- No active Build Unit currently exists.
+- Do not implement a new Build Unit until it is registered and authorized.
+- Do not create schema/migrations/API/runtime/frontend/backend code outside an explicitly registered Build Unit.
+- The next unit must follow BU-### sequencing.
+- Secure Assessment is the next priority, not an already-started unit.
+- Do not silently expand scope.
+- Verify before progression.
+- Preserve LOCKED/FROZEN decisions.
+- PB remains open until actual closure evidence exists.
 
 ## Required Entry Files for New Agent
 
