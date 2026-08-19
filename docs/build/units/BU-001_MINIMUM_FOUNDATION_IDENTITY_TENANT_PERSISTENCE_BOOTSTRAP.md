@@ -1,7 +1,7 @@
 **Build Unit:** BU-001
-**Status:** REGISTERED / NOT STARTED
+**Status:** IMPLEMENTED / TERMINAL VERIFICATION PASS / AWAITING CONTROLLER AUDIT
 **Phase:** BUILD
-**Implementation:** NOT EXECUTED
+**Implementation:** EXECUTED
 
 # BU-001: Minimum Foundation: Identity/Tenant Persistence Bootstrap
 
@@ -92,3 +92,17 @@ Establish the smallest persistence-level foundation required for canonical ident
 
 ## SECURE ASSESSMENT HANDOFF
 - This foundation is required before Secure Assessment can assign Participants or Authorize Exams. Secure Assessment remains the highest implementation priority after this verified minimum foundation.
+
+## IMPLEMENTATION EVIDENCE
+- Migration SHA256: 270CDBF7403FC7407A326ADE989AFE77F06926BDC660A12FC877DD5E6E2C73A9
+- Verification SHA256: 88CFF9EB76D97395421530DC625E021336C01F38AA000EED8D86F2548BF53EAB
+- exact table-set verification PASS
+- Person not tenant-owned verification PASS
+- Membership tenant-context verification PASS
+- same-owner FK target verification PASS
+- no Membership->Person FK under ANY constraint name PASS
+- migration first run PASS
+- migration second invocation PASS
+- duplicate effect NO
+- PB closes NONE
+- DONE: NO - AWAITING OWNER ACCEPTANCE / CONTROLLED GIT FINALIZATION
