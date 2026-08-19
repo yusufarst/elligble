@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.41
+**Version:** 0.1.42
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -66,7 +66,7 @@ MASTER BLUEPRINT
 → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 
 LAST COMPLETED UNIT
-→ BU-001 - Minimum Foundation: Identity/Tenant Persistence Bootstrap / COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
+→ BU-002 - Secure Assessment Core State Persistence Bootstrap / COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 
 LATEST LOCKED ARCHITECTURE SEQUENCE:
 SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
@@ -313,10 +313,13 @@ BUILD UNIT CONVENTION:
 BU-###
 
 LAST COMPLETED BUILD UNIT:
-BU-001
+BU-002
 
 ACTIVE BUILD UNIT:
-BU-002
+NONE
+
+NEXT BUILD UNIT:
+NOT YET REGISTERED
 
 BU-001:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -336,9 +339,6 @@ BU-001 GIT FINALIZATION COMMIT:
 BU-001 DONE:
 YES
 
-NEXT BUILD UNIT AFTER ACTIVE BU-002:
-NOT YET REGISTERED
-
 BUILD IMPLEMENTATION STARTED:
 YES
 
@@ -346,7 +346,7 @@ SUBSTANTIVE ARCHITECTURE DESIGN:
 SEQUENCES 1-7 COMPLETE / LOCKED
 
 BU-002:
-REGISTERED / READY FOR IMPLEMENTATION
+COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 
 BU-002 REGISTRATION OWNER ACCEPTANCE:
 COMPLETE
@@ -358,19 +358,28 @@ BU-002 REGISTRATION COMMIT:
 9ec67f1a1a4c782337b69a8d035942afa06b55e1
 
 BU-002 IMPLEMENTATION:
-NOT EXECUTED
+EXECUTED
+
+BU-002 TERMINAL VERIFICATION:
+PASS
+
+BU-002 IMPLEMENTATION OWNER ACCEPTANCE:
+COMPLETE
 
 BU-002 IMPLEMENTATION REPOSITORY FINALIZED:
-NO
+YES
+
+BU-002 IMPLEMENTATION GIT FINALIZATION COMMIT:
+267dfb5424b6c0eb323e8ce749083ef6b766e800
 
 BU-002 DONE:
-NO
+YES
 
 Secure Assessment:
-NEXT IMPLEMENTATION PRIORITY / IMPLEMENTATION NOT STARTED
+IN PROGRESS / BU-002 CORE STATE PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-BU-002 BOUNDED IMPLEMENTATION EXECUTION
+REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -486,12 +495,10 @@ All AI remains optional/non-blocking future capability.
 
 ## Forbidden Premature Work
 
-- only registered BU-002 is the active Build Unit;
-- do not implement BU-003;
+- there is currently NO active Build Unit;
+- do not implement BU-003 before it is registered;
 - do not expand BU-002 outside its exact registered scope;
 - implementation requires a separate bounded execution after Controller audit / Owner acceptance / registration Git finalization as required;
-- BU-002 implementation may proceed only through its separate bounded implementation execution.
-- Keep implementation inside the exact registered four-concept scope.
 - Do not implement BU-003.
 - Do not add answer persistence, timer, submission, snapshots, risk/proctoring, API, frontend, or backend runtime.
 - Verify before progression.

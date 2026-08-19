@@ -1,16 +1,20 @@
 # BU-002: Secure Assessment Core State Persistence Bootstrap
 
 **Build Unit:** BU-002
-**Status:** REGISTERED / READY FOR IMPLEMENTATION
+**Status:** COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 **Phase:** BUILD
-**Implementation:** NOT EXECUTED
+**Implementation:** EXECUTED
 **Registration Owner Acceptance:** COMPLETE
 **Registration Git Finalization:** COMPLETE
 **Registration Git Finalization Commit:** 9ec67f1a1a4c782337b69a8d035942afa06b55e1
 **Registration Repository Finalized:** YES
-**Implementation Repository Finalized:** NO
-**Done:** NO
-**Secure Assessment Implementation:** NOT STARTED
+**Implementation Owner Acceptance:** COMPLETE
+**Implementation Git Finalization:** COMPLETE
+**Implementation Git Finalization Commit:** 267dfb5424b6c0eb323e8ce749083ef6b766e800
+**Implementation Repository Finalized:** YES
+**Terminal Verification:** PASS
+**Done:** YES
+**Secure Assessment Implementation:** STARTED / BU-002 CORE STATE PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
 
 ## PURPOSE
 Register the first Secure-Assessment-priority Build Unit after the fully closed BU-001 minimum foundation. This is deliberately the smallest persistence-level Secure Assessment foundation following BU-001.
@@ -22,7 +26,7 @@ BU-002 scope is limited to persistence foundation for exactly these four Secure 
 3. Exam Attempt
 4. Exam Session
 
-The specification may define implementation requirements and verification expectations for a later execution. This registration execution MUST NOT create their physical implementation. BU-002 implementation has NOT started. No physical schema is created by registration.
+The specification defined implementation requirements and verification expectations for a later execution. The registration execution did NOT create their physical implementation. BU-002 implementation is now EXECUTED and physical schema was created by the implementation phase.
 
 ## OUT OF SCOPE
 BU-002 explicitly excludes:
@@ -113,8 +117,8 @@ Any BU-002-specific technology use is distinguished from global technology selec
 - PB Backlog MUST be registered.
 - BU-002 MUST be registered and in a separate bounded execution.
 
-## LATER IMPLEMENTATION WRITE BOUNDARY
-Implementation will be constrained to exactly the tables for Exam Instance, Exam Participant, Exam Attempt, and Exam Session.
+## IMPLEMENTATION WRITE BOUNDARY
+Implementation was constrained to exactly the tables for Exam Instance, Exam Participant, Exam Attempt, and Exam Session.
 
 ## VERIFICATION EXPECTATIONS
 - No expansion of scope.
