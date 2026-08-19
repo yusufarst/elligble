@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.39
+**Version:** 0.1.40
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -316,7 +316,7 @@ LAST COMPLETED BUILD UNIT:
 BU-001
 
 ACTIVE BUILD UNIT:
-NONE
+BU-002
 
 BU-001:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -336,7 +336,7 @@ BU-001 GIT FINALIZATION COMMIT:
 BU-001 DONE:
 YES
 
-NEXT BUILD UNIT:
+NEXT BUILD UNIT AFTER ACTIVE BU-002:
 NOT YET REGISTERED
 
 BUILD IMPLEMENTATION STARTED:
@@ -345,11 +345,23 @@ YES
 SUBSTANTIVE ARCHITECTURE DESIGN:
 SEQUENCES 1-7 COMPLETE / LOCKED
 
+BU-002:
+REGISTERED / NOT STARTED
+
+BU-002 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-002 REPOSITORY FINALIZED:
+NO
+
+BU-002 DONE:
+NO
+
 Secure Assessment:
-NOT STARTED / NEXT IMPLEMENTATION PRIORITY
+NEXT IMPLEMENTATION PRIORITY / IMPLEMENTATION NOT STARTED
 
 ## EXACT NEXT AUTHORIZED ACTION:
-REGISTER THE NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT
+CONTROLLER AUDIT OF BU-002 REGISTRATION PACKAGE
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -465,15 +477,11 @@ All AI remains optional/non-blocking future capability.
 
 ## Forbidden Premature Work
 
-- No active Build Unit currently exists.
-- Do not implement a new Build Unit until it is registered and authorized.
-- Do not create schema/migrations/API/runtime/frontend/backend code outside an explicitly registered Build Unit.
-- The next unit must follow BU-### sequencing.
-- Secure Assessment is the next priority, not an already-started unit.
-- Do not silently expand scope.
-- Verify before progression.
-- Preserve LOCKED/FROZEN decisions.
-- PB remains open until actual closure evidence exists.
+- only registered BU-002 is the active Build Unit;
+- do not implement BU-003;
+- do not expand BU-002 outside its exact registered scope;
+- implementation requires a separate bounded execution after Controller audit / Owner acceptance / registration Git finalization as required;
+- do not start Secure Assessment implementation in this registration execution.
 
 ## Required Entry Files for New Agent
 
