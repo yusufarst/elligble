@@ -15,13 +15,16 @@ Implementation:
 NOT EXECUTED
 
 Registration Owner Acceptance:
-NOT YET
+COMPLETE
 
 Registration Git Finalization:
-NOT COMPLETE
+COMPLETE
 
 Registration Repository Finalized:
-NO
+YES
+
+Registration Git Finalization Commit:
+09ca2c2978c184fb17926e7edaacd4142c83c0da
 
 Implementation Repository Finalized:
 NO
