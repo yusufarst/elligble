@@ -26,6 +26,21 @@ YES
 Registration Git Finalization Commit:
 09ca2c2978c184fb17926e7edaacd4142c83c0da
 
+Implementation Readiness / Activation:
+PASS
+
+Readiness Owner Acceptance:
+COMPLETE
+
+Readiness Git Finalization:
+COMPLETE
+
+Readiness Repository Finalized:
+YES
+
+Readiness Git Finalization Commit:
+5c6bce8f5be2c3e641daf253b45bc1cb2cddf970
+
 Implementation Repository Finalized:
 NO
 

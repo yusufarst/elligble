@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.47
+**Version:** 0.1.48
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -336,6 +336,21 @@ YES
 BU-004 REGISTRATION COMMIT:
 09ca2c2978c184fb17926e7edaacd4142c83c0da
 
+BU-004 IMPLEMENTATION READINESS / ACTIVATION:
+PASS
+
+BU-004 READINESS OWNER ACCEPTANCE:
+COMPLETE
+
+BU-004 READINESS GIT FINALIZATION:
+COMPLETE
+
+BU-004 READINESS REPOSITORY FINALIZED:
+YES
+
+BU-004 READINESS GIT FINALIZATION COMMIT:
+5c6bce8f5be2c3e641daf253b45bc1cb2cddf970
+
 BU-004 IMPLEMENTATION:
 NOT EXECUTED
 
@@ -439,7 +454,8 @@ Secure Assessment:
 IN PROGRESS / BU-002 CORE STATE PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER AUDIT OF BU-004 IMPLEMENTATION READINESS / ACTIVATION PACKAGE
+PREPARE / EXECUTE BOUNDED BU-004 IMPLEMENTATION PACKAGE
+ONLY AFTER CONTROLLER AUTHORIZATION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -558,15 +574,10 @@ All AI remains optional/non-blocking future capability.
 - BU-003 is finished and repository-finalized.
 - BU-004 is REGISTERED / READY FOR IMPLEMENTATION;
 - BU-004 implementation is still NOT EXECUTED;
-- the current Implementation Readiness / Activation package is awaiting
-  Controller audit;
-- BU-004 implementation MUST NOT begin until this readiness package completes:
-
-  Controller audit PASS
-  -> Owner Acceptance
-  -> controlled Git finalization
-
-- only after that gate may a separately authorized bounded BU-004
+- the BU-004 Implementation Readiness / Activation package is COMPLETE and repository finalized;
+- BU-004 implementation MUST NOT begin without Controller authorization;
+- The NEXT SAFE ACTION is: PREPARE / EXECUTE BOUNDED BU-004 IMPLEMENTATION PACKAGE ONLY AFTER CONTROLLER AUTHORIZATION;
+- only after that authorization may a separately authorized bounded BU-004
   implementation execution create:
 
   database/migrations/0004_bu004_secure_assessment_answer_persistence_core_state.sql
