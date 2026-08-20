@@ -6,13 +6,22 @@ Build Unit:
 BU-004
 
 Status:
-REGISTERED / READY FOR IMPLEMENTATION
+COMPLETE / TERMINAL VERIFICATION PASS / QUERY-PERFORMANCE PASS / REPOSITORY FINALIZED
 
 Phase:
 BUILD
 
 Implementation:
-NOT EXECUTED
+EXECUTED
+
+Terminal Verification:
+PASS
+
+Query/Performance Verification:
+PASS
+
+Implementation Owner Acceptance:
+COMPLETE
 
 Registration Owner Acceptance:
 COMPLETE
@@ -42,10 +51,13 @@ Readiness Git Finalization Commit:
 5c6bce8f5be2c3e641daf253b45bc1cb2cddf970
 
 Implementation Repository Finalized:
-NO
+YES
+
+Implementation Git Finalization Commit:
+1dc526e5cb5685d5e1a88575074bb410f4dd1c5c
 
 Done:
-NO
+YES
 
 PURPOSE:
 
@@ -117,6 +129,85 @@ Preserve:
 
 OWNERSHIP/TENANCY BOUNDARY:
 Ensure tenant-safe assessment-context association and isolation boundaries appropriate for answer state.
+
+==================================================
+FINAL IMPLEMENTATION / TERMINAL EVIDENCE
+==================================================
+
+IMPLEMENTATION GIT FINALIZATION COMMIT:
+1dc526e5cb5685d5e1a88575074bb410f4dd1c5c
+
+FINAL IMPLEMENTATION FILES:
+
+database/migrations/0004_bu004_secure_assessment_answer_persistence_core_state.sql
+SIZE 3447
+SHA256 36ED06D11F770B0A2443FBAD856C9D04C0AF19287FF005E93B599CB7BEE9FC43
+
+database/verification/verify_bu004_secure_assessment_answer_persistence_core_state.sql
+SIZE 25174
+SHA256 B76EB1C061B1BE3BE344644269A10192033432867A2165BD5AF2D9AF429573CF
+
+SUCCESSFUL TERMINAL RUN ID:
+816e874b-6812-4409-8ed1-194d966c54d0
+
+PREDECESSOR REGRESSION:
+BU-001 PASS
+BU-002 PASS
+BU-003 PASS
+
+BU-004 MIGRATION FIRST INVOCATION:
+PASS
+
+BU-004 MIGRATION SAFE REPEAT:
+PASS
+
+BU-004 VERIFICATION SUCCESS:
+PASS
+
+PERFORMANCE FIXTURE:
+100 tenants
+2000 instances
+2000 participants
+2000 attempts
+100000 snapshots
+100000 answers
+
+QUERY A:
+Index Scan using idx_sa_answers_attempt_tenant
+Execution Time 0.037 ms
+
+QUERY B:
+Index Scan using idx_sa_answers_attempt_tenant with Snapshot filter
+Returned rows 1
+Rows removed by filter 49
+Execution Time 0.033 ms
+
+ANSWER TABLE SEQUENTIAL SCAN:
+NO
+
+PLANNER FORCING:
+NO
+
+PB-07:
+OPEN
+
+GLOBAL FK/EVENT STRATEGY:
+PROVISIONAL
+
+GLOBAL FINAL TECHNOLOGY STACK:
+NOT GLOBALLY SELECTED
+
+POSTGRESQL 18 GLOBAL SELECTION:
+NO
+
+HISTORICAL READINESS SNAPSHOT
+
+The readiness/activation, implementation-enforcement expectations,
+query/performance requirements, regression expectations, and verification/DONE
+expectations below preserve the pre-implementation checkpoint. Future-tense
+statements in those sections describe requirements as they existed before
+implementation execution; they are NOT current-state claims. Current final
+truth is the lifecycle state and FINAL IMPLEMENTATION / TERMINAL EVIDENCE above.
 
 ==================================================
 IMPLEMENTATION READINESS / ACTIVATION
