@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.43
+**Version:** 0.1.44
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -322,16 +322,19 @@ NEXT BUILD UNIT AFTER ACTIVE BU-003:
 NOT YET REGISTERED
 
 BU-003:
-REGISTERED / NOT STARTED
+REGISTERED / READY FOR IMPLEMENTATION
 
 BU-003 REGISTRATION OWNER ACCEPTANCE:
-NOT YET
+COMPLETE
 
 BU-003 REGISTRATION GIT FINALIZATION:
-NOT COMPLETE
+COMPLETE
 
 BU-003 REGISTRATION REPOSITORY FINALIZED:
-NO
+YES
+
+BU-003 REGISTRATION COMMIT:
+6c1ecc67637a3fcff2d3515ff3883a0f9fce196b
 
 BU-003 IMPLEMENTATION:
 NOT EXECUTED
@@ -400,7 +403,7 @@ Secure Assessment:
 IN PROGRESS / BU-002 CORE STATE PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER AUDIT OF BU-003 REGISTRATION PACKAGE
+BU-003 BOUNDED IMPLEMENTATION EXECUTION
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -516,13 +519,11 @@ All AI remains optional/non-blocking future capability.
 
 ## Forbidden Premature Work
 
-- BU-003 is the active registered Build Unit.
-- do not implement BU-003 until registration Owner Acceptance and controlled registration Git finalization are complete and Controller authorizes the implementation stage.
-- do not expand BU-002 outside its exact registered scope;
-- implementation requires a separate bounded execution after Controller audit / Owner acceptance / registration Git finalization as required;
-- do not implement BU-003 persistence, including its registered Question Bank Item / Exam Question Snapshot foundation, before registration lifecycle gates are complete;
-- do not add answer persistence, timer, submission, risk/proctoring, APIs, frontend, backend runtime, or any other out-of-scope capability;
-- do not register or implement BU-004.
+- BU-003 is the active registered Build Unit and registration is finalized.
+- BU-003 may proceed only through a separate Controller-authorized bounded implementation execution.
+- Do not expand beyond the exact registered BU-003 scope.
+- Do not register or implement BU-004.
+- Do not add answer persistence, timer, submission, reconnect runtime, scoring, risk/proctoring persistence, APIs, frontend, backend runtime, or other out-of-scope capabilities.
 - Verify before progression.
 
 ## Required Entry Files for New Agent

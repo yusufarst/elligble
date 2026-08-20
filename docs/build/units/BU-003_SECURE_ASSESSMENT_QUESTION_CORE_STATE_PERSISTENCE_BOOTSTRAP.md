@@ -6,7 +6,7 @@ Build Unit:
 BU-003
 
 Status:
-REGISTERED / NOT STARTED
+REGISTERED / READY FOR IMPLEMENTATION
 
 Phase:
 BUILD
@@ -15,13 +15,16 @@ Implementation:
 NOT EXECUTED
 
 Registration Owner Acceptance:
-NOT YET
+COMPLETE
 
 Registration Git Finalization:
-NOT COMPLETE
+COMPLETE
 
 Registration Repository Finalized:
-NO
+YES
+
+Registration Git Finalization Commit:
+6c1ecc67637a3fcff2d3515ff3883a0f9fce196b
 
 Implementation Repository Finalized:
 NO
