@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.45
+**Version:** 0.1.46
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -316,10 +316,31 @@ LAST COMPLETED BUILD UNIT:
 BU-003
 
 ACTIVE BUILD UNIT:
-NONE
+BU-004
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
+
+BU-004:
+REGISTERED / NOT STARTED
+
+BU-004 REGISTRATION OWNER ACCEPTANCE:
+NOT YET
+
+BU-004 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-004 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-004 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-004 IMPLEMENTATION REPOSITORY FINALIZED:
+NO
+
+BU-004 DONE:
+NO
 
 BU-003:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -415,7 +436,7 @@ Secure Assessment:
 IN PROGRESS / BU-002 CORE STATE PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT
+CONTROLLER AUDIT OF BU-004 REGISTRATION PACKAGE
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -532,9 +553,9 @@ All AI remains optional/non-blocking future capability.
 ## Forbidden Premature Work
 
 - BU-003 is finished and repository-finalized.
-- BU-003 DONE YES. There is currently no active Build Unit. Next unit has not been registered. Exact next safe action is registration of the next Secure-Assessment-priority Build Unit.
-- Do not expand beyond the exact registered BU-003 scope.
-- Do not register or implement BU-004.
+- BU-004 is registered but NOT implemented.
+- Do not implement BU-004 in this registration stage.
+- Do not register BU-005.
 - Do not add answer persistence, timer, submission, reconnect runtime, scoring, risk/proctoring persistence, APIs, frontend, backend runtime, or other out-of-scope capabilities.
 - Verify before progression.
 
