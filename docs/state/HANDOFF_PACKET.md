@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.46
+**Version:** 0.1.47
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -322,7 +322,7 @@ NEXT BUILD UNIT:
 NOT YET REGISTERED
 
 BU-004:
-REGISTERED / NOT STARTED
+REGISTERED / READY FOR IMPLEMENTATION
 
 BU-004 REGISTRATION OWNER ACCEPTANCE:
 COMPLETE
@@ -439,7 +439,7 @@ Secure Assessment:
 IN PROGRESS / BU-002 CORE STATE PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-PREPARE BU-004 IMPLEMENTATION READINESS / ACTIVATION PACKAGE
+CONTROLLER AUDIT OF BU-004 IMPLEMENTATION READINESS / ACTIVATION PACKAGE
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -556,9 +556,26 @@ All AI remains optional/non-blocking future capability.
 ## Forbidden Premature Work
 
 - BU-003 is finished and repository-finalized.
-- BU-004 is registered but NOT implemented.
-- Do not implement BU-004 in this registration stage.
-- Do not register BU-005.
+- BU-004 is REGISTERED / READY FOR IMPLEMENTATION;
+- BU-004 implementation is still NOT EXECUTED;
+- the current Implementation Readiness / Activation package is awaiting
+  Controller audit;
+- BU-004 implementation MUST NOT begin until this readiness package completes:
+
+  Controller audit PASS
+  -> Owner Acceptance
+  -> controlled Git finalization
+
+- only after that gate may a separately authorized bounded BU-004
+  implementation execution create:
+
+  database/migrations/0004_bu004_secure_assessment_answer_persistence_core_state.sql
+
+  database/verification/verify_bu004_secure_assessment_answer_persistence_core_state.sql
+
+- BU-005 remains NOT REGISTERED;
+- PB-07 remains OPEN;
+- broader Secure Assessment implementation remains NOT COMPLETE.
 - Do not add answer persistence, timer, submission, reconnect runtime, scoring, risk/proctoring persistence, APIs, frontend, backend runtime, or other out-of-scope capabilities.
 - Verify before progression.
 

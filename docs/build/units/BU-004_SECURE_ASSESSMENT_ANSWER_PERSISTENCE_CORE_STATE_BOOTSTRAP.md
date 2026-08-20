@@ -6,7 +6,7 @@ Build Unit:
 BU-004
 
 Status:
-REGISTERED / NOT STARTED
+REGISTERED / READY FOR IMPLEMENTATION
 
 Phase:
 BUILD
@@ -104,6 +104,62 @@ OWNERSHIP/TENANCY BOUNDARY:
 Ensure tenant-safe assessment-context association and isolation boundaries appropriate for answer state.
 
 ==================================================
+IMPLEMENTATION READINESS / ACTIVATION
+==================================================
+
+READINESS GATE:
+PASS
+
+BOUNDED LOCAL PERSISTENCE REUSE DECISION:
+
+BU-004 MAY reuse the existing PostgreSQL + plain SQL versioned Git migration
+and verification foundation already established by BU-001/BU-002/BU-003 for
+BU-004 bounded persistence implementation ONLY.
+
+This is a bounded Build Unit local implementation choice.
+This does NOT constitute:
+
+- POSTGRESQL 18 GLOBAL SELECTION = YES
+- GLOBAL FINAL TECHNOLOGY STACK = SELECTED
+- global FK/event strategy resolved
+
+EXPECTED LATER IMPLEMENTATION FILE BOUNDARY:
+
+Migration:
+database/migrations/0004_bu004_secure_assessment_answer_persistence_core_state.sql
+
+Verification:
+database/verification/verify_bu004_secure_assessment_answer_persistence_core_state.sql
+
+Neither file has been created. Both will be created only during later
+bounded implementation execution.
+
+IMPLEMENTATION ENFORCEMENT EXPECTATIONS:
+
+The later bounded implementation must prove:
+
+1. answer state cannot bind across tenants;
+2. answer state cannot silently bind an Attempt to a Snapshot from an
+   incompatible assessment context;
+3. the authoritative row/state is associated with the Attempt rather than
+   being Session-owned;
+4. one question's authoritative state cannot accidentally resolve to a
+   different Question Bank Item truth instead of its frozen Snapshot;
+5. expected uniqueness/cardinality semantics are explicitly enforced where
+   required by the derived physical design;
+6. malformed or invalid association cases are rejected;
+7. no out-of-scope persistence concepts are introduced.
+
+The exact physical enforcement mechanism (FK, composite FK, unique constraint,
+trigger) is selected locally for BU-004 only after inspecting existing
+BU-002/BU-003 schema patterns. The composite unique (id, tenant_id) pattern
+established in BU-002/BU-003 provides the existing within-domain FK reference
+convention. BU-004 should follow this convention where applicable.
+
+This local enforcement choice does NOT resolve the global FK/event strategy,
+which remains PROVISIONAL.
+
+==================================================
 TECHNOLOGY MATURITY
 ==================================================
 
@@ -122,8 +178,6 @@ NOT GLOBALLY SELECTED OR REJECTED IN REGISTRATION
 AGENT SKILLS / TOOLING:
 NOT GLOBALLY SELECTED OR INSTALLED
 
-The later BU-004 implementation may reuse the already verified bounded persistence foundation only if justified at its implementation readiness gate.
-
 ==================================================
 QUERY / PERFORMANCE / DATA-ACCESS GATE
 ==================================================
@@ -131,25 +185,60 @@ QUERY / PERFORMANCE / DATA-ACCESS GATE
 QUERY/PERFORMANCE GATE:
 RELEVANT
 
-Future implementation verification must require, where applicable:
+Later implementation verification must include actual critical persisted-answer
+access paths:
 
-- bounded Attempt-scoped answer retrieval;
-- bounded Attempt + Snapshot answer lookup;
-- appropriate tenant/attempt/snapshot access paths;
-- indexes/composite indexes derived from actual query shapes;
+QUERY A:
+Bounded tenant + Exam Attempt scoped answer retrieval.
+
+Example: SELECT bounded columns FROM answer_table
+WHERE exam_attempt_id = $1 AND tenant_id = $2;
+
+QUERY B:
+Bounded tenant + Exam Attempt + Exam Question Snapshot lookup of a specific
+authoritative answer state.
+
+Example: SELECT bounded columns FROM answer_table
+WHERE exam_attempt_id = $1 AND exam_question_snapshot_id = $2 AND tenant_id = $3;
+
+Later verification requirements:
+
+- indexes/composite indexes derived from real predicates;
 - relationship/FK-side indexing where materially required;
-- no inappropriate full-table scans;
-- no N+1 query pattern once application access exists;
-- bounded SELECTs;
-- pagination only where collections can materially grow;
-- narrow transactions for answer writes;
-- EXPLAIN / EXPLAIN ANALYZE for critical persisted-answer queries;
-- realistic-volume performance fixtures;
-- query count / latency evidence where meaningful;
-- no arbitrary forced planner settings solely to make an index appear;
-- future observability hooks where runtime scope later permits them.
+- no inappropriate unbounded sequential scan on expected critical
+  realistic-volume paths;
+- bounded SELECT projection;
+- narrow answer-write transaction boundaries;
+- no N+1 access pattern once application access exists;
+- EXPLAIN / EXPLAIN ANALYZE for critical executable queries;
+- realistic-volume fixtures;
+- query-count/latency evidence where meaningful;
+- no arbitrary forced planner settings merely to produce an index plan;
+- no unsupported arbitrary latency SLO.
 
-Do not invent unsupported performance thresholds.
+Do not treat an index as a substitute for tenant-isolation enforcement.
+
+==================================================
+REGRESSION / TERMINAL VERIFICATION EXPECTATIONS
+==================================================
+
+Later BU-004 verification must require:
+
+- BU-001 migration/verification regression;
+- BU-002 migration/verification regression;
+- BU-003 migration/verification regression;
+- BU-004 migration PASS;
+- BU-004 verification PASS;
+- safe-repeat/idempotent migration behavior;
+- structural invariant checks;
+- invalid tenant/Attempt/Snapshot association rejection;
+- query/performance gate PASS;
+- out-of-scope persistence count/check where appropriate;
+- final terminal verification;
+- implementation source identities captured before Owner Acceptance.
+
+PB-07 remains OPEN. No claim that PB-07 closes from persistence-only
+verification. PB-07 requires later Zero-Lost-Answer runtime evidence.
 
 ==================================================
 VERIFICATION / DONE EXPECTATIONS
@@ -178,8 +267,6 @@ Future DONE requires:
 - repository finalized;
 - state synchronization where materially required.
 
-Explicitly: This registration creates NO implementation.
-
 ==================================================
 PB RELATIONSHIP
 ==================================================
@@ -189,3 +276,6 @@ PB:
 
 PB-07 (Zero-Lost-Answer):
 OPEN. No claim that PB-07 Zero-Lost-Answer Verification is closed.
+
+BU-004 is structural persistence groundwork only.
+No Production Blocker closes from BU-004 alone.
