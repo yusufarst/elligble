@@ -24,13 +24,16 @@ Implementation Owner Acceptance:
 NOT YET
 
 Registration Owner Acceptance:
-NOT YET
+COMPLETE
 
 Registration Git Finalization:
-NOT COMPLETE
+COMPLETE
 
 Registration Repository Finalized:
-NO
+YES
+
+Registration Commit:
+04459d873c53a406f5bcb9f1fc7b22b4910b5235
 
 Implementation Readiness / Activation:
 NOT EXECUTED
