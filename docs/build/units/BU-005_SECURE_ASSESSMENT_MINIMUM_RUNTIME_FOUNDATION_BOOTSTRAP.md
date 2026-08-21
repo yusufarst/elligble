@@ -36,7 +36,13 @@ Registration Commit:
 04459d873c53a406f5bcb9f1fc7b22b4910b5235
 
 Implementation Readiness / Activation:
-NOT EXECUTED
+ASSESSMENT PASS / PENDING CONTROLLER AUDIT
+
+Readiness Package:
+AUTHORED
+
+Readiness Controller Audit:
+NOT YET
 
 Readiness Owner Acceptance:
 NOT YET
@@ -255,6 +261,157 @@ Before implementation, that gate must determine at minimum:
 
 Readiness must be Controller-audited and Owner-accepted/finalized under the existing lifecycle before implementation starts.
 Do NOT make those technology selections during this registration execution.
+
+==================================================
+IMPLEMENTATION READINESS / ACTIVATION PACKAGE
+==================================================
+
+READINESS PACKAGE:
+AUTHORED
+
+READINESS ASSESSMENT:
+PASS / PENDING CONTROLLER AUDIT
+
+READINESS CONTROLLER AUDIT:
+NOT YET
+
+READINESS OWNER ACCEPTANCE:
+NOT YET
+
+READINESS GIT FINALIZATION:
+NOT COMPLETE
+
+READINESS REPOSITORY FINALIZED:
+NO
+
+IMPLEMENTATION:
+NOT EXECUTED
+
+DONE:
+NO
+
+--------------------------------------------------
+CONTROLLER-SELECTED BOUNDED LOCAL TECHNOLOGY
+--------------------------------------------------
+
+LANGUAGE / RUNTIME:
+Node.js 24.x. Minimum runtime capability baseline: Node >= 24.12. Current verified developer runtime: Node v24.18.0. This DOES NOT establish a global Node version policy.
+
+TYPESCRIPT:
+Use TypeScript source. Runtime execution model: Node built-in TypeScript type stripping. Node native type stripping DOES NOT perform type checking. Implementation MUST include separate static type-check verification: `tsc --noEmit`. Expected TypeScript compiler posture substantially includes: noEmit, module = nodenext, target = esnext, erasableSyntaxOnly, verbatimModuleSyntax.
+
+HTTP:
+Use built-in `node:http`. NO Express. NO Fastify. NO NestJS. NO other web framework.
+
+PACKAGE MANAGEMENT:
+Use `npm`. Dependency lock: `package-lock.json`. Implementation installation path must support `npm ci`. Do NOT make npm the globally selected ELLIGBLE package manager.
+
+POSTGRESQL:
+Use `pg`. Connection mechanism: `pg.Pool`. NO ORM. Pool ownership: one bounded pool owned by the BU-005 runtime host (no uncontrolled per-request pool creation, explicit pool teardown at shutdown, bounded pool maximum, finite connection acquisition/connect timeout, no unnecessary transaction for readiness check).
+
+CONFIGURATION:
+Use explicit environment-variable loading through `process.env`. NO configuration framework/library unless implementation evidence proves one is necessary. Validate required configuration before use. Missing or malformed required configuration must fail clearly and deterministically. Do not commit secrets.
+
+HEALTH / READINESS:
+Minimal non-domain routes are permitted:
+`GET /healthz`: runtime process is alive. Must not require a database query.
+`GET /readyz`: runtime can currently reach its required persistence dependency (probe: `SELECT 1`). Expected: 200 when dependency is ready; 503 when database dependency cannot be reached. No business/domain table lookup is permitted for readiness. No broad scan. No EXPLAIN for SELECT 1. Database unavailability does not need to crash the runtime host. Do not implement a background polling loop in BU-005.
+
+STRUCTURED LOGGING:
+Use structured one-line JSON logs to stdout/stderr. Use Node built-in console/stdout/stderr capability. NO logging framework dependency required for BU-005. Required evidence classes later: runtime starting, runtime started, dependency ready/not-ready, shutdown requested, shutdown complete, fatal startup/config error.
+
+TESTING:
+Use built-in `node:test` and `node:assert/strict`. NO external testing framework required. Implementation verification must include deterministic foreground tests.
+
+STARTUP / SHUTDOWN:
+Startup model:
+1. validate configuration;
+2. construct exactly one bounded pg Pool;
+3. perform bounded dependency readiness assessment;
+4. start minimal HTTP runtime;
+5. emit structured lifecycle evidence.
+
+Shutdown model (handle SIGINT, SIGTERM):
+1. stop accepting new HTTP work;
+2. close HTTP server;
+3. close PostgreSQL pool;
+4. emit shutdown-complete evidence;
+5. return normally.
+No watcher, daemonization, or background runner.
+
+FAILURE CONTAINMENT:
+Do NOT claim TypeScript or Node intrinsically enforces tenant isolation. Tenant isolation remains an application/data-access responsibility inherited from canonical architecture. Do NOT claim runtime language alone guarantees Zero-Lost-Answer. Do NOT select WebSocket or any other transport for future answer continuity. Zero-Lost-Answer remains governed by authoritative persisted state and architecture semantics. BU-005 implements NONE of that business behavior.
+
+PROPOSED IMPLEMENTATION ROOT:
+Bound all technology-specific implementation under: `runtime/secure-assessment/` (e.g., `package.json`, `src/`, `test/`). Do NOT create these now. Do NOT create a root-level package.json. Do NOT establish a repository-wide npm workspace.
+
+--------------------------------------------------
+LOCAL VS GLOBAL DECISION
+--------------------------------------------------
+BU-005 BOUNDED LOCAL RUNTIME SELECTION: Node.js 24.x + TypeScript + node:http + pg + npm/package-lock + node:test
+GLOBAL FINAL TECHNOLOGY STACK: NOT GLOBALLY SELECTED
+GLOBAL BACKEND LANGUAGE: NOT GLOBALLY SELECTED
+GLOBAL BACKEND FRAMEWORK: NOT GLOBALLY SELECTED
+GLOBAL API FRAMEWORK: NOT GLOBALLY SELECTED
+GLOBAL ORM: NOT GLOBALLY SELECTED
+GLOBAL PACKAGE MANAGER: NOT GLOBALLY SELECTED
+GLOBAL DEPLOYMENT/CLOUD: NOT GLOBALLY SELECTED
+INSFORGE: NOT SELECTED OR REJECTED BY THIS READINESS PACKAGE
+
+--------------------------------------------------
+QUERY / PERFORMANCE / RUNTIME GATE
+--------------------------------------------------
+- migrations 0001-0004 unchanged;
+- no BU-005 business schema;
+- one bounded pg Pool;
+- no uncontrolled connections;
+- no N+1;
+- no unbounded SELECT;
+- no broad health/readiness table scan;
+- no business table query for readiness;
+- SELECT 1 is sufficient for dependency readiness;
+- SELECT 1 does NOT require EXPLAIN / EXPLAIN ANALYZE;
+- bounded startup/readiness query count;
+- no planner forcing;
+- no arbitrary latency SLO;
+- narrow/no unnecessary transactions;
+- database failure is observable;
+- recovered database state can be reflected by a subsequent readiness check;
+- no background database poller.
+
+--------------------------------------------------
+FUTURE IMPLEMENTATION VERIFICATION PLAN
+--------------------------------------------------
+Readiness package must require later proof of:
+1. npm dependency install/reproduction via lockfile;
+2. TypeScript typecheck PASS using tsc --noEmit;
+3. runtime foreground startup PASS;
+4. /healthz semantics PASS;
+5. /readyz with database available PASS;
+6. /readyz with database unavailable returns accurate NOT READY state;
+7. database recovery reflected by a later /readyz check where verification environment permits;
+8. valid configuration PASS;
+9. missing required configuration fails clearly;
+10. malformed configuration fails clearly;
+11. SIGINT clean shutdown PASS;
+12. SIGTERM clean shutdown PASS where safely testable;
+13. HTTP server closes;
+14. PostgreSQL pool closes;
+15. no orphan Node process remains;
+16. structured lifecycle/dependency logs exist;
+17. secrets are not emitted;
+18. migrations 0001-0004 unchanged;
+19. no unintended schema change;
+20. no business/domain endpoints;
+21. no Zero-Lost-Answer runtime;
+22. no reconnect/resume;
+23. no timer;
+24. no submission;
+25. no cross-tenant behavior introduced;
+26. bounded query count;
+27. SELECT 1 only for DB readiness unless separately Controller-approved;
+28. implementation source SIZE/SHA identities captured before Owner Acceptance.
+All terminal verification: foreground only. No manage_task/background runner.
 
 ==================================================
 FUTURE VERIFICATION EXPECTATIONS
