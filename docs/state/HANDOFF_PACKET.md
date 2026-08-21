@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.48
+**Version:** 0.1.49
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -316,7 +316,7 @@ LAST COMPLETED BUILD UNIT:
 BU-004
 
 ACTIVE BUILD UNIT:
-NONE
+BU-005
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
@@ -371,6 +371,12 @@ BU-004 IMPLEMENTATION GIT FINALIZATION COMMIT:
 
 BU-004 DONE:
 YES
+
+BU-005:
+REGISTERED / NOT STARTED
+
+BU-005 IMPLEMENTATION:
+NOT EXECUTED
 
 BU-003:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -463,11 +469,11 @@ BU-002 DONE:
 YES
 
 Secure Assessment:
-IN PROGRESS / BU-004 ANSWER PERSISTENCE COMPLETE / BROADER IMPLEMENTATION NOT COMPLETE
+IN PROGRESS / BU-005 RUNTIME FOUNDATION REGISTERED /
+BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT
-ONLY AFTER CONTROLLER AUTHORIZATION
+CONTROLLER AUDIT OF BU-005 REGISTRATION PACKAGE
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -585,7 +591,7 @@ All AI remains optional/non-blocking future capability.
 
 - BU-003 is finished and repository-finalized.
 - BU-004 is finished and repository-finalized.
-- BU-005 remains NOT REGISTERED;
+- BU-005 cannot be implemented before readiness/activation and required lifecycle gates.
 - PB-07 remains OPEN;
 - broader Secure Assessment implementation remains NOT COMPLETE.
 - Do not add answer persistence, timer, submission, reconnect runtime, scoring, risk/proctoring persistence, APIs, frontend, backend runtime, or other out-of-scope capabilities.
