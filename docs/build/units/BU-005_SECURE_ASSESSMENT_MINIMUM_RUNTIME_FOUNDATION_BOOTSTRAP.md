@@ -6,22 +6,24 @@ Build Unit:
 BU-005
 
 Status:
-REGISTERED / READINESS FINALIZED / IMPLEMENTATION NOT STARTED
+COMPLETE / TERMINAL VERIFICATION PASS / RUNTIME-DATA-ACCESS GATE PASS /
+IMPLEMENTATION REPOSITORY FINALIZED
 
 Phase:
 BUILD
 
 Implementation:
-NOT EXECUTED
+EXECUTED
 
 Terminal Verification:
-NOT EXECUTED
+PASS
 
 Query/Performance Verification:
-NOT EXECUTED
+PASS — bounded runtime/data-access gate; BU-005 is not a domain-query
+performance unit.
 
 Implementation Owner Acceptance:
-NOT YET
+COMPLETE
 
 Registration Owner Acceptance:
 COMPLETE
@@ -56,11 +58,17 @@ YES
 Readiness Git Finalization Commit:
 f9ebbbec478c19a6ac8a29338a96b95d17471005
 
+Implementation Git Finalization:
+COMPLETE
+
+Implementation Git Finalization Commit:
+d68bf8ce2e632697d077880573d0bfeef097c1ff
+
 Implementation Repository Finalized:
-NO
+YES
 
 Done:
-NO
+YES
 
 PURPOSE:
 
@@ -239,6 +247,178 @@ NOT SELECTED BY REGISTRATION
 BU-005 may later require a bounded local runtime technology choice.
 That choice MUST occur in a separate readiness/activation gate before implementation.
 Any future local selection must be explicitly scoped to BU-005 and must NOT be represented as global final-stack selection.
+
+==================================================
+FINAL IMPLEMENTATION / TERMINAL EVIDENCE
+==================================================
+
+This is the durable final implementation evidence record for BU-005.
+
+IMPLEMENTATION GIT FINALIZATION COMMIT:
+d68bf8ce2e632697d077880573d0bfeef097c1ff
+
+FINAL IMPLEMENTATION FILE COUNT:
+11
+
+FINAL IMPLEMENTATION FILES:
+
+PATH:
+runtime/secure-assessment/.gitignore
+SIZE:
+14
+SHA256:
+4D56952B0FB13BF8F9B6C13A6D4C34A075BAC3AF447636A1DF4335D7576E2F97
+
+PATH:
+runtime/secure-assessment/package.json
+SIZE:
+457
+SHA256:
+D76BEF9233599F1F0948DCBA1728CC87C2487C112C479587595B31EDA728BF95
+
+PATH:
+runtime/secure-assessment/package-lock.json
+SIZE:
+19205
+SHA256:
+F4CE3B18890BE919BC6FEDECE8E6A8CFAC3A3A6D2218CA0FE359B63128CC85C7
+
+PATH:
+runtime/secure-assessment/tsconfig.json
+SIZE:
+307
+SHA256:
+A01B000004866D48625C067D4795E06FC0DCC8EB49BBCAE7C732E3439E5AFA1F
+
+PATH:
+runtime/secure-assessment/src/config.ts
+SIZE:
+1522
+SHA256:
+B7BBBAC6A8F2F23E022BB2AF8E3E88582D181FD740396217EC04EA5227C74607
+
+PATH:
+runtime/secure-assessment/src/log.ts
+SIZE:
+988
+SHA256:
+F088C6EFE130C3D2C67C385482F6DF3CA8CD386670C98D3FF15C15CACF232A64
+
+PATH:
+runtime/secure-assessment/src/db.ts
+SIZE:
+645
+SHA256:
+AEAEAA2ACB275C83EC02335887876F95EC4459880CD2E98F7D77021314ED9DD1
+
+PATH:
+runtime/secure-assessment/src/server.ts
+SIZE:
+1350
+SHA256:
+090B31BF092429BEE695D925A5BE77D72BC1A37F6ECDA95612F17FEC62A47C44
+
+PATH:
+runtime/secure-assessment/src/main.ts
+SIZE:
+2306
+SHA256:
+3F91D664A43B381D9021D2F1A012734B428627262882BBF7E7D009ECC3A952C4
+
+PATH:
+runtime/secure-assessment/test/config.test.ts
+SIZE:
+3990
+SHA256:
+547F763119F8362EB1399B2F29B2EF43155FE89CD999FCB759CD617DBF8AF269
+
+PATH:
+runtime/secure-assessment/test/server.test.ts
+SIZE:
+2849
+SHA256:
+6FA3129FCFE8B1F82298BD745102CF8A25B180895711AA586E8A926F790D275A
+
+STATIC TYPECHECK:
+PASS
+
+UNIT TESTS:
+20/20 PASS
+
+TERMINAL / DATABASE INTEGRATION:
+PASS — prior valid terminal/database evidence carried forward after explicit
+Controller materiality audit because the final correction was physically
+verified whitespace-only.
+
+CORRECTION TYPE:
+WHITESPACE-ONLY
+
+FULL CACHED-DIFF CONTENT INSPECTION:
+PASS
+
+CORRECTED PACKAGE OWNER ACCEPTANCE:
+COMPLETE
+
+IMPLEMENTATION REPOSITORY FINALIZED:
+YES
+
+PB-06:
+OPEN
+
+PB-07:
+OPEN
+
+GLOBAL FK/EVENT STRATEGY:
+PROVISIONAL
+
+GLOBAL FINAL TECHNOLOGY STACK:
+NOT GLOBALLY SELECTED
+
+POSTGRESQL 18 GLOBAL SELECTION:
+NO
+
+BU-005 DOES NOT IMPLEMENT OR CLAIM COMPLETION OF:
+
+- Zero-Lost-Answer runtime;
+- answer autosave/persistence API;
+- reconnect/resume;
+- server-authoritative assessment timer;
+- idempotent submission;
+- scoring;
+- proctoring;
+- cheating verdict logic;
+- broader Secure Assessment runtime.
+
+==================================================
+HISTORICAL READINESS / PRE-IMPLEMENTATION SNAPSHOT
+==================================================
+
+This section preserves the earlier readiness and pre-implementation checkpoint
+as historical chronology.
+
+Statements below such as:
+
+IMPLEMENTATION:
+NOT EXECUTED
+
+DONE:
+NO
+
+implementation not started
+
+future implementation requirements
+
+future terminal/runtime verification requirements
+
+describe the state and requirements that existed BEFORE BU-005 implementation
+was executed and finalized.
+
+They are NOT current lifecycle claims.
+
+Current final BU-005 lifecycle truth is defined by:
+
+1. the current lifecycle header; and
+2. the FINAL IMPLEMENTATION / TERMINAL EVIDENCE section above.
 
 ==================================================
 IMPLEMENTATION PRECONDITION / READINESS GATE
