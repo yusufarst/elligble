@@ -9,7 +9,7 @@ Title:
 Secure Assessment Answer Save / Acknowledgement Runtime Bootstrap
 
 Status:
-REGISTERED / NOT STARTED
+REGISTERED / READINESS OWNER-ACCEPTED / IMPLEMENTATION NOT STARTED
 
 Phase:
 BUILD
@@ -36,7 +36,19 @@ REGISTRATION COMMIT SUBJECT:
 docs(build): register BU-006 answer save acknowledgement runtime
 
 Implementation Readiness / Activation:
-NOT EXECUTED
+PASS
+
+Readiness Controller Audit:
+PASS
+
+Readiness Owner Acceptance:
+COMPLETE
+
+Readiness Git Finalization:
+NOT COMPLETE
+
+Readiness Repository Finalized:
+NO
 
 Implementation:
 NOT EXECUTED
@@ -144,10 +156,18 @@ LOCKED by repository authority.
 
 Schema/migration changes are NOT automatically in-scope.
 
-NEW SCHEMA REQUIRED:
-NOT YET ESTABLISHED
+REGISTRATION-ERA NEW SCHEMA DECISION:
+DEFERRED TO IMPLEMENTATION READINESS
 
-Readiness must inspect actual BU-004 physical schema first.
+CURRENT READINESS SCHEMA ASSESSMENT:
+BU-004 PHYSICAL SCHEMA SUFFICIENT / CONTROLLER AUDIT PASS /
+OWNER ACCEPTANCE COMPLETE
+
+NEW SCHEMA REQUIRED:
+NO
+
+SCHEMA / MIGRATION CHANGE:
+NOT REQUIRED BY CURRENT READINESS CANDIDATE
 
 If existing schema is sufficient:
 no migration is required.
@@ -203,8 +223,12 @@ must converge without duplicate/inconsistent authoritative Answer state.
 MANDATORY DUPLICATE HTTP REJECTION:
 NO
 
-EXACT IDEMPOTENCY MECHANISM:
-DEFER TO READINESS
+REGISTRATION-ERA IDEMPOTENCY MECHANISM DECISION:
+DEFERRED TO IMPLEMENTATION READINESS
+
+CURRENT READINESS IDEMPOTENCY / CONVERGENCE MECHANISM:
+DEFINED IN SECTION 12 / CONTROLLER AUDIT PASS /
+OWNER ACCEPTANCE COMPLETE
 
 IDEMPOTENT FINAL SUBMISSION:
 NOT IMPLEMENTED BY BU-006
@@ -310,6 +334,11 @@ Future verification must inspect actual executable paths including:
 Future implementation evidence must eventually prove:
 
 - valid tenant/Attempt/Snapshot answer save succeeds;
+- clientWriteIdentity length 255 is accepted when all other request/context fields are valid;
+- clientWriteIdentity length 256 is rejected as 400 invalid_request (with NO Answer mutation, NO write_version change, NO acknowledgement);
+- expectedWriteVersion = 2147483647 is syntactically accepted as an in-range version value; ordinary stale/current semantics then apply;
+- expectedWriteVersion > 2147483647 is rejected as 400 invalid_request (with NO Answer mutation, NO acknowledgement);
+- expectedWriteVersion zero, negative, or fractional is rejected as 400 invalid_request;
 - invalid tenant association fails safely;
 - invalid Attempt association fails safely;
 - invalid Snapshot association fails safely;
@@ -369,6 +398,172 @@ Future DONE requires at minimum:
 - controlled implementation Git finalization;
 - implementation repository finalized;
 - required closure/state synchronization finalized.
+
+==================================================
+12. IMPLEMENTATION READINESS / ACTIVATION PACKAGE
+==================================================
+
+BU-004 PHYSICAL SCHEMA SUFFICIENCY:
+SUFFICIENT
+
+SCHEMA CHANGE REQUIRED:
+NO
+
+EXACT ENDPOINT ROUTE:
+POST /api/v1/assessment/answer/save
+
+EXACT METHOD:
+POST
+
+REQUEST PAYLOAD:
+{
+  "attemptId": "uuid",
+  "snapshotId": "uuid",
+  "answerPayload": <non-null valid JSON value>,
+  "clientWriteIdentity": "string length 1 through 255 characters inclusive",
+  "expectedWriteVersion": <null for initial logical write OR integer from 1 through 2147483647 inclusive>
+}
+
+Validation:
+- malformed JSON => 400 invalid_request
+- invalid UUID/null answerPayload => 400 invalid_request
+- clientWriteIdentity length 0 => 400 invalid_request
+- clientWriteIdentity length > 255 => 400 invalid_request
+- expectedWriteVersion 0 => 400 invalid_request
+- expectedWriteVersion negative => 400 invalid_request
+- expectedWriteVersion non-integer => 400 invalid_request
+- expectedWriteVersion > 2147483647 => 400 invalid_request
+- No database write attempted for invalid length or version. No acknowledgement.
+- Trusted tenant context is inherited, not parsed from JSON authority.
+
+ACKNOWLEDGEMENT RESPONSE PAYLOAD:
+{
+  "status": "acknowledged",
+  "clientWriteIdentity": "<accepted logical identity>",
+  "writeVersion": <authoritative integer>
+}
+
+ERROR RESPONSE SEMANTICS:
+- Malformed input => 400 invalid_request
+- Missing or denied trusted authorization context => 403 forbidden
+- Authorized context but referenced Attempt/Snapshot does not exist => 404 assessment_context_not_found
+- Attempt/Snapshot incompatible context => 409 assessment_context_conflict
+- Same clientWriteIdentity with different payload => 409 write_identity_reuse_conflict
+- Different logical write with stale expectedWriteVersion => 409 stale_write_version
+- Database unavailable/dependency failure => 503 persistence_unavailable
+- Unexpected bounded internal failure => 500 internal_error
+
+Never emit acknowledged status for any failure/conflict. Do not leak database details, constraint names, credentials, or internal stack.
+
+SINGLE-ANSWER VS BOUNDED-BATCH BOUNDARY:
+Single-answer only per request.
+
+TENANT CONTEXT:
+Comes from trusted AuthorizedAssessmentContext supplied through the inherited
+fail-closed authorization/security dependency seam.
+
+Tenant authority MUST NOT be established from request JSON.
+
+ATTEMPT / SNAPSHOT INPUTS:
+attemptId and snapshotId come from the validated request payload.
+
+DATABASE CONTEXT CHECKS:
+Validate tenant-safe Attempt/Snapshot/data-context relationships only.
+They do NOT authorize the caller.
+
+INHERITED AUTHORIZATION/CONTEXT BOUNDARY:
+- database FK/existence/context checks validate DATA CONTEXT only;
+- they do NOT authorize the caller;
+- tenant authority MUST NOT be established merely by tenantId supplied in request JSON;
+- full Authentication implementation remains OUT OF SCOPE;
+- BU-006 must consume a TRUSTED inherited authorization/security context through a fail-closed dependency seam;
+- missing/denied trusted authorization context => request denied;
+- Secure Assessment does not re-own Identity/Tenant authorization truth.
+
+AuthorizedAssessmentContext:
+- tenantId
+- authorized Exam Attempt scope/context required by this save
+
+HTTP handler must receive that context from an injected dependency.
+
+CONCURRENCY BEHAVIOR:
+CLIENT WRITE IDENTITY identifies one logical Answer save.
+EXPECTED WRITE VERSION optimistic-concurrency token.
+Concurrent first-write collision must converge through the existing unique Answer key without creating a second authoritative row. A losing concurrent create must be reclassified against authoritative state; it must not blindly overwrite it.
+Delayed old retry must never overwrite a newer accepted answer merely because it arrived later.
+
+IDEMPOTENCY / CONVERGENCE MECHANISM:
+DUPLICATE SAME LOGICAL WRITE:
+If current client_write_identity == incoming clientWriteIdentity AND stored answer_payload is semantically equal to incoming answerPayload:
+- do NOT mutate authoritative Answer;
+- do NOT increment write_version;
+- return acknowledgement of the existing accepted write/version.
+(This duplicate MUST NOT require HTTP rejection.)
+
+SAME WRITE IDENTITY + DIFFERENT PAYLOAD:
+- do NOT mutate;
+- return 409 write_identity_reuse_conflict.
+
+DIFFERENT WRITE IDENTITY:
+May modify current Answer only when incoming expectedWriteVersion matches the current authoritative write_version.
+If expectedWriteVersion is stale:
+- do NOT mutate;
+- return 409 stale_write_version.
+
+LEGITIMATE LATER ANSWER CHANGE:
+- new clientWriteIdentity;
+- expectedWriteVersion matches authoritative current version;
+- update Answer;
+- increment write_version exactly once;
+- acknowledgement identifies the new logical write/version.
+
+INITIAL WRITE:
+expectedWriteVersion is null.
+
+AUTHORITATIVE UPDATE/WRITE SEMANTICS:
+1. resolve authorized tenant context;
+2. inspect the current Answer row for exact tenant + Attempt + Snapshot, locking/current-version guarding where required;
+3. classify: initial write, duplicate same logical write, identity-reuse conflict, stale-version conflict, legitimate next write;
+4. insert/update only when classification permits;
+5. existing BU-004 FK/trigger/context constraints remain authoritative physical guards;
+6. COMMIT successfully;
+7. only after successful authoritative completion emit acknowledgement.
+
+TRANSACTION BOUNDARY:
+ACK MUST NOT be emitted before successful transaction/statement completion.
+
+DATABASE FAILURE BEHAVIOR:
+Returns 503/500 without false acknowledgement.
+
+ACKNOWLEDGEMENT-AFTER-ACCEPTANCE RULE:
+SERVER ACKNOWLEDGEMENT means the corresponding logical Answer write is known to be authoritatively accepted.
+- For a duplicate of an already accepted logical write: return the already authoritative identity/version without new mutation.
+- For a new accepted write: return only after authoritative database completion succeeds.
+- PENDING / failed / stale / unauthorized / unknown: NOT server-saved.
+(This does NOT implement client offline recovery or reconnect.)
+
+ACTUAL QUERY / DATA-ACCESS PATH:
+Implementation defined query mapping to the 7-step data-access semantics without forcing an unsafe exact SQL string.
+
+INDEX SUFFICIENCY:
+Explicit unique index `uq_sa_exam_answer_current` (tenant_id, exam_attempt_id, exam_question_snapshot_id) fully supports the classification clause.
+
+REALISTIC VERIFICATION METHOD:
+node:test integration against controlled/disposable PostgreSQL verification environment with migrations 0001-0004 applied.
+
+EXACT SOURCE-WRITE BOUNDARY:
+NEW:
+runtime/secure-assessment/src/answer.ts
+runtime/secure-assessment/test/answer.test.ts
+
+MODIFY:
+runtime/secure-assessment/src/server.ts
+runtime/secure-assessment/src/main.ts
+runtime/secure-assessment/test/server.test.ts
+runtime/secure-assessment/package.json
+
+REGRESSION SCOPE:
+BU-005 healthz/readyz unimpacted.
 
 DONE:
 NO
