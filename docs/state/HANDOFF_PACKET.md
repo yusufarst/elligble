@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.53
+**Version:** 0.1.54
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -316,16 +316,43 @@ LAST COMPLETED BUILD UNIT:
 BU-005
 
 ACTIVE BUILD UNIT:
-NONE
+BU-006
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
 
-NEXT SAFE ACTION:
-REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT ONLY AFTER CONTROLLER AUTHORIZATION
-
 BU-006:
-NOT REGISTERED / NOT STARTED
+REGISTERED / NOT STARTED
+
+BU-006 TITLE:
+Secure Assessment Answer Save / Acknowledgement Runtime Bootstrap
+
+BU-006 REGISTRATION CONTROLLER AUDIT:
+NOT YET
+
+BU-006 REGISTRATION OWNER ACCEPTANCE:
+NOT YET
+
+BU-006 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-006 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-006 IMPLEMENTATION READINESS:
+NOT EXECUTED
+
+BU-006 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-006 DONE:
+NO
+
+NEXT SAFE ACTION:
+CONTROLLER AUDIT OF BU-006 REGISTRATION PACKAGE
+
+EXACT NEXT AUTHORIZED ACTION:
+CONTROLLER AUDIT OF BU-006 REGISTRATION PACKAGE
 
 BU-004:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -526,7 +553,7 @@ IN PROGRESS / BU-005 RUNTIME FOUNDATION: COMPLETE / REPOSITORY FINALIZED /
 BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT ONLY AFTER CONTROLLER AUTHORIZATION
+CONTROLLER AUDIT OF BU-006 REGISTRATION PACKAGE
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -645,9 +672,12 @@ All AI remains optional/non-blocking future capability.
 - BU-003 is finished and repository-finalized.
 - BU-004 is finished and repository-finalized.
 - BU-005 is COMPLETE / repository-finalized and must not be reopened without explicit Controller-approved supersession.
+- BU-006 is registration-only at this stage;
+- no implementation before registration finalization + readiness;
+- no full Zero-Lost-Answer claim;
+- no reconnect/timer/submission/scoring/proctoring expansion.
 - PB-07 remains OPEN;
 - broader Secure Assessment implementation remains NOT COMPLETE.
-- Do not add answer persistence, timer, submission, reconnect runtime, scoring, risk/proctoring persistence, APIs, frontend, backend runtime, or other capabilities without a formally registered and Controller-authorized NEXT Build Unit.
 - Verify before progression.
 
 ## Required Entry Files for New Agent

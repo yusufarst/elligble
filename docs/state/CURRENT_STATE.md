@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.57
+**Version:** 1.4.58
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.56
+**Supersedes:** CURRENT_STATE v1.4.57
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-22
@@ -19,11 +19,11 @@ DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 LAST COMPLETED UNIT   → BU-005 — Secure Assessment Minimum Runtime Foundation Bootstrap
 LAST COMPLETED BUILD UNIT → BU-005 — Secure Assessment Minimum Runtime Foundation Bootstrap
-ACTIVE UNIT           → NONE
-NEXT SAFE ACTION      → REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT ONLY AFTER CONTROLLER AUTHORIZATION
+ACTIVE UNIT           → BU-006
+NEXT SAFE ACTION      → CONTROLLER AUDIT OF BU-006 REGISTRATION PACKAGE
 NEXT UNIT             → NOT YET REGISTERED
 NEXT BUILD UNIT       → NOT YET REGISTERED
-NEXT STAGE            → NEXT BUILD UNIT REGISTRATION ONLY AFTER CONTROLLER AUTHORIZATION
+NEXT STAGE            → BU-006 REGISTRATION PACKAGE CONTROLLER AUDIT
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
@@ -104,7 +104,7 @@ BUILD PHASE INDEX     → docs/build/BUILD_PHASE_INDEX.md
 BUILD BOOTSTRAP GIT FINALIZATION → COMPLETE
 BUILD BOOTSTRAP GIT FINALIZATION COMMIT → fea9750c05d1f8bbee3ba7c987b494aa52293379
 BUILD BOOTSTRAP REPOSITORY FINALIZED → YES
-ACTIVE BUILD UNIT     → NONE
+ACTIVE BUILD UNIT     → BU-006
 BU-001                → COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 BU-001 IMPLEMENTATION → EXECUTED
 BU-001 OWNER ACCEPTANCE → COMPLETE
@@ -255,6 +255,33 @@ d68bf8ce2e632697d077880573d0bfeef097c1ff
 BU-005 DONE:
 YES
 
+BU-006:
+REGISTERED / NOT STARTED
+
+BU-006 REGISTRATION CONTROLLER AUDIT:
+NOT YET
+
+BU-006 REGISTRATION OWNER ACCEPTANCE:
+NOT YET
+
+BU-006 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-006 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-006 IMPLEMENTATION READINESS:
+NOT EXECUTED
+
+BU-006 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-006 IMPLEMENTATION REPOSITORY FINALIZED:
+NO
+
+BU-006 DONE:
+NO
+
 BUILD IMPLEMENTATION STARTED → YES
 BU-001 TECHNOLOGY SELECTION → RESOLVED FOR BU-001 ONLY
 PostgreSQL → SELECTED FOR BU-001 PERSISTENCE
@@ -322,7 +349,7 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT ONLY AFTER CONTROLLER AUTHORIZATION
+CONTROLLER AUDIT OF BU-006 REGISTRATION PACKAGE
 
 MASTER BLUEPRINT EXIT FINALIZATION: COMPLETE
 
@@ -383,7 +410,7 @@ BUILD PHASE INDEX: docs/build/BUILD_PHASE_INDEX.md
 BUILD BOOTSTRAP GIT FINALIZATION: COMPLETE
 BUILD BOOTSTRAP GIT FINALIZATION COMMIT: fea9750c05d1f8bbee3ba7c987b494aa52293379
 BUILD BOOTSTRAP REPOSITORY FINALIZED: YES
-ACTIVE BUILD UNIT: NONE
+ACTIVE BUILD UNIT: BU-006
 BU-001: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 BU-001 IMPLEMENTATION: EXECUTED
 BU-001 OWNER ACCEPTANCE: COMPLETE
@@ -429,7 +456,13 @@ BACKLOG GIT FINALIZATION: COMPLETE
 - Do not register and implement the next Build Unit in the same uncontrolled execution.
 - BU-005 is complete / implementation repository-finalized;
 - BU-005 must not be reopened without explicit Controller-approved supersession;
-- the next Build Unit must not be implemented before formal registration and authorization;
+- Do not implement BU-006 before Registration Controller Audit, Registration
+  Owner Acceptance, controlled registration Git finalization, registration
+  repository finalization, and required readiness/activation are complete.
+- Do not implement reconnect/resume, Server-Authoritative Timer, final
+  submission, scoring/proctoring, or another BU-006 out-of-scope capability.
+- Do not claim complete Zero-Lost-Answer runtime.
+- Do not close PB-06 or PB-07 from registration.
 - broader Secure Assessment implementation remains NOT COMPLETE.
 - Preserve OPEN / PROVISIONAL / FUTURE maturity.
 - Do not install random Agent Skills.
@@ -476,8 +509,12 @@ No API contract finalized
 BU-001 implementation is COMPLETE and REPOSITORY FINALIZED.
 BU-002 implementation is COMPLETE and REPOSITORY FINALIZED.
 BU-003 implementation is COMPLETE and REPOSITORY FINALIZED.
-BU-004 implementation is COMPLETE and REPOSITORY FINALIZED.
-BU-005 implementation is complete and repository-finalized.
+BU-004 authoritative Answer persistence foundation exists;
+BU-005 bounded Secure Assessment runtime exists;
+BU-006 is only REGISTERED / NOT STARTED in candidate registration content;
+no Answer Save / Acknowledgement runtime implementation exists yet;
+no complete Zero-Lost-Answer runtime exists;
+global final technology stack remains NOT GLOBALLY SELECTED.
 Broader Secure Assessment implementation remains NOT COMPLETE.
 ```
 
@@ -496,7 +533,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-REGISTER NEXT SECURE-ASSESSMENT-PRIORITY BUILD UNIT ONLY AFTER CONTROLLER AUTHORIZATION
+CONTROLLER AUDIT OF BU-006 REGISTRATION PACKAGE
 
 After each phase, update this file with the new active unit and prohibited premature work.
 
