@@ -1,7 +1,11 @@
 import * as http from 'node:http';
+import * as pg from 'pg';
+import { handleSaveAnswer, type AuthorizedAssessmentContext } from './answer.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
+    pool: pg.Pool;
+    getAuthorizedContext: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
 }
 
 export function createServer(deps: ServerDependencies): http.Server {
@@ -27,6 +31,11 @@ export function createServer(deps: ServerDependencies): http.Server {
                 res.writeHead(503, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'error' }));
             });
+            return;
+        }
+
+        if (req.url === '/api/v1/assessment/answer/save') {
+            handleSaveAnswer(req, res, deps);
             return;
         }
 

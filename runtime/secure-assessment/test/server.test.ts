@@ -14,7 +14,9 @@ test('server tests', async (t) => {
                 throw checkReadinessResult;
             }
             return checkReadinessResult;
-        }
+        },
+        pool: null as any,
+        getAuthorizedContext: () => null
     });
 
     await new Promise<void>((resolve, reject) => {

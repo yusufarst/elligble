@@ -32,7 +32,13 @@ async function start() {
     }
 
     activeServer = createServer({
-        checkReadiness: () => activePool ? checkDatabaseReadiness(activePool) : Promise.resolve(false)
+        checkReadiness: () => activePool ? checkDatabaseReadiness(activePool) : Promise.resolve(false),
+        pool: activePool!,
+        getAuthorizedContext: (req) => {
+            // Full authentication out of scope. Fail closed by default.
+            // Tests or integration will inject realistic context here.
+            return null;
+        }
     });
 
     activeServer.listen(config.SA_PORT, config.SA_HOST, () => {
