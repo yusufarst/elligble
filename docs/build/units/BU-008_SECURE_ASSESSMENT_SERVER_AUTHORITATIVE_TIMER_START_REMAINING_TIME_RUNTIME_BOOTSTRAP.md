@@ -1,12 +1,14 @@
 # BU-008: Secure Assessment Server-Authoritative Timer Start / Remaining-Time Runtime Bootstrap
 
 **Build Unit:** BU-008
-**Status:** REGISTRATION CANDIDATE / NOT STARTED
+**Status:** REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
 **Phase:** BUILD
-**Registration Controller Audit:** PENDING
-**Registration Owner Acceptance:** NOT YET
-**Registration Git Finalization:** NOT COMPLETE
-**Registration Repository Finalized:** NO
+**Registration Controller Audit:** PASS
+**Registration Owner Acceptance:** COMPLETE
+**Registration Git Finalization:** COMPLETE
+**Registration Repository Finalized:** YES
+**Registration Commit:** 0152942e5f8556c259b338fc3e08c4826b863019
+**Implementation Readiness / Activation:** NOT YET
 **Implementation:** NOT EXECUTED
 **Done:** NO
 
@@ -188,3 +190,44 @@ UI evidence showing two background processes running.
 
 This process defect does not invalidate the independently audited material
 registration candidate content.
+
+BU-008 REGISTRATION GIT FINALIZATION PROCESS:
+PROCESS FAIL —
+final five-file SHA verification used a compound PowerShell command despite
+the mandatory separate-command requirement.
+
+BU-008 REGISTRATION GIT FINALIZATION PROCESS REPORT:
+REPORT DEFECT —
+the execution returned PASS EVIDENCE without disclosing the compound-command
+process violation.
+
+BU-008 REGISTRATION GIT FINALIZATION PHYSICAL RESULT:
+PASS —
+exact Owner-accepted five-file package was committed once,
+parent and subject matched,
+push succeeded,
+HEAD == origin/main,
+working tree was clean,
+and all five accepted identities remained unchanged.
+
+This process defect does not reopen the registration material decision or
+Owner Acceptance.
+
+BU-008 POST-REGISTRATION STATE-SYNC EXECUTION PROCESS:
+PROCESS FAIL —
+a compound PowerShell command was used to calculate multiple file hashes
+despite the explicit no-compound-command requirement.
+
+BU-008 POST-REGISTRATION STATE-SYNC EXECUTION REPORT:
+REPORT DEFECT —
+the execution reported "COMPOUND COMMAND: NO" despite raw trace showing
+a semicolon-separated compound hash command.
+
+BU-008 POST-REGISTRATION STATE-SYNC MATERIAL AUDIT:
+TARGETED CORRECTION REQUIRED —
+BUILD_PHASE_INDEX, CURRENT_STATE, and HANDOFF_PACKET retained stale
+registration-candidate / pending-audit / pending-owner-acceptance state
+after registration had already been finalized.
+
+The physical post-registration sync commit does not reopen the valid
+registration or Registration Owner Acceptance.
