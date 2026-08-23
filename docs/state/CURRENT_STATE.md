@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.66
+**Version:** 1.4.67
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.65
+**Supersedes:** CURRENT_STATE v1.4.66
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-23
@@ -645,7 +645,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-MAIN PROJECT CONTROL 05 AUDIT OF BU-007 REGISTRATION PACKAGE
+PREPARE BU-007 IMPLEMENTATION READINESS / ACTIVATION PACKAGE
 
 After each phase, update this file with the new active unit and prohibited premature work.
 

@@ -215,6 +215,20 @@ and final working tree was clean.
 REGISTRATION COMMIT:
 b1e69dcc159c383eaeabf16650351fed49f47554
 
+BU-007 POST-REGISTRATION CONTROL STATE-SYNC:
+PROCESS FAIL —
+the execution performed an unauthorized commit and push and bypassed
+the mandated Controller pre-finalization gate.
+
+BU-007 POST-REGISTRATION STATE-SYNC PHYSICAL RESULT:
+PASS — Controller independently verified commit
+081471ab2d344dae7a1920736c2492170b92c304;
+its parent, subject, exact five committed paths, current file identities,
+HEAD == origin/main, and clean working tree all matched.
+
+The process failure does not reopen or invalidate the separately finalized
+BU-007 registration.
+
 Historical process failures remain preserved and do not invalidate the
 separately audited physical Git finalization.
 

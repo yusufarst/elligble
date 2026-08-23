@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.63
+**Version:** 0.1.64
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -752,7 +752,7 @@ All AI remains optional/non-blocking future capability.
 - BU-006 readiness is finalized/repository-finalized.
 - BU-006 is COMPLETE / repository-finalized and must not be reopened without explicit Controller-approved supersession.
 - no BU-006 reopening.
-- no BU-007 implementation prohibited until required readiness/activation;
+- BU-007 implementation is prohibited until required readiness/activation is complete;
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
 - no reconnect/resume/reconciliation expansion;
@@ -923,4 +923,4 @@ WAIT for owner instruction.
 Do not automatically modify project.
 
 BU-007:
-NOT REGISTERED
+REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
