@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --test test/config.test.ts test/server.test.ts test/answer.test.ts"
+    "test": "node --test test/config.test.ts test/server.test.ts test/answer.test.ts test/timer.test.ts"
   },
   "dependencies": {
     "pg": "8.23.0"
