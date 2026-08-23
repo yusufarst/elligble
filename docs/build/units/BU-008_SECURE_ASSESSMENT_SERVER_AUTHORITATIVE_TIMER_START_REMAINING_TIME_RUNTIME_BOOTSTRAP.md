@@ -1,18 +1,19 @@
 # BU-008: Secure Assessment Server-Authoritative Timer Start / Remaining-Time Runtime Bootstrap
 
 **Build Unit:** BU-008
-**Status:** IMPLEMENTATION READINESS / ASSESSMENT PASS / PENDING CONTROLLER AUDIT
+**Status:** IMPLEMENTATION READINESS / ACTIVATION PASS
 **Phase:** BUILD
 **Registration Controller Audit:** PASS
 **Registration Owner Acceptance:** COMPLETE
 **Registration Git Finalization:** COMPLETE
 **Registration Repository Finalized:** YES
 **Registration Commit:** 0152942e5f8556c259b338fc3e08c4826b863019
-**Implementation Readiness / Activation:** ASSESSMENT PASS / PENDING CONTROLLER AUDIT
-**Readiness Controller Audit:** PENDING
-**Readiness Owner Acceptance:** NOT YET
-**Readiness Git Finalization:** NOT COMPLETE
-**Readiness Repository Finalized:** NO
+**Implementation Readiness / Activation:** PASS
+**Readiness Controller Audit:** PASS
+**Readiness Owner Acceptance:** COMPLETE
+**Readiness Git Finalization:** COMPLETE
+**Readiness Repository Finalized:** YES
+**Readiness Git Finalization Commit:** b8ffc8dbaf5b0d0f417adea3fe3e454d53e3cedd
 **Implementation:** NOT EXECUTED
 **Done:** NO
 
@@ -399,3 +400,19 @@ the execution returned readiness authoring PASS without disclosing those
 process violations.
 
 This does not reopen registration.
+
+BU-008 READINESS GIT FINALIZATION PROCESS:
+PROCESS FAIL —
+the execution used prohibited schedule after the push.
+
+BU-008 READINESS GIT FINALIZATION REPORT:
+REPORT DEFECT —
+the execution reported "schedule: NO" despite raw trace showing schedule use.
+
+BU-008 READINESS GIT FINALIZATION PHYSICAL RESULT:
+PASS —
+the Owner-accepted five-file readiness package was committed once,
+pushed once, HEAD matched origin/main, and the repository finished clean.
+
+This process defect does not reopen the accepted readiness material,
+Owner Acceptance, or Git finalization.
