@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.60
+**Version:** 0.1.62
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -319,7 +319,21 @@ ACTIVE BUILD UNIT:
 NONE
 
 NEXT BUILD UNIT:
-NOT YET REGISTERED
+BU-007 REGISTRATION CANDIDATE
+
+BU-007 TITLE:
+Secure Assessment Server-Authoritative Timer Core State Persistence Bootstrap
+
+BU-007 REGISTRATION SPEC MATERIAL AUDIT:
+PASS
+
+BU-007 REGISTRATION:
+CANDIDATE /
+NOT OWNER-ACCEPTED /
+NOT REPOSITORY-FINALIZED
+
+BU-007 IMPLEMENTATION:
+NOT EXECUTED
 
 BU-006:
 COMPLETE / TERMINAL VERIFICATION PASS /
@@ -391,10 +405,10 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
+MAIN PROJECT CONTROL 05 AUDIT OF BU-007 REGISTRATION PACKAGE
 
 EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
+MAIN PROJECT CONTROL 05 AUDIT OF BU-007 REGISTRATION PACKAGE
 
 BU-004:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -595,7 +609,7 @@ IN PROGRESS / BU-005 RUNTIME FOUNDATION: COMPLETE / REPOSITORY FINALIZED /
 BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
+MAIN PROJECT CONTROL 05 AUDIT OF BU-007 REGISTRATION PACKAGE
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -716,14 +730,18 @@ All AI remains optional/non-blocking future capability.
 - BU-005 is COMPLETE / repository-finalized and must not be reopened without explicit Controller-approved supersession.
 - BU-006 readiness is finalized/repository-finalized.
 - BU-006 is COMPLETE / repository-finalized and must not be reopened without explicit Controller-approved supersession.
-- No next Build Unit implementation before formal registration and Controller authorization.
-- BU-007: NOT REGISTERED.
+- no BU-006 reopening.
+- no BU-007 implementation before registration Controller audit,
+  Owner Acceptance, and registration Git finalization;
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
-- no reconnect/timer/submission/scoring/proctoring.
+- no reconnect/resume/reconciliation/scoring/proctoring.
+- no timer enforcement runtime;
+- no Submission;
+- no pause/continue/grace decision;
+- no BU-008 registration;
 - PB-06 OPEN.
 - PB-07 OPEN.
-- BU-007 NOT REGISTERED.
 - broader Secure Assessment implementation remains NOT COMPLETE.
 - Verify before progression.
 
