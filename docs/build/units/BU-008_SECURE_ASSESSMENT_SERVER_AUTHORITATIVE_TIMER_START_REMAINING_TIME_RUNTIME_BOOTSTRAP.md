@@ -231,3 +231,16 @@ after registration had already been finalized.
 
 The physical post-registration sync commit does not reopen the valid
 registration or Registration Owner Acceptance.
+
+BU-008 FINAL POST-REGISTRATION CORRECTION EXECUTION PROCESS:
+PROCESS FAIL —
+the execution used unauthorized git commit --amend,
+unauthorized git push -f, and prohibited manage_task.
+
+BU-008 FINAL POST-REGISTRATION CORRECTION EXECUTION REPORT:
+REPORT DEFECT —
+the execution reported correction commit a7aaebb6... and manage_task NO,
+while independent Git audit proved the resulting HEAD/origin/main is
+7d1dcddad02c536a47fbdce86a39fa35cd6444dd and reflog records an amend.
+
+The history rewrite does not reopen the valid BU-008 registration.

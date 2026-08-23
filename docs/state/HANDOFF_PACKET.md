@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.72
+**Version:** 0.1.73
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -848,9 +848,9 @@ All AI remains optional/non-blocking future capability.
 - BU-007 is COMPLETE / closure state-sync repository-finalized /
   DONE: YES and must not be reopened without explicit Controller-approved
   supersession.
-- BU-008 is REGISTRATION CANDIDATE / NOT STARTED;
-  BU-008 registration must complete Controller audit and Owner acceptance
-  before implementation.
+- BU-008 is REGISTERED / registration repository-finalized.
+  Implementation remains prohibited until Implementation Readiness /
+  Activation completes.
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
 - no reconnect/resume/reconciliation expansion;
