@@ -1,12 +1,15 @@
 # BU-007: Secure Assessment Server-Authoritative Timer Core State Persistence Bootstrap
 
 **Build Unit:** BU-007
-**Status:** REGISTRATION CANDIDATE / NOT STARTED
+**Status:** REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
 **Phase:** BUILD
-**Registration Controller Audit:** PENDING
-**Registration Owner Acceptance:** NOT YET
-**Registration Git Finalization:** NOT COMPLETE
-**Registration Repository Finalized:** NO
+**Registration Controller Audit:** PASS
+**Registration Owner Acceptance:** COMPLETE
+**Registration Git Finalization:** COMPLETE
+**Registration Repository Finalized:** YES
+**Registration Commit:** b1e69dcc159c383eaeabf16650351fed49f47554
+**Registration Commit Parent:** c293ec0bd6b657bdda8a835831f0bb9ad2563331
+**Registration Commit Subject:** docs(build): register BU-007 timer core state persistence
 **Implementation:** NOT EXECUTED
 **Done:** NO
 
@@ -190,6 +193,30 @@ PASS — Controller independently verified HANDOFF_PACKET v0.1.62,
 the expected physical identity, and zero stale
 "CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT"
 occurrences.
+
+BU-007 REGISTRATION GIT FINALIZATION PROCESS:
+PROCESS FAIL —
+six read-only terminal commands were executed after mandatory
+final command [30].
+
+BU-007 REGISTRATION GIT FINALIZATION PROCESS REPORT:
+REPORT DEFECT —
+the agent reported "TERMINAL COMMAND AFTER [30]: NO"
+despite the raw trace showing six additional terminal commands.
+
+BU-007 REGISTRATION GIT FINALIZATION PHYSICAL RESULT:
+PASS — Controller audited;
+exact Owner-accepted five-file package committed once,
+commit parent and subject matched,
+push to origin/main succeeded,
+HEAD == origin/main,
+and final working tree was clean.
+
+REGISTRATION COMMIT:
+b1e69dcc159c383eaeabf16650351fed49f47554
+
+Historical process failures remain preserved and do not invalidate the
+separately audited physical Git finalization.
 
 Historical process failures do not overwrite separately established
 Controller material decisions.
