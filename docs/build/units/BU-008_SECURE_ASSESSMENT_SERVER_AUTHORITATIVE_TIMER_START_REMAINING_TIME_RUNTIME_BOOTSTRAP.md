@@ -1,14 +1,18 @@
 # BU-008: Secure Assessment Server-Authoritative Timer Start / Remaining-Time Runtime Bootstrap
 
 **Build Unit:** BU-008
-**Status:** REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
+**Status:** IMPLEMENTATION READINESS / ASSESSMENT PASS / PENDING CONTROLLER AUDIT
 **Phase:** BUILD
 **Registration Controller Audit:** PASS
 **Registration Owner Acceptance:** COMPLETE
 **Registration Git Finalization:** COMPLETE
 **Registration Repository Finalized:** YES
 **Registration Commit:** 0152942e5f8556c259b338fc3e08c4826b863019
-**Implementation Readiness / Activation:** NOT YET
+**Implementation Readiness / Activation:** ASSESSMENT PASS / PENDING CONTROLLER AUDIT
+**Readiness Controller Audit:** PENDING
+**Readiness Owner Acceptance:** NOT YET
+**Readiness Git Finalization:** NOT COMPLETE
+**Readiness Repository Finalized:** NO
 **Implementation:** NOT EXECUTED
 **Done:** NO
 
@@ -80,8 +84,129 @@ DEPENDENCY != CHRONOLOGY
 
 ## READINESS DECISIONS
 
+SCHEMA CHANGE REQUIRED:
+NO
+
+TIMER STATE:
+uses existing BU-007 secure_assessment_timer_state and secure_assessment_timer_adjustments.
+Timer-state/configured-duration provisioning is NOT created from an untrusted client request.
+
+SERVER TIME:
+database/server-authoritative time only.
+Client clock is never authoritative.
+
+TIMER START:
+- tenant + Exam Attempt scoped;
+- sets started_at only when currently NULL;
+- concurrent/repeated start must never reset started_at;
+- repeated start converges to the original authoritative start time;
+- Session replacement does not reset timer.
+
+REMAINING TIME:
+server calculates:
+
+effective_duration_seconds =
+configured_duration_seconds
++ SUM(adjustment_seconds)
+
+elapsed_seconds =
+authoritative server/database elapsed time since started_at
+
+remaining_seconds =
+MAX(0, effective_duration_seconds - elapsed_seconds)
+
+A zero remaining value does NOT implement expiry enforcement,
+state transition, or auto-submit.
+
 EXACT API / ROUTE:
-NOT DECIDED — readiness decision required before implementation. Do not invent an endpoint during registration.
+POST /api/v1/assessment/timer/start
+
+request:
+{
+  "attemptId": "uuid"
+}
+
+GET /api/v1/assessment/timer?attemptId=<uuid>
+
+Trusted tenant/authorization context must be inherited from the bounded runtime,
+not accepted from request data as authority.
+
+BOUNDARIES / PAYLOADS:
+Deterministic success/error payloads required.
+
+SUCCESSFUL FIRST TIMER START:
+HTTP 200 OK
+{
+  "status": "started",
+  "startedAt": "<iso8601_timestamp>",
+  "configuredDurationSeconds": <integer>,
+  "effectiveDurationSeconds": <integer>,
+  "effectiveRemainingSeconds": <integer>
+}
+
+SUCCESSFUL REPEATED/IDEMPOTENT TIMER START:
+HTTP 200 OK
+{
+  "status": "started",
+  "startedAt": "<iso8601_timestamp>",
+  "configuredDurationSeconds": <integer>,
+  "effectiveDurationSeconds": <integer>,
+  "effectiveRemainingSeconds": <integer>
+}
+
+SUCCESSFUL REMAINING-TIME READ:
+HTTP 200 OK
+{
+  "status": "active",
+  "startedAt": "<iso8601_timestamp>",
+  "configuredDurationSeconds": <integer>,
+  "effectiveDurationSeconds": <integer>,
+  "effectiveRemainingSeconds": <integer>
+}
+
+TIMER READ BEFORE AUTHORITATIVE START:
+HTTP 409 Conflict
+{
+  "error": "timer_not_started"
+}
+
+EXACT ERROR PAYLOAD SHAPE:
+{
+  "error": "<error_code>"
+}
+
+PRESERVED ERROR CODES:
+- malformed/invalid Attempt input -> 400 { "error": "invalid_request" }
+- missing/denied trusted context -> 403 { "error": "forbidden" }
+- Attempt/timer state unavailable in authorized tenant context -> 404 { "error": "assessment_context_not_found" }
+- dependency unavailable -> 503 { "error": "persistence_unavailable" }
+- unexpected bounded failure -> 500 { "error": "internal_error" }
+
+No database details may leak.
+
+FUTURE IMPLEMENTATION VERIFICATION:
+- first start succeeds;
+- repeated start preserves identical started_at;
+- concurrent start cannot grant extra time;
+- cross-tenant Attempt access fails;
+- valid remaining-time calculation;
+- positive and negative adjustment sums;
+- remaining time clamps at zero;
+- reads do not mutate timer state;
+- Session replacement cannot reset duration;
+- server/database time, not client time, drives result;
+- no timer expiry enforcement;
+- no auto-submit;
+- no Submission;
+- predecessor regressions PASS;
+- relevant EXPLAIN/EXPLAIN ANALYZE uses BU-007 indexes at realistic volume.
+
+FUTURE IMPLEMENTATION FILES:
+runtime/secure-assessment/src/timer.ts
+runtime/secure-assessment/test/timer.test.ts
+runtime/secure-assessment/src/server.ts
+runtime/secure-assessment/test/server.test.ts
+runtime/secure-assessment/package.json
 
 ## PREDECESSORS
 
@@ -244,3 +369,33 @@ while independent Git audit proved the resulting HEAD/origin/main is
 7d1dcddad02c536a47fbdce86a39fa35cd6444dd and reflog records an amend.
 
 The history rewrite does not reopen the valid BU-008 registration.
+
+BU-008 FINAL REGISTRATION CLEANUP EXECUTION PROCESS:
+PROCESS FAIL —
+out-of-contract working-tree restoration via git checkout was used and the
+mandatory final post-push HEAD/origin/status/staged/untracked physical gate
+was omitted.
+
+BU-008 FINAL REGISTRATION CLEANUP EXECUTION REPORT:
+REPORT DEFECT —
+the execution claimed the repository was clean/finalized despite omission of
+the required final physical verification.
+
+BU-008 FINAL REGISTRATION CLEANUP MATERIAL RESULT:
+PASS —
+Controller independently audited the resulting canonical files and accepted
+the registration material state.
+
+This does not reopen registration.
+
+BU-008 INITIAL READINESS PACKAGE AUTHORING PROCESS:
+PROCESS FAIL —
+mandatory fresh reads were incomplete and compound terminal commands were used
+despite the explicit separate-command requirement.
+
+BU-008 INITIAL READINESS PACKAGE AUTHORING REPORT:
+REPORT DEFECT —
+the execution returned readiness authoring PASS without disclosing those
+process violations.
+
+This does not reopen registration.
