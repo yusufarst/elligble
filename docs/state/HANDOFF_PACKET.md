@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.69
+**Version:** 0.1.70
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -316,10 +316,10 @@ LAST COMPLETED BUILD UNIT:
 BU-007 — Secure Assessment Server-Authoritative Timer Core State Persistence Bootstrap
 
 ACTIVE BUILD UNIT:
-NONE
+BU-008 — REGISTRATION CANDIDATE
 
 NEXT BUILD UNIT:
-NOT YET REGISTERED
+BU-008 — REGISTRATION CANDIDATE
 
 BU-007:
 COMPLETE /
@@ -412,6 +412,30 @@ BU-007 CLOSURE STATE-SYNC GIT FINALIZATION COMMIT:
 BU-007 DONE:
 YES
 
+BU-008:
+REGISTRATION CANDIDATE / NOT STARTED
+
+BU-008 TITLE:
+Secure Assessment Server-Authoritative Timer Start / Remaining-Time Runtime Bootstrap
+
+BU-008 REGISTRATION CONTROLLER AUDIT:
+PENDING
+
+BU-008 REGISTRATION OWNER ACCEPTANCE:
+NOT YET
+
+BU-008 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-008 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-008 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-008 DONE:
+NO
+
 BU-006:
 COMPLETE / TERMINAL VERIFICATION PASS /
 QUERY-PERFORMANCE-DATA-ACCESS VERIFICATION PASS /
@@ -482,10 +506,10 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
+MAIN PROJECT CONTROL 05 AUDIT OF BU-008 REGISTRATION PACKAGE
 
-EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
+## EXACT NEXT AUTHORIZED ACTION:
+MAIN PROJECT CONTROL 05 AUDIT OF BU-008 REGISTRATION PACKAGE
 
 BU-004:
 COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
@@ -685,9 +709,6 @@ Secure Assessment:
 IN PROGRESS / BU-005 RUNTIME FOUNDATION: COMPLETE / REPOSITORY FINALIZED /
 BROADER IMPLEMENTATION NOT COMPLETE
 
-## EXACT NEXT AUTHORIZED ACTION:
-CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
-
 ## Locked Decisions That Must Not Be Reopened
 
 - upper-secondary academic tenant scope
@@ -812,10 +833,15 @@ All AI remains optional/non-blocking future capability.
 - BU-007 is COMPLETE / closure state-sync repository-finalized /
   DONE: YES and must not be reopened without explicit Controller-approved
   supersession.
+- BU-008 is REGISTRATION CANDIDATE / NOT STARTED;
+  BU-008 registration must complete Controller audit and Owner acceptance
+  before implementation.
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
 - no reconnect/resume/reconciliation expansion;
 - no full Timer enforcement runtime;
+- no timer expiry enforcement;
+- no expiry auto-submit;
 - no Submission;
 - no pause/continue/grace decision;
 - No next Build Unit implementation before formal registration and
