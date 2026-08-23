@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.71
+**Version:** 1.4.72
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.70
+**Supersedes:** CURRENT_STATE v1.4.71
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-23
@@ -391,7 +391,7 @@ Agent Skill installation checkpoint: **NOT YET**
 
 ## Next Safe Action
 
-MAIN PROJECT CONTROL 05 AUDIT OF BU-007 POST-IMPLEMENTATION CLOSURE / STATE-SYNC PACKAGE
+CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
 
 MASTER BLUEPRINT EXIT FINALIZATION: COMPLETE
 
@@ -506,7 +506,8 @@ BACKLOG GIT FINALIZATION: COMPLETE
 - no expiry auto-submit/submission;
 - no pause/continue/grace policy decision;
 - no client timer/reconnect/Zero-Lost-Answer expansion;
-- no BU-008 registration before BU-007 closure finalization;
+- No next Build Unit implementation before formal registration and
+  Controller authorization.
 - PB-06 and PB-07 remain OPEN.
 - broader Secure Assessment implementation remains NOT COMPLETE.
 - Preserve OPEN / PROVISIONAL / FUTURE maturity.

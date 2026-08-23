@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.68
+**Version:** 0.1.69
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -686,7 +686,7 @@ IN PROGRESS / BU-005 RUNTIME FOUNDATION: COMPLETE / REPOSITORY FINALIZED /
 BROADER IMPLEMENTATION NOT COMPLETE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 05 AUDIT OF BU-007 POST-IMPLEMENTATION CLOSURE / STATE-SYNC PACKAGE
+CONTROLLER SELECTION / REGISTRATION OF THE NEXT BUILD UNIT
 
 ## Locked Decisions That Must Not Be Reopened
 
@@ -809,14 +809,17 @@ All AI remains optional/non-blocking future capability.
 - BU-006 is COMPLETE / repository-finalized and must not be reopened without explicit Controller-approved supersession.
 - no BU-006 reopening.
 - BU-007 implementation is EXECUTED / implementation repository-finalized;
-- BU-007 closure / state-sync remains pending and BU-007 remains DONE: NO;
+- BU-007 is COMPLETE / closure state-sync repository-finalized /
+  DONE: YES and must not be reopened without explicit Controller-approved
+  supersession.
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
 - no reconnect/resume/reconciliation expansion;
 - no full Timer enforcement runtime;
 - no Submission;
 - no pause/continue/grace decision;
-- no BU-008 registration before BU-007 closure finalization;
+- No next Build Unit implementation before formal registration and
+  Controller authorization.
 - PB-06 OPEN;
 - PB-07 OPEN;
 - broader Secure Assessment NOT COMPLETE.

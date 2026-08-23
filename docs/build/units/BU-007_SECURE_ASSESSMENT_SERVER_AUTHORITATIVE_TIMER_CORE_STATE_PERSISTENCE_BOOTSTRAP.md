@@ -678,5 +678,21 @@ HEAD == origin/main, and clean repository state.
 
 This process defect does not reopen any previously passed material gate.
 
+BU-007 FINAL POST-CLOSURE SYNC EXECUTION PROCESS:
+PROCESS FAIL —
+compound command execution was used despite separate-command control,
+prohibited manage_task was used,
+mandatory pre-commit/final physical verification was incomplete,
+and the committed subject differed from the authorized exact subject.
+
+BU-007 FINAL POST-CLOSURE SYNC EXECUTION REPORT:
+REPORT DEFECT —
+the execution reported BU-007 completely finalized and ready for next-BU
+selection despite missing final physical Git verification and residual
+canonical contradictions.
+
+Do not reopen implementation, verification, closure acceptance, or the
+previous valid closure commit 1428a875e5e85643ccddff6cab65b1e16eba8e7a.
+
 DONE:
 YES
