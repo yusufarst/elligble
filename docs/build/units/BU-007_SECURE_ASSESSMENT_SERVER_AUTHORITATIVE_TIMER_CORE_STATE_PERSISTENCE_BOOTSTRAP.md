@@ -1,7 +1,7 @@
 # BU-007: Secure Assessment Server-Authoritative Timer Core State Persistence Bootstrap
 
 **Build Unit:** BU-007
-**Status:** REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
+**Status:** REGISTERED / READINESS OWNER-ACCEPTED / IMPLEMENTATION NOT STARTED
 **Phase:** BUILD
 **Registration Controller Audit:** PASS
 **Registration Owner Acceptance:** COMPLETE
@@ -69,20 +69,66 @@ policy-authorized timing adjustment must remain explicit governed state
 DEPENDENCY != CHRONOLOGY
 
 ## READINESS DECISIONS
-PHYSICAL TIMER STORAGE MODEL: READINESS DECISION REQUIRED
-BU-002 SCHEMA SUFFICIENCY: READINESS DECISION REQUIRED
-NEW TABLE VS ATTEMPT COLUMNS: READINESS DECISION REQUIRED
-NEW MIGRATION: READINESS DECISION REQUIRED
-EXACT TIMER FIELDS: READINESS DECISION REQUIRED
-START/END/DURATION REPRESENTATION: READINESS DECISION REQUIRED
-TIMING ADJUSTMENT MODEL: READINESS DECISION REQUIRED
-PAUSE/CONTINUE/GRACE POLICY: NOT DECIDED
-EXACT API: NOT DECIDED
-TIMER-EXPIRY SUBMISSION: OUT OF BU-007
+
+PHYSICAL TIMER STORAGE MODEL:
+DEDICATED TIMER STATE TABLE
+
+BU-002 SCHEMA SUFFICIENCY:
+SUFFICIENT AS DEPENDENCY TARGET — BU-002 Exam Attempts provides the FK target
+(id, tenant_id) via constraint uq_sa_exam_attempts_tenant. BU-002 migration
+0002 is NOT modified.
+
+NEW TABLE VS ATTEMPT COLUMNS:
+NEW TABLE — editing finalized migrations is prohibited; adding timer columns
+to Exam Attempts via ALTER would couple BU-007 scope into BU-002 schema;
+a dedicated timer state table preserves domain separation and supports the
+timing-adjustment ledger model.
+
+NEW MIGRATION:
+YES — migration 0005_bu007_secure_assessment_timer_core_state.sql
+
+EXACT TIMER FIELDS:
+Defined in PHYSICAL PERSISTENCE MODEL section below.
+
+START/END/DURATION REPRESENTATION:
+- configured_duration_seconds: INTEGER NOT NULL — the effective allocated working
+  duration for this Attempt, in whole seconds, persisted as authoritative timer
+  state after the governed upstream assessment/window/latest-start policy has
+  resolved the participant's allowed duration.
+  (Note: Exam Window != Attempt Duration. Latest-start/window policy remains
+  outside this BU-007 physical persistence decision);
+- started_at: TIMESTAMP WITH TIME ZONE — stores the authoritative Attempt timer
+  start timestamp. A future authorized server-side timer operation must set it
+  using server/database-authoritative time. BU-007 persistence alone does not
+  implement timer start runtime; NULL only when Attempt exists but timing has
+  not yet begun;
+- remaining time is computed server-side as:
+  configured_duration_seconds + sum(adjustment_seconds) - elapsed time
+  since started_at; this is NOT stored as a mutable column.
+
+TIMING ADJUSTMENT MODEL:
+EXPLICIT GOVERNED LEDGER — a separate adjustment ledger table
+(secure_assessment_timer_adjustments) records each authorized timing
+adjustment. Adjustments are never silent mutations to the base timer.
+The ledger persists the explicit adjustment amount, reason, timer scope,
+tenant scope, and creation timestamp. Authorization of a future adjustment
+operation remains an inherited server-side authorization/policy responsibility
+and is NOT implemented by BU-007.
+
+PAUSE/CONTINUE/GRACE POLICY:
+NOT DECIDED — remains out of BU-007 scope per registration.
+
+EXACT API:
+NOT DECIDED — BU-007 is persistence-only; no API endpoint is created.
+
+TIMER-EXPIRY SUBMISSION:
+OUT OF BU-007
 
 ## PREDECESSORS
+
 BU-002:
 Exam Attempt / Exam Session persistence foundation.
+Provides FK target (id, tenant_id) via uq_sa_exam_attempts_tenant.
 
 BU-005:
 bounded Secure Assessment runtime foundation.
@@ -122,6 +168,255 @@ Future DONE requires:
 - required closure / state synchronization finalized.
 
 Registration candidate status alone does NOT make BU-007 DONE.
+
+## IMPLEMENTATION READINESS / ACTIVATION
+
+Implementation Readiness / Activation:
+PASS
+
+Readiness Controller Audit:
+PASS
+
+Readiness Owner Acceptance:
+COMPLETE
+
+Readiness Git Finalization:
+NOT COMPLETE
+
+Readiness Repository Finalized:
+NO
+
+Implementation:
+NOT EXECUTED
+
+Done:
+NO
+
+## PHYSICAL PERSISTENCE MODEL
+
+MIGRATION FILE:
+database/migrations/0005_bu007_secure_assessment_timer_core_state.sql
+
+EXISTING MIGRATIONS 0001–0004:
+NOT MODIFIED
+
+TABLE 1: secure_assessment_timer_state
+
+PURPOSE:
+Authoritative server-governed timer core state for one Exam Attempt.
+Exactly one row per Attempt. Timer authority belongs to Attempt, not Session.
+
+COLUMNS:
+
+id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+tenant_id UUID NOT NULL
+exam_attempt_id UUID NOT NULL
+configured_duration_seconds INTEGER NOT NULL
+started_at TIMESTAMP WITH TIME ZONE
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+CONSTRAINTS:
+
+CONSTRAINT fk_sa_timer_attempt
+  FOREIGN KEY (exam_attempt_id, tenant_id)
+  REFERENCES secure_assessment_exam_attempts (id, tenant_id)
+  ON DELETE RESTRICT
+
+CONSTRAINT uq_sa_timer_state_attempt
+  UNIQUE (tenant_id, exam_attempt_id)
+  — enforces AT MOST ONE timer_state row for a tenant-scoped Attempt;
+  — existence/creation of a timer row is a later governed lifecycle/runtime
+  — responsibility and is not implemented by BU-007 persistence alone
+
+CONSTRAINT uq_sa_timer_state_tenant
+  UNIQUE (id, tenant_id)
+  — enables tenant-safe FK targeting from adjustment ledger
+
+CONSTRAINT chk_sa_timer_duration_positive
+  CHECK (configured_duration_seconds > 0)
+
+TABLE 2: secure_assessment_timer_adjustments
+
+PURPOSE:
+Explicit governed timing-adjustment ledger. The table is an adjustment ledger
+intended for append-oriented governed use. BU-007 schema does not by itself
+enforce write-once immutability. Future mutation/runtime behavior must not
+silently rewrite historical adjustments, but that runtime enforcement is out
+of BU-007 scope. Adjustments modify effective remaining time without silently
+mutating the base timer state.
+
+COLUMNS:
+
+id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+tenant_id UUID NOT NULL
+timer_state_id UUID NOT NULL
+adjustment_seconds INTEGER NOT NULL
+reason VARCHAR(500) NOT NULL
+created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+CONSTRAINTS:
+
+CONSTRAINT fk_sa_timer_adj_timer
+  FOREIGN KEY (timer_state_id, tenant_id)
+  REFERENCES secure_assessment_timer_state (id, tenant_id)
+  ON DELETE RESTRICT
+
+CONSTRAINT chk_sa_timer_adj_seconds_nonzero
+  CHECK (adjustment_seconds != 0)
+
+CONSTRAINT chk_sa_timer_adj_reason_nonempty
+  CHECK (LENGTH(TRIM(reason)) > 0)
+
+INDEX:
+
+CREATE INDEX idx_sa_timer_adj_timer_tenant
+  ON secure_assessment_timer_adjustments (tenant_id, timer_state_id)
+
+DESIGN RATIONALE:
+
+1. Timer authority belongs to Exam Attempt — enforced by
+   uq_sa_timer_state_attempt (tenant_id, exam_attempt_id) guaranteeing
+   AT MOST ONE timer_state row for a tenant-scoped Attempt.
+   Existence/creation of a timer row is a later governed lifecycle/runtime
+   responsibility and is not implemented by BU-007 persistence alone.
+
+2. Exam Session does NOT own timer state — no Session FK exists on
+   timer_state; Session loss/replacement cannot silently reset or
+   replace timer duration.
+
+3. Client/device clock is NOT authoritative — started_at stores the
+   authoritative Attempt timer start timestamp. A future authorized server-side
+   timer operation must set it using server/database-authoritative time.
+   BU-007 persistence alone does not implement timer start runtime.
+   Remaining time is computed server-side.
+
+4. Session loss/replacement does not silently reset timer duration —
+   timer state is bound to Attempt, not Session; reconnecting to the
+   same Attempt finds the same unchanged timer state.
+
+5. Timing adjustments are explicit governed state — each adjustment is
+   a separate ledger row with a mandatory reason; no silent
+   mutation of configured_duration_seconds. The ledger persists the explicit
+   adjustment amount, reason, timer scope, tenant scope, and creation timestamp.
+   Authorization of a future adjustment operation remains an inherited
+   server-side authorization/policy responsibility and is NOT implemented
+   by BU-007.
+
+6. Tenant isolation is structurally enforced — composite FK references
+   include tenant_id at every level (Attempt → Timer, Timer → Adjustment).
+
+## TENANT / ATTEMPT INTEGRITY
+
+TENANT ISOLATION:
+All tables include NOT NULL tenant_id.
+All FK references use composite (entity_id, tenant_id) pairs.
+Composite tenant FKs structurally reject cross-tenant relationship
+misassociation between Attempt -> Timer and Timer -> Adjustment.
+Tenant-scoped authorization/query enforcement remains required for
+data access.
+BU-007 does NOT implement or claim PostgreSQL RLS.
+
+ATTEMPT ASSOCIATION:
+Timer state is bound to exactly one Exam Attempt via
+(exam_attempt_id, tenant_id) composite unique + FK.
+The FK targets uq_sa_exam_attempts_tenant from BU-002 migration 0002.
+
+SESSION INDEPENDENCE:
+Timer state has NO foreign key to Exam Session.
+Session lifecycle changes do NOT affect timer state.
+Reconnect resumes the same Attempt and finds the same timer state unchanged.
+
+## EXACT LATER IMPLEMENTATION BOUNDARY
+
+IMPLEMENTATION FILES (NEW):
+
+database/migrations/0005_bu007_secure_assessment_timer_core_state.sql
+
+VERIFICATION FILES (NEW):
+
+database/verification/verify_bu007_secure_assessment_timer_core_state.sql
+
+NO OTHER FILES ARE CREATED OR MODIFIED BY BU-007 IMPLEMENTATION.
+
+Existing migrations 0001–0004 remain unchanged.
+Existing verification scripts remain unchanged.
+Existing runtime/secure-assessment/ source remains unchanged.
+
+BU-007 is a persistence-only unit. No runtime/API/endpoint source files
+are created or modified.
+
+## QUERY / PERFORMANCE / DATA-ACCESS READINESS
+
+BU-007 DATA-ACCESS SCOPE:
+persistence-only migration; no runtime query path introduced by BU-007 itself.
+
+FUTURE RUNTIME QUERY PATTERNS (informational, not implemented now):
+- tenant-scoped Attempt timer lookup: WHERE tenant_id = $1 AND exam_attempt_id = $2
+  supported by uq_sa_timer_state_attempt unique index;
+- adjustment ledger retrieval: WHERE tenant_id = $1 AND timer_state_id = $2
+  supported by idx_sa_timer_adj_timer_tenant;
+- SUM(adjustment_seconds) for effective remaining time computation.
+
+INDEX SUFFICIENCY:
+The defined indexes support tenant+Attempt timer lookup and tenant+timer
+adjustment lookup. Actual query-plan sufficiency is NOT considered proven
+by schema review. Implementation verification MUST execute EXPLAIN ANALYZE
+against a realistic-volume fixture and verify the intended index-backed plans.
+SUM(adjustment_seconds) remains a tenant+timer-bounded aggregation, but no
+production-scale latency guarantee is claimed at readiness.
+
+VERIFICATION PLAN:
+- exact two new table names;
+- exact columns/types/nullability/defaults;
+- PKs;
+- exact UNIQUE constraints and column order;
+- exact composite FK mappings and ON DELETE RESTRICT;
+- cross-tenant relationship-mismatch rejection;
+- at-most-one timer row per Attempt;
+- positive duration;
+- nonzero adjustment;
+- non-empty reason;
+- intended indexes and exact key order;
+- migration-history entry;
+- predecessor migrations remain unchanged;
+- out-of-scope persistence not introduced;
+- realistic-volume EXPLAIN ANALYZE for:
+  tenant+Attempt timer lookup,
+  tenant+timer adjustment retrieval,
+  adjustment aggregation;
+- verification rollback.
+
+Do NOT claim runtime authorization, database RLS, timer-start execution, expiry enforcement, adjustment immutability, or timer API verification.
+
+## READINESS OUT-OF-SCOPE GUARD
+
+BU-007 DOES NOT IMPLEMENT:
+- timer enforcement runtime;
+- timer expiry detection or auto-submit;
+- pause/continue/grace policy decision;
+- timer API endpoint;
+- timer client UI or synchronization;
+- submission procedure;
+- final/idempotent submission;
+- Submission Receipt;
+- answer flush at expiry;
+- reconnect/resume/reconciliation runtime;
+- autosave/local answer buffer/sync queue;
+- frontend/mobile;
+- scoring;
+- proctoring/anti-cheating;
+- Full Authentication;
+- Permission Matrix;
+- PB closure;
+- global technology selection.
+
+BU-007 DOES NOT CLAIM:
+- PB-06 CLOSED;
+- PB-07 CLOSED;
+- full Server-Authoritative Timer complete;
+- full Zero-Lost-Answer complete;
+- broader Secure Assessment complete.
 
 ## HISTORICAL CONTROL / EXECUTION RECORD
 
@@ -228,6 +523,39 @@ HEAD == origin/main, and clean working tree all matched.
 
 The process failure does not reopen or invalidate the separately finalized
 BU-007 registration.
+
+FINAL POST-REGISTRATION CLEANUP PROCESS:
+PROCESS FAIL —
+the required staged-path verification was not executed after staging and
+before the cleanup commit.
+
+FINAL POST-REGISTRATION CLEANUP PHYSICAL RESULT:
+PASS —
+commit fcad62f43ede4bf2858939007d13e750e62c00ce was reported pushed,
+HEAD == origin/main, working tree clean, and Controller independently
+verified the resulting canonical document identities and material state.
+
+This historical process defect does not reopen BU-007 registration.
+
+BU-007 INITIAL IMPLEMENTATION READINESS AUTHORING PROCESS:
+PROCESS FAIL —
+mandatory fresh-read evidence was incomplete at 16/17 because AGENTS.md
+was not freshly evidenced during the execution, and prohibited manage_task
+was used.
+
+BU-007 INITIAL IMPLEMENTATION READINESS AUTHORING PROCESS REPORT:
+REPORT DEFECT —
+the execution reported required reads 17/17 and readiness PASS despite
+the incomplete fresh-read gate and prohibited manage_task usage.
+
+BU-007 INITIAL READINESS MATERIAL AUDIT:
+TARGETED CORRECTION REQUIRED —
+the core physical storage model was retained, but precision defects were
+found in timer cardinality, tenant-access wording, timestamp authority,
+duration semantics, adjustment-governance claims, immutability claims,
+and query/performance claims.
+
+Historical process failures do not reopen BU-007 registration.
 
 Historical process failures remain preserved and do not invalidate the
 separately audited physical Git finalization.
