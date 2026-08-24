@@ -1,12 +1,14 @@
 # BU-009: Secure Assessment Idempotent Submission Core State Persistence Bootstrap
 
 **Build Unit:** BU-009
-**Status:** REGISTRATION CANDIDATE / NOT STARTED
+**Status:** REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
 **Phase:** BUILD
 **Registration Controller Audit:** PASS
 **Registration Owner Acceptance:** COMPLETE
-**Registration Git Finalization:** NOT COMPLETE
-**Registration Repository Finalized:** NO
+**Registration Git Finalization:** COMPLETE
+**Registration Commit:** 0135078e702da050515826486863796084e09c22
+**Registration Repository Finalized:** YES
+**Implementation Readiness / Activation:** NOT YET
 **Implementation:** NOT EXECUTED
 **Done:** NO
 
