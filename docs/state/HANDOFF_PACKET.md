@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.77
+**Version:** 0.1.78
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -316,10 +316,10 @@ LAST COMPLETED BUILD UNIT:
 BU-008
 
 ACTIVE BUILD UNIT:
-NONE
+BU-009 — REGISTRATION CANDIDATE
 
 NEXT BUILD UNIT:
-NOT YET REGISTERED
+BU-009 — REGISTRATION CANDIDATE
 
 BU-007:
 COMPLETE /
@@ -496,6 +496,30 @@ ce1c1fd7e254050bb76a105b8bfc6ef44bf94b03
 BU-008 DONE:
 YES
 
+BU-009:
+REGISTRATION CANDIDATE / NOT STARTED
+
+BU-009 TITLE:
+Secure Assessment Idempotent Submission Core State Persistence Bootstrap
+
+BU-009 REGISTRATION CONTROLLER AUDIT:
+PASS
+
+BU-009 REGISTRATION OWNER ACCEPTANCE:
+COMPLETE
+
+BU-009 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-009 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-009 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-009 DONE:
+NO
+
 BU-006:
 COMPLETE / TERMINAL VERIFICATION PASS /
 QUERY-PERFORMANCE-DATA-ACCESS VERIFICATION PASS /
@@ -566,13 +590,13 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-Controller selection / registration of the next Build Unit.
+BU-009 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 05 final audit.
 
 ## EXACT NEXT AUTHORIZED ACTION:
-Controller selection / registration of the next Build Unit.
+BU-009 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 05 final audit.
 
 ## Forbidden Premature Work
-- The next Build Unit is NOT YET REGISTERED and must not be invented or implemented prematurely.
+- BU-009 Registration is pending audit; implementation must not start yet.
 - No timer expiry enforcement.
 - No expiry auto-submit.
 - No Submission.

@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.80
+**Version:** 1.4.81
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.79
+**Supersedes:** CURRENT_STATE v1.4.80
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-24
@@ -19,11 +19,11 @@ DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 LAST COMPLETED UNIT   → BU-008 — Secure Assessment Server-Authoritative Timer Start / Remaining-Time Runtime Bootstrap
 LAST COMPLETED BUILD UNIT → BU-008 — Secure Assessment Server-Authoritative Timer Start / Remaining-Time Runtime Bootstrap
-ACTIVE UNIT           → NONE
-NEXT SAFE ACTION      → Controller selection / registration of the next Build Unit.
-NEXT UNIT             → NOT YET REGISTERED
-NEXT BUILD UNIT       → NOT YET REGISTERED
-NEXT STAGE            → Controller selection / registration of the next Build Unit.
+ACTIVE UNIT           → BU-009 — REGISTRATION CANDIDATE
+NEXT SAFE ACTION      → BU-009 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 05 final audit.
+NEXT UNIT             → BU-009 — REGISTRATION CANDIDATE
+NEXT BUILD UNIT       → BU-009 — REGISTRATION CANDIDATE
+NEXT STAGE            → BU-009 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 05 final audit.
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
@@ -777,6 +777,30 @@ ce1c1fd7e254050bb76a105b8bfc6ef44bf94b03
 
 BU-008 DONE:
 YES
+
+BU-009:
+REGISTRATION CANDIDATE / NOT STARTED
+
+BU-009 TITLE:
+Secure Assessment Idempotent Submission Core State Persistence Bootstrap
+
+BU-009 REGISTRATION CONTROLLER AUDIT:
+PASS
+
+BU-009 REGISTRATION OWNER ACCEPTANCE:
+COMPLETE
+
+BU-009 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-009 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-009 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-009 DONE:
+NO
 ```
 
 ## Current Canonical Documents
@@ -794,7 +818,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-Controller selection / registration of the next Build Unit.
+BU-009 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 05 final audit.
 
 After each phase, update this file with the new active unit and prohibited premature work.
 
