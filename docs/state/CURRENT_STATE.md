@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.4.88
+**Version:** 1.4.89
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.4.87
+**Supersedes:** CURRENT_STATE v1.4.88
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-24
@@ -19,11 +19,11 @@ DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 LAST COMPLETED UNIT   → BU-009 — Secure Assessment Idempotent Submission Core State Persistence Bootstrap
 LAST COMPLETED BUILD UNIT → BU-009 — Secure Assessment Idempotent Submission Core State Persistence Bootstrap
-ACTIVE UNIT           → NONE
-NEXT SAFE ACTION      → Controller selection / registration of the next Build Unit.
-NEXT UNIT             → NOT YET REGISTERED
-NEXT BUILD UNIT       → NOT YET REGISTERED
-NEXT STAGE            → Controller selection / registration of the next Build Unit.
+ACTIVE UNIT           → BU-010 — REGISTRATION CANDIDATE
+NEXT SAFE ACTION      → BU-010 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 06 final audit.
+NEXT UNIT             → BU-010 — REGISTRATION CANDIDATE
+NEXT BUILD UNIT       → BU-010 — REGISTRATION CANDIDATE
+NEXT STAGE            → BU-010 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 06 final audit.
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
@@ -452,7 +452,7 @@ BUILD PHASE INDEX: docs/build/BUILD_PHASE_INDEX.md
 BUILD BOOTSTRAP GIT FINALIZATION: COMPLETE
 BUILD BOOTSTRAP GIT FINALIZATION COMMIT: fea9750c05d1f8bbee3ba7c987b494aa52293379
 BUILD BOOTSTRAP REPOSITORY FINALIZED: YES
-ACTIVE BUILD UNIT: BU-008
+ACTIVE BUILD UNIT: BU-010 — REGISTRATION CANDIDATE
 BU-001: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 BU-001 IMPLEMENTATION: EXECUTED
 BU-001 OWNER ACCEPTANCE: COMPLETE
@@ -882,6 +882,30 @@ BU-009 CLOSURE STATE-SYNC GIT FINALIZATION COMMIT:
 
 BU-009 DONE:
 YES
+
+BU-010:
+REGISTRATION CANDIDATE / NOT STARTED
+
+BU-010 REGISTRATION CONTROLLER AUDIT:
+PASS
+
+BU-010 REGISTRATION OWNER ACCEPTANCE:
+COMPLETE
+
+BU-010 REGISTRATION GIT FINALIZATION:
+NOT COMPLETE
+
+BU-010 REGISTRATION REPOSITORY FINALIZED:
+NO
+
+BU-010 IMPLEMENTATION READINESS:
+NOT YET
+
+BU-010 IMPLEMENTATION:
+NOT EXECUTED
+
+BU-010 DONE:
+NO
 ```
 
 ## Current Canonical Documents
@@ -899,7 +923,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-Controller selection / registration of the next Build Unit.
+BU-010 REGISTRATION GIT FINALIZATION, pending MAIN PROJECT CONTROL 06 final audit.
 
 After each phase, update this file with the new active unit and prohibited premature work.
 
