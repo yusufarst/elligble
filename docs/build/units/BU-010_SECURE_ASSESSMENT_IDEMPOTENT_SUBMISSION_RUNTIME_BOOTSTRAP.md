@@ -1,13 +1,14 @@
 # BU-010: Secure Assessment Idempotent Submission Runtime Bootstrap
 
 **Build Unit:** BU-010
-**Status:** REGISTRATION CANDIDATE / NOT STARTED
+**Status:** REGISTERED / REGISTRATION REPOSITORY FINALIZED / NOT STARTED
 **Phase:** BUILD
 **Registration Controller Audit:** PASS
 **Registration Owner Acceptance:** COMPLETE
-**Registration Git Finalization:** NOT COMPLETE
-**Registration Repository Finalized:** NO
-**Implementation Readiness:** NOT YET
+**Registration Git Finalization:** COMPLETE
+**Registration Commit:** f57d1af5fdf48a568f1cb77ae1ad162a7233e5d2
+**Registration Repository Finalized:** YES
+**Implementation Readiness / Activation:** NOT YET
 **Implementation:** NOT EXECUTED
 **Done:** NO
 
@@ -15,7 +16,7 @@
 
 Establish the smallest bounded runtime behavior needed to consume the authoritative submission persistence foundation created by BU-009 while preserving canonical Idempotent Submission invariants.
 
-This specification establishes only the registration candidate. This execution does NOT authorize implementation.
+This specification records the registered Build Unit boundary. Registration does NOT authorize implementation.
 
 ## CANONICAL RATIONALE
 
