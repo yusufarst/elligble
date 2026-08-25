@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.82
+**Version:** 0.1.83
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -596,17 +596,19 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 06 AUDIT OF BU-009 READINESS FINALIZATION CORRECTION / STATE-SYNC PACKAGE
+MAIN PROJECT CONTROL 06 AUDIT OF BU-009 POST-READINESS STATE-SYNC PACKAGE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 06 AUDIT OF BU-009 READINESS FINALIZATION CORRECTION / STATE-SYNC PACKAGE
+MAIN PROJECT CONTROL 06 AUDIT OF BU-009 POST-READINESS STATE-SYNC PACKAGE
 
 ## Forbidden Premature Work
-- BU-009 is IMPLEMENTATION READINESS PASS / READINESS FINALIZATION PENDING.
-- BU-009 implementation remains prohibited until the current BU-009 readiness
-  finalization / correction state-sync lifecycle is completed, including
-  required Controller/Owner gate completion, controlled Git finalization, and
-  repository finalization.
+- BU-009 is IMPLEMENTATION READINESS / REPOSITORY FINALIZED / IMPLEMENTATION NOT STARTED.
+- BU-009 implementation remains prohibited until the post-readiness state-sync
+  lifecycle is completed, including:
+  - Controller audit;
+  - Owner acceptance;
+  - controlled Git finalization;
+  - repository verification/finalization.
 - No timer expiry enforcement.
 - No expiry auto-submit.
 - No Submission.
