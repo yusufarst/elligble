@@ -1,7 +1,7 @@
 # BU-009: Secure Assessment Idempotent Submission Core State Persistence Bootstrap
 
 **Build Unit:** BU-009
-**Status:** IMPLEMENTATION REPOSITORY FINALIZED / CLOSURE STATE-SYNC PENDING
+**Status:** COMPLETE / TERMINAL VERIFICATION PASS / QUERY-PERFORMANCE-DATA-ACCESS VERIFICATION PASS / IMPLEMENTATION REPOSITORY FINALIZED / CLOSURE STATE-SYNC REPOSITORY FINALIZED
 **Phase:** BUILD
 **Registration Controller Audit:** PASS
 **Registration Owner Acceptance:** COMPLETE
@@ -29,12 +29,13 @@
 **Implementation Git Finalization Commit Subject:** feat(database): implement BU-009 idempotent submission core state persistence
 **Implementation Migration SHA256:** 7489BFC3B46A839D8405BD526ACCBF46FAC7ACEC093848025B757F90F6BCAD8E
 **Implementation Verification SHA256:** 3999AB80AA784C6873FBD0F6610C8044888DF5FD0080A1B894E85C3D2542C9AD
-**Closure / State-Sync Package:** PREPARED / PENDING CONTROLLER AUDIT
+**Closure / State-Sync Package:** COMPLETE
 **Closure Package Controller Audit:** PASS
 **Closure Package Owner Acceptance:** COMPLETE
-**Closure State-Sync Git Finalization:** NOT COMPLETE
-**Closure State-Sync Repository Finalized:** NO
-**Done:** NO
+**Closure State-Sync Git Finalization:** COMPLETE
+**Closure State-Sync Repository Finalized:** YES
+**Closure State-Sync Git Finalization Commit:** 1768f68129a0818663d29f6aead5d4b6da342502
+**Done:** YES
 
 ## PURPOSE
 
@@ -219,3 +220,21 @@ Future DONE requires:
 - required closure / state synchronization finalized.
 
 Registration candidate status alone does NOT make BU-009 DONE.
+
+## PROCESS DEFECT HISTORY
+
+- **1. INITIAL IMPLEMENTATION AUTHORING PROCESS DEFECT:** Mandatory fresh-read evidence was incomplete. This did not reopen separately verified implementation material.
+- **2. INITIAL TERMINAL / CLEANUP PROCESS DEFECTS:** Prohibited manage_task/background/process methods occurred during earlier verification/cleanup executions.
+- **3. CLEANUP / RECONSTRUCTION REPORT DEFECT:** Earlier cleanup evidence included report/process inconsistencies, including manage_task reporting mismatch. Physical cleanup/material verification remained separately accepted.
+- **4. RUN-104:** Material terminal/regression/query-performance result PASS, foreground/process compliance FAIL.
+- **5. V16:** Initial terminal V16 failure and later exact restrict_violation correction.
+- **6. INITIAL IMPLEMENTATION GIT FINALIZATION:** Correctly stopped before commit because of trailing whitespace.
+- **7. WHITESPACE CORRECTION:** Whitespace-only correction changed no SQL semantics and did not require database reverification.
+- **8. CLOSURE CANDIDATE HANDOFF CORRECTION:** Earlier closure candidate contained stale HANDOFF current-state claims; targeted correction removed them before Closure Controller Audit PASS.
+- **9. CLOSURE PACKAGE FINALIZATION PROCESS DEFECT:** Physical commit/push PASS, but report creation used compound PowerShell despite separate-command requirements.
+- **10. FINAL POST-CLOSURE AUTHORING PROCESS DEFECT:** Mandatory fresh governance/context reads were not fully demonstrated and authoring report creation used compound PowerShell. This does not reopen previously passed material gates.
+- **11. CORRECTED RE-AUDIT PROCESS DEFECT:** The corrected re-audit material evidence was usable, but its external report was again created through a compound PowerShell block despite the separate-independent-command execution requirement. This process defect does not reopen any previously passed material gate.
+
+**PRESERVED ACCEPTED PHYSICAL IDENTITIES:**
+- **IMPLEMENTATION COMMIT:** `1d59f5f07e706c846d3b11be236cf09fafd6e9f7`
+- **CLOSURE PACKAGE COMMIT:** `1768f68129a0818663d29f6aead5d4b6da342502`
