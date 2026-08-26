@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 0.1.97
+**Version:** 0.1.98
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
