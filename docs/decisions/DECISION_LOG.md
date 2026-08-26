@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.1
+**Version:** 1.0.2
 **Canonical:** YES  
 **Used By:** Governance, Discovery, Architecture  
 **Last Reviewed:** 2026-08-15
@@ -43,6 +43,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-031 | Discovery 03 | Academic Core finalized v1.0.0 | LOCKED | D03.1–D03.9 |
 | DEC-032 | Discovery 04 | Secure Assessment finalized v1.0.1 | LOCKED | D04.1–D04.10 |
 | DEC-033 | Governance | Context & Governance Continuity Amendment | LOCKED | Owner |
+| DEC-034 | Build Fast-Track | Build Unit Fast-Track Control v1 applies from BU-011+, reducing administrative lifecycle loops while preserving one-BU, verification, scope, repository, and safety gates | LOCKED | Owner / 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -147,3 +148,20 @@ This amendment does NOT:
 - modify product scope;
 - authorize Architecture;
 - authorize Build.
+
+### DEC-034 — Build Unit Fast-Track Control v1 (2026-08-26)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifact:** `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md`
+
+Owner explicitly approved Build Unit Fast-Track Control v1:
+
+- Applies from BU-011 onward.
+- Does NOT supersede one-BU-per-execution rule.
+- Combines administrative gates (registration acceptance, readiness acceptance, implementation acceptance, closure package acceptance) into a single controlled execution rather than skipping material gates.
+- Owner Acceptance becomes exception-based: required only when OWNER DECISION REQUIRED triggers apply.
+- Repository-first concise evidence is the default return format.
+- External report/raw patch is NOT default; required only when Controller explicitly requests them.
+- Targeted forward correction is preferred over full lifecycle restart.
+- BU-011 must not start until the Fast-Track activation commit is physically verified by Controller.

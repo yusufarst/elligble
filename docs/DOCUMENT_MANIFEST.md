@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.85
+**Version:** 1.0.86
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 
@@ -37,6 +37,7 @@ NEVER_DEFAULT
 | `docs/00-governance/00.05_BUILD_EXECUTION_RULES.md` | Build execution safety | Canonical | PHASE: Build |
 | `docs/00-governance/00.06_PROACTIVE_GAP_GOVERNANCE.md` | Proactive gap review | Canonical | PHASE/Review |
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
+| `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (347C201E50E78CB095BF01F469F05E07963841AF77DE06BA25A20FAE16F4775B) | Canonical / LOCKED v1.0.0 | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
 | `docs/00-recovery/00.02_TENANT_IDENTITY_AND_ACCESS.md` | Identity/Tenant Recovery | Frozen | DOMAIN |
@@ -51,7 +52,7 @@ NEVER_DEFAULT
 | `docs/00-recovery/00.11_LEGACY_CBT_RECOVERY.md` | Legacy classification | Frozen | ON_DEMAND |
 | `docs/00-recovery/00.12_OPEN_PROVISIONAL_FUTURE_REGISTER.md` | Unresolved status register | Frozen/Canonical handoff | PHASE/DOMAIN |
 | `docs/00-recovery/archive/ELLIGBLE_RECOVERY_FULL_ARCHIVE.md` | Complete Recovery history | Frozen historical | NEVER_DEFAULT |
-| `docs/decisions/DECISION_LOG.md` | Concise decision register | Canonical/Dynamic | PHASE |
+| `docs/decisions/DECISION_LOG.md` | Concise decision register. Version: 1.0.2. (7B8F61A36B4D05011DEECEF7D42D3685CDAA2312037DFA7C2B67A748C265CE94) | Canonical/Dynamic | PHASE |
 | `docs/01-discovery/01.01_PRODUCT_VISION_AND_BOUNDARIES.md` | Discovery 01 — Product Vision & Boundaries | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md` | Discovery 02 — Tenant / Organization / Identity / Access Foundation | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/03.01_ACADEMIC_CORE.md` | Discovery 03 — Academic Core | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
@@ -68,7 +69,7 @@ NEVER_DEFAULT
 | `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE / CONTROL BASELINE. Version: 0.1.54. (1892B0A54F0F9B833889BC42A151CF21482374988DE944281367A84A0885CB91) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE / CONTROL BASELINE. Version: 0.1.55. (1942F626694B4ED7953CE58D58887A5BB0FDFEB9286C2FB2BA3CDB53DE94D632) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
 | `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (2952AD2EDC5AA5EA8CA559AD71A441D5FC003357C849548B4CBCB6C6BC3BD5B9) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-002_SECURE_ASSESSMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-002 Specification - Secure Assessment Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (C2D2A111ACE7B0E615AFF69992E980DD61C9F503CB6ABBA2564DFA40996CAB46) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-003_SECURE_ASSESSMENT_QUESTION_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-003 Specification - Secure Assessment Question Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (19DE33263442893B9DDFDDD9F0244467FFC5F66E714F46E79E58597978E1EE10) | BUILD UNIT SPEC | PHASE: Build |
