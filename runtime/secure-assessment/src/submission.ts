@@ -236,7 +236,7 @@ export async function handleSubmissionGet(req: http.IncomingMessage, res: http.S
             res.end(JSON.stringify({ error: 'persistence_unavailable' }));
             return;
         }
-        
+
         if (attemptRes.rows.length === 0) {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'assessment_context_not_found' }));

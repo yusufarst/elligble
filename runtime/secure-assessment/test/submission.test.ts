@@ -9,12 +9,12 @@ class MockReq {
     headers: any = {};
     dataCb: (chunk: string) => void = () => {};
     endCb: () => void = () => {};
-    
+
     on(event: string, cb: any) {
         if (event === 'data') this.dataCb = cb;
         if (event === 'end') this.endCb = cb;
     }
-    
+
     send(body: any) {
         if (body) {
             this.dataCb(JSON.stringify(body));
@@ -23,7 +23,7 @@ class MockReq {
         }
         this.endCb();
     }
-    
+
     sendRaw(body: string) {
         this.dataCb(body);
         this.endCb();
@@ -36,12 +36,12 @@ class MockRes {
     body = '';
     onEnd: () => void = () => {};
     endPromise = new Promise<void>(resolve => { this.onEnd = resolve; });
-    
+
     writeHead(status: number, headers: any) {
         this.statusCode = status;
         this.headers = headers;
     }
-    
+
     end(chunk: string) {
         this.body = chunk;
         this.onEnd();
@@ -49,21 +49,21 @@ class MockRes {
 }
 
 test('submission tests', async (t) => {
-    
+
     const validAttemptId = '11111111-2222-4333-8444-555555555555';
     const otherAttemptId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
     const tenantId = 'tenant-1';
-    
+
     let mockPoolConnectError: Error | null = null;
     let queries: any[] = [];
-    
+
     // In-memory state for mocks
     let attempts: any[] = [
         { id: validAttemptId, tenant_id: tenantId },
         { id: otherAttemptId, tenant_id: 'tenant-2' }
     ];
     let submissions: any[] = [];
-    
+
     // Simulating specific error states
     let simulateConflict = false;
     let simulateImpossibleConflict = false;
@@ -74,21 +74,21 @@ test('submission tests', async (t) => {
         query: async (queryText: string, params: any[]) => {
             queries.push({ queryText, params });
             if (simulateQueryError) throw new Error('Simulated query error');
-            
+
             if (queryText.startsWith('BEGIN')) return { rows: [] };
             if (queryText.startsWith('COMMIT')) return { rows: [] };
             if (queryText.startsWith('ROLLBACK')) {
                 if (simulateRollbackError) throw new Error('Simulated rollback error');
                 return { rows: [] };
             }
-            
+
             if (queryText.includes('SELECT id FROM secure_assessment_exam_attempts')) {
                 const id = params[0];
                 const tid = params[1];
                 const row = attempts.find(a => a.id === id && a.tenant_id === tid);
                 return { rows: row ? [row] : [] };
             }
-            
+
             if (queryText.includes('INSERT INTO secure_assessment_exam_submissions')) {
                 if (simulateConflict || simulateImpossibleConflict) {
                     return { rows: [] }; // Simulate ON CONFLICT DO NOTHING trigger without returning row
@@ -103,7 +103,7 @@ test('submission tests', async (t) => {
                 submissions.push(newSub);
                 return { rows: [newSub] };
             }
-            
+
             if (queryText.includes('SELECT id, submitted_at FROM secure_assessment_exam_submissions')) {
                 const tid = params[0];
                 const attemptId = params[1];
@@ -117,7 +117,7 @@ test('submission tests', async (t) => {
                 const row = submissions.find(s => s.tenant_id === tid && s.exam_attempt_id === attemptId);
                 return { rows: row ? [row] : [] };
             }
-            
+
             return { rows: [] };
         },
         release: () => {}
@@ -137,7 +137,7 @@ test('submission tests', async (t) => {
             return { tenantId, authorizedAttemptId: validAttemptId };
         }
     };
-    
+
     const reset = () => {
         queries = [];
         mockPoolConnectError = null;
@@ -155,13 +155,13 @@ test('submission tests', async (t) => {
         const promise = handleSubmit(req as any, res as any, deps);
         req.send({ attemptId: validAttemptId });
         await res.endPromise;
-        
+
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
         assert.equal(data.status, 'submitted');
         assert.equal(data.submissionId, 'sub-uuid');
         assert.equal(data.submittedAt, '2026-08-26T12:00:00.000Z');
-        
+
         // tenant from context used (req 29)
         const insertQuery = queries.find(q => q.queryText.includes('INSERT'));
         assert.equal(insertQuery.params[0], tenantId);
@@ -175,7 +175,7 @@ test('submission tests', async (t) => {
         const promise = handleSubmit(req as any, res as any, deps);
         req.send({ attemptId: validAttemptId });
         await res.endPromise;
-        
+
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
         assert.equal(data.submissionId, 'existing-sub');
@@ -191,17 +191,17 @@ test('submission tests', async (t) => {
         const promise = handleSubmit(req as any, res as any, deps);
         req.send({ attemptId: validAttemptId });
         await res.endPromise;
-        
+
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
         assert.equal(data.submissionId, 'existing-sub-id');
         assert.equal(data.submittedAt, '2026-01-01T00:00:00.000Z');
     });
-    
+
     await t.test('9. different authorized Attempts can be logically independent', async () => {
         reset();
         submissions.push({ id: 'other-sub', tenant_id: 'tenant-2', exam_attempt_id: otherAttemptId, submitted_at: new Date('2026-03-03T03:03:03Z') });
-        
+
         // This requires auth context to match otherAttemptId
         const deps2: SubmissionDependencies = {
             ...deps,
@@ -212,7 +212,7 @@ test('submission tests', async (t) => {
         const promise = handleSubmit(req as any, res as any, deps2);
         req.send({ attemptId: otherAttemptId });
         await res.endPromise;
-        
+
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
         assert.equal(data.submissionId, 'other-sub');
@@ -387,7 +387,7 @@ test('submission tests', async (t) => {
         await res.endPromise;
         assert.equal(res.statusCode, 405);
     });
-    
+
     // GET Tests
 
     const getReq = (attemptIdParam?: string, noContext = false) => {
@@ -488,7 +488,7 @@ test('submission tests', async (t) => {
         await handleSubmissionGet(req as any, res as any, deps);
         assert.equal(res.statusCode, 405);
     });
-    
+
     await t.test('27b. GET query/persistence failure -> 503', async () => {
         reset();
         simulateQueryError = true;
@@ -522,7 +522,7 @@ test('submission tests', async (t) => {
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
         assert.equal(data.submittedAt, '2026-08-26T12:00:00.000Z'); // The one generated by mock DB
-        
+
         // Also check INSERT params do NOT contain the client value
         const insertQuery = queries.find(q => q.queryText.includes('INSERT INTO secure_assessment_exam_submissions'));
         assert.ok(insertQuery);
@@ -537,7 +537,7 @@ test('submission tests', async (t) => {
         req.send({ attemptId: validAttemptId, tenantId: 'tenant-malicious', tenant_id: 'tenant-malicious' });
         await res.endPromise;
         assert.equal(res.statusCode, 200);
-        
+
         const insertQuery = queries.find(q => q.queryText.includes('INSERT INTO secure_assessment_exam_submissions'));
         assert.equal(insertQuery.params[0], tenantId); // context.tenantId used
     });
