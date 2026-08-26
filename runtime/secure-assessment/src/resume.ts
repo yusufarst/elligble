@@ -58,58 +58,75 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        await client.query('BEGIN READ ONLY');
+        let attemptRes, answersRes, timerRes, submissionRes;
+        try {
+            await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
-        const attemptRes = await client.query(
-            'SELECT id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2',
-            [attemptId, context.tenantId]
-        );
+            attemptRes = await client.query(
+                'SELECT id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2',
+                [attemptId, context.tenantId]
+            );
 
-        if (attemptRes.rows.length === 0) {
-            await client.query('ROLLBACK');
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+            if (attemptRes.rows.length === 0) {
+                await client.query('ROLLBACK');
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                return;
+            }
+
+            answersRes = await client.query(`
+                SELECT 
+                    exam_question_snapshot_id as "snapshotId", 
+                    answer_payload as "answerPayload", 
+                    client_write_identity as "clientWriteIdentity", 
+                    write_version as "writeVersion", 
+                    updated_at as "updatedAt"
+                FROM secure_assessment_exam_answers
+                WHERE tenant_id = $1 AND exam_attempt_id = $2
+                ORDER BY updated_at ASC, exam_question_snapshot_id ASC
+            `, [context.tenantId, attemptId]);
+
+            timerRes = await client.query(`
+                SELECT
+                    t.id,
+                    t.started_at,
+                    t.configured_duration_seconds,
+                    COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
+                    FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                FROM secure_assessment_timer_state t
+                WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
+            `, [context.tenantId, attemptId]);
+
+            if (timerRes.rows.length === 0) {
+                await client.query('ROLLBACK');
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                return;
+            }
+
+            submissionRes = await client.query(
+                'SELECT id, submitted_at FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
+                [context.tenantId, attemptId]
+            );
+
+            await client.query('COMMIT');
+        } catch (dbErr) {
+            try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'persistence_unavailable' }));
             return;
         }
 
-        const answersRes = await client.query(`
-            SELECT 
-                exam_question_snapshot_id as "snapshotId", 
-                answer_payload as "answerPayload", 
-                client_write_identity as "clientWriteIdentity", 
-                write_version as "writeVersion", 
-                updated_at as "updatedAt"
-            FROM secure_assessment_exam_answers
-            WHERE tenant_id = $1 AND exam_attempt_id = $2
-            ORDER BY updated_at ASC, exam_question_snapshot_id ASC
-        `, [context.tenantId, attemptId]);
+        try {
+            const answers = answersRes.rows.map(row => ({
+                snapshotId: row.snapshotId,
+                answerPayload: row.answerPayload,
+                clientWriteIdentity: row.clientWriteIdentity,
+                writeVersion: parseInt(row.writeVersion, 10),
+                updatedAt: row.updatedAt.toISOString()
+            }));
 
-        const answers = answersRes.rows.map(row => ({
-            snapshotId: row.snapshotId,
-            answerPayload: row.answerPayload,
-            clientWriteIdentity: row.clientWriteIdentity,
-            writeVersion: parseInt(row.writeVersion, 10),
-            updatedAt: row.updatedAt.toISOString()
-        }));
-
-        let timerResponse: any = null;
-        const timerRes = await client.query(`
-            SELECT
-                t.id,
-                t.started_at,
-                t.configured_duration_seconds,
-                COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
-            FROM secure_assessment_timer_state t
-            WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
-        `, [context.tenantId, attemptId]);
-
-        if (timerRes.rows.length === 0) {
-            await client.query('ROLLBACK');
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
-            return;
-        } else {
+            let timerResponse: any = null;
             const timer = timerRes.rows[0];
             if (!timer.started_at) {
                 timerResponse = { status: 'not_started' };
@@ -129,38 +146,30 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                     effectiveRemainingSeconds
                 };
             }
+
+            let submissionResponse: any = null;
+            if (submissionRes.rows.length === 0) {
+                submissionResponse = { status: 'not_submitted' };
+            } else {
+                submissionResponse = {
+                    status: 'submitted',
+                    submissionId: submissionRes.rows[0].id,
+                    submittedAt: submissionRes.rows[0].submitted_at.toISOString()
+                };
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                attemptId,
+                answers,
+                timer: timerResponse,
+                submission: submissionResponse
+            }));
+        } catch (appErr) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'internal_error' }));
         }
 
-        let submissionResponse: any = null;
-        const submissionRes = await client.query(
-            'SELECT id, submitted_at FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
-            [context.tenantId, attemptId]
-        );
-
-        if (submissionRes.rows.length === 0) {
-            submissionResponse = { status: 'not_submitted' };
-        } else {
-            submissionResponse = {
-                status: 'submitted',
-                submissionId: submissionRes.rows[0].id,
-                submittedAt: submissionRes.rows[0].submitted_at.toISOString()
-            };
-        }
-
-        await client.query('COMMIT');
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            attemptId,
-            answers,
-            timer: timerResponse,
-            submission: submissionResponse
-        }));
-
-    } catch (err) {
-        try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
-        res.writeHead(503, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'persistence_unavailable' }));
     } finally {
         client.release();
     }

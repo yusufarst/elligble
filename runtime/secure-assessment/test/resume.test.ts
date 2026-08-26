@@ -265,4 +265,92 @@ test('resume tests', async (t) => {
         await handleResumeGet(req as any, res as any, deps);
         assert.equal(res.statusCode, 405);
     });
+    await t.test('12. Transaction requests REPEATABLE READ + READ ONLY and no writes', async () => {
+        reset();
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+        
+        const queries: string[] = [];
+        const originalQuery = deps.pool.connect;
+        deps.pool.connect = async () => ({
+            query: async (queryText: string, params: any[]) => {
+                queries.push(queryText);
+                return mockClient.query(queryText, params);
+            },
+            release: () => {}
+        } as any);
+
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+        
+        deps.pool.connect = originalQuery;
+        
+        assert.equal(res.statusCode, 200);
+        assert.ok(queries[0].includes('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'));
+        
+        const writes = queries.filter(q => q.includes('INSERT') || q.includes('UPDATE') || q.includes('DELETE'));
+        assert.equal(writes.length, 0);
+        
+        const answerQuery = queries.find(q => q.includes('FROM secure_assessment_exam_answers'));
+        assert.ok(answerQuery?.includes('ORDER BY updated_at ASC, exam_question_snapshot_id ASC'));
+    });
+
+    await t.test('13. Multiple answers map correctly and null identity preserved', async () => {
+        reset();
+        answers.push({
+            tenant_id: tenantId,
+            exam_attempt_id: validAttemptId,
+            exam_question_snapshot_id: '11111111-2222-3333-4444-555555555555',
+            answer_payload: { choice: 'A' },
+            client_write_identity: null,
+            write_version: 1,
+            updated_at: new Date('2026-08-26T12:00:00Z')
+        });
+        answers.push({
+            tenant_id: tenantId,
+            exam_attempt_id: validAttemptId,
+            exam_question_snapshot_id: '22222222-2222-3333-4444-555555555555',
+            answer_payload: { choice: 'B' },
+            client_write_identity: 'identity-2',
+            write_version: 2,
+            updated_at: new Date('2026-08-26T12:01:00Z')
+        });
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.equal(data.answers.length, 2);
+        
+        assert.equal(data.answers[0].clientWriteIdentity, null);
+        assert.deepEqual(data.answers[0].answerPayload, { choice: 'A' });
+        
+        assert.equal(data.answers[1].clientWriteIdentity, 'identity-2');
+        assert.deepEqual(data.answers[1].answerPayload, { choice: 'B' });
+    });
+
+    await t.test('14. Unexpected non-persistence failure -> 500', async () => {
+        reset();
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+        
+        // Mocking an error during the non-persistence processing block
+        const originalStringify = JSON.stringify;
+        JSON.stringify = (val: any) => {
+            if (val && typeof val === 'object' && val.attemptId) {
+                throw new Error('Simulated application serialization error');
+            }
+            return originalStringify(val);
+        };
+        
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+        
+        JSON.stringify = originalStringify;
+        
+        assert.equal(res.statusCode, 500);
+    });
 });
