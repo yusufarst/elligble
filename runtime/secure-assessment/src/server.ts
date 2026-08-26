@@ -3,6 +3,7 @@ import * as pg from 'pg';
 import { handleSaveAnswer, type AuthorizedAssessmentContext } from './answer.ts';
 import { handleTimerStart, handleTimerGet } from './timer.ts';
 import { handleSubmit, handleSubmissionGet } from './submission.ts';
+import { handleResumeGet } from './resume.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
@@ -63,6 +64,14 @@ export function createServer(deps: ServerDependencies): http.Server {
             const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
             if (parsedUrl.pathname === '/api/v1/assessment/timer') {
                 handleTimerGet(req, res, deps);
+                return;
+            }
+        }
+
+        if (req.url && req.url.startsWith('/api/v1/assessment/resume')) {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            if (parsedUrl.pathname === '/api/v1/assessment/resume') {
+                handleResumeGet(req, res, deps);
                 return;
             }
         }

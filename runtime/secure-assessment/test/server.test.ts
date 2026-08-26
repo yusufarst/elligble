@@ -81,6 +81,11 @@ test('server tests', async (t) => {
         assert.equal(res.status, 403);
     });
 
+    await t.test('GET /api/v1/assessment/resume?attemptId=uuid -> reaches bounded Resume handler (403 missing context)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/resume?attemptId=11111111-2222-4333-8444-555555555555`);
+        assert.equal(res.status, 403);
+    });
+
     await t.test('unsupported method -> bounded not-found behavior', async () => {
         const res = await fetch(`${baseUrl}/healthz`, { method: 'POST' });
         assert.equal(res.status, 404);
