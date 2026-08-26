@@ -1,5 +1,5 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.55
+**Version:** 0.1.56
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -284,28 +284,28 @@
 
 ### BU-011
 - **TITLE:** Secure Assessment Reconnect / Resume Authoritative State Readback Runtime Bootstrap
-- **STATUS:** COMPLETE / TERMINAL VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FAST-TRACK CLOSURE FORWARD SYNC
+- **STATUS:** PENDING CONTROLLER PHYSICAL AUDIT
 - **IMPLEMENTATION:** EXECUTED
 - **TYPECHECK:** PASS
 - **TEST:** PASS
 - **TERMINAL VERIFICATION:** PASS
 - **REAL POSTGRESQL VERIFICATION:** PASS
-- **DONE:** YES
+- **DONE:** NO
 
 ### LAST COMPLETED BUILD UNIT
-BU-011 — Secure Assessment Reconnect / Resume Authoritative State Readback Runtime Bootstrap
+BU-010 — Secure Assessment Idempotent Submission Runtime Bootstrap
 
 ### ACTIVE BUILD UNIT
-NONE
+BU-011 — Secure Assessment Reconnect / Resume Authoritative State Readback Runtime Bootstrap
 
 ### NEXT BUILD UNIT
 NOT YET REGISTERED
 
 ### NEXT SAFE ACTION
-MAIN PROJECT CONTROL 06 PHYSICAL VERIFICATION
+BU-011 CONTROLLER PHYSICAL AUDIT
 
 ### NEXT STAGE
-MAIN PROJECT CONTROL 06 PHYSICAL VERIFICATION
+BU-011 CONTROLLER PHYSICAL AUDIT
 
 ## Build Unit Fast-Track Control v1
 
