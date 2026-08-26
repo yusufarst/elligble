@@ -88,7 +88,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                 await client.query('BEGIN');
 
                 const attemptRes = await client.query(
-                    'SELECT id, exam_participant_id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2',
+                    'SELECT id, exam_participant_id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE',
                     [attemptId, context.tenantId]
                 );
                 if (attemptRes.rows.length === 0) {
@@ -120,12 +120,25 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     return;
                 }
 
+                const submissionRes = await client.query(
+                    'SELECT id FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
+                    [context.tenantId, attemptId]
+                );
+                const isSubmitted = submissionRes.rows.length > 0;
+
                 const currentAnswerRes = await client.query(
                     'SELECT client_write_identity, write_version, answer_payload FROM secure_assessment_exam_answers WHERE tenant_id = $1 AND exam_attempt_id = $2 AND exam_question_snapshot_id = $3 FOR UPDATE',
                     [context.tenantId, attemptId, snapshotId]
                 );
 
                 if (currentAnswerRes.rows.length === 0) {
+                    if (isSubmitted) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                        return;
+                    }
+
                     if (expectedWriteVersion !== null) {
                         await client.query('ROLLBACK');
                         res.writeHead(409, { 'Content-Type': 'application/json' });
@@ -172,12 +185,24 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                                 res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version }));
                                 return;
                             } else {
+                                if (isSubmitted) {
+                                    await client.query('ROLLBACK');
+                                    res.writeHead(409, { 'Content-Type': 'application/json' });
+                                    res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                                    return;
+                                }
                                 await client.query('ROLLBACK');
                                 res.writeHead(409, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({ error: 'write_identity_reuse_conflict' }));
                                 return;
                             }
                         } else {
+                            if (isSubmitted) {
+                                await client.query('ROLLBACK');
+                                res.writeHead(409, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                                return;
+                            }
                             await client.query('ROLLBACK');
                             res.writeHead(409, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ error: 'stale_write_version' }));
@@ -199,12 +224,24 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version }));
                         return;
                     } else {
+                        if (isSubmitted) {
+                            await client.query('ROLLBACK');
+                            res.writeHead(409, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                            return;
+                        }
                         await client.query('ROLLBACK');
                         res.writeHead(409, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'write_identity_reuse_conflict' }));
                         return;
                     }
                 } else {
+                    if (isSubmitted) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                        return;
+                    }
                     if (expectedWriteVersion !== current.write_version) {
                         await client.query('ROLLBACK');
                         res.writeHead(409, { 'Content-Type': 'application/json' });

@@ -165,6 +165,9 @@ test('submission tests', async (t) => {
         // tenant from context used (req 29)
         const insertQuery = queries.find(q => q.queryText.includes('INSERT'));
         assert.equal(insertQuery.params[0], tenantId);
+
+        const attemptQuery = queries.find(q => q.queryText.includes('SELECT id FROM secure_assessment_exam_attempts'));
+        assert.ok(attemptQuery.queryText.includes('FOR UPDATE'), 'Attempt query should use FOR UPDATE for serialization');
     });
 
     await t.test('4. retry -> same submissionId, 5. retry -> same submittedAt, 6. no second logical submission', async () => {

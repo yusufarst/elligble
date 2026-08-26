@@ -83,7 +83,7 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
             try {
                 await client.query('BEGIN');
                 attemptRes = await client.query(
-                    'SELECT id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2',
+                    'SELECT id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE',
                     [attemptId, context.tenantId]
                 );
             } catch (err) {

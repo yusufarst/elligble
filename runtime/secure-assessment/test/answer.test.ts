@@ -13,6 +13,7 @@ test('answer save capability tests', async (t) => {
     let snapshots: any[] = [];
     let participants: any[] = [];
     let answers: any[] = [];
+    let submissions: any[] = [];
 
     let mockPoolShouldFail = false;
     let mockQueryShouldFail = false;
@@ -34,6 +35,13 @@ test('answer save capability tests', async (t) => {
                 const tenantId = params![1];
                 const id = params![0];
                 const found = attempts.filter(a => a.id === id && a.tenant_id === tenantId);
+                return { rows: found };
+            }
+
+            if (sqlLower.includes('from secure_assessment_exam_submissions')) {
+                const tenantId = params![0];
+                const attemptId = params![1];
+                const found = submissions.filter(s => s.exam_attempt_id === attemptId && s.tenant_id === tenantId);
                 return { rows: found };
             }
 
@@ -161,6 +169,7 @@ test('answer save capability tests', async (t) => {
         snapshots = [{ id: validSnapshotUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
         participants = [{ id: validUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
         answers = [];
+        submissions = [];
         mockContext = { tenantId: validUUID, authorizedAttemptId: validUUID };
     });
 
@@ -404,6 +413,50 @@ test('answer save capability tests', async (t) => {
         const data = await res.json();
         assert.equal(data.error, 'persistence_unavailable');
         assert.equal(answers.length, 0);
+    });
+
+    await t.test('submitted Attempt + new Answer -> 409', async () => {
+        submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        assert.equal(res.status, 409);
+        const data = await res.json();
+        assert.equal(data.error, 'attempt_already_submitted');
+        assert.equal(answers.length, 0);
+    });
+
+    await t.test('submitted Attempt + update -> 409', async () => {
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
+
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
+        assert.equal(res.status, 409);
+        const data = await res.json();
+        assert.equal(data.error, 'attempt_already_submitted');
+        assert.equal(answers[0].write_version, 1); // no mutation
+    });
+
+    await t.test('submitted Attempt + same identity/same payload -> 200 acknowledged, preserves writeVersion, no mutation', async () => {
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
+
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(data.status, 'acknowledged');
+        assert.equal(data.writeVersion, 1);
+        assert.equal(answers[0].write_version, 1);
+        assert.equal(answers.length, 1);
+    });
+
+    await t.test('submitted Attempt + same identity/different payload -> 409', async () => {
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
+
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req1' });
+        assert.equal(res.status, 409);
+        const data = await res.json();
+        assert.equal(data.error, 'attempt_already_submitted');
+        assert.equal(answers[0].write_version, 1);
     });
 
     await t.test('cleanup server', async () => {
