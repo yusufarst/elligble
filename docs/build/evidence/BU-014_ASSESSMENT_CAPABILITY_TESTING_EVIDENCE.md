@@ -1,18 +1,19 @@
 # BU-014 INTEGRATED CAPABILITY TESTING EVIDENCE
 
-- PASS: Migrations 0001-0006 applied successfully.
-- PASS: Timer start successful with correct status and times.
-- PASS: Answer 1 saved successfully.
-- PASS: Answer 2 saved successfully.
-- PASS: DB authoritative Answers exact match.
-- PASS: Resume before expiry verified.
-- PASS: Real timer adjustment applied and expiry asserted.
-- PASS: Exact retry after expiry is a zero mutation.
-- PASS: Mutating answer after expiry rejected cleanly.
-- PASS: Submission created successfully with valid UUID and timestamp.
-- PASS: Submission idempotent retry confirmed.
-- PASS: Mutating answer after submission rejected.
-- PASS: Exact retry after submission is zero mutation.
-- PASS: Resume readback after submission verified.
-- PASS: Tenant isolation successfully blocks access.
-- PASS: Final authoritative state consistency confirmed.
+RUN ID: g4ebo4c
+- PASS: Migrations 0001-0006
+- PASS: Timer start
+- PASS: Answer persistence
+- PASS: Resume pre-submission
+- PASS: Real timer adjustment
+- PASS: Expiry
+- PASS: Exact retry after expiry zero mutation
+- PASS: Mutating Answer after expiry rejected
+- PASS: Submission
+- PASS: Submission idempotent retry
+- PASS: Post-submission write guard
+- PASS: Post-submission exact retry zero mutation
+- PASS: Submitted resume readback
+- PASS: Tenant isolation
+- PASS: Final authoritative consistency
+- PASS: Disposable DB cleanup

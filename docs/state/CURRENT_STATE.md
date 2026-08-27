@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.05
+**Version:** 1.5.06
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.04
+**Supersedes:** CURRENT_STATE v1.5.05
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-24
@@ -104,7 +104,7 @@ BUILD PHASE INDEX     → docs/build/BUILD_PHASE_INDEX.md
 BUILD BOOTSTRAP GIT FINALIZATION → COMPLETE
 BUILD BOOTSTRAP GIT FINALIZATION COMMIT → fea9750c05d1f8bbee3ba7c987b494aa52293379
 BUILD BOOTSTRAP REPOSITORY FINALIZED → YES
-ACTIVE BUILD UNIT     → BU-013 — Secure Assessment Server-Authoritative Timer Expiry & Answer Write Guard Runtime Bootstrap
+ACTIVE BUILD UNIT     → BU-014 — Secure Assessment Integrated Capability Verification Bootstrap
 BU-001                → COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED
 BU-001 IMPLEMENTATION → EXECUTED
 BU-001 OWNER ACCEPTANCE → COMPLETE
@@ -1021,7 +1021,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-013 LIFECYCLE CLOSE
+MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-014 FAST-TRACK MAIN EXECUTION
 
 After each phase, update this file with the new active unit and prohibited premature work.
 

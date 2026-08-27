@@ -31,7 +31,7 @@ function assertStrict(condition: boolean, message: string) {
 }
 
 async function main() {
-    let evidence = '# BU-014 INTEGRATED CAPABILITY TESTING EVIDENCE\n\n';
+    let evidence = `# BU-014 INTEGRATED CAPABILITY TESTING EVIDENCE\n\nRUN ID: ${runId}\n`;
     const log = (msg: string) => {
         console.log(msg);
         evidence += `- PASS: ${msg}\n`;
@@ -52,6 +52,7 @@ async function main() {
     const client = new Client({ connectionString: parsedUrl.toString() });
     const pool = new Pool({ connectionString: parsedUrl.toString() });
 
+    let caughtError: any = null;
     try {
         await client.connect();
 
@@ -64,7 +65,7 @@ async function main() {
                 await client.query(sql);
             }
         }
-        log("Migrations 0001-0006 applied successfully.");
+        log("Migrations 0001-0006");
 
         const tenantId = '00000000-1111-4222-a333-444444444444';
         const attemptId = '11111111-2222-4333-a444-555555555555';
@@ -119,7 +120,7 @@ async function main() {
         assertStrict(typeof timerStartRes.body.startedAt === 'string', "Timer start should return startedAt");
         assertStrict(timerStartRes.body.configuredDurationSeconds === 10, "Timer start duration should be 10");
         assertStrict(typeof timerStartRes.body.effectiveDurationSeconds === 'number', "effectiveDurationSeconds missing");
-        log("Timer start successful with correct status and times.");
+        log("Timer start");
 
         // C. Answer 1 and Answer 2
         const ans1Res: any = await callApi(handleSaveAnswer, '/api/v1/assessment/answer/save', 'POST', {
@@ -127,14 +128,12 @@ async function main() {
         });
         assertStrict(ans1Res.status === 200, "Answer 1 save should be 200");
         assertStrict(ans1Res.body.writeVersion === 1, "Answer 1 writeVersion should be 1");
-        log("Answer 1 saved successfully.");
 
         const ans2Res: any = await callApi(handleSaveAnswer, '/api/v1/assessment/answer/save', 'POST', {
             attemptId, snapshotId: snapshotId2, answerPayload: { choice: "B" }, clientWriteIdentity: 'client-2', expectedWriteVersion: null
         });
         assertStrict(ans2Res.status === 200, "Answer 2 save should be 200");
         assertStrict(ans2Res.body.writeVersion === 1, "Answer 2 writeVersion should be 1");
-        log("Answer 2 saved successfully.");
 
         // D. DB authoritative Answers
         const dbAnswers = await client.query('SELECT * FROM secure_assessment_exam_answers WHERE exam_attempt_id = $1 ORDER BY client_write_identity ASC', [attemptId]);
@@ -143,7 +142,7 @@ async function main() {
         assertStrict(dbAnswers.rows[0].answer_payload.choice === 'A', "Answer 1 payload mismatch");
         assertStrict(dbAnswers.rows[1].client_write_identity === 'client-2', "Answer 2 identity mismatch");
         assertStrict(dbAnswers.rows[1].answer_payload.choice === 'B', "Answer 2 payload mismatch");
-        log("DB authoritative Answers exact match.");
+        log("Answer persistence");
 
         // E. Resume before expiry
         const resumeRes: any = await callApi(handleResumeGet, `/api/v1/assessment/resume?attemptId=${attemptId}`, 'GET', null);
@@ -151,7 +150,7 @@ async function main() {
         assertStrict(resumeRes.body.answers.length === 2, "Resume should return 2 answers");
         assertStrict(resumeRes.body.timer.status === 'active', "Resume timer status should be active");
         assertStrict(resumeRes.body.submission.status === 'not_submitted', "Resume submission status should be not_submitted");
-        log("Resume before expiry verified.");
+        log("Resume pre-submission");
 
         // F. REAL TIMER ADJUSTMENT
         await client.query("INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason) VALUES ($1, $2, $3, $4)", [tenantId, timerStateId, -15, 'Penalty']);
@@ -161,7 +160,8 @@ async function main() {
         assertStrict(timerGetRes2.status === 200, "Timer get should be 200 after expiry");
         assertStrict(timerGetRes2.body.effectiveRemainingSeconds === 0, "effectiveRemainingSeconds should be 0");
         assertStrict(timerGetRes2.body.status === 'expired', "Timer status should be expired");
-        log("Real timer adjustment applied and expiry asserted.");
+        log("Real timer adjustment");
+        log("Expiry");
 
         // H. Exact acknowledged retry after expiry
         const rowBefore = await client.query('SELECT * FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshotId1]);
@@ -176,7 +176,7 @@ async function main() {
         assertStrict(rowBefore.rows[0].client_write_identity === rowAfter.rows[0].client_write_identity, "Identity changed");
         assertStrict(rowBefore.rows[0].write_version === rowAfter.rows[0].write_version, "Write version changed");
         assertStrict(rowBefore.rows[0].updated_at.getTime() === rowAfter.rows[0].updated_at.getTime(), "Updated at changed");
-        log("Exact retry after expiry is a zero mutation.");
+        log("Exact retry after expiry zero mutation");
 
         // I. Mutating Answer after expiry
         const ans1MutateRes: any = await callApi(handleSaveAnswer, '/api/v1/assessment/answer/save', 'POST', {
@@ -186,7 +186,7 @@ async function main() {
         assertStrict(ans1MutateRes.body.error === 'timer_expired', "Error should be timer_expired");
         const rowMutate = await client.query('SELECT * FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshotId1]);
         assertStrict(rowBefore.rows[0].updated_at.getTime() === rowMutate.rows[0].updated_at.getTime(), "State should be unchanged");
-        log("Mutating answer after expiry rejected cleanly.");
+        log("Mutating Answer after expiry rejected");
 
         // J. Submission
         const subRes: any = await callApi(handleSubmit, '/api/v1/assessment/submit', 'POST', { attemptId });
@@ -198,7 +198,7 @@ async function main() {
         assertStrict(subDb.rows.length === 1, "Should have exactly 1 submission row");
         assertStrict(subDb.rows[0].id === subRes.body.submissionId, "submissionId mismatch");
         assertStrict(new Date(subRes.body.submittedAt).getTime() === subDb.rows[0].submitted_at.getTime(), "submittedAt mismatch");
-        log("Submission created successfully with valid UUID and timestamp.");
+        log("Submission");
 
         // K. Submission retry
         const subRetryRes: any = await callApi(handleSubmit, '/api/v1/assessment/submit', 'POST', { attemptId });
@@ -207,7 +207,7 @@ async function main() {
         assertStrict(subRetryRes.body.submittedAt === subRes.body.submittedAt, "Retry submittedAt mismatch");
         const subDbRetry = await client.query('SELECT * FROM secure_assessment_exam_submissions WHERE exam_attempt_id = $1', [attemptId]);
         assertStrict(subDbRetry.rows.length === 1, "Submission row count changed after retry");
-        log("Submission idempotent retry confirmed.");
+        log("Submission idempotent retry");
 
         // L. Mutating Answer after Submission
         const ans3Res: any = await callApi(handleSaveAnswer, '/api/v1/assessment/answer/save', 'POST', {
@@ -215,7 +215,7 @@ async function main() {
         });
         assertStrict(ans3Res.status === 409, "Mutating answer after submission should be 409");
         assertStrict(ans3Res.body.error === 'attempt_already_submitted', "Error should be attempt_already_submitted");
-        log("Mutating answer after submission rejected.");
+        log("Post-submission write guard");
 
         // M. Exact previously acknowledged Answer retry after Submission
         const row2Before = await client.query('SELECT * FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshotId2]);
@@ -226,7 +226,7 @@ async function main() {
         assertStrict(ans2RetryRes.body.writeVersion === 1, "Exact retry version should be 1");
         const row2After = await client.query('SELECT * FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshotId2]);
         assertStrict(row2Before.rows[0].updated_at.getTime() === row2After.rows[0].updated_at.getTime(), "State should be unchanged after exact retry");
-        log("Exact retry after submission is zero mutation.");
+        log("Post-submission exact retry zero mutation");
 
         // N. Resume after Submission
         const resumeRes2: any = await callApi(handleResumeGet, `/api/v1/assessment/resume?attemptId=${attemptId}`, 'GET', null);
@@ -234,13 +234,13 @@ async function main() {
         assertStrict(resumeRes2.body.submission.status === 'submitted', "Resume submission status should be submitted");
         assertStrict(resumeRes2.body.submission.submissionId === subRes.body.submissionId, "Resume submissionId mismatch");
         assertStrict(resumeRes2.body.submission.submittedAt === subRes.body.submittedAt, "Resume submittedAt mismatch");
-        log("Resume readback after submission verified.");
+        log("Submitted resume readback");
 
         // O. Tenant isolation
         const wrongTenantId = '99999999-9999-9999-9999-999999999999';
         const tenantIsolRes: any = await callApi(handleResumeGet, `/api/v1/assessment/resume?attemptId=${attemptId}`, 'GET', null, wrongTenantId);
         assertStrict(tenantIsolRes.status === 404, "Tenant isolation should return 404 or boundary error");
-        log("Tenant isolation successfully blocks access.");
+        log("Tenant isolation");
 
         // P. Final authoritative consistency
         const finalAnswers = await client.query('SELECT COUNT(*) FROM secure_assessment_exam_answers WHERE exam_attempt_id = $1', [attemptId]);
@@ -251,15 +251,12 @@ async function main() {
         assertStrict(parseInt(finalAdjs.rows[0].count, 10) === 1, "Final adjustment count should be 1");
         const finalSubs = await client.query('SELECT COUNT(*) FROM secure_assessment_exam_submissions WHERE exam_attempt_id = $1', [attemptId]);
         assertStrict(parseInt(finalSubs.rows[0].count, 10) === 1, "Final submission count should be 1");
-        log("Final authoritative state consistency confirmed.");
-
-        fs.mkdirSync(evidenceDir, { recursive: true });
-        fs.writeFileSync(evidenceFile, evidence);
+        log("Final authoritative consistency");
 
     } catch (err: any) {
+        caughtError = err;
         console.error("RUN FAILED:");
         console.error(err.message || err);
-        process.exit(1);
     } finally {
         await pool.end();
         await client.end();
@@ -269,6 +266,15 @@ async function main() {
         await cleanupClient.connect();
         await cleanupClient.query(`DROP DATABASE IF EXISTS ${TEST_DB} WITH (FORCE)`);
         await cleanupClient.end();
+        console.log("Disposable DB cleanup");
+
+        if (caughtError) {
+            process.exit(1);
+        } else {
+            evidence += `- PASS: Disposable DB cleanup\n`;
+            fs.mkdirSync(evidenceDir, { recursive: true });
+            fs.writeFileSync(evidenceFile, evidence);
+        }
     }
 }
 

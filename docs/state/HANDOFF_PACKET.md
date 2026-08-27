@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.104
-**Supersedes:** 0.1.103
+**Version:** 0.1.105
+**Supersedes:** 0.1.104
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -751,9 +751,7 @@ Full repository finalized NO
 
 ## Forbidden Premature Work
 - No expiry auto-submit.
-- No Submission HTTP/runtime or final Submission endpoint/API runtime beyond the completed BU-009 persistence foundation.
 - No pause/continue/grace policy.
-- No reconnect/resume/reconciliation expansion.
 - PB-06 OPEN.
 - PB-07 OPEN.
 - Broader Secure Assessment NOT COMPLETE.

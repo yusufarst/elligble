@@ -1,5 +1,6 @@
 **Status:** ACTIVE  
-**Version:** 1.0.96
+**Version:** 1.0.97
+**Supersedes:** 1.0.96
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 
@@ -84,8 +85,8 @@ NEVER_DEFAULT
 | `docs/build/units/BU-012_SECURE_ASSESSMENT_POST_SUBMISSION_ANSWER_WRITE_GUARD_RUNTIME_BOOTSTRAP.md` | BU-012 Specification - Secure Assessment Post-Submission Answer Write Guard Runtime Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FAST-TRACK REPOSITORY FINALIZED. (ED233649EB2F18271BFDFF4D4E097C57F838A630712975B372FB749222057A54) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-013_SECURE_ASSESSMENT_SERVER_AUTHORITATIVE_TIMER_EXPIRY_ANSWER_WRITE_GUARD_RUNTIME_BOOTSTRAP.md` | BU-013 Specification - Secure Assessment Server-Authoritative Timer Expiry Answer Write Guard Runtime Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FAST-TRACK REPOSITORY FINALIZED. (0FED9E6D4AD19F903F502AAE64EB4594B4C3688B2B342E203EFA79C185C9B5C9) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-014_SECURE_ASSESSMENT_INTEGRATED_CAPABILITY_VERIFICATION_BOOTSTRAP.md` | BU-014 Specification - Secure Assessment Integrated Capability Verification Bootstrap. Status: ACTIVE. (C7234C11DC2B8B6FF941D649187AA485F1B6F364206F05520736430F05910FFA) | BUILD UNIT SPEC | PHASE: Build |
-| `docs/build/evidence/BU-014_ASSESSMENT_CAPABILITY_TESTING_EVIDENCE.md` | BU-014 Integrated Real PostgreSQL Capability Verification Evidence. (8B712C2B6B90AFEBD286615C1F535132D4DB993CA981FB868837D85B467B0F80) | BUILD UNIT EVIDENCE | PHASE: Build |
-| `runtime/secure-assessment/verification/verify_bu014_active_exam.ts` | BU-014 Verification Harness. (ACAA086973877F3494820301D9B3761A5F16EB35117EDFC4D8AEDC0BA0F2F6C0) | VERIFICATION HARNESS | PHASE: Build |
+| `docs/build/evidence/BU-014_ASSESSMENT_CAPABILITY_TESTING_EVIDENCE.md` | BU-014 Integrated Real PostgreSQL Capability Verification Evidence. (028BC688185A58D4B9EFE725B30193A7638591B9892E0E840E8F36BD43844E91) | BUILD UNIT EVIDENCE | PHASE: Build |
+| `runtime/secure-assessment/verification/verify_bu014_active_exam.ts` | BU-014 Verification Harness. (2C549A7612E3F97920D483956384A35A1CECE8B6E08713C9B0E4C93B929FBDEC) | VERIFICATION HARNESS | PHASE: Build |
 | `docs/state/HANDOFF_PACKET.md` | cross-session/agent context recovery snapshot | Canonical/Dynamic Navigation | ALWAYS |
 | `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
