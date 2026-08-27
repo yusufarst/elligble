@@ -1,5 +1,6 @@
-**Status:** ACTIVE
-**Version:** 0.1.100
+**Status:** ACTIVE / STATE-SYNC
+**Version:** 0.1.101
+**Supersedes:** 0.1.100
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -730,7 +731,7 @@ Full repository finalized YES
 
 BU-013:
 implementation executed
-127/127 tests PASS
+128/128 tests PASS
 real PostgreSQL PASS
 expiry guard PASS
 exact retry zero mutation PASS

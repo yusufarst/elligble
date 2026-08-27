@@ -22,6 +22,7 @@ test('answer save capability tests', async (t) => {
     let insertCount = 0;
     let selectForUpdateCount = 0;
     let triggerInsertCollision: any = null;
+    let lastTimerQuery = '';
 
     class MockClient {
         async query(sql: string, params?: any[]): Promise<any> {
@@ -61,6 +62,7 @@ test('answer save capability tests', async (t) => {
             }
 
             if (sqlLower.includes('from secure_assessment_timer_state')) {
+                lastTimerQuery = sql;
                 const tenantId = params![0];
                 const attemptId = params![1];
                 const found = timerStates.filter(t => t.tenant_id === tenantId && t.exam_attempt_id === attemptId);
@@ -178,6 +180,7 @@ test('answer save capability tests', async (t) => {
         insertCount = 0;
         selectForUpdateCount = 0;
         triggerInsertCollision = null;
+        lastTimerQuery = '';
         attempts = [{ id: validUUID, tenant_id: validUUID, exam_participant_id: validUUID }];
         snapshots = [{ id: validSnapshotUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
         participants = [{ id: validUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
@@ -503,6 +506,13 @@ test('answer save capability tests', async (t) => {
         assert.equal(data.status, 'acknowledged');
         assert.equal(answers[0].write_version, 1);
         assert.equal(answers.length, 1);
+    });
+
+    await t.test('verifies timer query uses statement_timestamp() for lock-wait safe expiry', async () => {
+        timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 0 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        assert.equal(res.status, 200);
+        assert.ok(lastTimerQuery.toLowerCase().includes('statement_timestamp()'), 'should use statement_timestamp() instead of CURRENT_TIMESTAMP');
     });
 
     await t.test('cleanup server', async () => {

@@ -132,7 +132,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         t.started_at,
                         t.configured_duration_seconds,
                         COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                        FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                        FLOOR(EXTRACT(EPOCH FROM (statement_timestamp() - t.started_at)))::integer as elapsed_seconds
                     FROM secure_assessment_timer_state t
                     WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
                 `, [context.tenantId, attemptId]);
