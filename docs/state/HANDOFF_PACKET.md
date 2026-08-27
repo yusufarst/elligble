@@ -741,7 +741,6 @@ Done NO
 Full repository finalized NO
 
 ## Forbidden Premature Work
-- No timer expiry enforcement.
 - No expiry auto-submit.
 - No Submission HTTP/runtime or final Submission endpoint/API runtime beyond the completed BU-009 persistence foundation.
 - No pause/continue/grace policy.
@@ -1078,8 +1077,6 @@ All AI remains optional/non-blocking future capability.
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
 - no reconnect/resume/reconciliation expansion;
-- no full Timer enforcement runtime;
-- no timer expiry enforcement;
 - no expiry auto-submit;
 - no Submission;
 - no pause/continue/grace decision;

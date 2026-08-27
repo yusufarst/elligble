@@ -516,7 +516,6 @@ BACKLOG GIT FINALIZATION: COMPLETE
 - BU-007 is COMPLETE / closure state-sync repository-finalized.
 - BU-007 must not be reopened without explicit Controller-approved supersession.
 - No next-BU implementation before registration/control authorization.
-- no timer enforcement runtime;
 - no expiry auto-submit/submission;
 - no pause/continue/grace policy decision;
 - no client timer/reconnect/Zero-Lost-Answer expansion;
