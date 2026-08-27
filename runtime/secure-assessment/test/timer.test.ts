@@ -229,6 +229,7 @@ test('timer capability tests', async (t) => {
         const data = await res.json();
         assert.equal(data.effectiveDurationSeconds, 0);
         assert.equal(data.effectiveRemainingSeconds, 0); // Not negative
+        assert.equal(data.status, 'expired');
     });
 
     await t.test('12. repeated reads do not mutate timer state', async () => {

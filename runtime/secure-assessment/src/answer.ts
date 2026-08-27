@@ -126,18 +126,52 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                 );
                 const isSubmitted = submissionRes.rows.length > 0;
 
+                let isExpired = false;
+                const timerRes = await client.query(`
+                    SELECT
+                        t.started_at,
+                        t.configured_duration_seconds,
+                        COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
+                        FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                    FROM secure_assessment_timer_state t
+                    WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
+                `, [context.tenantId, attemptId]);
+
+                if (timerRes.rows.length > 0) {
+                    const tState = timerRes.rows[0];
+                    if (tState.started_at) {
+                        const configured = parseInt(tState.configured_duration_seconds, 10);
+                        const adj = parseInt(tState.total_adjustment, 10);
+                        const elapsed = tState.elapsed_seconds || 0;
+                        if ((configured + adj) - elapsed <= 0) {
+                            isExpired = true;
+                        }
+                    }
+                }
+
+                const checkTerminalState = async () => {
+                    if (isSubmitted) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                        return true;
+                    }
+                    if (isExpired) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'timer_expired' }));
+                        return true;
+                    }
+                    return false;
+                };
+
                 const currentAnswerRes = await client.query(
                     'SELECT client_write_identity, write_version, answer_payload FROM secure_assessment_exam_answers WHERE tenant_id = $1 AND exam_attempt_id = $2 AND exam_question_snapshot_id = $3 FOR UPDATE',
                     [context.tenantId, attemptId, snapshotId]
                 );
 
                 if (currentAnswerRes.rows.length === 0) {
-                    if (isSubmitted) {
-                        await client.query('ROLLBACK');
-                        res.writeHead(409, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
-                        return;
-                    }
+                    if (await checkTerminalState()) return;
 
                     if (expectedWriteVersion !== null) {
                         await client.query('ROLLBACK');
@@ -185,24 +219,14 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                                 res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version }));
                                 return;
                             } else {
-                                if (isSubmitted) {
-                                    await client.query('ROLLBACK');
-                                    res.writeHead(409, { 'Content-Type': 'application/json' });
-                                    res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
-                                    return;
-                                }
+                                if (await checkTerminalState()) return;
                                 await client.query('ROLLBACK');
                                 res.writeHead(409, { 'Content-Type': 'application/json' });
                                 res.end(JSON.stringify({ error: 'write_identity_reuse_conflict' }));
                                 return;
                             }
                         } else {
-                            if (isSubmitted) {
-                                await client.query('ROLLBACK');
-                                res.writeHead(409, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
-                                return;
-                            }
+                            if (await checkTerminalState()) return;
                             await client.query('ROLLBACK');
                             res.writeHead(409, { 'Content-Type': 'application/json' });
                             res.end(JSON.stringify({ error: 'stale_write_version' }));
@@ -224,24 +248,14 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version }));
                         return;
                     } else {
-                        if (isSubmitted) {
-                            await client.query('ROLLBACK');
-                            res.writeHead(409, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
-                            return;
-                        }
+                        if (await checkTerminalState()) return;
                         await client.query('ROLLBACK');
                         res.writeHead(409, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'write_identity_reuse_conflict' }));
                         return;
                     }
                 } else {
-                    if (isSubmitted) {
-                        await client.query('ROLLBACK');
-                        res.writeHead(409, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
-                        return;
-                    }
+                    if (await checkTerminalState()) return;
                     if (expectedWriteVersion !== current.write_version) {
                         await client.query('ROLLBACK');
                         res.writeHead(409, { 'Content-Type': 'application/json' });

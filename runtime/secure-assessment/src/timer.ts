@@ -198,9 +198,11 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
         const effectiveDurationSeconds = configuredDurationSeconds + totalAdjustment;
         const effectiveRemainingSeconds = Math.max(0, effectiveDurationSeconds - elapsedSeconds);
 
+        const status = effectiveRemainingSeconds <= 0 ? 'expired' : 'active';
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-            status: 'active',
+            status,
             startedAt: startedAt.toISOString(),
             configuredDurationSeconds,
             effectiveDurationSeconds,

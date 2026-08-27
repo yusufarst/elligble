@@ -14,6 +14,7 @@ test('answer save capability tests', async (t) => {
     let participants: any[] = [];
     let answers: any[] = [];
     let submissions: any[] = [];
+    let timerStates: any[] = [];
 
     let mockPoolShouldFail = false;
     let mockQueryShouldFail = false;
@@ -57,6 +58,18 @@ test('answer save capability tests', async (t) => {
                 const id = params![0];
                 const found = participants.filter(p => p.id === id && p.tenant_id === tenantId);
                 return { rows: found };
+            }
+
+            if (sqlLower.includes('from secure_assessment_timer_state')) {
+                const tenantId = params![0];
+                const attemptId = params![1];
+                const found = timerStates.filter(t => t.tenant_id === tenantId && t.exam_attempt_id === attemptId);
+                // Return total_adjustment 0 and elapsed_seconds based on the object
+                return { rows: found.map(t => ({
+                    ...t,
+                    total_adjustment: '0',
+                    elapsed_seconds: t.elapsed_seconds || 0
+                }))};
             }
 
             if (sqlLower.includes('from secure_assessment_exam_answers') && sqlLower.includes('for update')) {
@@ -170,6 +183,7 @@ test('answer save capability tests', async (t) => {
         participants = [{ id: validUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
         answers = [];
         submissions = [];
+        timerStates = [];
         mockContext = { tenantId: validUUID, authorizedAttemptId: validUUID };
     });
 
@@ -457,6 +471,38 @@ test('answer save capability tests', async (t) => {
         const data = await res.json();
         assert.equal(data.error, 'attempt_already_submitted');
         assert.equal(answers[0].write_version, 1);
+    });
+
+    await t.test('expired timer + new Answer -> 409 timer_expired', async () => {
+        timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 3601 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        assert.equal(res.status, 409);
+        const data = await res.json();
+        assert.equal(data.error, 'timer_expired');
+        assert.equal(answers.length, 0);
+    });
+
+    await t.test('expired timer + update Answer -> 409 timer_expired', async () => {
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 3601 });
+        
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
+        assert.equal(res.status, 409);
+        const data = await res.json();
+        assert.equal(data.error, 'timer_expired');
+        assert.equal(answers[0].write_version, 1);
+    });
+
+    await t.test('expired timer + exact retry -> 200 acknowledged, zero mutation', async () => {
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 3601 });
+        
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(data.status, 'acknowledged');
+        assert.equal(answers[0].write_version, 1);
+        assert.equal(answers.length, 1);
     });
 
     await t.test('cleanup server', async () => {
