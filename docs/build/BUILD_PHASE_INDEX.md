@@ -1,5 +1,5 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.65
+**Version:** 0.1.66
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -352,20 +352,27 @@
 - **DONE:** YES
 - **FULL BU-014 REPOSITORY FINALIZED:** YES
 
+### BU-015
+- **TITLE:** Secure Assessment Capability Matrix & PB06 Gap Qualification Bootstrap
+- **STATUS:** ACTIVE
+- **CONTROLLER PHYSICAL AUDIT:** NOT YET
+- **DONE:** NO
+- **FULL BU-015 REPOSITORY FINALIZED:** NO
+
 ### LAST COMPLETED BUILD UNIT
 BU-014 — Secure Assessment Integrated Capability Verification Bootstrap
 
 ### ACTIVE BUILD UNIT
-NONE
+BU-015 — Secure Assessment Capability Matrix & PB06 Gap Qualification Bootstrap
 
 ### NEXT BUILD UNIT
 NOT YET REGISTERED
 
 ### NEXT SAFE ACTION
-MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-014 LIFECYCLE CLOSE
+MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-015
 
 ### NEXT STAGE
-NONE
+BU-015 FAST-TRACK MAIN EXECUTION
 
 ## Build Unit Fast-Track Control v1
 
