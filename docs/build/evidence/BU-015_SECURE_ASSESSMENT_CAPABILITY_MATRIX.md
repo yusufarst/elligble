@@ -1,7 +1,7 @@
 # BU-015 Secure Assessment Capability Matrix & PB06 Gap Qualification
 
-**Status:** ACTIVE
-**Version:** 1.0.1
+**Status:** QUALIFIED / CONTROLLER PHYSICAL AUDIT PASS
+**Version:** 1.0.2
 **Source:** Canonical Discovery (D04.01), SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE, BU-014 Evidence, BU-003 Evidence
 
 | Capability ID | Capability Name | Canonical Source | Baseline Classification | Implementation State | Available Evidence | Verification State | PB06 Relevance | Gap / Next Action |
@@ -52,3 +52,8 @@
 - **PB06 READINESS RESULT:** OPEN / NOT READY FOR CLOSURE
 - **PB06 STATUS:** OPEN
 - **PB07 STATUS:** OPEN
+
+**PB06 QUALIFICATION RESULT:**
+OPEN / NOT READY FOR CLOSURE
+
+This matrix is a BU-015 bootstrap qualification artifact and does not itself close PB06 or PB07.
