@@ -1,19 +1,18 @@
 # BU-014 INTEGRATED CAPABILITY TESTING EVIDENCE
 
-- valid tenant / participant / Attempt / snapshots created.
-- Timer start: 200
-- Timer read: 200, remaining: 10
-- Answer 1 save: 200, version: undefined, error: undefined
-- Answer 2 save: 200, version: undefined, error: undefined
-- Resume readback: 200, answers count: 2, timer status: active
-- Timer adjustment applied (-15 seconds).
-- Timer read after expiry: 200, remaining: 0, status: expired
-- Answer 1 exact retry after expiry: 200, version: undefined
-- Answer 1 mutate after expiry: 409, error: timer_expired
-- Submission: 200, id: undefined
-- Submission retry: 200, id matches: true
-- Answer mutate after submission: 409
-- Answer 2 exact retry after submission: 200, version: undefined
-- Resume readback after submission: 200, submitted: true
-- Tenant isolation check: 404
-- Final authoritative answer row count: 2
+- PASS: Migrations 0001-0006 applied successfully.
+- PASS: Timer start successful with correct status and times.
+- PASS: Answer 1 saved successfully.
+- PASS: Answer 2 saved successfully.
+- PASS: DB authoritative Answers exact match.
+- PASS: Resume before expiry verified.
+- PASS: Real timer adjustment applied and expiry asserted.
+- PASS: Exact retry after expiry is a zero mutation.
+- PASS: Mutating answer after expiry rejected cleanly.
+- PASS: Submission created successfully with valid UUID and timestamp.
+- PASS: Submission idempotent retry confirmed.
+- PASS: Mutating answer after submission rejected.
+- PASS: Exact retry after submission is zero mutation.
+- PASS: Resume readback after submission verified.
+- PASS: Tenant isolation successfully blocks access.
+- PASS: Final authoritative state consistency confirmed.

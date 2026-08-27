@@ -1,5 +1,5 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.63
+**Version:** 0.1.64
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
