@@ -94,6 +94,14 @@ test('server tests', async (t) => {
         assert.equal(res.status, 403);
     });
 
+    await t.test('POST /api/v1/assessment/session/activate -> reaches bounded Session handler (403 missing context)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/session/activate`, {
+            method: 'POST',
+            body: JSON.stringify({ attemptId: '11111111-2222-4333-8444-555555555555', sessionId: '22222222-2222-4333-8444-555555555555' })
+        });
+        assert.equal(res.status, 403);
+    });
+
     await t.test('unsupported method -> bounded not-found behavior', async () => {
         const res = await fetch(`${baseUrl}/healthz`, { method: 'POST' });
         assert.equal(res.status, 404);

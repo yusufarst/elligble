@@ -4,6 +4,7 @@ import { handleSaveAnswer, type AuthorizedAssessmentContext } from './answer.ts'
 import { handleTimerStart, handleTimerGet } from './timer.ts';
 import { handleSubmit, handleSubmissionGet, handleExpiryFinalize } from './submission.ts';
 import { handleResumeGet } from './resume.ts';
+import { handleSessionActivate } from './session.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
@@ -54,6 +55,17 @@ export function createServer(deps: ServerDependencies): http.Server {
 
         if (req.url === '/api/v1/assessment/expiry-finalize') {
             handleExpiryFinalize(req, res, deps);
+            return;
+        }
+
+        if (req.url === '/api/v1/assessment/session/activate') {
+            const ctx = deps.getAuthorizedContext(req);
+            if (!ctx) {
+                res.writeHead(403, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'forbidden' }));
+                return;
+            }
+            handleSessionActivate(req, res, ctx, deps.pool);
             return;
         }
 

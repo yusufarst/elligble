@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.117
-**Supersedes:** 0.1.116
+**Version:** 0.1.118
+**Supersedes:** 0.1.117
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -317,7 +317,7 @@ LAST COMPLETED BUILD UNIT:
 BU-017 — Secure Assessment One-Active-Session Core State Persistence Bootstrap
 
 ACTIVE BUILD UNIT:
-NONE
+BU-018 — Secure Assessment Governed Session Activation / Supersession Runtime Bootstrap
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
@@ -1334,3 +1334,12 @@ Historical Process/Report Defect Summary for BU-010:
 - correction report compliance was incomplete;
 - raw patch evidence was UTF-16 and showed evidence-layer mojibake.
 These defects do not obscure the accepted material repository state.
+
+BU-018:
+IMPLEMENTATION: EXECUTED / TYPECHECK: PASS / EXISTING SUITE: PASS (144 tests) / SESSION FOCUSED TESTS: PASS (17 tests) / COMBINED TEST TOTAL: 161 / REAL POSTGRESQL VERIFICATION: PASS / CONTROLLER PHYSICAL AUDIT: NOT YET / DONE: NO / FULL BU-018 REPOSITORY FINALIZED: NO / SEC-005: IMPLEMENTATION CANDIDATE / NOT YET CONTROLLER-PROVEN / SEC-028: NOT YET FULLY PROVEN / PB06: OPEN / PB07: OPEN / BU-019: NOT REGISTERED
+
+EXACT NEXT AUTHORIZED ACTION:
+MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-018 FAST-TRACK MAIN EXECUTION
+
+NEXT STAGE:
+BU-018 FAST-TRACK CONTROLLER PHYSICAL AUDIT
