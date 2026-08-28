@@ -1,13 +1,17 @@
 # BU-016 Specification - Secure Assessment Server-Side Expiry Finalization Runtime Bootstrap
 
-**Status:** ACTIVE
+**Status:** COMPLETE / TERMINAL VERIFICATION PASS /
+REAL POSTGRESQL VERIFICATION PASS /
+CONTROLLER PHYSICAL AUDIT PASS /
+FAST-TRACK REPOSITORY FINALIZED
 **Version:** 1.0.0
 **Phase:** BUILD
-**Stage:** BU-016 FAST-TRACK MAIN EXECUTION
+**Stage:** BU-016 FAST-TRACK LIFECYCLE CLOSE
 
-**Controller Physical Audit:** NOT YET
-**Done:** NO
-**Full BU-016 Repository Finalized:** NO
+**Controller Physical Audit:** PASS
+**Fast-Track Lifecycle Close:** COMPLETE
+**Done:** YES
+**Full BU-016 Repository Finalized:** YES
 **PB06:** OPEN / NOT READY FOR CLOSURE
 **PB07:** OPEN
 
@@ -42,11 +46,11 @@ It does NOT implement client pending-answer flush, local recovery queue, offline
 ## 3.1. Maturity Statement
 BU-016 implements SERVER-SIDE expiry finalization only.
 
-It does NOT implement:
+It does NOT prove:
 - client pending-answer flush;
 - offline queue;
-- local recovery reconciliation;
-- background/scheduler-triggered auto-submit.
+- local-first recovery/reconciliation;
+- background/scheduler-driven auto-submit.
 
 ## 4. Verification
 This unit provides real PostgreSQL integration tests through a disposable harness, covering timer expiration transitions, idempotent retries, race conditions, and tenant isolation, ensuring zero mutation of state upon exact retries and preventing multiple submissions.

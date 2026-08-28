@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.111
-**Supersedes:** 0.1.110
+**Version:** 0.1.112
+**Supersedes:** 0.1.111
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -314,10 +314,10 @@ BUILD UNIT CONVENTION:
 BU-###
 
 LAST COMPLETED BUILD UNIT:
-BU-015 — Secure Assessment Capability Matrix & PB06 Gap Qualification Bootstrap
+BU-016 — Secure Assessment Server-Side Expiry Finalization Runtime Bootstrap
 
 ACTIVE BUILD UNIT:
-BU-016 — Secure Assessment Server-Side Expiry Finalization Runtime Bootstrap
+NONE
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
@@ -679,13 +679,13 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
+MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-016 LIFECYCLE CLOSE
 
 NEXT STAGE:
-BU-016 FAST-TRACK CONTROLLER PHYSICAL AUDIT
+NONE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
+MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-016 LIFECYCLE CLOSE
 
 DO NOT EXECUTE BU-011 UNTIL BU-010 IS DONE YES AND FULLY REPOSITORY FINALIZED.
 DO NOT EXECUTE BU-011 UNTIL FAST-TRACK ACTIVATION COMMIT IS PHYSICALLY VERIFIED.
@@ -754,11 +754,12 @@ Full repository finalized YES
 
 BU-016:
 implementation executed
-134/134 tests PASS
+143/143 tests PASS
 integrated real PostgreSQL PASS
-Controller Physical Audit NOT YET
-Done NO
-Full repository finalized NO
+Controller Physical Audit PASS
+Fast-Track Lifecycle Close COMPLETE
+Done YES
+Full repository finalized YES
 
 ## Forbidden Premature Work
 - No background/scheduler-driven expiry auto-submit.
