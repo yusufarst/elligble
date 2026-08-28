@@ -28,4 +28,26 @@ BU-019 is Answer-write enforcement only.
 - [x] Process authorized write conditionally on valid active Session
 - [x] Return generic `session_not_active` error without active Session UUID
 - [x] Verify real PostgreSQL execution
-- [x] Fast-track finalize
+- [x] Main execution verification complete
+- [ ] Controller Physical Audit
+- [ ] Fast-Track Lifecycle Close
+
+## Explicit maturity
+
+SEC-005:
+BU-017 + BU-018 IMPLEMENTATION EVIDENCE CONTROLLER-PROVEN /
+CAPABILITY MATRIX SYNCHRONIZATION PENDING
+
+SEC-028:
+IMPLEMENTATION PARTIAL /
+ANSWER-WRITE AUTHORITY ENFORCEMENT CANDIDATE /
+NOT YET FULLY PROVEN
+
+Reason:
+Resume authoritative active-Session readback remains outside BU-019.
+
+PB06:
+OPEN / NOT READY FOR CLOSURE
+
+PB07:
+OPEN
