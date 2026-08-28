@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.108
-**Supersedes:** 0.1.107
+**Version:** 0.1.109
+**Supersedes:** 0.1.108
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -317,7 +317,7 @@ LAST COMPLETED BUILD UNIT:
 BU-014 — Secure Assessment Integrated Capability Verification Bootstrap
 
 ACTIVE BUILD UNIT:
-NONE
+BU-016 — Secure Assessment Server-Side Expiry Finalization Runtime Bootstrap
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
@@ -679,10 +679,10 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-015 LIFECYCLE CLOSE
+MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-015 LIFECYCLE CLOSE
+MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
 
 DO NOT EXECUTE BU-011 UNTIL BU-010 IS DONE YES AND FULLY REPOSITORY FINALIZED.
 DO NOT EXECUTE BU-011 UNTIL FAST-TRACK ACTIVATION COMMIT IS PHYSICALLY VERIFIED.
@@ -748,6 +748,14 @@ integrated real PostgreSQL PASS
 Controller Physical Audit PASS
 Done YES
 Full repository finalized YES
+
+BU-016:
+implementation executed
+134/134 tests PASS
+integrated real PostgreSQL PASS
+Controller Physical Audit NOT YET
+Done NO
+Full repository finalized NO
 
 ## Forbidden Premature Work
 - No expiry auto-submit.

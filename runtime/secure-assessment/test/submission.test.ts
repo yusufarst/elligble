@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { handleSubmit, handleSubmissionGet, type SubmissionDependencies } from '../src/submission.ts';
+import { handleSubmit, handleSubmissionGet, handleExpiryFinalize, type SubmissionDependencies } from '../src/submission.ts';
 
 // Mock request and response
 class MockReq {
@@ -612,5 +612,115 @@ test('submission tests', async (t) => {
         assert.equal(queries.length, 0);
         const data = JSON.parse(res.body);
         assert.deepEqual(data, { error: 'invalid_request' });
+    });
+});
+
+test('expiry finalize tests', async (t) => {
+    const validAttemptId = '11111111-2222-4333-8444-555555555555';
+    const tenantId = 'tenant-1';
+
+    let queries: any[] = [];
+    let submissions: any[] = [];
+    let attempts: any[] = [{ id: validAttemptId, tenant_id: tenantId }];
+    let timerState: any = null;
+
+    const mockClient = {
+        query: async (queryText: string, params: any[]) => {
+            queries.push({ queryText, params });
+            if (queryText.startsWith('BEGIN') || queryText.startsWith('COMMIT') || queryText.startsWith('ROLLBACK')) return { rows: [] };
+
+            if (queryText.includes('SELECT id FROM secure_assessment_exam_attempts')) {
+                const id = params[0];
+                const tid = params[1];
+                const row = attempts.find(a => a.id === id && a.tenant_id === tid);
+                return { rows: row ? [row] : [] };
+            }
+            if (queryText.includes('SELECT id, submitted_at FROM secure_assessment_exam_submissions')) {
+                const tid = params[0];
+                const attemptId = params[1];
+                const row = submissions.find(s => s.tenant_id === tid && s.exam_attempt_id === attemptId);
+                return { rows: row ? [row] : [] };
+            }
+            if (queryText.includes('secure_assessment_timer_state t')) { // simplified match
+                return { rows: timerState ? [timerState] : [] };
+            }
+            if (queryText.includes('INSERT INTO secure_assessment_exam_submissions')) {
+                const tid = params[0];
+                const attemptId = params[1];
+                const newSub = { id: 'finalize-sub-uuid', tenant_id: tid, exam_attempt_id: attemptId, submitted_at: new Date('2026-08-28T12:00:00Z') };
+                submissions.push(newSub);
+                return { rows: [newSub] };
+            }
+            return { rows: [] };
+        },
+        release: () => {}
+    };
+
+    const deps: SubmissionDependencies = {
+        pool: {
+            connect: async () => mockClient
+        } as any,
+        getAuthorizedContext: () => ({ tenantId, authorizedAttemptId: validAttemptId })
+    };
+
+    const reset = () => {
+        queries = [];
+        submissions = [];
+        timerState = null;
+    };
+
+    await t.test('1. timer not started -> 409', async () => {
+        reset();
+        timerState = { started_at: null, configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 0 };
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 409);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'timer_not_started');
+    });
+
+    await t.test('2. timer not expired -> 409', async () => {
+        reset();
+        timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 100 }; // 3500 remaining
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 409);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'timer_not_expired');
+    });
+
+    await t.test('3. timer expired -> 200 submitted', async () => {
+        reset();
+        timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 4000 }; // expired
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.equal(data.status, 'submitted');
+        assert.equal(data.submissionId, 'finalize-sub-uuid');
+    });
+
+    await t.test('4. already submitted -> 200 exact receipt', async () => {
+        reset();
+        submissions.push({ id: 'existing-sub', tenant_id: tenantId, exam_attempt_id: validAttemptId, submitted_at: new Date('2026-08-08T08:08:08Z') });
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.equal(data.status, 'submitted');
+        assert.equal(data.submissionId, 'existing-sub');
+        assert.equal(data.submittedAt, '2026-08-08T08:08:08.000Z');
     });
 });

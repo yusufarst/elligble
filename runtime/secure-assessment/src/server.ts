@@ -2,7 +2,7 @@ import * as http from 'node:http';
 import * as pg from 'pg';
 import { handleSaveAnswer, type AuthorizedAssessmentContext } from './answer.ts';
 import { handleTimerStart, handleTimerGet } from './timer.ts';
-import { handleSubmit, handleSubmissionGet } from './submission.ts';
+import { handleSubmit, handleSubmissionGet, handleExpiryFinalize } from './submission.ts';
 import { handleResumeGet } from './resume.ts';
 
 export interface ServerDependencies {
@@ -49,6 +49,11 @@ export function createServer(deps: ServerDependencies): http.Server {
 
         if (req.url === '/api/v1/assessment/submit') {
             handleSubmit(req, res, deps);
+            return;
+        }
+
+        if (req.url === '/api/v1/assessment/expiry-finalize') {
+            handleExpiryFinalize(req, res, deps);
             return;
         }
 

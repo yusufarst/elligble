@@ -76,6 +76,14 @@ test('server tests', async (t) => {
         assert.equal(res.status, 403);
     });
 
+    await t.test('POST /api/v1/assessment/expiry-finalize -> reaches bounded Submission handler (403 missing context)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/expiry-finalize`, {
+            method: 'POST',
+            body: JSON.stringify({ attemptId: '11111111-2222-4333-8444-555555555555' })
+        });
+        assert.equal(res.status, 403);
+    });
+
     await t.test('GET /api/v1/assessment/submission?attemptId=uuid -> reaches bounded Submission handler (403 missing context)', async () => {
         const res = await fetch(`${baseUrl}/api/v1/assessment/submission?attemptId=11111111-2222-4333-8444-555555555555`);
         assert.equal(res.status, 403);
