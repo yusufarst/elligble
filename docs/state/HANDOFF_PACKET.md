@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.113
-**Supersedes:** 0.1.112
+**Version:** 0.1.114
+**Supersedes:** 0.1.113
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -760,6 +760,20 @@ Controller Physical Audit PASS
 Fast-Track Lifecycle Close COMPLETE
 Done YES
 Full repository finalized YES
+
+BU-017:
+implementation executed
+PostgreSQL structural verification PASS
+Real PostgreSQL functional verification PASS
+Migration repeat safety PASS
+Controller Audit NOT YET
+Done NO
+Full Finalized NO
+PB06 OPEN
+PB07 OPEN
+
+BU-018:
+NOT REGISTERED
 
 ## Forbidden Premature Work
 - No background/scheduler-driven expiry auto-submit.

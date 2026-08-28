@@ -34,9 +34,9 @@ This BU is PERSISTENCE ONLY. It does NOT implement runtime session activation, r
 ## 3. Maturity Statement
 BU-017 establishes persistence foundation only.
 It does NOT yet prove full:
-- SEC-005
-- SEC-028
-because runtime activation/governed supersession is not implemented here.
+- SEC-005: NOT YET FULLY PROVEN
+- SEC-028: NOT YET FULLY PROVEN
+because governed runtime activation/supersession remains future bounded work.
 
 ## 4. Required Persistence Semantics
 1. Existing Session rows remain valid and preserved.
