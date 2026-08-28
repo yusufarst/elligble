@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.109
-**Supersedes:** 0.1.108
+**Version:** 0.1.110
+**Supersedes:** 0.1.109
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -314,7 +314,7 @@ BUILD UNIT CONVENTION:
 BU-###
 
 LAST COMPLETED BUILD UNIT:
-BU-014 — Secure Assessment Integrated Capability Verification Bootstrap
+BU-015 — Secure Assessment Capability Matrix & PB06 Gap Qualification Bootstrap
 
 ACTIVE BUILD UNIT:
 BU-016 — Secure Assessment Server-Side Expiry Finalization Runtime Bootstrap
@@ -681,6 +681,9 @@ YES
 NEXT SAFE ACTION:
 MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
 
+NEXT STAGE:
+BU-016 FAST-TRACK CONTROLLER PHYSICAL AUDIT
+
 ## EXACT NEXT AUTHORIZED ACTION:
 MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
 
@@ -758,7 +761,8 @@ Done NO
 Full repository finalized NO
 
 ## Forbidden Premature Work
-- No expiry auto-submit.
+- No background/scheduler-driven expiry auto-submit.
+- No client pending-response flush/offline reconciliation.
 - No pause/continue/grace policy.
 - PB-06 OPEN.
 - PB-07 OPEN.
@@ -1092,7 +1096,8 @@ All AI remains optional/non-blocking future capability.
 - no scope expansion.
 - no full Zero-Lost-Answer claim.
 - no reconnect/resume/reconciliation expansion;
-- no expiry auto-submit;
+- no background/scheduler-driven expiry auto-submit;
+- no client pending-response flush/offline reconciliation;
 - no Submission;
 - no pause/continue/grace decision;
 - No next Build Unit implementation before formal registration and

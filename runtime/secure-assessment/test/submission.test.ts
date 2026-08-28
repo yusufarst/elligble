@@ -669,7 +669,77 @@ test('expiry finalize tests', async (t) => {
         timerState = null;
     };
 
-    await t.test('1. timer not started -> 409', async () => {
+    await t.test('1. non-POST method -> 405', async () => {
+        const req = new MockReq();
+        const res = new MockRes();
+        req.method = 'GET';
+        handleExpiryFinalize(req as any, res as any, deps);
+        assert.equal(res.statusCode, 405);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'method_not_allowed');
+    });
+
+    await t.test('2. invalid JSON/request -> 400', async () => {
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.sendRaw('invalid json');
+        await res.endPromise;
+        assert.equal(res.statusCode, 400);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'invalid_request');
+    });
+
+    await t.test('3. missing authorized context -> 403', async () => {
+        const req = new MockReq();
+        const res = new MockRes();
+        const depsNoContext: SubmissionDependencies = { ...deps, getAuthorizedContext: () => null };
+        const promise = handleExpiryFinalize(req as any, res as any, depsNoContext);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 403);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'forbidden');
+    });
+
+    await t.test('4. attemptId differs from authorizedAttemptId -> 403', async () => {
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: '22222222-3333-4444-8555-666666666666' });
+        await res.endPromise;
+        assert.equal(res.statusCode, 403);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'forbidden');
+    });
+
+    await t.test('5. DB connect failure -> 503', async () => {
+        const req = new MockReq();
+        const res = new MockRes();
+        const depsDbFail: SubmissionDependencies = { ...deps, pool: { connect: async () => { throw new Error('fail'); } } as any };
+        const promise = handleExpiryFinalize(req as any, res as any, depsDbFail);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 503);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'persistence_unavailable');
+    });
+
+    await t.test('6. transaction/query persistence failure -> 503', async () => {
+        reset();
+        const failClient = { ...mockClient, query: async (q: string) => { if (q.includes('FOR UPDATE')) throw new Error('fail'); return {rows:[]}; } };
+        const depsQueryFail: SubmissionDependencies = { ...deps, pool: { connect: async () => failClient } as any };
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, depsQueryFail);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        assert.equal(res.statusCode, 503);
+        const data = JSON.parse(res.body);
+        assert.equal(data.error, 'persistence_unavailable');
+    });
+
+    await t.test('7. timer not started -> 409', async () => {
         reset();
         timerState = { started_at: null, configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 0 };
         const req = new MockReq();
@@ -682,7 +752,7 @@ test('expiry finalize tests', async (t) => {
         assert.equal(data.error, 'timer_not_started');
     });
 
-    await t.test('2. timer not expired -> 409', async () => {
+    await t.test('8. active timer -> 409', async () => {
         reset();
         timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 100 }; // 3500 remaining
         const req = new MockReq();
@@ -695,7 +765,7 @@ test('expiry finalize tests', async (t) => {
         assert.equal(data.error, 'timer_not_expired');
     });
 
-    await t.test('3. timer expired -> 200 submitted', async () => {
+    await t.test('9. expired timer -> 200 submitted', async () => {
         reset();
         timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 4000 }; // expired
         const req = new MockReq();
@@ -709,7 +779,7 @@ test('expiry finalize tests', async (t) => {
         assert.equal(data.submissionId, 'finalize-sub-uuid');
     });
 
-    await t.test('4. already submitted -> 200 exact receipt', async () => {
+    await t.test('10. existing Submission -> same exact receipt', async () => {
         reset();
         submissions.push({ id: 'existing-sub', tenant_id: tenantId, exam_attempt_id: validAttemptId, submitted_at: new Date('2026-08-08T08:08:08Z') });
         const req = new MockReq();
@@ -722,5 +792,54 @@ test('expiry finalize tests', async (t) => {
         assert.equal(data.status, 'submitted');
         assert.equal(data.submissionId, 'existing-sub');
         assert.equal(data.submittedAt, '2026-08-08T08:08:08.000Z');
+    });
+
+    await t.test('11. repeated expired finalize -> same receipt and exactly one Submission', async () => {
+        reset();
+        timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 4000 };
+        const req1 = new MockReq(); const res1 = new MockRes();
+        const req2 = new MockReq(); const res2 = new MockRes();
+
+        handleExpiryFinalize(req1 as any, res1 as any, deps);
+        req1.send({ attemptId: validAttemptId });
+        await res1.endPromise;
+
+        handleExpiryFinalize(req2 as any, res2 as any, deps);
+        req2.send({ attemptId: validAttemptId });
+        await res2.endPromise;
+
+        assert.equal(res1.statusCode, 200);
+        assert.equal(res2.statusCode, 200);
+        const d1 = JSON.parse(res1.body);
+        const d2 = JSON.parse(res2.body);
+        assert.equal(d1.submissionId, d2.submissionId);
+        assert.equal(submissions.length, 1);
+    });
+
+    await t.test('12. authoritative timer SQL uses statement_timestamp()', async () => {
+        reset();
+        timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 4000 };
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+        const timerQuery = queries.find(q => q.queryText.includes('secure_assessment_timer_state t'));
+        assert.ok(timerQuery.queryText.includes('statement_timestamp()'), 'Must use statement_timestamp() for timer authority');
+    });
+
+    await t.test('13. query ordering proves BEGIN then Attempt SELECT ... FOR UPDATE then authoritative Submission/timer evaluation', async () => {
+        reset();
+        timerState = { started_at: new Date(), configured_duration_seconds: '3600', total_adjustment: '0', elapsed_seconds: 4000 };
+        const req = new MockReq();
+        const res = new MockRes();
+        const promise = handleExpiryFinalize(req as any, res as any, deps);
+        req.send({ attemptId: validAttemptId });
+        await res.endPromise;
+
+        assert.ok(queries[0].queryText.startsWith('BEGIN'));
+        assert.ok(queries[1].queryText.includes('SELECT id FROM secure_assessment_exam_attempts') && queries[1].queryText.includes('FOR UPDATE'));
+        assert.ok(queries[2].queryText.includes('SELECT id, submitted_at FROM secure_assessment_exam_submissions'));
+        assert.ok(queries[3].queryText.includes('secure_assessment_timer_state t'));
     });
 });

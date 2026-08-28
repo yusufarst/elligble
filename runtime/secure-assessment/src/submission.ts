@@ -435,8 +435,8 @@ export async function handleExpiryFinalize(req: http.IncomingMessage, res: http.
 
         } catch (err) {
             try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'internal_error' }));
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'persistence_unavailable' }));
         } finally {
             client.release();
         }
