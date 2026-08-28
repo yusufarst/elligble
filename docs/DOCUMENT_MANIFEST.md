@@ -1,6 +1,6 @@
 **Status:** ACTIVE  
-**Version:** 1.0.104
-**Supersedes:** 1.0.102
+**Version:** 1.0.105
+**Supersedes:** 1.0.104
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 

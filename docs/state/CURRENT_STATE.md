@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.11
+**Version:** 1.5.12
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.10
+**Supersedes:** CURRENT_STATE v1.5.11
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-08-24
@@ -982,7 +982,7 @@ YES
 
 ### BU-012
 - **TITLE:** Secure Assessment Post-Submission Answer Write Guard Runtime Bootstrap
-- **STATUS:** COMPLETE / TERMINAL VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FAST-TRACK PENDING AUDIT
+- **STATUS:** COMPLETE / TERMINAL VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FAST-TRACK REPOSITORY FINALIZED
 - **IMPLEMENTATION:** EXECUTED
 - **TYPECHECK:** PASS
 - **TEST:** PASS
@@ -1051,7 +1051,7 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 
 ## Immediate Next Milestone
 
-MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-015 LIFECYCLE CLOSE
+MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-016 FAST-TRACK MAIN EXECUTION
 
 After each phase, update this file with the new active unit and prohibited premature work.
 

@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.110
-**Supersedes:** 0.1.109
+**Version:** 0.1.111
+**Supersedes:** 0.1.110
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -90,7 +90,7 @@ BUILD
 **Project root:** `C:\Projects\ELLIGBLE`
 **Branch:** `main`
 **Remote:** `origin https://github.com/yusufarst/elligble.git`
-**Repository visibility:** PRIVATE
+**Repository visibility:** PUBLIC
 
 Previous committed baseline before the MB-03 lock package:
 
@@ -1098,7 +1098,7 @@ All AI remains optional/non-blocking future capability.
 - no reconnect/resume/reconciliation expansion;
 - no background/scheduler-driven expiry auto-submit;
 - no client pending-response flush/offline reconciliation;
-- no Submission;
+- no new Submission policy expansion beyond completed bounded runtime;
 - no pause/continue/grace decision;
 - No next Build Unit implementation before formal registration and
   Controller authorization.
