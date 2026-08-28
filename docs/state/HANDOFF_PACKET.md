@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.115
-**Supersedes:** 0.1.114
+**Version:** 0.1.116
+**Supersedes:** 0.1.115
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -314,10 +314,10 @@ BUILD UNIT CONVENTION:
 BU-###
 
 LAST COMPLETED BUILD UNIT:
-BU-016 — Secure Assessment Server-Side Expiry Finalization Runtime Bootstrap
+BU-017 — Secure Assessment One-Active-Session Core State Persistence Bootstrap
 
 ACTIVE BUILD UNIT:
-BU-017 — Secure Assessment One-Active-Session Core State Persistence Bootstrap
+NONE
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
@@ -679,10 +679,10 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-017 FAST-TRACK MAIN EXECUTION
+MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-017 LIFECYCLE CLOSE
 
 NEXT STAGE:
-BU-017 FAST-TRACK CONTROLLER PHYSICAL AUDIT
+NONE
 
 ## EXACT NEXT AUTHORIZED ACTION:
 MAIN PROJECT CONTROL 06 PHYSICAL AUDIT OF BU-017 FAST-TRACK MAIN EXECUTION
@@ -764,18 +764,38 @@ Full repository finalized YES
 BU-017:
 implementation executed
 PostgreSQL structural verification PASS
-COLUMN NULLABILITY VERIFICATION PASS
-NO UNINTENDED TABLE CREATION PASS
-Real PostgreSQL functional verification PASS
-Migration repeat safety PASS
-Controller Audit NOT YET
-Done NO
-Full Finalized NO
-PB06 OPEN
-PB07 OPEN
+column nullability verification PASS
+no unintended table creation PASS
+real PostgreSQL functional verification PASS
+migration repeat safety PASS
+Controller Physical Audit PASS
+Fast-Track Lifecycle Close COMPLETE
+Done YES
+Full repository finalized YES
+
+SEC-005:
+NOT YET FULLY PROVEN
+
+SEC-028:
+NOT YET FULLY PROVEN
+
+NEXT BUILD UNIT:
+NOT YET REGISTERED
+
+NEXT SAFE ACTION:
+MAIN PROJECT CONTROL 06 FINAL PHYSICAL VERIFICATION OF BU-017 LIFECYCLE CLOSE
+
+NEXT STAGE:
+NONE
+
+PB06:
+OPEN / NOT READY FOR CLOSURE
+
+PB07:
+OPEN
 
 BU-018:
-NOT REGISTERED
+NOT REGISTERED / NOT ACTIVE
 
 ## Forbidden Premature Work
 - No background/scheduler-driven expiry auto-submit.
