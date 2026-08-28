@@ -9,6 +9,7 @@ export interface AuthorizedAssessmentContext {
 
 export interface SaveAnswerRequest {
     attemptId: string;
+    sessionId: string;
     snapshotId: string;
     answerPayload: any;
     clientWriteIdentity: string;
@@ -48,6 +49,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
             const payload = JSON.parse(body);
 
             if (!payload.attemptId || !isValidUUID(payload.attemptId)) throw new Error('invalid attemptId');
+            if (!payload.sessionId || !isValidUUID(payload.sessionId)) throw new Error('invalid sessionId');
             if (!payload.snapshotId || !isValidUUID(payload.snapshotId)) throw new Error('invalid snapshotId');
             if (payload.answerPayload === undefined || payload.answerPayload === null) throw new Error('invalid answerPayload');
 
@@ -64,6 +66,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
             }
 
             const attemptId = payload.attemptId;
+            const sessionId = payload.sessionId;
             const snapshotId = payload.snapshotId;
             const answerPayload = payload.answerPayload;
             const clientWriteIdentity = payload.clientWriteIdentity;
@@ -95,6 +98,17 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     await client.query('ROLLBACK');
                     res.writeHead(404, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                    return;
+                }
+
+                const activeSessionRes = await client.query(
+                    'SELECT id FROM secure_assessment_exam_sessions WHERE tenant_id = $1 AND exam_attempt_id = $2 AND activated_at IS NOT NULL AND ended_at IS NULL',
+                    [context.tenantId, attemptId]
+                );
+                if (activeSessionRes.rows.length === 0 || activeSessionRes.rows[0].id !== sessionId) {
+                    await client.query('ROLLBACK');
+                    res.writeHead(409, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'session_not_active' }));
                     return;
                 }
 

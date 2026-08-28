@@ -7,6 +7,7 @@ import type * as pg from 'pg';
 test('answer save capability tests', async (t) => {
     const validUUID = '123e4567-e89b-12d3-a456-426614174000';
     const validSnapshotUUID = '123e4567-e89b-12d3-a456-426614174001';
+    const validSessionUUID = '123e4567-e89b-12d3-a456-426614174002';
 
     // In-memory mock DB state
     let attempts: any[] = [];
@@ -15,6 +16,7 @@ test('answer save capability tests', async (t) => {
     let answers: any[] = [];
     let submissions: any[] = [];
     let timerStates: any[] = [];
+    let sessions: any[] = [];
 
     let mockPoolShouldFail = false;
     let mockQueryShouldFail = false;
@@ -72,6 +74,13 @@ test('answer save capability tests', async (t) => {
                     total_adjustment: '0',
                     elapsed_seconds: t.elapsed_seconds || 0
                 }))};
+            }
+
+            if (sqlLower.includes('from secure_assessment_exam_sessions')) {
+                const tenantId = params![0];
+                const attemptId = params![1];
+                const found = sessions.filter(s => s.tenant_id === tenantId && s.exam_attempt_id === attemptId && s.activated_at !== null && s.ended_at === null);
+                return { rows: found };
             }
 
             if (sqlLower.includes('from secure_assessment_exam_answers') && sqlLower.includes('for update')) {
@@ -166,6 +175,9 @@ test('answer save capability tests', async (t) => {
     const baseUrl = `http://127.0.0.1:${port}`;
 
     async function sendPost(payload: any) {
+        if (payload && typeof payload === 'object' && !('sessionId' in payload)) {
+            payload.sessionId = validSessionUUID;
+        }
         return fetch(`${baseUrl}/api/v1/assessment/answer/save`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -187,6 +199,7 @@ test('answer save capability tests', async (t) => {
         answers = [];
         submissions = [];
         timerStates = [];
+        sessions = [{ id: validSessionUUID, tenant_id: validUUID, exam_attempt_id: validUUID, activated_at: new Date(), ended_at: null }];
         mockContext = { tenantId: validUUID, authorizedAttemptId: validUUID };
     });
 
