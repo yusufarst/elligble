@@ -59,7 +59,14 @@ export function createServer(deps: ServerDependencies): http.Server {
         }
 
         if (req.url === '/api/v1/assessment/session/activate') {
-            const ctx = deps.getAuthorizedContext(req);
+            let ctx;
+            try {
+                ctx = deps.getAuthorizedContext(req);
+            } catch (e) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'internal_error' }));
+                return;
+            }
             if (!ctx) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'forbidden' }));

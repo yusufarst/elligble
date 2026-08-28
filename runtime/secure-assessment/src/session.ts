@@ -2,6 +2,11 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { Pool } from 'pg';
 import type { AuthorizedAssessmentContext } from './answer.ts';
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidUUID(uuid: any): boolean {
+  return typeof uuid === 'string' && uuidRegex.test(uuid);
+}
+
 export async function handleSessionActivate(
   req: IncomingMessage,
   res: ServerResponse,
@@ -29,9 +34,16 @@ export async function handleSessionActivate(
         return resolve();
       }
 
-      const { attemptId, sessionId, confirmSupersede, expectedActiveSessionId } = parsed;
+      const { attemptId, sessionId, expectedActiveSessionId } = parsed;
 
-      if (!attemptId || !sessionId || typeof attemptId !== 'string' || typeof sessionId !== 'string') {
+      if (parsed.confirmSupersede !== undefined && typeof parsed.confirmSupersede !== 'boolean') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request' }));
+        return resolve();
+      }
+      const confirmSupersede = parsed.confirmSupersede === true;
+
+      if (!isValidUUID(attemptId) || !isValidUUID(sessionId)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'invalid_request' }));
         return resolve();
@@ -43,7 +55,7 @@ export async function handleSessionActivate(
         return resolve();
       }
 
-      if (confirmSupersede === true && (!expectedActiveSessionId || typeof expectedActiveSessionId !== 'string')) {
+      if (confirmSupersede && !isValidUUID(expectedActiveSessionId)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'invalid_request' }));
         return resolve();
@@ -68,8 +80,8 @@ export async function handleSessionActivate(
 
         // 2. Check Submission
         const subRes = await client.query(
-          'SELECT id FROM secure_assessment_exam_submissions WHERE exam_attempt_id = $1',
-          [attemptId]
+          'SELECT id FROM secure_assessment_exam_submissions WHERE exam_attempt_id = $1 AND tenant_id = $2',
+          [attemptId, ctx.tenantId]
         );
         if (subRes.rows.length > 0) {
           await client.query('ROLLBACK');
@@ -102,8 +114,8 @@ export async function handleSessionActivate(
 
         // 4. Read Current Active Session
         const activeRes = await client.query(
-          'SELECT id, activated_at FROM secure_assessment_exam_sessions WHERE exam_attempt_id = $1 AND activated_at IS NOT NULL AND ended_at IS NULL',
-          [attemptId]
+          'SELECT id, activated_at FROM secure_assessment_exam_sessions WHERE exam_attempt_id = $1 AND tenant_id = $2 AND activated_at IS NOT NULL AND ended_at IS NULL',
+          [attemptId, ctx.tenantId]
         );
         const currentActive = activeRes.rows.length > 0 ? activeRes.rows[0] : null;
 
@@ -125,8 +137,8 @@ export async function handleSessionActivate(
           // First Activation
           if (targetSession) {
             await client.query(
-              'UPDATE secure_assessment_exam_sessions SET activated_at = $1 WHERE id = $2',
-              [ts, sessionId]
+              'UPDATE secure_assessment_exam_sessions SET activated_at = $1 WHERE id = $2 AND tenant_id = $3 AND exam_attempt_id = $4',
+              [ts, sessionId, ctx.tenantId, attemptId]
             );
           } else {
             await client.query(
@@ -172,12 +184,12 @@ export async function handleSessionActivate(
             );
           }
           await client.query(
-            'UPDATE secure_assessment_exam_sessions SET ended_at = $1, superseded_by_session_id = $2 WHERE id = $3',
-            [ts, sessionId, currentActive.id]
+            'UPDATE secure_assessment_exam_sessions SET ended_at = $1, superseded_by_session_id = $2 WHERE id = $3 AND tenant_id = $4 AND exam_attempt_id = $5',
+            [ts, sessionId, currentActive.id, ctx.tenantId, attemptId]
           );
           await client.query(
-            'UPDATE secure_assessment_exam_sessions SET activated_at = $1 WHERE id = $2',
-            [ts, sessionId]
+            'UPDATE secure_assessment_exam_sessions SET activated_at = $1 WHERE id = $2 AND tenant_id = $3 AND exam_attempt_id = $4',
+            [ts, sessionId, ctx.tenantId, attemptId]
           );
           await client.query('COMMIT');
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -194,7 +206,6 @@ export async function handleSessionActivate(
         if (client) {
           await client.query('ROLLBACK').catch(() => {});
         }
-        console.error(err);
         res.writeHead(503, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'persistence_unavailable' }));
         return resolve();

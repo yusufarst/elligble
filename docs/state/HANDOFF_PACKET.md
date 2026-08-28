@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.118
-**Supersedes:** 0.1.117
+**Version:** 0.1.119
+**Supersedes:** 0.1.118
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -792,7 +792,8 @@ PB07:
 OPEN
 
 BU-018:
-NOT REGISTERED / NOT ACTIVE
+ACTIVE / TERMINAL VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FAST-TRACK MAIN EXECUTION
+(Verification forward-corrected for strict UUID validation)
 
 ## Forbidden Premature Work
 - No background/scheduler-driven expiry auto-submit.

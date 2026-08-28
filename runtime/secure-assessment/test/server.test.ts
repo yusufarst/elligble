@@ -6,6 +6,7 @@ import { createServer } from '../src/server.ts';
 test('server tests', async (t) => {
     let checkReadinessResult: boolean | Error = true;
     let readinessCallCount = 0;
+    let authContextThrows = false;
 
     const server = createServer({
         checkReadiness: async () => {
@@ -16,7 +17,10 @@ test('server tests', async (t) => {
             return checkReadinessResult;
         },
         pool: null as any,
-        getAuthorizedContext: () => null
+        getAuthorizedContext: () => {
+            if (authContextThrows) throw new Error("Auth provider down");
+            return null;
+        }
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -94,12 +98,24 @@ test('server tests', async (t) => {
         assert.equal(res.status, 403);
     });
 
-    await t.test('POST /api/v1/assessment/session/activate -> reaches bounded Session handler (403 missing context)', async () => {
+    await t.test('38, 40. POST /api/v1/assessment/session/activate -> reaches bounded Session handler (403 missing context)', async () => {
         const res = await fetch(`${baseUrl}/api/v1/assessment/session/activate`, {
             method: 'POST',
             body: JSON.stringify({ attemptId: '11111111-2222-4333-8444-555555555555', sessionId: '22222222-2222-4333-8444-555555555555' })
         });
         assert.equal(res.status, 403);
+    });
+
+    await t.test('39. POST /api/v1/assessment/session/activate getAuthorizedContext throws -> 500 internal_error', async () => {
+        authContextThrows = true;
+        const res = await fetch(`${baseUrl}/api/v1/assessment/session/activate`, {
+            method: 'POST',
+            body: JSON.stringify({ attemptId: '11111111-2222-4333-8444-555555555555', sessionId: '22222222-2222-4333-8444-555555555555' })
+        });
+        assert.equal(res.status, 500);
+        const data = await res.json();
+        assert.deepEqual(data, { error: 'internal_error' });
+        authContextThrows = false;
     });
 
     await t.test('unsupported method -> bounded not-found behavior', async () => {
