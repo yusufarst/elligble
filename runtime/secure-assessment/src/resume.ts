@@ -58,7 +58,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        let attemptRes, answersRes, timerRes, submissionRes;
+        let attemptRes, sessionRes, answersRes, timerRes, submissionRes;
         try {
             await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
@@ -71,6 +71,18 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 await client.query('ROLLBACK');
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                return;
+            }
+
+            sessionRes = await client.query(
+                'SELECT id, activated_at FROM secure_assessment_exam_sessions WHERE tenant_id = $1 AND exam_attempt_id = $2 AND activated_at IS NOT NULL AND ended_at IS NULL',
+                [context.tenantId, attemptId]
+            );
+
+            if (sessionRes.rows.length > 1) {
+                await client.query('ROLLBACK');
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'internal_error' }));
                 return;
             }
 
@@ -118,6 +130,15 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
         }
 
         try {
+            let sessionResponse: any = { status: 'none' };
+            if (sessionRes.rows.length === 1) {
+                sessionResponse = {
+                    status: 'active',
+                    sessionId: sessionRes.rows[0].id,
+                    activatedAt: sessionRes.rows[0].activated_at.toISOString()
+                };
+            }
+
             const answers = answersRes.rows.map(row => ({
                 snapshotId: row.snapshotId,
                 answerPayload: row.answerPayload,
@@ -161,6 +182,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 attemptId,
+                session: sessionResponse,
                 answers,
                 timer: timerResponse,
                 submission: submissionResponse
