@@ -38,6 +38,7 @@ It does NOT yet prove full:
 - SEC-028: NOT YET FULLY PROVEN
 because governed runtime activation/supersession remains future bounded work.
 
+
 ## 4. Required Persistence Semantics
 1. Existing Session rows remain valid and preserved.
 2. A historical Session may exist without being active.

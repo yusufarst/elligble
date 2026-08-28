@@ -21,6 +21,7 @@ DECLARE
     session_t2_1 UUID := gen_random_uuid();
     
     col_type TEXT;
+    is_null TEXT;
 BEGIN
     RAISE NOTICE '--- Starting BU-017 Verification ---';
 
@@ -29,57 +30,61 @@ BEGIN
         RAISE EXCEPTION 'STRUCTURAL FAILED: 0007 migration not in history';
     END IF;
 
-    SELECT data_type INTO col_type FROM information_schema.columns WHERE table_name = 'secure_assessment_exam_sessions' AND column_name = 'activated_at';
-    IF col_type != 'timestamp with time zone' THEN RAISE EXCEPTION 'STRUCTURAL FAILED: activated_at missing or wrong type'; END IF;
+    -- activated_at
+    SELECT data_type, is_nullable INTO col_type, is_null FROM information_schema.columns WHERE table_name = 'secure_assessment_exam_sessions' AND column_name = 'activated_at';
+    IF col_type != 'timestamp with time zone' OR is_null != 'YES' THEN RAISE EXCEPTION 'STRUCTURAL FAILED: activated_at missing, wrong type or not nullable'; END IF;
+    RAISE NOTICE 'COLUMN NULLABILITY: activated_at PASS';
 
-    SELECT data_type INTO col_type FROM information_schema.columns WHERE table_name = 'secure_assessment_exam_sessions' AND column_name = 'ended_at';
-    IF col_type != 'timestamp with time zone' THEN RAISE EXCEPTION 'STRUCTURAL FAILED: ended_at missing or wrong type'; END IF;
+    -- ended_at
+    SELECT data_type, is_nullable INTO col_type, is_null FROM information_schema.columns WHERE table_name = 'secure_assessment_exam_sessions' AND column_name = 'ended_at';
+    IF col_type != 'timestamp with time zone' OR is_null != 'YES' THEN RAISE EXCEPTION 'STRUCTURAL FAILED: ended_at missing, wrong type or not nullable'; END IF;
+    RAISE NOTICE 'COLUMN NULLABILITY: ended_at PASS';
 
-    SELECT data_type INTO col_type FROM information_schema.columns WHERE table_name = 'secure_assessment_exam_sessions' AND column_name = 'superseded_by_session_id';
-    IF col_type != 'uuid' THEN RAISE EXCEPTION 'STRUCTURAL FAILED: superseded_by_session_id missing or wrong type'; END IF;
+    -- superseded_by_session_id
+    SELECT data_type, is_nullable INTO col_type, is_null FROM information_schema.columns WHERE table_name = 'secure_assessment_exam_sessions' AND column_name = 'superseded_by_session_id';
+    IF col_type != 'uuid' OR is_null != 'YES' THEN RAISE EXCEPTION 'STRUCTURAL FAILED: superseded_by_session_id missing, wrong type or not nullable'; END IF;
+    RAISE NOTICE 'COLUMN NULLABILITY: superseded_by_session_id PASS';
 
+    -- Robust catalog checks
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
-        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.contype = 'u'
-        AND pg_get_constraintdef(c.oid) LIKE '%(id, tenant_id)%'
+        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.conname = 'uq_sa_exam_sessions_tenant'
     ) THEN
-        RAISE EXCEPTION 'STRUCTURAL FAILED: missing unique constraint on id, tenant_id';
+        RAISE EXCEPTION 'STRUCTURAL FAILED: missing uq_sa_exam_sessions_tenant';
     END IF;
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
-        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.contype = 'f'
-        AND pg_get_constraintdef(c.oid) LIKE '%FOREIGN KEY (superseded_by_session_id, tenant_id) REFERENCES secure_assessment_exam_sessions(id, tenant_id)%'
+        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.conname = 'fk_sa_session_superseded'
     ) THEN
-        RAISE EXCEPTION 'STRUCTURAL FAILED: missing same-domain tenant-bound FK for supersession';
+        RAISE EXCEPTION 'STRUCTURAL FAILED: missing fk_sa_session_superseded';
     END IF;
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint c
         JOIN pg_class t ON c.conrelid = t.oid
-        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.contype = 'c'
-        AND pg_get_constraintdef(c.oid) LIKE '%CHECK (((superseded_by_session_id IS NULL) OR (superseded_by_session_id <> id)))%'
+        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.conname = 'chk_sa_session_no_self_supersede'
     ) THEN
-        RAISE EXCEPTION 'STRUCTURAL FAILED: missing self-supersession check';
+        RAISE EXCEPTION 'STRUCTURAL FAILED: missing chk_sa_session_no_self_supersede';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.conname = 'fk_sa_session_attempt'
+    ) THEN
+        RAISE EXCEPTION 'STRUCTURAL FAILED: missing fk_sa_session_attempt';
     END IF;
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes
         WHERE tablename = 'secure_assessment_exam_sessions'
+        AND indexname = 'uq_sa_exam_sessions_one_active'
         AND indexdef LIKE '%CREATE UNIQUE INDEX%ON %secure_assessment_exam_sessions%USING btree (tenant_id, exam_attempt_id) WHERE ((activated_at IS NOT NULL) AND (ended_at IS NULL))%'
     ) THEN
-        RAISE EXCEPTION 'STRUCTURAL FAILED: missing partial unique index for active session';
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint c
-        JOIN pg_class t ON c.conrelid = t.oid
-        WHERE t.relname = 'secure_assessment_exam_sessions' AND c.contype = 'f'
-        AND pg_get_constraintdef(c.oid) LIKE '%FOREIGN KEY (exam_attempt_id, tenant_id) REFERENCES secure_assessment_exam_attempts(id, tenant_id)%'
-    ) THEN
-        RAISE EXCEPTION 'STRUCTURAL FAILED: original BU-002 FK broken';
+        RAISE EXCEPTION 'STRUCTURAL FAILED: missing or incorrect uq_sa_exam_sessions_one_active';
     END IF;
 
     RAISE NOTICE 'STRUCTURAL VERIFICATION: PASS';

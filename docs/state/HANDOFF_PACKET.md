@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.114
-**Supersedes:** 0.1.113
+**Version:** 0.1.115
+**Supersedes:** 0.1.114
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -764,6 +764,8 @@ Full repository finalized YES
 BU-017:
 implementation executed
 PostgreSQL structural verification PASS
+COLUMN NULLABILITY VERIFICATION PASS
+NO UNINTENDED TABLE CREATION PASS
 Real PostgreSQL functional verification PASS
 Migration repeat safety PASS
 Controller Audit NOT YET
