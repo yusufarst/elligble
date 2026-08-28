@@ -1,7 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.126
-**Supersedes:** 0.1.125
-0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history.
+**Version:** 0.1.127
+**Supersedes:** 0.1.126
+0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 advanced BU-020.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -69,6 +69,9 @@ MASTER BLUEPRINT
 
 LAST COMPLETED UNIT
 → BU-019
+
+ACTIVE UNIT
+→ BU-020
 
 LATEST LOCKED ARCHITECTURE SEQUENCE:
 SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
