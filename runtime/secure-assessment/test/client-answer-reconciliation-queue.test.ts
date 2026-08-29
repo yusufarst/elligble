@@ -4,10 +4,14 @@ import assert from 'node:assert/strict';
 import {
   reconcileClientAnswerQueue,
   type ClientAnswerSynchronizationExecutor,
-  type ClientAnswerRecoveryStoreAdapter
 } from '../src/client-answer-reconciliation-queue.ts';
 
-import type { ClientAnswerRecoveryRecord, ClientAnswerRecoveryScope } from '../src/client-answer-recovery-store.ts';
+import {
+  type ClientAnswerRecoveryRecord,
+  type ClientAnswerRecoveryScope,
+  type ClientAnswerRecoveryStore,
+  isRecoveryRecordForScope
+} from '../src/client-answer-recovery-store.ts';
 import type { ClientAnswerMutationRecord, AuthoritativeAcknowledgement } from '../src/client-answer-sync.ts';
 
 const testScope: ClientAnswerRecoveryScope = {
@@ -47,7 +51,7 @@ function createMockRecord(mutation: ClientAnswerMutationRecord): ClientAnswerRec
   };
 }
 
-class MockStore implements ClientAnswerRecoveryStoreAdapter {
+class MockStore implements Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'> {
   public records: ClientAnswerRecoveryRecord[] = [];
   public putCalls: ClientAnswerRecoveryRecord[] = [];
   public shouldFailList = false;
@@ -58,15 +62,15 @@ class MockStore implements ClientAnswerRecoveryStoreAdapter {
     if (this.shouldFailList) {
       throw new Error('Mock store list failure');
     }
-    // Return deep copies to ensure caller records are not mutated by the store (though reconcile shouldn't either)
-    return JSON.parse(JSON.stringify(this.records));
+    const filtered = this.records.filter(r => isRecoveryRecordForScope(r, scope));
+    return structuredClone(filtered);
   }
 
   async put(record: ClientAnswerRecoveryRecord): Promise<void> {
     if (this.shouldFailPut || (this.putFailureCondition && this.putFailureCondition(record))) {
       throw new Error('Mock store put failure');
     }
-    this.putCalls.push(JSON.parse(JSON.stringify(record)));
+    this.putCalls.push(structuredClone(record));
   }
 }
 
@@ -95,7 +99,7 @@ describe('client-answer-reconciliation-queue', () => {
     const record = createMockRecord(mutation);
 
     // We keep a reference to the original object to ensure it's not mutated
-    const originalRecord = JSON.parse(JSON.stringify(record));
+    const originalRecord = structuredClone(record);
     store.records = [record];
 
     const executor: ClientAnswerSynchronizationExecutor = async () => {
@@ -113,6 +117,56 @@ describe('client-answer-reconciliation-queue', () => {
     });
     assert.equal(store.putCalls.length, 0);
     assert.deepEqual(record, originalRecord, 'Caller records must not be mutated');
+  });
+
+  it('attempt-scope isolation, including another attempt/scope not being executed', async () => {
+    const store = new MockStore();
+
+    const mut1 = createMockMutation('pending', 1, 'in-scope');
+    const rec1 = createMockRecord(mut1);
+
+    const mut2 = createMockMutation('pending', 2, 'out-of-scope');
+    const rec2 = {
+      ...createMockRecord(mut2),
+      scopeKey: 'different-scope',
+      mutation: {
+        ...mut2,
+        identity: { ...mut2.identity, attemptId: 'different-attempt' }
+      }
+    };
+
+    store.records = [rec1, rec2];
+
+    const executor: ClientAnswerSynchronizationExecutor = async (mut) => {
+      return { status: 'acknowledged', clientWriteIdentity: mut.clientWriteIdentity, writeVersion: 2 };
+    };
+
+    const summary = await reconcileClientAnswerQueue(testScope, store, executor);
+
+    assert.equal(summary.scanned, 1, 'Should only scan in-scope records');
+    assert.equal(summary.attempted, 1, 'Should only attempt in-scope records');
+    assert.equal(store.putCalls.length, 2);
+    assert.equal(store.putCalls[0].mutation.clientWriteIdentity, 'in-scope');
+  });
+
+  it('structured-clone-compatible non-JSON answerPayload survives reconciliation', async () => {
+    const store = new MockStore();
+    const mutation = {
+      ...createMockMutation('pending', 1, 'client-id-1'),
+      answerPayload: { data: new Uint8Array([1, 2, 3]) }
+    };
+    const record = createMockRecord(mutation);
+    store.records = [record];
+
+    const executor: ClientAnswerSynchronizationExecutor = async (mut) => {
+      return { status: 'acknowledged', clientWriteIdentity: mut.clientWriteIdentity, writeVersion: 2 };
+    };
+
+    await reconcileClientAnswerQueue(testScope, store, executor);
+
+    const payload = store.putCalls[0].mutation.answerPayload as any;
+    assert.ok(payload.data instanceof Uint8Array);
+    assert.deepEqual(payload.data, new Uint8Array([1, 2, 3]));
   });
 
   it('processes pending candidate, persists valid acknowledgement', async () => {

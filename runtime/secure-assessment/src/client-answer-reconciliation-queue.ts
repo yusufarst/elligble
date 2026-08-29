@@ -1,6 +1,7 @@
 import type {
   ClientAnswerRecoveryScope,
   ClientAnswerRecoveryRecord,
+  ClientAnswerRecoveryStore,
 } from './client-answer-recovery-store.ts';
 
 import type {
@@ -24,14 +25,11 @@ export interface ClientAnswerReconciliationSummary {
   skippedAcknowledged: number;
 }
 
-export interface ClientAnswerRecoveryStoreAdapter {
-  listByScope(scope: ClientAnswerRecoveryScope): Promise<ClientAnswerRecoveryRecord[]>;
-  put(record: ClientAnswerRecoveryRecord): Promise<void>;
-}
+
 
 export async function reconcileClientAnswerQueue(
   scope: ClientAnswerRecoveryScope,
-  store: ClientAnswerRecoveryStoreAdapter,
+  store: Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'>,
   executor: ClientAnswerSynchronizationExecutor
 ): Promise<ClientAnswerReconciliationSummary> {
   const summary: ClientAnswerReconciliationSummary = {
