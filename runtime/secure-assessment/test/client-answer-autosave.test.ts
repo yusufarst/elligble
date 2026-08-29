@@ -51,6 +51,7 @@ test('client answer immediate autosave capture', async (t) => {
       triggerSync: () => { triggerCount++; }
     });
 
+    assert.deepStrictEqual(result.identity, validIdentity);
     assert.strictEqual(result.syncState, 'pending');
     assert.strictEqual(result.localSequence, 1);
     assert.deepStrictEqual(result.answerPayload, { a: 1 });
@@ -59,6 +60,7 @@ test('client answer immediate autosave capture', async (t) => {
     assert.strictEqual(result.acceptedWriteVersion, null);
 
     assert.strictEqual(store.puts.length, 1);
+    assert.deepStrictEqual(store.puts[0].mutation.identity, validIdentity);
     assert.strictEqual(store.puts[0].mutation.localSequence, 1);
     assert.strictEqual(store.puts[0].mutation.clientWriteIdentity, 'write-id-1');
 
@@ -170,5 +172,40 @@ test('client answer immediate autosave capture', async (t) => {
     assert.strictEqual(store.puts.length, 2);
     assert.strictEqual(store.puts[0].mutation.localSequence, 10);
     assert.strictEqual(store.puts[1].mutation.localSequence, 11);
+  });
+
+  await t.test('autosave completion does not wait for asynchronous triggerSync', async () => {
+    const store = new DeterministicMockStore();
+    let triggerInvoked = false;
+    let triggerCompleted = false;
+
+    let resolveTrigger: () => void;
+    const fakeNetworkPromise = new Promise<void>(resolve => {
+      resolveTrigger = resolve;
+    });
+
+    const capturePromise = captureAutosave({
+      identity: validIdentity,
+      localSequence: 5,
+      answerPayload: 'payload',
+      clientWriteIdentity: 'write-id-5',
+      expectedWriteVersion: null,
+      store,
+      triggerSync: () => {
+        triggerInvoked = true;
+        fakeNetworkPromise.then(() => {
+          triggerCompleted = true;
+        });
+      }
+    });
+
+    await capturePromise;
+
+    assert.strictEqual(triggerInvoked, true, 'triggerSync should have been invoked');
+    assert.strictEqual(triggerCompleted, false, 'captureAutosave should complete before the async trigger completes');
+
+    resolveTrigger!();
+    await drainMicrotasks();
+    assert.strictEqual(triggerCompleted, true, 'trigger cleanly finishes later');
   });
 });
