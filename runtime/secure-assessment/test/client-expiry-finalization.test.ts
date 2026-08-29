@@ -246,6 +246,113 @@ describe('finalizeAuthoritativeExpiry', () => {
     assert.equal(result, validReceipt);
   });
 
+  it('case 9a: acknowledged record with acceptedWriteVersion = 0 -> pending_answers_unresolved', async () => {
+    let finalizerCalls = 0;
+    let putCalls = 0;
+    const store = createMockStore([{
+      recordKey: 'key-1', scopeKey: 'scope-1',
+      mutation: { identity: mockIdentity, syncState: 'acknowledged', acceptedWriteVersion: 0, localSequence: 1, clientWriteIdentity: 'w-1', answerPayload: { value: true }, expectedWriteVersion: null }
+    }]);
+    store.put = async () => { putCalls++; };
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not be called'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => { finalizerCalls++; return validReceipt; };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'pending_answers_unresolved' });
+    assert.equal(finalizerCalls, 0);
+    assert.equal(putCalls, 0);
+  });
+
+  it('case 9b: acknowledged record with acceptedWriteVersion = -1 -> pending_answers_unresolved', async () => {
+    let finalizerCalls = 0;
+    let putCalls = 0;
+    const store = createMockStore([{
+      recordKey: 'key-1', scopeKey: 'scope-1',
+      mutation: { identity: mockIdentity, syncState: 'acknowledged', acceptedWriteVersion: -1, localSequence: 1, clientWriteIdentity: 'w-1', answerPayload: { value: true }, expectedWriteVersion: null }
+    }]);
+    store.put = async () => { putCalls++; };
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not be called'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => { finalizerCalls++; return validReceipt; };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'pending_answers_unresolved' });
+    assert.equal(finalizerCalls, 0);
+    assert.equal(putCalls, 0);
+  });
+
+  it('case 9c: acknowledged record with acceptedWriteVersion = 1.5 -> pending_answers_unresolved', async () => {
+    let finalizerCalls = 0;
+    let putCalls = 0;
+    const store = createMockStore([{
+      recordKey: 'key-1', scopeKey: 'scope-1',
+      mutation: { identity: mockIdentity, syncState: 'acknowledged', acceptedWriteVersion: 1.5, localSequence: 1, clientWriteIdentity: 'w-1', answerPayload: { value: true }, expectedWriteVersion: null }
+    }]);
+    store.put = async () => { putCalls++; };
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not be called'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => { finalizerCalls++; return validReceipt; };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'pending_answers_unresolved' });
+    assert.equal(finalizerCalls, 0);
+    assert.equal(putCalls, 0);
+  });
+
+  it('case 9d: acknowledged record with acceptedWriteVersion = NaN -> pending_answers_unresolved', async () => {
+    let finalizerCalls = 0;
+    let putCalls = 0;
+    const store = createMockStore([{
+      recordKey: 'key-1', scopeKey: 'scope-1',
+      mutation: { identity: mockIdentity, syncState: 'acknowledged', acceptedWriteVersion: NaN, localSequence: 1, clientWriteIdentity: 'w-1', answerPayload: { value: true }, expectedWriteVersion: null }
+    }]);
+    store.put = async () => { putCalls++; };
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not be called'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => { finalizerCalls++; return validReceipt; };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'pending_answers_unresolved' });
+    assert.equal(finalizerCalls, 0);
+    assert.equal(putCalls, 0);
+  });
+
+  it('case 9e: acknowledged record with acceptedWriteVersion = MAX_SAFE_INTEGER + 1 -> pending_answers_unresolved', async () => {
+    let finalizerCalls = 0;
+    let putCalls = 0;
+    const store = createMockStore([{
+      recordKey: 'key-1', scopeKey: 'scope-1',
+      mutation: { identity: mockIdentity, syncState: 'acknowledged', acceptedWriteVersion: Number.MAX_SAFE_INTEGER + 1, localSequence: 1, clientWriteIdentity: 'w-1', answerPayload: { value: true }, expectedWriteVersion: null }
+    }]);
+    store.put = async () => { putCalls++; };
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not be called'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => { finalizerCalls++; return validReceipt; };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'pending_answers_unresolved' });
+    assert.equal(finalizerCalls, 0);
+    assert.equal(putCalls, 0);
+  });
+
+  it('case 9f: whitespace-only submissionId -> finalization_uncertain', async () => {
+    const store = createMockStore([]);
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not call'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => {
+      return { status: 'submitted', submissionId: '   ', submittedAt: '2026-08-30T00:00:00.000Z' };
+    };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'finalization_uncertain' });
+  });
+
+  it('case 9g: whitespace-only submittedAt -> finalization_uncertain', async () => {
+    const store = createMockStore([]);
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async () => { throw new Error('should not call'); };
+    const finalizer: ExpiryFinalizationExecutor = async () => {
+      return { status: 'submitted', submissionId: 's-1', submittedAt: ' \t\n ' };
+    };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, store, syncExecutor, finalizer);
+    assert.deepEqual(result, { status: 'finalization_uncertain' });
+  });
+
   it('case 10: store surface used by orchestration never requires/calls clearScope/delete', async () => {
     const store = createMockStore([]);
     let deleteCalled = false;

@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.85
+**Version:** 1.5.86
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.84
+**Supersedes:** CURRENT_STATE v1.5.85
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
@@ -1267,11 +1267,11 @@ docs/00-governance/00.02_DECISION_HIERARCHY.md
 ## CONTROLLER CHAT HANDOFF
 
 MAIN PROJECT CONTROL 07
-→ ACTIVE CONTROLLER / MAIN PROJECT CONTROL 07 PHYSICAL AUDIT OF BU-031 MAIN EXECUTION
+→ ACTIVE CONTROLLER / MAIN PROJECT CONTROL 07 PHYSICAL RE-AUDIT OF BU-031 MAIN EXECUTION
 
 ## Immediate Next Milestone
 
-MAIN PROJECT CONTROL 07 — BU-031 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL AUDIT
+MAIN PROJECT CONTROL 07 — BU-031 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL RE-AUDIT
 
 After each phase, update this file with the new active unit and prohibited premature work.
 

@@ -31,8 +31,24 @@ export async function finalizeAuthoritativeExpiry(
   syncExecutor: ClientAnswerSynchronizationExecutor,
   finalizationExecutor: ExpiryFinalizationExecutor
 ): Promise<ExpiryFinalizationResult> {
+  const validatingStore: Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'> = {
+    put: store.put,
+    listByScope: async (s) => {
+      const records = await store.listByScope(s);
+      for (const record of records) {
+        if (record.mutation.syncState === 'acknowledged') {
+          const v = record.mutation.acceptedWriteVersion;
+          if (v === null || typeof v !== 'number' || !Number.isSafeInteger(v) || v <= 0) {
+            throw new Error('Invalid acknowledged record: missing or invalid acceptedWriteVersion');
+          }
+        }
+      }
+      return records;
+    }
+  };
+
   try {
-    const summary = await reconcileClientAnswerQueue(scope, store, syncExecutor);
+    const summary = await reconcileClientAnswerQueue(scope, validatingStore, syncExecutor);
 
     if (summary.failed !== 0 || summary.acknowledged !== summary.attempted) {
       return { status: 'pending_answers_unresolved' };
@@ -52,9 +68,9 @@ export async function finalizeAuthoritativeExpiry(
     !receipt ||
     receipt.status !== 'submitted' ||
     typeof receipt.submissionId !== 'string' ||
-    receipt.submissionId === '' ||
+    receipt.submissionId.trim() === '' ||
     typeof receipt.submittedAt !== 'string' ||
-    receipt.submittedAt === ''
+    receipt.submittedAt.trim() === ''
   ) {
     return { status: 'finalization_uncertain' };
   }
