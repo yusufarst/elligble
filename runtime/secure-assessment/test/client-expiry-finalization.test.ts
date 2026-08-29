@@ -353,6 +353,49 @@ describe('finalizeAuthoritativeExpiry', () => {
     assert.deepEqual(result, { status: 'finalization_uncertain' });
   });
 
+  it('case 9h: binding-sensitive store delegation succeeds during reconciliation', async () => {
+    class BindingSensitiveStore {
+      private state = 'bound';
+      public records: ClientAnswerRecoveryRecord[];
+
+      constructor(records: ClientAnswerRecoveryRecord[]) {
+        this.records = records;
+      }
+
+      async listByScope() {
+        return this.records;
+      }
+
+      async put(record: ClientAnswerRecoveryRecord) {
+        if (this.state !== 'bound') {
+          throw new Error('Lost binding!');
+        }
+        const index = this.records.findIndex(r => r.recordKey === record.recordKey);
+        if (index >= 0) {
+          this.records[index] = record;
+        } else {
+          this.records.push(record);
+        }
+      }
+    }
+
+    const backingStore = new BindingSensitiveStore([{
+      recordKey: 'key-1', scopeKey: 'scope-1',
+      mutation: { identity: mockIdentity, syncState: 'pending', acceptedWriteVersion: null, localSequence: 1, clientWriteIdentity: 'w-1', answerPayload: { value: true }, expectedWriteVersion: null }
+    }]);
+
+    const syncExecutor: ClientAnswerSynchronizationExecutor = async (): Promise<any> => {
+      return { status: 'acknowledged', clientWriteIdentity: 'w-1', writeVersion: 1 };
+    };
+
+    let finalizerCalls = 0;
+    const finalizer: ExpiryFinalizationExecutor = async () => { finalizerCalls++; return validReceipt; };
+
+    const result = await finalizeAuthoritativeExpiry(mockScope, backingStore, syncExecutor, finalizer);
+    assert.deepEqual(result, validReceipt);
+    assert.equal(finalizerCalls, 1);
+  });
+
   it('case 10: store surface used by orchestration never requires/calls clearScope/delete', async () => {
     const store = createMockStore([]);
     let deleteCalled = false;

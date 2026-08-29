@@ -32,7 +32,9 @@ export async function finalizeAuthoritativeExpiry(
   finalizationExecutor: ExpiryFinalizationExecutor
 ): Promise<ExpiryFinalizationResult> {
   const validatingStore: Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'> = {
-    put: store.put,
+    put: async (record) => {
+      await store.put(record);
+    },
     listByScope: async (s) => {
       const records = await store.listByScope(s);
       for (const record of records) {
