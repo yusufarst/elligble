@@ -37,20 +37,42 @@ export async function triggerAuthoritativeExpiry(
   finalizationExecutor: ExpiryFinalizationExecutor,
   coordinator: typeof finalizeAuthoritativeExpiry = finalizeAuthoritativeExpiry
 ): Promise<ExpiryTriggerResult> {
+  // 1. Validate observation and attemptId
   if (
     !observation ||
+    typeof observation !== 'object' ||
     typeof observation.attemptId !== 'string' ||
-    observation.attemptId.trim() === ''
+    observation.attemptId.trim() === '' ||
+    observation.attemptId !== scope.attemptId
   ) {
     return { status: 'authoritative_state_invalid' };
   }
 
-  if (observation.attemptId !== scope.attemptId) {
+  // 2. Validate timer observation
+  const timer = observation.timer;
+  if (!timer || typeof timer !== 'object') {
     return { status: 'authoritative_state_invalid' };
   }
+  if (timer.status !== 'not_started' && timer.status !== 'active') {
+    return { status: 'authoritative_state_invalid' };
+  }
+  if (timer.status === 'active') {
+    const remaining = timer.effectiveRemainingSeconds;
+    if (typeof remaining !== 'number' || !Number.isSafeInteger(remaining) || remaining < 0) {
+      return { status: 'authoritative_state_invalid' };
+    }
+  }
 
-  if (observation.submission.status === 'submitted') {
-    const { status, submissionId, submittedAt } = observation.submission;
+  // 3. Validate submission observation
+  const submission = observation.submission;
+  if (!submission || typeof submission !== 'object') {
+    return { status: 'authoritative_state_invalid' };
+  }
+  if (submission.status !== 'not_submitted' && submission.status !== 'submitted') {
+    return { status: 'authoritative_state_invalid' };
+  }
+  if (submission.status === 'submitted') {
+    const { submissionId, submittedAt } = submission;
     if (
       typeof submissionId !== 'string' ||
       submissionId.trim() === '' ||
@@ -59,27 +81,23 @@ export async function triggerAuthoritativeExpiry(
     ) {
       return { status: 'authoritative_state_invalid' };
     }
-    return observation.submission;
   }
 
-  if (observation.submission.status !== 'not_submitted') {
-    return { status: 'authoritative_state_invalid' };
+  // 4. Already-submitted early return
+  if (submission.status === 'submitted') {
+    return submission;
   }
 
-  if (observation.timer.status === 'not_started') {
+  // 5. Timer evaluation
+  if (timer.status === 'not_started') {
     return { status: 'not_expired' };
   }
 
-  if (observation.timer.status === 'active') {
-    const remaining = observation.timer.effectiveRemainingSeconds;
-    if (typeof remaining !== 'number' || !Number.isSafeInteger(remaining) || remaining < 0) {
-      return { status: 'authoritative_state_invalid' };
-    }
-
+  if (timer.status === 'active') {
+    const remaining = timer.effectiveRemainingSeconds;
     if (remaining > 0) {
       return { status: 'not_expired' };
     }
-
     if (remaining === 0) {
       return await coordinator(scope, store, syncExecutor, finalizationExecutor);
     }

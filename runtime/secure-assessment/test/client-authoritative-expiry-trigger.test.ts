@@ -217,6 +217,68 @@ describe('BU-032 Secure Assessment Client Server-Derived Expiry Observation Fina
     assert.deepStrictEqual(res2, { status: 'authoritative_state_invalid' });
   });
 
+  // 18. missing/null submission object
+  test('returns authoritative_state_invalid on missing/null submission object', async () => {
+    let coordinatorCalls = 0;
+    const coordinator: typeof finalizeAuthoritativeExpiry = async () => { coordinatorCalls++; return { status: 'submitted', submissionId: 's1', submittedAt: 't1' }; };
+
+    const obsUndefined = createMockObservation();
+    (obsUndefined as any).submission = undefined;
+    const res1 = await triggerAuthoritativeExpiry(defaultScope, obsUndefined, createMockStore(), createMockSyncExecutor(), createMockFinalizationExecutor(), coordinator);
+    assert.deepStrictEqual(res1, { status: 'authoritative_state_invalid' });
+    assert.strictEqual(coordinatorCalls, 0);
+
+    const obsNull = createMockObservation();
+    (obsNull as any).submission = null;
+    const res2 = await triggerAuthoritativeExpiry(defaultScope, obsNull, createMockStore(), createMockSyncExecutor(), createMockFinalizationExecutor(), coordinator);
+    assert.deepStrictEqual(res2, { status: 'authoritative_state_invalid' });
+    assert.strictEqual(coordinatorCalls, 0);
+  });
+
+  // 19. missing/null timer object with not_submitted observation
+  test('returns authoritative_state_invalid on missing/null timer object with not_submitted observation', async () => {
+    let coordinatorCalls = 0;
+    const coordinator: typeof finalizeAuthoritativeExpiry = async () => { coordinatorCalls++; return { status: 'submitted', submissionId: 's1', submittedAt: 't1' }; };
+
+    const obsUndefined = createMockObservation({ submission: { status: 'not_submitted' } });
+    (obsUndefined as any).timer = undefined;
+    const res1 = await triggerAuthoritativeExpiry(defaultScope, obsUndefined, createMockStore(), createMockSyncExecutor(), createMockFinalizationExecutor(), coordinator);
+    assert.deepStrictEqual(res1, { status: 'authoritative_state_invalid' });
+    assert.strictEqual(coordinatorCalls, 0);
+
+    const obsNull = createMockObservation({ submission: { status: 'not_submitted' } });
+    (obsNull as any).timer = null;
+    const res2 = await triggerAuthoritativeExpiry(defaultScope, obsNull, createMockStore(), createMockSyncExecutor(), createMockFinalizationExecutor(), coordinator);
+    assert.deepStrictEqual(res2, { status: 'authoritative_state_invalid' });
+    assert.strictEqual(coordinatorCalls, 0);
+  });
+
+  // 20. valid submitted receipt + unsupported timer status
+  test('returns authoritative_state_invalid on valid submitted receipt + unsupported timer status', async () => {
+    let coordinatorCalls = 0;
+    const coordinator: typeof finalizeAuthoritativeExpiry = async () => { coordinatorCalls++; return { status: 'submitted', submissionId: 's1', submittedAt: 't1' }; };
+
+    const obs = createMockObservation({ submission: { status: 'submitted', submissionId: 's1', submittedAt: 't1' } });
+    (obs as any).timer = { status: 'invalid_status' };
+    const res = await triggerAuthoritativeExpiry(defaultScope, obs, createMockStore(), createMockSyncExecutor(), createMockFinalizationExecutor(), coordinator);
+    assert.deepStrictEqual(res, { status: 'authoritative_state_invalid' });
+    assert.strictEqual(coordinatorCalls, 0);
+  });
+
+  // 21. valid submitted receipt + active timer with invalid remaining value
+  test('returns authoritative_state_invalid on valid submitted receipt + active timer with invalid remaining value', async () => {
+    let coordinatorCalls = 0;
+    const coordinator: typeof finalizeAuthoritativeExpiry = async () => { coordinatorCalls++; return { status: 'submitted', submissionId: 's1', submittedAt: 't1' }; };
+
+    const obs = createMockObservation({
+      submission: { status: 'submitted', submissionId: 's1', submittedAt: 't1' },
+      timer: { status: 'active', effectiveRemainingSeconds: -5 }
+    });
+    const res = await triggerAuthoritativeExpiry(defaultScope, obs, createMockStore(), createMockSyncExecutor(), createMockFinalizationExecutor(), coordinator);
+    assert.deepStrictEqual(res, { status: 'authoritative_state_invalid' });
+    assert.strictEqual(coordinatorCalls, 0);
+  });
+
   // 16. supplied observation and scope remain unmutated
   test('observation and scope are not mutated', async () => {
     const originalScope = JSON.stringify(defaultScope);
