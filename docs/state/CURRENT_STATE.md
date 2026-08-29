@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.87
+**Version:** 1.5.88
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.86
+**Supersedes:** CURRENT_STATE v1.5.87
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
@@ -22,10 +22,10 @@ LAST COMPLETED UNIT     → BU-030
 LAST COMPLETED BUILD UNIT → BU-030 — Secure Assessment Client Answer Honest Save-State Projection Runtime Foundation Bootstrap
 ACTIVE UNIT           → BU-031
 ACTIVE BUILD UNIT     → BU-031
-NEXT SAFE ACTION      → MAIN PROJECT CONTROL 07 PHYSICAL AUDIT OF BU-031 MAIN EXECUTION
+NEXT SAFE ACTION      → MAIN PROJECT CONTROL 07 PHYSICAL RE-AUDIT OF BU-031 MAIN EXECUTION
 NEXT UNIT             → NOT YET REGISTERED
 NEXT BUILD UNIT       → NOT YET REGISTERED
-NEXT STAGE            → BU-031 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL AUDIT
+NEXT STAGE            → BU-031 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL RE-AUDIT
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
