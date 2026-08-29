@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.69
+**Version:** 1.5.70
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.68
+**Supersedes:** CURRENT_STATE v1.5.69
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
@@ -19,13 +19,13 @@ DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 LAST COMPLETED UNIT   → BU-027
-LAST COMPLETED BUILD UNIT → BU-028
-ACTIVE UNIT           → NONE
-ACTIVE BUILD UNIT     → NONE
-NEXT SAFE ACTION      → MAIN PROJECT CONTROL 07 — BU-028 FINAL PHYSICAL VERIFICATION
+LAST COMPLETED BUILD UNIT → BU-027
+ACTIVE UNIT           → BU-028
+ACTIVE BUILD UNIT     → BU-028
+NEXT SAFE ACTION      → MAIN PROJECT CONTROL 07 — BU-028 LIFECYCLE CLOSE PHYSICAL RE-AUDIT
 NEXT UNIT             → NOT YET REGISTERED
 NEXT BUILD UNIT       → NOT YET REGISTERED
-NEXT STAGE            → BU-028 FAST-TRACK STAGE 5 — FINAL PHYSICAL VERIFICATION
+NEXT STAGE            → BU-028 FAST-TRACK STAGE 4 — CONTROLLER LIFECYCLE CLOSE RE-AUDIT
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
