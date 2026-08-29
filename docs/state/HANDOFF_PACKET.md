@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.131
-**Supersedes:** 0.1.130
+**Version:** 0.1.132
+**Supersedes:** 0.1.131
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -71,7 +71,7 @@ LAST COMPLETED UNIT
 → BU-020
 
 ACTIVE UNIT
-→ NONE
+→ BU-021 — Secure Assessment Capability Matrix Active-Session Continuity Evidence Synchronization Bootstrap
 
 LATEST LOCKED ARCHITECTURE SEQUENCE:
 SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
@@ -707,7 +707,7 @@ BU-006 DONE:
 YES
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 07 — REPOSITORY RECONSTRUCTION AND NEXT BUILD UNIT SELECTION
+MAIN PROJECT CONTROL 07 PHYSICAL AUDIT OF BU-021 FAST-TRACK MAIN EXECUTION
 
 NEXT STAGE:
 BU-021 CONTROLLER PHYSICAL AUDIT
