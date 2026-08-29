@@ -1,7 +1,7 @@
 # BU-015 Secure Assessment Capability Matrix & PB06 Gap Qualification
 
 **Status:** QUALIFIED / CONTROLLER PHYSICAL AUDIT PASS
-**Version:** 1.0.5
+**Version:** 1.0.6
 **Source:** Canonical Discovery (D04.01), SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE, BU-014 Evidence, BU-003 Evidence
 
 | Capability ID | Capability Name | Canonical Source | Baseline Classification | Implementation State | Available Evidence | Verification State | PB06 Relevance | Gap / Next Action |
@@ -38,13 +38,13 @@
 | SEC-030 | Required Failure-Injection Verification (FI-01..FI-30) | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.10-H | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Build and run FI suite |
 | SEC-031 | Zero Lost Answers (End-to-End) | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.10-I | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | PB07 resolution / UI implementation |
 | SEC-032 | High-Assurance Entire-Screen Capture | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.7-48K | FUTURE | NONE | NONE | FUTURE / OUT OF CURRENT BASELINE | NOT APPLICABLE | NONE |
-| SEC-033 | Expiry-Triggered Submission / Defined Expiry Finalization Procedure | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-45 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement governed expiry finalization |
+| SEC-033 | Expiry-Triggered Submission / Defined Expiry Finalization Procedure | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-45 | BASELINE | IMPLEMENTED | BU-016 + BU-031 + BU-032 Controller-proven server-side expiry finalization, reconciliation-before-finalization, and server-derived authoritative expiry trigger evidence | PROVEN | APPLICABLE | NONE |
 | SEC-034 | Detailed Anti-Cheating Heuristics / Preset Mechanics | docs/architecture/SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE.md §16 | PROVISIONAL | NONE | NONE | PROVISIONAL / UNRESOLVED | APPLICABLE | PRESERVE CANONICAL MATURITY |
 
 ## Summary
-- **PROVEN COUNT:** 22
+- **PROVEN COUNT:** 23
 - **IMPLEMENTED / EVIDENCE GAP COUNT:** 0
-- **NOT YET IMPLEMENTED COUNT:** 10
+- **NOT YET IMPLEMENTED COUNT:** 9
 - **PROVISIONAL / UNRESOLVED COUNT:** 1
 - **FUTURE / OUT OF CURRENT BASELINE COUNT:** 1
 - **NOT APPLICABLE COUNT:** 0
