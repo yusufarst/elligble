@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert';
 
-import { IndexedDBClientAnswerRecoveryStore } from '../src/indexeddb-recovery-store.js';
+import { IndexedDBClientAnswerRecoveryStore } from '../src/indexeddb-recovery-store.ts';
 import {
   createRecoveryRecord,
   buildRecoveryScopeKey
-} from '../src/client-answer-recovery-store.js';
-import type { ClientAnswerRecoveryScope, ClientAnswerRecoveryRecord } from '../src/client-answer-recovery-store.js';
+} from '../src/client-answer-recovery-store.ts';
+import type { ClientAnswerRecoveryScope, ClientAnswerRecoveryRecord } from '../src/client-answer-recovery-store.ts';
 
 // Minimal in-memory mock for IDBFactory to pass deterministic tests without dependencies
 class MockIDBRequest {
@@ -42,7 +42,7 @@ class MockIDBIndex {
       const results: any[] = [];
       for (const record of this.records.values()) {
         if (record[this.indexKey] === scopeKey) {
-          results.push(JSON.parse(JSON.stringify(record)));
+          results.push(structuredClone(record));
         }
       }
       request.fireSuccess(results);
@@ -53,12 +53,14 @@ class MockIDBIndex {
 
 class MockIDBObjectStore {
   indices = new Map<string, MockIDBIndex>();
-  private name: string;
+  name: string;
   private records: Map<string, any>;
+  keyPath: string;
 
-  constructor(name: string, records: Map<string, any>) {
+  constructor(name: string, records: Map<string, any>, keyPath: string) {
     this.name = name;
     this.records = records;
+    this.keyPath = keyPath;
   }
 
   createIndex(name: string, keyPath: string, options?: any) {
@@ -67,8 +69,7 @@ class MockIDBObjectStore {
 
   index(name: string): any {
     if (!this.indices.has(name)) {
-      // Lazy creation just for tests if upgrade not simulated fully
-      this.indices.set(name, new MockIDBIndex(this.records, 'scopeKey'));
+      throw new Error(`Index not found: ${name}`);
     }
     return this.indices.get(name)!;
   }
@@ -76,8 +77,13 @@ class MockIDBObjectStore {
   put(item: any): any {
     const request = new MockIDBRequest();
     setTimeout(() => {
-      this.records.set(item.recordKey, JSON.parse(JSON.stringify(item)));
-      request.fireSuccess();
+      try {
+        const cloned = structuredClone(item);
+        this.records.set(cloned.recordKey, cloned);
+        request.fireSuccess();
+      } catch (err: any) {
+        request.fireError(err);
+      }
     }, 0);
     return request;
   }
@@ -86,7 +92,7 @@ class MockIDBObjectStore {
     const request = new MockIDBRequest();
     setTimeout(() => {
       const val = this.records.get(key);
-      request.fireSuccess(val ? JSON.parse(JSON.stringify(val)) : undefined);
+      request.fireSuccess(val ? structuredClone(val) : undefined);
     }, 0);
     return request;
   }
@@ -108,33 +114,57 @@ class MockIDBTransaction {
   error: Error | null = null;
   private db: MockIDBDatabase;
   private storeName: string;
+  private autoFire: boolean;
 
-  constructor(db: MockIDBDatabase, storeName: string) {
+  constructor(db: MockIDBDatabase, storeName: string, autoFire = true) {
     this.db = db;
     this.storeName = storeName;
-    // Auto-complete tx in next tick
-    setTimeout(() => {
-      if (!this.error && this.oncomplete) {
-        this.oncomplete({ target: this });
-      }
-    }, 5);
+    this.autoFire = autoFire;
+
+    if (this.autoFire) {
+      setTimeout(() => {
+        if (!this.error && this.oncomplete) {
+          this.oncomplete({ target: this });
+        } else if (this.error && this.onerror) {
+          this.onerror({ target: this });
+        }
+      }, 5);
+    }
+  }
+
+  abort() {
+    this.error = new Error('Transaction aborted by user');
+    if (this.onabort) {
+      this.onabort({ target: this });
+    }
   }
 
   objectStore(name: string): any {
-    if (name !== this.storeName) throw new Error('Store not found');
-    return new MockIDBObjectStore(name, this.db.records);
+    if (!this.db.objectStoreNames.contains(name)) throw new Error(`Store not found: ${name}`);
+    return this.db.stores.get(name)!;
   }
 }
 
 class MockIDBDatabase {
-  objectStoreNames = { contains: () => true };
   records = new Map<string, any>();
+  stores = new Map<string, MockIDBObjectStore>();
+
+  get objectStoreNames() {
+    return {
+      contains: (name: string) => this.stores.has(name)
+    };
+  }
 
   createObjectStore(name: string, options: any): any {
-    return new MockIDBObjectStore(name, this.records);
+    const store = new MockIDBObjectStore(name, this.records, options?.keyPath);
+    this.stores.set(name, store);
+    return store;
   }
 
   transaction(storeName: string, mode: string): any {
+    if (!this.stores.has(storeName)) {
+      throw new Error(`Store not found: ${storeName}`);
+    }
     return new MockIDBTransaction(this, storeName);
   }
 
@@ -151,7 +181,7 @@ class MockIDBFactory {
         this.databasesMap.set(name, new MockIDBDatabase());
         if (request.onupgradeneeded) {
           request.result = this.databasesMap.get(name);
-          request.onupgradeneeded({ target: request });
+          request.onupgradeneeded({ target: request } as any);
         }
       }
       request.fireSuccess(this.databasesMap.get(name));
@@ -168,7 +198,7 @@ if (typeof globalThis.IDBKeyRange === 'undefined') {
 }
 
 test('IndexedDBClientAnswerRecoveryStore tests', async (t) => {
-  const createTestMutation = (id: string) => ({
+  const createTestMutation = (id: string, payload: any = `{"answer": "${id}"}`) => ({
     identity: {
       tenantId: 'tenant-1',
       participantId: 'participant-1',
@@ -179,7 +209,7 @@ test('IndexedDBClientAnswerRecoveryStore tests', async (t) => {
     localSequence: 1,
     clientWriteIdentity: id,
     expectedWriteVersion: 1,
-    answerPayload: `{"answer": "${id}"}`,
+    answerPayload: payload,
     syncState: 'pending' as const,
     acceptedWriteVersion: 0,
   });
@@ -330,38 +360,99 @@ test('IndexedDBClientAnswerRecoveryStore tests', async (t) => {
     assert.strictEqual(retrieved.mutation.syncState, 'pending', 'Store should not reflect caller mutation of passed-in record');
   });
 
-  await t.test('8. IndexedDB failure propagation on open', async () => {
+  await t.test('8. structured-clone-compatible non-JSON payload fidelity', async () => {
+    const store = new IndexedDBClientAnswerRecoveryStore({ idbFactory });
+    const payload = new Date('2026-08-29T16:00:00Z');
+    const mutation = createTestMutation('uuid-date', payload);
+    const record = createRecoveryRecord(mutation);
+
+    await store.put(record);
+
+    const retrieved = await store.get(record.recordKey);
+    assert.ok(retrieved);
+    assert.ok(retrieved.mutation.answerPayload instanceof Date);
+    assert.strictEqual(retrieved.mutation.answerPayload.getTime(), payload.getTime());
+  });
+
+  await t.test('9. schema creates recordKey store and scopeKey index', async () => {
+    const store = new IndexedDBClientAnswerRecoveryStore({ idbFactory });
+    const record = createRecoveryRecord(createTestMutation('schema-test'));
+    await store.put(record); // forces openDB
+
+    const db = idbFactory.databasesMap.get('elligble_secure_assessment_recovery');
+    assert.ok(db, 'Database should be created');
+
+    const objectStore = db.stores.get('client_answers');
+    assert.ok(objectStore, 'Store should be created');
+    assert.strictEqual(objectStore.keyPath, 'recordKey', 'Store should have recordKey keyPath');
+
+    const index = objectStore.indices.get('idx_scope_key');
+    assert.ok(index, 'Index should be created');
+    assert.strictEqual((index as any).indexKey, 'scopeKey', 'Index should have scopeKey keyPath');
+  });
+
+  await t.test('10. IndexedDB failure propagation on open', async () => {
     const brokenFactory = {
       open: () => { throw new Error('Simulated factory failure'); }
     } as unknown as IDBFactory;
 
     const store = new IndexedDBClientAnswerRecoveryStore({ idbFactory: brokenFactory });
-
     const record = createRecoveryRecord(createTestMutation('fail'));
 
-    await assert.rejects(
-      store.put(record),
-      /Simulated factory failure/
-    );
+    await assert.rejects(store.put(record), /Simulated factory failure/);
+    await assert.rejects(store.get(record.recordKey), /Simulated factory failure/);
+    await assert.rejects(store.listByScope(scope), /Simulated factory failure/);
+    await assert.rejects(store.delete(record.recordKey), /Simulated factory failure/);
+    await assert.rejects(store.clearScope(scope), /Simulated factory failure/);
+  });
 
-    await assert.rejects(
-      store.get(record.recordKey),
-      /Simulated factory failure/
-    );
+  await t.test('11. request failure propagation', async () => {
+    const store = new IndexedDBClientAnswerRecoveryStore({ idbFactory });
+    const record = createRecoveryRecord(createTestMutation('fail'));
 
-    await assert.rejects(
-      store.listByScope(scope),
-      /Simulated factory failure/
-    );
+    // Open DB first to inject mock behavior
+    await store.put(record);
 
-    await assert.rejects(
-      store.delete(record.recordKey),
-      /Simulated factory failure/
-    );
+    const db = idbFactory.databasesMap.get('elligble_secure_assessment_recovery');
+    const originalGet = db.stores.get('client_answers').get.bind(db.stores.get('client_answers'));
 
-    await assert.rejects(
-      store.clearScope(scope),
-      /Simulated factory failure/
-    );
+    // Mock the get method to simulate a request error
+    db.stores.get('client_answers').get = () => {
+      const request = new MockIDBRequest();
+      setTimeout(() => request.fireError(new Error('Simulated request error')), 0);
+      return request;
+    };
+
+    await assert.rejects(store.get(record.recordKey), /Simulated request error/);
+
+    // Restore
+    db.stores.get('client_answers').get = originalGet;
+  });
+
+  await t.test('12. transaction failure/abort after request success is rejected', async () => {
+    const store = new IndexedDBClientAnswerRecoveryStore({ idbFactory });
+    const record = createRecoveryRecord(createTestMutation('abort-test'));
+
+    // We will override transaction to create one that fires abort instead of complete
+    const db = await (store as any)._openDB();
+    const originalTx = db.transaction.bind(db);
+
+    db.transaction = (storeName: string, mode: string) => {
+      const tx = new MockIDBTransaction(db, storeName, false); // no auto complete
+      setTimeout(() => tx.abort(), 10);
+      return tx;
+    };
+
+    await assert.rejects(store.put(record), /Transaction aborted/);
+
+    // Restore
+    db.transaction = originalTx;
+  });
+
+  await t.test('13. direct runtime imports work', async () => {
+    // Verified implicitly by the ability to run the file since it imports `.ts` files,
+    // but we can assert we got the correct imported components.
+    assert.ok(IndexedDBClientAnswerRecoveryStore);
+    assert.ok(createRecoveryRecord);
   });
 });

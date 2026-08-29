@@ -2,8 +2,8 @@ import type {
   ClientAnswerRecoveryStore,
   ClientAnswerRecoveryRecord,
   ClientAnswerRecoveryScope
-} from './client-answer-recovery-store.js';
-import { buildRecoveryScopeKey, isRecoveryRecordForScope } from './client-answer-recovery-store.js';
+} from './client-answer-recovery-store.ts';
+import { buildRecoveryScopeKey, isRecoveryRecordForScope } from './client-answer-recovery-store.ts';
 
 const DB_NAME = 'elligble_secure_assessment_recovery';
 const DB_VERSION = 1;
@@ -64,7 +64,7 @@ export class IndexedDBClientAnswerRecoveryStore implements ClientAnswerRecoveryS
       }
 
       const store = tx.objectStore(STORE_NAME);
-      const clonedRecord: ClientAnswerRecoveryRecord = JSON.parse(JSON.stringify(record));
+      const clonedRecord: ClientAnswerRecoveryRecord = structuredClone(record);
       const request = store.put(clonedRecord);
 
       request.onsuccess = () => {};
@@ -92,13 +92,15 @@ export class IndexedDBClientAnswerRecoveryStore implements ClientAnswerRecoveryS
       const store = tx.objectStore(STORE_NAME);
       const request = store.get(recordKey);
 
+      let result: ClientAnswerRecoveryRecord | null = null;
+
       request.onsuccess = () => {
-        resolve(request.result ? (request.result as ClientAnswerRecoveryRecord) : null);
+        result = request.result ? (request.result as ClientAnswerRecoveryRecord) : null;
       };
 
       request.onerror = () => reject(request.error || new Error('Failed to get record'));
 
-      tx.oncomplete = () => {};
+      tx.oncomplete = () => resolve(result);
       tx.onerror = () => reject(tx.error || new Error('Transaction failed'));
       tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
     }).finally(() => {
@@ -123,15 +125,16 @@ export class IndexedDBClientAnswerRecoveryStore implements ClientAnswerRecoveryS
       const index = store.index(INDEX_SCOPE);
       const request = index.getAll(IDBKeyRange.only(scopeKey));
 
+      let verifiedResults: ClientAnswerRecoveryRecord[] = [];
+
       request.onsuccess = () => {
         const results = request.result as ClientAnswerRecoveryRecord[];
-        const verifiedResults = results.filter(r => isRecoveryRecordForScope(r, scope));
-        resolve(verifiedResults);
+        verifiedResults = results.filter(r => isRecoveryRecordForScope(r, scope));
       };
 
       request.onerror = () => reject(request.error || new Error('Failed to list records by scope'));
 
-      tx.oncomplete = () => {};
+      tx.oncomplete = () => resolve(verifiedResults);
       tx.onerror = () => reject(tx.error || new Error('Transaction failed'));
       tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
     }).finally(() => {
