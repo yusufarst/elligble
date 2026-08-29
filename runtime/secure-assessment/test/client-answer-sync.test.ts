@@ -7,7 +7,7 @@ import {
   markMutationFailed,
   applyAuthoritativeAcknowledgement,
   isMutationAcknowledged,
-  ClientAnswerSyncIdentity
+  type ClientAnswerSyncIdentity
 } from '../src/client-answer-sync.js';
 
 const validIdentity: ClientAnswerSyncIdentity = {
