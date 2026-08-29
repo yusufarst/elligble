@@ -141,6 +141,9 @@ NOT YET
 * history is preserved
 * this execution performs bounded forward correction only
 * Stage-5 remains NOT YET until MAIN PROJECT CONTROL 07 physically re-audits this correction
+* correction commit 291956e40ae58511bd95d42e9cac4cf453b47c57 had repository scope/material content substantially correct
+* that correction execution still had: compound explicit-staging invocation; missing final post-edit source/test hash command evidence; missing final post-edit hash re-verification evidence; terminal Handoff guard repetition incomplete
 
-STAGE-4 CONTROL PACKAGE CORRECTION:
-REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT
+SECOND STAGE-4 CONTROL CORRECTION:
+REPOSITORY FINALIZED /
+AWAITING CONTROLLER PHYSICAL RE-AUDIT
