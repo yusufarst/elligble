@@ -80,4 +80,29 @@ test('BU-030 projectClientAnswerSaveState', async (t) => {
     assert.strictEqual(result, 'saving');
     assert.strictEqual(JSON.stringify(mutation), originalJson, 'Mutation should not be modified');
   });
+
+  await t.test('11. acknowledged with acceptedWriteVersion = 0 -> save_failed', () => {
+    const mutation = createMockMutation({ syncState: 'acknowledged', acceptedWriteVersion: 0 });
+    assert.strictEqual(projectClientAnswerSaveState(mutation, false), 'save_failed');
+  });
+
+  await t.test('12. acknowledged with acceptedWriteVersion = -1 -> save_failed', () => {
+    const mutation = createMockMutation({ syncState: 'acknowledged', acceptedWriteVersion: -1 });
+    assert.strictEqual(projectClientAnswerSaveState(mutation, false), 'save_failed');
+  });
+
+  await t.test('13. acknowledged with acceptedWriteVersion = 1.5 -> save_failed', () => {
+    const mutation = createMockMutation({ syncState: 'acknowledged', acceptedWriteVersion: 1.5 });
+    assert.strictEqual(projectClientAnswerSaveState(mutation, false), 'save_failed');
+  });
+
+  await t.test('14. acknowledged with acceptedWriteVersion = Number.NaN -> save_failed', () => {
+    const mutation = createMockMutation({ syncState: 'acknowledged', acceptedWriteVersion: Number.NaN });
+    assert.strictEqual(projectClientAnswerSaveState(mutation, false), 'save_failed');
+  });
+
+  await t.test('15. acknowledged with acceptedWriteVersion = Number.MAX_SAFE_INTEGER + 1 -> save_failed', () => {
+    const mutation = createMockMutation({ syncState: 'acknowledged', acceptedWriteVersion: Number.MAX_SAFE_INTEGER + 1 });
+    assert.strictEqual(projectClientAnswerSaveState(mutation, false), 'save_failed');
+  });
 });

@@ -17,7 +17,12 @@ export function projectClientAnswerSaveState(
   }
   
   if (mutation.syncState === 'acknowledged') {
-    if (isMutationAcknowledged(mutation)) {
+    if (
+      isMutationAcknowledged(mutation) &&
+      mutation.acceptedWriteVersion !== null &&
+      Number.isSafeInteger(mutation.acceptedWriteVersion) &&
+      mutation.acceptedWriteVersion > 0
+    ) {
       return 'saved';
     }
     return 'save_failed';
