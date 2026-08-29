@@ -1,7 +1,7 @@
 # BU-015 Secure Assessment Capability Matrix & PB06 Gap Qualification
 
 **Status:** QUALIFIED / CONTROLLER PHYSICAL AUDIT PASS
-**Version:** 1.0.2
+**Version:** 1.0.3
 **Source:** Canonical Discovery (D04.01), SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE, BU-014 Evidence, BU-003 Evidence
 
 | Capability ID | Capability Name | Canonical Source | Baseline Classification | Implementation State | Available Evidence | Verification State | PB06 Relevance | Gap / Next Action |
@@ -10,7 +10,7 @@
 | SEC-002 | Teacher != Proctor Authorization Boundary | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.4-26B | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement explicit role separation |
 | SEC-003 | Exam Participant / Attempt / Session Separation | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.1-10 | BASELINE | IMPLEMENTED | BU-014 Final authoritative consistency PASS | PROVEN | APPLICABLE | NONE |
 | SEC-004 | Recovery != Retake | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.1-13 | BASELINE | IMPLEMENTED | BU-014 Resume PASS | PROVEN | APPLICABLE | NONE |
-| SEC-005 | One-Active-Session Baseline & Governed Supersession | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.4-32 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement session supersession control |
+| SEC-005 | One-Active-Session Baseline & Governed Supersession | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.4-32 | BASELINE | IMPLEMENTED | BU-017 + BU-018 Controller-proven implementation/verification evidence | PROVEN | APPLICABLE | NONE |
 | SEC-006 | Immutable Exam Question Snapshot | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.1-09 | BASELINE | IMPLEMENTED | BU-003 Snapshot persistence / invariant verification PASS | PROVEN | APPLICABLE | NONE |
 | SEC-007 | Exam/Runtime Snapshot Continuity | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.1-22 | BASELINE | IMPLEMENTED | BU-014 Final authoritative consistency PASS | PROVEN | APPLICABLE | NONE |
 | SEC-008 | Answer Save Acknowledgement | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-11 | BASELINE | IMPLEMENTED | BU-014 Answer persistence PASS | PROVEN | APPLICABLE | NONE |
@@ -33,7 +33,7 @@
 | SEC-025 | Academic Core Outage Continuity | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.1-33 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Ensure no runtime reliance |
 | SEC-026 | Noncritical-Domain Failure Containment | docs/architecture/SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE.md §11 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Ensure no runtime reliance |
 | SEC-027 | Controlled Device Transfer Where Baseline | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.4-39 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement device transfer logic |
-| SEC-028 | Required Active-Session Continuity Semantics | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-01 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement active session enforcement |
+| SEC-028 | Required Active-Session Continuity Semantics | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-01 | BASELINE | IMPLEMENTED | BU-017 + BU-018 + BU-019 + BU-020 Controller-proven implementation/verification evidence | PROVEN | APPLICABLE | NONE |
 | SEC-029 | Locked Anti-Cheating Boundaries: Risk Signal != Verdict | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.7-56 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Build signal evaluation layer |
 | SEC-030 | Required Failure-Injection Verification (FI-01..FI-30) | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.10-H | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Build and run FI suite |
 | SEC-031 | Zero Lost Answers (End-to-End) | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.10-I | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | PB07 resolution / UI implementation |
@@ -42,9 +42,9 @@
 | SEC-034 | Detailed Anti-Cheating Heuristics / Preset Mechanics | docs/architecture/SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE.md §16 | PROVISIONAL | NONE | NONE | PROVISIONAL / UNRESOLVED | APPLICABLE | PRESERVE CANONICAL MATURITY |
 
 ## Summary
-- **PROVEN COUNT:** 17
+- **PROVEN COUNT:** 19
 - **IMPLEMENTED / EVIDENCE GAP COUNT:** 0
-- **NOT YET IMPLEMENTED COUNT:** 15
+- **NOT YET IMPLEMENTED COUNT:** 13
 - **PROVISIONAL / UNRESOLVED COUNT:** 1
 - **FUTURE / OUT OF CURRENT BASELINE COUNT:** 1
 - **NOT APPLICABLE COUNT:** 0
