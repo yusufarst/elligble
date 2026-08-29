@@ -37,7 +37,13 @@ export function buildSyncKey(identity: ClientAnswerSyncIdentity): string {
   validateNonEmptyString(identity.attemptId, 'attemptId');
   validateNonEmptyString(identity.snapshotId, 'snapshotId');
 
-  return `${identity.tenantId}:${identity.participantId}:${identity.examInstanceId}:${identity.attemptId}:${identity.snapshotId}`;
+  return JSON.stringify([
+    identity.tenantId,
+    identity.participantId,
+    identity.examInstanceId,
+    identity.attemptId,
+    identity.snapshotId
+  ]);
 }
 
 export function createPendingMutation(

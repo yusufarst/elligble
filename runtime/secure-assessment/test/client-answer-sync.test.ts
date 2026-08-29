@@ -8,7 +8,7 @@ import {
   applyAuthoritativeAcknowledgement,
   isMutationAcknowledged,
   type ClientAnswerSyncIdentity
-} from '../src/client-answer-sync.js';
+} from '../src/client-answer-sync.ts';
 
 const validIdentity: ClientAnswerSyncIdentity = {
   tenantId: 'tenant-1',
@@ -22,7 +22,7 @@ test('1. same identity inputs create same deterministic synchronization key', ()
   const key1 = buildSyncKey({ ...validIdentity });
   const key2 = buildSyncKey({ ...validIdentity });
   assert.equal(key1, key2);
-  assert.equal(key1, 'tenant-1:participant-1:exam-1:attempt-1:snapshot-1');
+  assert.equal(key1, JSON.stringify(['tenant-1', 'participant-1', 'exam-1', 'attempt-1', 'snapshot-1']));
 });
 
 test('2. changing tenantId changes the key', () => {
@@ -183,4 +183,20 @@ test('24. module behavior is deterministic and requires no browser/network/datab
   // Proven by running successfully in plain node test environment without mocks.
   const key = buildSyncKey(validIdentity);
   assert.ok(key);
+});
+
+test('25. delimiter collision is prevented', () => {
+  const keyA = buildSyncKey({
+    ...validIdentity,
+    tenantId: 'a:b',
+    participantId: 'c'
+  });
+
+  const keyB = buildSyncKey({
+    ...validIdentity,
+    tenantId: 'a',
+    participantId: 'b:c'
+  });
+
+  assert.notEqual(keyA, keyB);
 });
