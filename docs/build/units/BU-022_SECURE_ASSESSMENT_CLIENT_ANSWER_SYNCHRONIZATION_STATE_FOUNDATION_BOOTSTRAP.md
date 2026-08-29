@@ -127,3 +127,20 @@ YES
 
 FINAL PHYSICAL VERIFICATION:
 NOT YET
+
+### Stage-4 Control Package Correction
+
+* Controller Physical Audit PASS
+* lifecycle-close content was created in historical commit 085ea43506b304dcb9c29bac8ee4bde380c2e60d
+* that historical execution used prohibited `git add .`
+* staging and commit were executed in one invocation
+* historical commit subject differed from the frozen required subject
+* required post-push verification was omitted
+* required final evidence return was incomplete
+* Handoff terminal navigation was incomplete
+* history is preserved
+* this execution performs bounded forward correction only
+* Stage-5 remains NOT YET until MAIN PROJECT CONTROL 07 physically re-audits this correction
+
+STAGE-4 CONTROL PACKAGE CORRECTION:
+REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT
