@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.40
+**Version:** 1.5.41
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.39
+**Supersedes:** CURRENT_STATE v1.5.40
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
@@ -22,10 +22,10 @@ LAST COMPLETED UNIT   → BU-022
 LAST COMPLETED BUILD UNIT → BU-022
 ACTIVE UNIT           → BU-023
 ACTIVE BUILD UNIT     → BU-023 — Secure Assessment Client Answer Durable Local Recovery Persistence Boundary Bootstrap
-NEXT SAFE ACTION      → MAIN PROJECT CONTROL 07 PHYSICAL AUDIT OF BU-023 FAST-TRACK MAIN EXECUTION
+NEXT SAFE ACTION      → MAIN PROJECT CONTROL 07 PHYSICAL RE-AUDIT OF BU-023 FAST-TRACK MAIN EXECUTION REMEDIATION
 NEXT UNIT             → NOT YET REGISTERED
 NEXT BUILD UNIT       → NOT YET REGISTERED
-NEXT STAGE            → BU-023 CONTROLLER PHYSICAL AUDIT
+NEXT STAGE            → BU-023 CONTROLLER PHYSICAL RE-AUDIT
 MB-00                 → LOCKED v1.0.0
 MB-01                 → LOCKED v1.0.0
 MB-02                 → LOCKED v1.0.0
@@ -1263,6 +1263,11 @@ docs/state/CURRENT_STATE.md
 docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md
 docs/00-governance/00.02_DECISION_HIERARCHY.md
 ```
+
+## CONTROLLER CHAT HANDOFF
+
+MAIN PROJECT CONTROL 07
+→ ACTIVE CONTROLLER / BU-023 PHYSICAL RE-AUDIT
 
 ## Immediate Next Milestone
 

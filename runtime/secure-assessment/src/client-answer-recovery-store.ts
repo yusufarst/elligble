@@ -1,3 +1,4 @@
+import { buildSyncKey } from './client-answer-sync.ts';
 import type { ClientAnswerMutationRecord } from './client-answer-sync.ts';
 
 export interface ClientAnswerRecoveryScope {
@@ -34,11 +35,7 @@ export function buildRecoveryScopeKey(scope: ClientAnswerRecoveryScope): string 
 }
 
 export function buildRecoveryRecordKey(mutation: ClientAnswerMutationRecord): string {
-  validateNonEmptyString(mutation.identity.tenantId, 'tenantId');
-  validateNonEmptyString(mutation.identity.participantId, 'participantId');
-  validateNonEmptyString(mutation.identity.examInstanceId, 'examInstanceId');
-  validateNonEmptyString(mutation.identity.attemptId, 'attemptId');
-  validateNonEmptyString(mutation.identity.snapshotId, 'snapshotId');
+  buildSyncKey(mutation.identity);
 
   if (!Number.isSafeInteger(mutation.localSequence) || mutation.localSequence <= 0) {
     throw new Error('Invalid localSequence: must be a positive safe integer');

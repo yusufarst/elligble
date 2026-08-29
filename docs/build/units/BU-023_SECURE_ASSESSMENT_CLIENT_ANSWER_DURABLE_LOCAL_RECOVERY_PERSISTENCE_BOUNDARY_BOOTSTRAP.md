@@ -81,12 +81,30 @@ FUTURE: 1
 NOT APPLICABLE: 0
 TOTAL: 34
 
-## 14. Final Stage-2 Exit Semantics
-FAST-TRACK MAIN EXECUTION COMPLETE /
-IMPLEMENTATION REPOSITORY FINALIZED /
-AWAITING CONTROLLER PHYSICAL AUDIT
+## 14. Controller Audit / Remediation
 
-CONTROLLER PHYSICAL AUDIT:
+PRIOR STAGE-3 CONTROLLER PHYSICAL AUDIT:
+FAIL
+
+Defects:
+* stale Manifest Build Index registration;
+* stale current Handoff navigation;
+* missing explicit pending/failed/non-null acknowledged preservation evidence;
+* predecessor buildSyncKey reuse mismatch;
+* stale typecheck evidence after final implementation edits;
+* historical controlled-Git/process defects.
+
+History is preserved and remediation is forward-only.
+
+## 15. Final Stage-2 Exit Semantics
+FAST-TRACK MAIN EXECUTION REMEDIATION COMPLETE /
+IMPLEMENTATION REPOSITORY FINALIZED /
+AWAITING CONTROLLER PHYSICAL RE-AUDIT
+
+PRIOR CONTROLLER PHYSICAL AUDIT:
+FAIL
+
+CONTROLLER PHYSICAL RE-AUDIT:
 NOT YET
 
 FAST-TRACK LIFECYCLE CLOSE:

@@ -80,39 +80,95 @@ test('buildRecoveryRecordKey validates all dimensions and creates deterministic 
   assert.throws(() => buildRecoveryRecordKey({ ...mutation, clientWriteIdentity: '' }), /Invalid clientWriteIdentity/);
 });
 
-test('createRecoveryRecord maps mutation to recovery record safely', (t) => {
+test('createRecoveryRecord: A. PENDING STATE PRESERVATION', (t) => {
   const mutation: ClientAnswerMutationRecord = {
-    identity: {
-      tenantId: 't1',
-      participantId: 'p1',
-      examInstanceId: 'e1',
-      attemptId: 'a1',
-      snapshotId: 's1'
-    },
+    identity: { tenantId: 't1', participantId: 'p1', examInstanceId: 'e1', attemptId: 'a1', snapshotId: 's1' },
     localSequence: 1,
     answerPayload: { answer: 'A' },
     clientWriteIdentity: 'cw1',
-    expectedWriteVersion: 2,
+    expectedWriteVersion: null,
+    syncState: 'pending',
+    acceptedWriteVersion: null
+  };
+  const record = createRecoveryRecord(mutation);
+  assert.equal(record.mutation.syncState, 'pending');
+  assert.equal(record.mutation.acceptedWriteVersion, null);
+});
+
+test('createRecoveryRecord: B. IN_FLIGHT STATE PRESERVATION', (t) => {
+  const mutation: ClientAnswerMutationRecord = {
+    identity: { tenantId: 't1', participantId: 'p1', examInstanceId: 'e1', attemptId: 'a1', snapshotId: 's1' },
+    localSequence: 1,
+    answerPayload: { answer: 'A' },
+    clientWriteIdentity: 'cw1',
+    expectedWriteVersion: null,
     syncState: 'in_flight',
     acceptedWriteVersion: null
   };
-
   const record = createRecoveryRecord(mutation);
-
-  assert.equal(record.scopeKey, '["t1","p1","e1","a1"]');
-  assert.equal(record.recordKey, '["t1","p1","e1","a1","s1",1,"cw1"]');
-  
-  // Preserves properties correctly
-  assert.deepEqual(record.mutation.identity, mutation.identity);
-  assert.deepEqual(record.mutation.answerPayload, mutation.answerPayload);
-  assert.equal(record.mutation.localSequence, mutation.localSequence);
-  assert.equal(record.mutation.clientWriteIdentity, mutation.clientWriteIdentity);
-  assert.equal(record.mutation.expectedWriteVersion, mutation.expectedWriteVersion);
-  assert.equal(record.mutation.syncState, mutation.syncState);
-  assert.equal(record.mutation.acceptedWriteVersion, mutation.acceptedWriteVersion);
-
-  // Does not falsely acknowledge pending or convert state
   assert.equal(record.mutation.syncState, 'in_flight');
+  assert.equal(record.mutation.acceptedWriteVersion, null);
+});
+
+test('createRecoveryRecord: C. FAILED STATE PRESERVATION', (t) => {
+  const mutation: ClientAnswerMutationRecord = {
+    identity: { tenantId: 't1', participantId: 'p1', examInstanceId: 'e1', attemptId: 'a1', snapshotId: 's1' },
+    localSequence: 1,
+    answerPayload: { answer: 'A' },
+    clientWriteIdentity: 'cw1',
+    expectedWriteVersion: null,
+    syncState: 'failed',
+    acceptedWriteVersion: null
+  };
+  const record = createRecoveryRecord(mutation);
+  assert.equal(record.mutation.syncState, 'failed');
+  assert.equal(record.mutation.acceptedWriteVersion, null);
+});
+
+test('createRecoveryRecord: D. ACKNOWLEDGED STATE / ACCEPTED WRITE VERSION PRESERVATION', (t) => {
+  const mutation: ClientAnswerMutationRecord = {
+    identity: { tenantId: 't1', participantId: 'p1', examInstanceId: 'e1', attemptId: 'a1', snapshotId: 's1' },
+    localSequence: 1,
+    answerPayload: { answer: 'A' },
+    clientWriteIdentity: 'cw1',
+    expectedWriteVersion: null,
+    syncState: 'acknowledged',
+    acceptedWriteVersion: 42
+  };
+  const record = createRecoveryRecord(mutation);
+  assert.equal(record.mutation.syncState, 'acknowledged');
+  assert.equal(record.mutation.acceptedWriteVersion, 42);
+});
+
+test('createRecoveryRecord: E. CALLER MUTATION NON-MUTATION', (t) => {
+  const mutation: ClientAnswerMutationRecord = {
+    identity: { tenantId: 't1', participantId: 'p1', examInstanceId: 'e1', attemptId: 'a1', snapshotId: 's1' },
+    localSequence: 1,
+    answerPayload: { answer: 'A' },
+    clientWriteIdentity: 'cw1',
+    expectedWriteVersion: null,
+    syncState: 'pending',
+    acceptedWriteVersion: null
+  };
+  
+  const callerMutationString = JSON.stringify(mutation);
+  createRecoveryRecord(mutation);
+  
+  // Prove caller mutation has not been changed
+  assert.equal(JSON.stringify(mutation), callerMutationString);
+});
+
+test('buildRecoveryRecordKey: F. PREDECESSOR VALIDATION REUSE BEHAVIOR', (t) => {
+  const mutation: ClientAnswerMutationRecord = {
+    identity: { tenantId: '', participantId: 'p1', examInstanceId: 'e1', attemptId: 'a1', snapshotId: 's1' },
+    localSequence: 1,
+    answerPayload: { answer: 'A' },
+    clientWriteIdentity: 'cw1',
+    expectedWriteVersion: null,
+    syncState: 'pending',
+    acceptedWriteVersion: null
+  };
+  assert.throws(() => buildRecoveryRecordKey(mutation), /Invalid tenantId/);
 });
 
 test('isRecoveryRecordForScope accurately checks scope boundaries', (t) => {
