@@ -1,7 +1,7 @@
 # BU-015 Secure Assessment Capability Matrix & PB06 Gap Qualification
 
 **Status:** QUALIFIED / CONTROLLER PHYSICAL AUDIT PASS
-**Version:** 1.0.3
+**Version:** 1.0.4
 **Source:** Canonical Discovery (D04.01), SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE, BU-014 Evidence, BU-003 Evidence
 
 | Capability ID | Capability Name | Canonical Source | Baseline Classification | Implementation State | Available Evidence | Verification State | PB06 Relevance | Gap / Next Action |
@@ -18,8 +18,8 @@
 | SEC-010 | Autosave Requirement | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-05 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement client autosave |
 | SEC-011 | Visible Saved/Saving/Pending/Offline/Error Semantics | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-12 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement UI semantics |
 | SEC-012 | Client Must Not Falsely Claim Authoritative Saved | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-13 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement UI verification |
-| SEC-013 | Local-First Recovery Buffer | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-06 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement local storage buffer |
-| SEC-014 | Pending Queue Automatic Retry/Re-sync/Reconciliation | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-15 | BASELINE | NONE | NONE | NOT YET IMPLEMENTED | APPLICABLE | Implement client queue |
+| SEC-013 | Local-First Recovery Buffer | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-06 | BASELINE | IMPLEMENTED | BU-023 + BU-024 Controller-proven recovery persistence boundary and concrete IndexedDB implementation | PROVEN | APPLICABLE | NONE |
+| SEC-014 | Pending Queue Automatic Retry/Re-sync/Reconciliation | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-15 | BASELINE | IMPLEMENTED | BU-025 + BU-026 Controller-proven deterministic reconciliation and automatic retry/backoff implementation | PROVEN | APPLICABLE | NONE |
 | SEC-015 | Exact/Idempotent Answer Retries | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-09 | BASELINE | IMPLEMENTED | BU-014 Exact retry zero mutation PASS | PROVEN | APPLICABLE | NONE |
 | SEC-016 | Server-Authoritative Timer | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-26 | BASELINE | IMPLEMENTED | BU-014 Timer start PASS | PROVEN | APPLICABLE | NONE |
 | SEC-017 | Reconnect Does Not Reset Timer | docs/01-discovery/04.01_SECURE_ASSESSMENT.md §D04.5-30 | BASELINE | IMPLEMENTED | BU-014 Resume pre-submission PASS | PROVEN | APPLICABLE | NONE |
@@ -42,9 +42,9 @@
 | SEC-034 | Detailed Anti-Cheating Heuristics / Preset Mechanics | docs/architecture/SECURE_ASSESSMENT_CRITICAL_ARCHITECTURE.md §16 | PROVISIONAL | NONE | NONE | PROVISIONAL / UNRESOLVED | APPLICABLE | PRESERVE CANONICAL MATURITY |
 
 ## Summary
-- **PROVEN COUNT:** 19
+- **PROVEN COUNT:** 21
 - **IMPLEMENTED / EVIDENCE GAP COUNT:** 0
-- **NOT YET IMPLEMENTED COUNT:** 13
+- **NOT YET IMPLEMENTED COUNT:** 11
 - **PROVISIONAL / UNRESOLVED COUNT:** 1
 - **FUTURE / OUT OF CURRENT BASELINE COUNT:** 1
 - **NOT APPLICABLE COUNT:** 0
