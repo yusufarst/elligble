@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.5.31
+**Version:** 1.5.32
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.30
+**Supersedes:** CURRENT_STATE v1.5.31
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
@@ -541,7 +541,7 @@ MAIN PROJECT CONTROL 06
 → COMPLETE THROUGH BU-020 FINAL PHYSICAL VERIFICATION
 
 MAIN PROJECT CONTROL 07
-→ ACTIVE CONTROLLER / BU-021 CONTROLLER PHYSICAL AUDIT
+→ ACTIVE CONTROLLER / BU-021 FINAL PHYSICAL VERIFICATION
 
 ## Recovery Status
 
