@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.161
-**Supersedes:** 0.1.160
+**Version:** 0.1.162
+**Supersedes:** 0.1.161
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -68,10 +68,10 @@ MASTER BLUEPRINT
 → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 
 LAST COMPLETED BUILD UNIT:
-BU-023 — Secure Assessment Client Answer Durable Local Recovery Persistence Boundary Bootstrap
+BU-025 — Secure Assessment Client Answer Pending Queue Reconciliation Runtime Foundation Bootstrap
 
 ACTIVE BUILD UNIT:
-NONE
+BU-026
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED

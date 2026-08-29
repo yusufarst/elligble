@@ -20,10 +20,9 @@ const DEFAULT_POLICY: RetryPolicy = {
   jitterRatio: 0.1,
 };
 
-// We create a mock store and intercept the reconcileClientAnswerQueue by having it call a deterministic mock queue.
-// Wait, we can't easily mock reconcileClientAnswerQueue without dependency injection if we import it directly.
-// But we can just use a real store that produces deterministic records so the real reconcileClientAnswerQueue does what we want!
-// Let's create a memory store.
+async function drainMicrotasks() {
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+}
 
 class MockStore implements Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'> {
   public records: ClientAnswerRecoveryRecord[] = [];
@@ -110,14 +109,14 @@ function createDummyRecord(key: string, acknowledged: boolean): ClientAnswerReco
 
 test('BU-026 retry controller policy validation', () => {
   const store = new MockStore();
-  const executor = async (): Promise<never> => { throw new Error('fail') }; 
+  const executor = async (): Promise<never> => { throw new Error('fail') };
   const scheduler = new MockScheduler();
   const rand = new MockRandomness();
 
   assert.throws(() => {
     new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, { ...DEFAULT_POLICY, initialDelayMs: -1 }, scheduler, rand);
   }, /Invalid initialDelayMs/);
-  
+
   assert.throws(() => {
     new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, { ...DEFAULT_POLICY, maxDelayMs: 0 }, scheduler, rand);
   }, /Invalid maxDelayMs/);
@@ -144,15 +143,15 @@ test('BU-026 explicit trigger runs reconciliation immediately and exact attempt 
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger();
   // It's async inside. Wait for next tick.
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   assert.equal(store.listCalls.length, 1);
   assert.deepEqual(store.listCalls[0], DUMMY_SCOPE);
   assert.equal(executorCalls, 1);
-  
+
   // Successful, so nothing scheduled
   assert.equal(scheduler.pendingTimeout, null);
 });
@@ -168,9 +167,9 @@ test('BU-026 failed summary schedules retry', async () => {
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // Should have scheduled a retry
   assert.ok(scheduler.pendingTimeout);
@@ -186,9 +185,9 @@ test('BU-026 thrown reconciliation/store failure schedules retry', async () => {
   const rand = new MockRandomness();
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   assert.ok(scheduler.pendingTimeout);
   assert.equal(scheduler.pendingTimeout.ms, 1000);
@@ -199,14 +198,14 @@ test('BU-026 deterministic injected jitter and exponential/bounded delay progres
   const executor: ClientAnswerSynchronizationExecutor = async (m) => { throw new Error('failed'); }; // always fail
   const scheduler = new MockScheduler();
   const rand = new MockRandomness();
-  
+
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   rand.nextValue = 0.5;
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // 1st delay: 1000 + (1000 * 0.1 * 0.5) = 1050
   assert.ok(scheduler.pendingTimeout);
@@ -215,24 +214,24 @@ test('BU-026 deterministic injected jitter and exponential/bounded delay progres
   // flush timer to trigger 2nd
   rand.nextValue = 1.0;
   scheduler.flush();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // 2nd base delay: 2000. Jitter: 2000 * 0.1 * 1.0 = 200
   // total = 2200
   assert.ok(scheduler.pendingTimeout);
   assert.equal(scheduler.pendingTimeout.ms, 2200);
 
-  // 3rd base delay: 4000. 
+  // 3rd base delay: 4000.
   scheduler.flush();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
   assert.ok(scheduler.pendingTimeout);
   assert.equal(scheduler.pendingTimeout!.ms, 4400); // 4000 + 400
 
   // jump ahead to test bound: 4000 -> 8000 -> 16000 -> 32000 (bounded to 30000)
-  scheduler.flush(); await new Promise(r => setImmediate(r)); // 8000
-  scheduler.flush(); await new Promise(r => setImmediate(r)); // 16000
-  scheduler.flush(); await new Promise(r => setImmediate(r)); // 30000
-  
+  scheduler.flush(); await drainMicrotasks(); // 8000
+  scheduler.flush(); await drainMicrotasks(); // 16000
+  scheduler.flush(); await drainMicrotasks(); // 30000
+
   // base is now 30000. maxDelayMs cannot be exceeded, jitter is applied before cap.
   // 30000 + (30000 * 0.1 * 1.0) = 33000 -> cap to 30000
   assert.ok(scheduler.pendingTimeout);
@@ -248,13 +247,13 @@ test('BU-026 successful or empty reconciliation schedules nothing and resets pro
   };
   const scheduler = new MockScheduler();
   const rand = new MockRandomness();
-  
+
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // Failed, so scheduled
   assert.ok(scheduler.pendingTimeout);
@@ -263,7 +262,7 @@ test('BU-026 successful or empty reconciliation schedules nothing and resets pro
   // Now make it succeed
   fail = false;
   scheduler.flush();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // Success, nothing scheduled
   assert.equal(scheduler.pendingTimeout, null);
@@ -272,7 +271,7 @@ test('BU-026 successful or empty reconciliation schedules nothing and resets pro
   fail = true;
   store.records[0] = createDummyRecord('r1', false); // reset so it attempts
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // Back to 1000, confirming it reset
   assert.ok(scheduler.pendingTimeout);
@@ -281,7 +280,7 @@ test('BU-026 successful or empty reconciliation schedules nothing and resets pro
   // Now empty
   store.records = []; // empty
   scheduler.flush();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // Empty, schedules nothing
   assert.equal(scheduler.pendingTimeout, null);
@@ -296,9 +295,9 @@ test('BU-026 explicit trigger cancels pending delayed retry', async () => {
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   assert.ok(scheduler.pendingTimeout);
   const initialClearCalls = scheduler.clearCalls;
@@ -307,7 +306,7 @@ test('BU-026 explicit trigger cancels pending delayed retry', async () => {
   assert.equal(scheduler.pendingTimeout, null);
   assert.equal(scheduler.clearCalls, initialClearCalls + 1);
 
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
   // should reschedule
   assert.ok(scheduler.pendingTimeout);
 });
@@ -328,10 +327,10 @@ test('BU-026 overlapping triggers do not overlap reconciliation and coalesce', a
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger(); // starts first
   // Don't wait for completion yet
-  await new Promise(r => setTimeout(r, 10)); // just let it enter executeReconciliation
+  await drainMicrotasks(); // just let it enter executeReconciliation
 
   controller.trigger(); // overlapping
   controller.trigger(); // overlapping
@@ -340,13 +339,13 @@ test('BU-026 overlapping triggers do not overlap reconciliation and coalesce', a
 
   // resolve the first execution
   executorResolve!(null);
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // It should have run a second time immediately because of pendingImmediateTrigger coalescing
   assert.equal(callCount, 2);
 
   // resolve the second execution (with failure so it schedules)
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
   assert.ok(scheduler.pendingTimeout);
 });
 
@@ -359,18 +358,18 @@ test('BU-026 dispose cancels scheduled retry and prevents later execution', asyn
   store.records.push(createDummyRecord('r1', false));
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   assert.ok(scheduler.pendingTimeout);
-  
+
   controller.dispose();
   assert.equal(scheduler.pendingTimeout, null);
 
   // Triggering after dispose should do nothing
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
   assert.equal(scheduler.pendingTimeout, null);
 });
 
@@ -384,12 +383,12 @@ test('BU-026 scheduler failure creates no false authoritative acknowledgement', 
   store.records.push(origRecord);
 
   const controller = new ClientAnswerReconciliationRetryController(DUMMY_SCOPE, store, executor, DEFAULT_POLICY, scheduler, rand);
-  
+
   // Make setTimeout throw
   scheduler.setTimeout = () => { throw new Error('Timer broken'); };
 
   controller.trigger();
-  await new Promise(r => setImmediate(r));
+  await drainMicrotasks();
 
   // The record was failed by reconcileClientAnswerQueue
   const record = store.records[0];
