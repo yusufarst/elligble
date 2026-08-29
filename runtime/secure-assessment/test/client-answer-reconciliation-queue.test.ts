@@ -54,11 +54,13 @@ function createMockRecord(mutation: ClientAnswerMutationRecord): ClientAnswerRec
 class MockStore implements Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'> {
   public records: ClientAnswerRecoveryRecord[] = [];
   public putCalls: ClientAnswerRecoveryRecord[] = [];
+  public listByScopeCalls: ClientAnswerRecoveryScope[] = [];
   public shouldFailList = false;
   public shouldFailPut = false;
   public putFailureCondition?: (record: ClientAnswerRecoveryRecord) => boolean;
 
   async listByScope(scope: ClientAnswerRecoveryScope): Promise<ClientAnswerRecoveryRecord[]> {
+    this.listByScopeCalls.push(structuredClone(scope));
     if (this.shouldFailList) {
       throw new Error('Mock store list failure');
     }
@@ -117,6 +119,30 @@ describe('client-answer-reconciliation-queue', () => {
     });
     assert.equal(store.putCalls.length, 0);
     assert.deepEqual(record, originalRecord, 'Caller records must not be mutated');
+  });
+
+  it('passes the exact supplied scope to listByScope', async () => {
+    const store = new MockStore();
+    const executor: ClientAnswerSynchronizationExecutor = async (mut) => {
+      return { status: 'acknowledged', clientWriteIdentity: mut.clientWriteIdentity, writeVersion: 2 };
+    };
+
+    await reconcileClientAnswerQueue(testScope, store, executor);
+
+    assert.equal(store.listByScopeCalls.length, 1, 'Should call listByScope exactly once');
+    assert.deepEqual(store.listByScopeCalls[0], testScope, 'Must forward exact scope to listByScope');
+  });
+
+  it('store dependency satisfies Pick<ClientAnswerRecoveryStore, "listByScope" | "put"> compile-time contract', async () => {
+    const store = new MockStore();
+    const canonicalDependency: Pick<ClientAnswerRecoveryStore, 'listByScope' | 'put'> = store;
+
+    const executor: ClientAnswerSynchronizationExecutor = async (mut) => {
+      return { status: 'acknowledged', clientWriteIdentity: mut.clientWriteIdentity, writeVersion: 2 };
+    };
+
+    const summary = await reconcileClientAnswerQueue(testScope, canonicalDependency, executor);
+    assert.equal(summary.scanned, 0);
   });
 
   it('attempt-scope isolation, including another attempt/scope not being executed', async () => {
@@ -291,6 +317,32 @@ describe('client-answer-reconciliation-queue', () => {
     assert.equal(store.putCalls[4].recordKey, 'key-B');
     assert.equal(store.putCalls[6].recordKey, 'key-C');
   });
+  it('invalid acknowledgement version (<= 0) marks record as failed and preserves payload', async () => {
+    const store = new MockStore();
+    const mutation = createMockMutation('pending', 1, 'client-id-1');
+    const record = createMockRecord(mutation);
+    store.records = [record];
+
+    const executor: ClientAnswerSynchronizationExecutor = async (mut) => {
+      // Matching clientWriteIdentity, but invalid writeVersion (0)
+      return { status: 'acknowledged', clientWriteIdentity: mut.clientWriteIdentity, writeVersion: 0 };
+    };
+
+    const summary = await reconcileClientAnswerQueue(testScope, store, executor);
+
+    assert.equal(summary.scanned, 1);
+    assert.equal(summary.attempted, 1);
+    assert.equal(summary.acknowledged, 0);
+    assert.equal(summary.failed, 1);
+
+    assert.equal(store.putCalls.length, 2);
+
+    const finalPut = store.putCalls[1];
+    assert.equal(finalPut.mutation.syncState, 'failed');
+    assert.deepEqual(finalPut.mutation.answerPayload, mutation.answerPayload, 'answerPayload must be preserved');
+    assert.equal(finalPut.mutation.acceptedWriteVersion, null, 'no false authoritative save should occur');
+  });
+
 
   it('never falsely saves mismatched acknowledgement', async () => {
     const store = new MockStore();
