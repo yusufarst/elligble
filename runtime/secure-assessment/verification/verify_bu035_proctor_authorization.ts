@@ -95,6 +95,7 @@ async function main() {
         const examInstance3 = '33333333-2222-4333-a444-555555555555'; // Unassigned exam instance for independent wrong-exam verification
         const p1 = '33333333-3333-4333-a444-555555555555';
         const p2 = '44444444-4444-4333-a444-555555555555';
+        const unassignedPerson = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
         const assign1 = '55555555-5555-4333-a444-555555555555';
         const assign2 = '66666666-6666-4333-a444-555555555555';
         const assign3 = '77777777-7777-4333-a444-555555555555';
@@ -102,7 +103,7 @@ async function main() {
 
         // Setup base data
         await client.query('INSERT INTO tenant_tenants (id) VALUES ($1), ($2)', [tenantId, otherTenantId]);
-        await client.query('INSERT INTO identity_persons (id) VALUES ($1), ($2)', [p1, p2]);
+        await client.query('INSERT INTO identity_persons (id) VALUES ($1), ($2), ($3)', [p1, p2, unassignedPerson]);
         await client.query('INSERT INTO secure_assessment_exam_instances (id, tenant_id) VALUES ($1, $2), ($3, $4), ($5, $6)',
             [examInstance1, tenantId, examInstance2, tenantId, examInstance3, tenantId]);
 
@@ -114,6 +115,7 @@ async function main() {
         // p2 -> examInstance1 (active)
         await client.query('INSERT INTO secure_assessment_proctor_assignments (id, tenant_id, exam_instance_id, person_id) VALUES ($1, $2, $3, $4)', [assign3, tenantId, examInstance1, p2]);
         // Note: examInstance3 has NO assignment row for p1 or p2.
+        // Note: unassignedPerson has NO assignment row anywhere in secure_assessment_proctor_assignments.
 
         // B. active exact assignment authorizes
         const resB = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance1, personId: p1 });
@@ -131,11 +133,15 @@ async function main() {
         assertStrict(resC.status === 'denied', "Revoked assignment must deny");
         log("revoked assignment denies");
 
-        // D. missing assignment denies
-        const missingPerson = '99999999-9999-9999-9999-999999999999';
-        const resD = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance1, personId: missingPerson });
+        // D. missing assignment denies (true PostgreSQL-backed lookup for valid unassigned Person)
+        const missingCountCheck = await client.query(
+            'SELECT count(*) FROM secure_assessment_proctor_assignments WHERE tenant_id = $1 AND exam_instance_id = $2 AND person_id = $3',
+            [tenantId, examInstance1, unassignedPerson]
+        );
+        assertStrict(parseInt(missingCountCheck.rows[0].count, 10) === 0, "Assignment count must be 0 for unassigned person");
+        const resD = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance1, personId: unassignedPerson });
         assertStrict(resD.status === 'denied', "Missing assignment must deny");
-        log("missing assignment denies");
+        log("missing assignment denies (true PostgreSQL-backed lookup for valid unassigned Person)");
 
         // E. wrong person denies
         const resE = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance2, personId: p2 });
