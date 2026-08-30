@@ -1,4 +1,4 @@
-**Status:** COMPLETE / STAGE-2 IMPLEMENTATION EXECUTED / TARGETED VERIFIER-TARGET REMEDIATION COMPLETE / TARGETED REAL-DB EVIDENCE RECONSTRUCTION PASS / IMPLEMENTATION MATERIAL STATE PRESERVED / VERIFIED / TARGETED STAGE-2 REMEDIATION REPOSITORY FINALIZED YES / FIRST CONTROLLER PHYSICAL AUDIT FAIL / TARGETED VERIFIER COVERAGE REMEDIATION PASS / TARGETED REAL POSTGRESQL REVERIFICATION PASS / TARGETED REMEDIATION PROCESS PASS / CONTROLLER PHYSICAL RE-AUDIT NOT YET / DONE NO / FULL BU-038 REPOSITORY FINALIZED NO / FINAL PHYSICAL VERIFICATION NOT YET
+**Status:** STAGE-2 IMPLEMENTATION EXECUTED / FIRST CONTROLLER PHYSICAL AUDIT FAIL / 091bf317 VERIFIER-COVERAGE REMEDIATION ATTEMPT FAIL / SECOND TARGETED VERIFIER COVERAGE REMEDIATION COMPLETE / SECOND TARGETED REAL POSTGRESQL REVERIFICATION PASS / CONTROLLER PHYSICAL RE-AUDIT NOT YET / DONE NO / FULL BU-038 REPOSITORY FINALIZED NO / FINAL PHYSICAL VERIFICATION NOT YET
 **Version:** 1.0.0
 **Canonical:** YES
 **Phase:** BUILD
@@ -115,9 +115,18 @@ Grade Level does NOT semantically depend on Subject or Academic Year.
 - Targeted Stage-2 Remediation Repository Finalized: YES
 - First Controller Physical Audit: FAIL
 - Migration 0014: CONTROLLER-PROVEN / PRESERVED
-- Targeted Verifier Coverage Remediation: COMPLETE
-- Targeted Real-DB Reverification: PASS
-- Targeted Material + Process-Control Remediation Repository Finalized: YES after successful push
+- 091bf317 Verifier-Coverage Remediation Attempt: FAIL
+- 091bf317 Physical Commit Path Set: ONLY THREE PATHS (BUILD_PHASE_INDEX, BU-038 spec, CURRENT_STATE)
+- 091bf317 Verifier Strengthening: NOT INCLUDED IN COMMIT
+- 091bf317 Handoff Sync: NOT INCLUDED
+- 091bf317 Document Manifest Sync: NOT INCLUDED
+- 091bf317 Canonical Verifier Pass Claim: PREMATURE / FALSE-PROMOTION
+- 091bf317 Canonical Process Pass Claim: PREMATURE / FALSE-PROMOTION
+- 091bf317 Process Defects: background/task execution occurred; semicolon command sequencing; pipeline command used; git reset --soft HEAD~1 used; history locally rewritten before push; authorized exact commit subject not used; precommit/cached diff-check evidence absent; post-push physical gate evidence absent
+- 091bf317 Remediation Process: FAIL / HISTORICAL / DO NOT REPEAT
+- Second Targeted Verifier Coverage Remediation: COMPLETE
+- Second Targeted Real PostgreSQL Reverification: PASS
+- Second Targeted Remediation Repository Finalized: YES only after successful push
 - Controller Physical Re-Audit: NOT YET
 - Done: NO
 - Full BU-038 Repository Finalized: NO
