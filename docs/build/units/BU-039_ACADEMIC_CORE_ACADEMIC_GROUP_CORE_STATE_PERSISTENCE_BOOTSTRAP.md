@@ -57,7 +57,7 @@ Establish authoritative tenant-scoped, academic-year-scoped Academic Group/Rombe
 - [x] STAGE 4: LIFECYCLE CLOSE
 - [x] STAGE 5A: FIRST FINAL PHYSICAL VERIFICATION (FAIL)
 - [x] STAGE 5B: TARGETED FINAL-PHYSICAL CONTROL CORRECTION (COMPLETE)
-- [ ] STAGE 5C: FINAL PHYSICAL RE-VERIFICATION
+- [x] STAGE 5C: FINAL PHYSICAL RE-VERIFICATION
 
 ## 3. Verifier
 `verify_bu039_academic_core_academic_group_core_state.sql` execution PASS across fresh PostgreSQL instance.
