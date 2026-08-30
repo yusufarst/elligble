@@ -1,6 +1,6 @@
 **Status:** ACTIVE  
-**Version:** 1.0.199
-**Supersedes:** 1.0.198
+**Version:** 1.0.200
+**Supersedes:** 1.0.199
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 
@@ -72,7 +72,7 @@ NEVER_DEFAULT
 | `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE v0.1.161 / SHA256: 77AECF0B410B4EFC95901E31476B2903AF782AF9E34B0F98E8C366A8A465E030) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE v0.1.162 / SHA256: FB49520798109F8236BED390CB7ABA939D7BAED7193EEBF942B373074E7004A8) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
 | `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (2952AD2EDC5AA5EA8CA559AD71A441D5FC003357C849548B4CBCB6C6BC3BD5B9) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-002_SECURE_ASSESSMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-002 Specification - Secure Assessment Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (C2D2A111ACE7B0E615AFF69992E980DD61C9F503CB6ABBA2564DFA40996CAB46) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-003_SECURE_ASSESSMENT_QUESTION_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-003 Specification - Secure Assessment Question Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (19DE33263442893B9DDFDDD9F0244467FFC5F66E714F46E79E58597978E1EE10) | BUILD UNIT SPEC | PHASE: Build |
@@ -134,7 +134,7 @@ NEVER_DEFAULT
 | `docs/02-master-blueprint/02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md` | Baseline, Future & Exclusions | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-10 |
 | `docs/02-master-blueprint/02.11_TRACEABILITY_MATRIX.md` | Traceability Matrix | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-11 |
 | `docs/02-master-blueprint/02.12_MASTER_BLUEPRINT_EXIT_GATE.md` | Master Blueprint Exit Gate | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-12 |
-| `docs/build/units/BU-035_SECURE_ASSESSMENT_EXPLICIT_PROCTOR_ASSIGNMENT_AUTHORIZATION_RUNTIME_BOOTSTRAP.md` | BU-035 specification — Secure Assessment Explicit Proctor Assignment Authorization Runtime Bootstrap. Version: 1.0.0. Status: IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL AUDIT. (733D7B2DDE892CC657D6E2E80110189753B4B6D73FF7705ECDA6F0AA1C5213A2) | BUILD UNIT SPEC | PHASE: Build |
-| `runtime/secure-assessment/src/proctor-authorization.ts` | BU-035 Proctor Authorization Runtime Primitive. (19A5F54C237F70EC2D15C0A94A8752E5989192B94961692EFDF1B02A20977C6A) | RUNTIME SOURCE | PHASE: Build |
-| `runtime/secure-assessment/test/proctor-authorization.test.ts` | BU-035 Proctor Authorization Unit Tests. (36A5646BCEAB5B652A60CC227D62585276F3698738DE3201CB2311898D33E12B) | TEST HARNESS | PHASE: Build |
-| `runtime/secure-assessment/verification/verify_bu035_proctor_authorization.ts` | BU-035 Proctor Authorization Physical Verification Script. (1AE9ABD5246AAB3E6DAB497634EAC78C14DFFEE7D06554B005727B8BC61344D5) | VERIFICATION HARNESS | PHASE: Build |
+| `docs/build/units/BU-035_SECURE_ASSESSMENT_EXPLICIT_PROCTOR_ASSIGNMENT_AUTHORIZATION_RUNTIME_BOOTSTRAP.md` | BU-035 specification — Secure Assessment Explicit Proctor Assignment Authorization Runtime Bootstrap. Version: 1.0.0. Status: PRIOR CONTROLLER PHYSICAL AUDIT FAIL / TARGETED RUNTIME VALIDATION + VERIFICATION + HANDOFF CONTROL REMEDIATION COMPLETE / IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT. (397509636D53E010A36BBEF5E8CB8924217C07A5F5964910C74838098F238F00) | BUILD UNIT SPEC | PHASE: Build |
+| `runtime/secure-assessment/src/proctor-authorization.ts` | BU-035 Proctor Authorization Runtime Primitive. (3A262AFA75AE1C4104F8109A7997FB0D3DFDDFC820ED8AD8E04F1BF28E134E75) | RUNTIME SOURCE | PHASE: Build |
+| `runtime/secure-assessment/test/proctor-authorization.test.ts` | BU-035 Proctor Authorization Unit Tests. (68A99FE1656B2BAC70D447F89F13F1ED43C291284788CF437F6B8514F4CF6A09) | TEST HARNESS | PHASE: Build |
+| `runtime/secure-assessment/verification/verify_bu035_proctor_authorization.ts` | BU-035 Proctor Authorization Physical Verification Script. (CBC94DBB9D45C899BEE578C8E686167DD304D240D91858E153824E940381743E) | VERIFICATION HARNESS | PHASE: Build |

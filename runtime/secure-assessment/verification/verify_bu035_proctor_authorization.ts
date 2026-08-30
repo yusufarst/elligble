@@ -58,10 +58,41 @@ async function main() {
         }
         log("Migration chain through 0008 applied successfully");
 
+        // Explicit Predecessor Database Regression Check
+        const requiredTables = [
+            'elligble_migration_history',
+            'identity_persons',
+            'identity_user_accounts',
+            'tenant_tenants',
+            'tenant_memberships',
+            'secure_assessment_exam_instances',
+            'secure_assessment_exam_participants',
+            'secure_assessment_exam_attempts',
+            'secure_assessment_exam_sessions',
+            'secure_assessment_question_bank_items',
+            'secure_assessment_exam_question_snapshots',
+            'secure_assessment_exam_answers',
+            'secure_assessment_timer_state',
+            'secure_assessment_timer_adjustments',
+            'secure_assessment_exam_submissions',
+            'secure_assessment_proctor_assignments'
+        ];
+
+        for (const tableName of requiredTables) {
+            const tableCheck = await client.query(
+                `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1`,
+                [tableName]
+            );
+            assertStrict(tableCheck.rows.length === 1, `Predecessor table missing: ${tableName}`);
+            await client.query(`SELECT COUNT(*) FROM ${tableName}`);
+        }
+        log("explicit predecessor DB regression verified: all 16 core tables exist and are functional");
+
         const tenantId = '00000000-1111-4222-a333-444444444444';
         const otherTenantId = '00000000-1111-4222-a333-555555555555';
         const examInstance1 = '11111111-2222-4333-a444-555555555555';
         const examInstance2 = '22222222-2222-4333-a444-555555555555';
+        const examInstance3 = '33333333-2222-4333-a444-555555555555'; // Unassigned exam instance for independent wrong-exam verification
         const p1 = '33333333-3333-4333-a444-555555555555';
         const p2 = '44444444-4444-4333-a444-555555555555';
         const assign1 = '55555555-5555-4333-a444-555555555555';
@@ -72,22 +103,26 @@ async function main() {
         // Setup base data
         await client.query('INSERT INTO tenant_tenants (id) VALUES ($1), ($2)', [tenantId, otherTenantId]);
         await client.query('INSERT INTO identity_persons (id) VALUES ($1), ($2)', [p1, p2]);
-        await client.query('INSERT INTO secure_assessment_exam_instances (id, tenant_id) VALUES ($1, $2), ($3, $4)', 
-            [examInstance1, tenantId, examInstance2, tenantId]);
+        await client.query('INSERT INTO secure_assessment_exam_instances (id, tenant_id) VALUES ($1, $2), ($3, $4), ($5, $6)',
+            [examInstance1, tenantId, examInstance2, tenantId, examInstance3, tenantId]);
 
-        // Insert some assignments
-        // p1 -> exam1 (active)
+        // Insert assignments:
+        // p1 -> examInstance1 (active)
         await client.query('INSERT INTO secure_assessment_proctor_assignments (id, tenant_id, exam_instance_id, person_id) VALUES ($1, $2, $3, $4)', [assign1, tenantId, examInstance1, p1]);
-        // p1 -> exam2 (revoked)
+        // p1 -> examInstance2 (revoked)
         await client.query('INSERT INTO secure_assessment_proctor_assignments (id, tenant_id, exam_instance_id, person_id, revoked_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)', [assign2, tenantId, examInstance2, p1]);
-        // p2 -> exam1 (active)
+        // p2 -> examInstance1 (active)
         await client.query('INSERT INTO secure_assessment_proctor_assignments (id, tenant_id, exam_instance_id, person_id) VALUES ($1, $2, $3, $4)', [assign3, tenantId, examInstance1, p2]);
+        // Note: examInstance3 has NO assignment row for p1 or p2.
 
         // B. active exact assignment authorizes
         const resB = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance1, personId: p1 });
         assertStrict(resB.status === 'authorized', "Active exact assignment must authorize");
         if (resB.status === 'authorized') {
             assertStrict(resB.context.proctorAssignmentId === assign1, "Must return correct assignment ID");
+            assertStrict(resB.context.tenantId === tenantId, "Must return correct tenant ID");
+            assertStrict(resB.context.examInstanceId === examInstance1, "Must return correct examInstance ID");
+            assertStrict(resB.context.personId === p1, "Must return correct person ID");
         }
         log("active exact assignment authorizes");
 
@@ -107,10 +142,10 @@ async function main() {
         assertStrict(resE.status === 'denied', "Wrong person denies");
         log("wrong person denies");
 
-        // F. wrong Exam Instance denies
-        const resF = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance2, personId: p1 });
-        assertStrict(resF.status === 'denied', "Wrong Exam Instance denies");
-        log("wrong Exam Instance denies");
+        // F. independent wrong Exam Instance denies (examInstance3 has no assignment row for p1, independent of revocation)
+        const resF = await authorizeExplicitProctorAssignment(pool, { tenantId, examInstanceId: examInstance3, personId: p1 });
+        assertStrict(resF.status === 'denied', "Independent wrong Exam Instance must deny");
+        log("independent wrong Exam Instance denies (unassigned exam instance independently scoped)");
 
         // G. wrong tenant denies
         const resG = await authorizeExplicitProctorAssignment(pool, { tenantId: otherTenantId, examInstanceId: examInstance1, personId: p1 });
@@ -123,8 +158,10 @@ async function main() {
         assertStrict(resH1.status === 'authorized' && resH2.status === 'authorized', "Multiple Proctors for one instance must independently authorize");
         log("multiple active Proctors for one Exam Instance independently authorize");
 
-        // I. same Person on a different Exam Instance is scoped correctly
-        // (p1 is active on exam1, revoked on exam2) -> already proven in B and C.
+        // I. malformed UUID required identifiers return denied without DB error
+        const resI = await authorizeExplicitProctorAssignment(pool, { tenantId: 'not-a-uuid', examInstanceId: examInstance1, personId: p1 });
+        assertStrict(resI.status === 'denied', "Malformed tenantId must deny");
+        log("malformed UUID required identifiers return denied");
 
         // J. revoke + reassignment recognizes the current active row
         await client.query('UPDATE secure_assessment_proctor_assignments SET revoked_at = CURRENT_TIMESTAMP WHERE id = $1', [assign1]);
@@ -150,7 +187,7 @@ async function main() {
         assertStrict(resL.status === 'authorization_unavailable', "Persistence failure must yield authorization_unavailable");
         log("persistence failure/unavailability does not become authorization success");
 
-        // M. predecessor Secure Assessment runtime/database baseline remains healthy (implicit since we just ran migrations 0001-0008 successfully)
+        // M. predecessor Secure Assessment runtime/database baseline remains healthy
         log("predecessor Secure Assessment runtime/database baseline remains healthy");
 
     } catch (err: any) {

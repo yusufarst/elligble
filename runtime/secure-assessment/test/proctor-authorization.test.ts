@@ -4,25 +4,37 @@ import * as assert from 'node:assert';
 import type { Pool } from 'pg';
 import { authorizeExplicitProctorAssignment } from '../src/proctor-authorization.ts';
 
+const validTenantId = '00000000-1111-4222-a333-444444444444';
+const validExamInstanceId = '11111111-2222-4333-a444-555555555555';
+const validExamInstanceId2 = '22222222-2222-4333-a444-555555555555';
+const validPersonId = '33333333-3333-4333-a444-555555555555';
+const validPersonId2 = '44444444-4444-4333-a444-555555555555';
+const validWrongTenantId = '99999999-9999-4999-a999-999999999999';
+const validWrongExamId = '88888888-8888-4888-a888-888888888888';
+const validWrongPersonId = '77777777-7777-4777-a777-777777777777';
+
 test('authorizeExplicitProctorAssignment', async (t) => {
     await t.test('1. active exact assignment -> authorized', async () => {
+        let queryCount = 0;
         const pool = {
             query: async (query: string, values: any[]) => {
+                queryCount++;
                 return { rows: [{ id: 'assign-1' }] };
             }
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
+        assert.strictEqual(queryCount, 1);
         assert.strictEqual(res.status, 'authorized');
         if (res.status === 'authorized') {
-            assert.strictEqual(res.context.tenantId, 't1', '2. authorized result contains exact tenantId');
-            assert.strictEqual(res.context.examInstanceId, 'e1', '3. authorized result contains exact examInstanceId');
-            assert.strictEqual(res.context.personId, 'p1', '4. authorized result contains exact personId');
+            assert.strictEqual(res.context.tenantId, validTenantId, '2. authorized result contains exact tenantId');
+            assert.strictEqual(res.context.examInstanceId, validExamInstanceId, '3. authorized result contains exact examInstanceId');
+            assert.strictEqual(res.context.personId, validPersonId, '4. authorized result contains exact personId');
             assert.strictEqual(res.context.proctorAssignmentId, 'assign-1', '5. authorized result contains assignment ID');
         }
     });
@@ -36,9 +48,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -52,9 +64,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -63,15 +75,14 @@ test('authorizeExplicitProctorAssignment', async (t) => {
     await t.test('8. wrong person -> denied', async () => {
         const pool = {
             query: async (query: string, values: any[]) => {
-                // Assuming DB returns empty for wrong person
                 return { rows: [] };
             }
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p-wrong'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validWrongPersonId
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -85,9 +96,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e-wrong',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validWrongExamId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -101,9 +112,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't-wrong',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validWrongTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -119,9 +130,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         // Passing Teacher in input is impossible due to strict typing, but even if the person is a teacher,
         // without a DB row, they are denied.
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'teacher-p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -130,20 +141,20 @@ test('authorizeExplicitProctorAssignment', async (t) => {
     await t.test('12. multiple different active Proctors for one Exam Instance are independently authorized', async () => {
         const pool1 = {
             query: async (query: string, values: any[]) => {
-                if (values[2] === 'p1') return { rows: [{ id: 'assign-1' }] };
+                if (values[2] === validPersonId) return { rows: [{ id: 'assign-1' }] };
                 return { rows: [] };
             }
         } as unknown as Pool;
 
         const pool2 = {
             query: async (query: string, values: any[]) => {
-                if (values[2] === 'p2') return { rows: [{ id: 'assign-2' }] };
+                if (values[2] === validPersonId2) return { rows: [{ id: 'assign-2' }] };
                 return { rows: [] };
             }
         } as unknown as Pool;
 
-        const res1 = await authorizeExplicitProctorAssignment(pool1, { tenantId: 't1', examInstanceId: 'e1', personId: 'p1' });
-        const res2 = await authorizeExplicitProctorAssignment(pool2, { tenantId: 't1', examInstanceId: 'e1', personId: 'p2' });
+        const res1 = await authorizeExplicitProctorAssignment(pool1, { tenantId: validTenantId, examInstanceId: validExamInstanceId, personId: validPersonId });
+        const res2 = await authorizeExplicitProctorAssignment(pool2, { tenantId: validTenantId, examInstanceId: validExamInstanceId, personId: validPersonId2 });
 
         assert.strictEqual(res1.status, 'authorized');
         assert.strictEqual(res2.status, 'authorized');
@@ -156,15 +167,15 @@ test('authorizeExplicitProctorAssignment', async (t) => {
     await t.test('13. Person assigned to another Exam Instance does not authorize this Exam Instance', async () => {
         const pool = {
             query: async (query: string, values: any[]) => {
-                if (values[1] === 'e2' && values[2] === 'p1') return { rows: [{ id: 'assign-1' }] };
+                if (values[1] === validExamInstanceId2 && values[2] === validPersonId) return { rows: [{ id: 'assign-1' }] };
                 return { rows: [] };
             }
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1', // User requests auth for e1
-            personId: 'p1'        // User is only assigned to e2
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId, // User requests auth for examInstance 1
+            personId: validPersonId              // User is only assigned to examInstance 2
         });
 
         assert.strictEqual(res.status, 'denied');
@@ -179,9 +190,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'authorized');
@@ -191,19 +202,59 @@ test('authorizeExplicitProctorAssignment', async (t) => {
     });
 
     await t.test('15. invalid/missing required scope never authorizes', async () => {
+        let queryCount = 0;
         const pool = {
             query: async (query: string, values: any[]) => {
+                queryCount++;
                 return { rows: [{ id: 'assign-1' }] };
             }
         } as unknown as Pool;
 
-        const res1 = await authorizeExplicitProctorAssignment(pool, { tenantId: '', examInstanceId: 'e1', personId: 'p1' });
-        const res2 = await authorizeExplicitProctorAssignment(pool, { tenantId: 't1', examInstanceId: '', personId: 'p1' });
-        const res3 = await authorizeExplicitProctorAssignment(pool, { tenantId: 't1', examInstanceId: 'e1', personId: '' });
+        const res1 = await authorizeExplicitProctorAssignment(pool, { tenantId: '', examInstanceId: validExamInstanceId, personId: validPersonId });
+        const res2 = await authorizeExplicitProctorAssignment(pool, { tenantId: validTenantId, examInstanceId: '', personId: validPersonId });
+        const res3 = await authorizeExplicitProctorAssignment(pool, { tenantId: validTenantId, examInstanceId: validExamInstanceId, personId: '' });
 
         assert.strictEqual(res1.status, 'denied');
         assert.strictEqual(res2.status, 'denied');
         assert.strictEqual(res3.status, 'denied');
+        assert.strictEqual(queryCount, 0, 'No query executed for missing scope');
+    });
+
+    await t.test('15b. malformed UUID required identifiers denied before PostgreSQL query execution', async () => {
+        let queryCount = 0;
+        const pool = {
+            query: async () => {
+                queryCount++;
+                return { rows: [{ id: 'assign-1' }] };
+            }
+        } as unknown as Pool;
+
+        // Malformed tenantId
+        const res1 = await authorizeExplicitProctorAssignment(pool, {
+            tenantId: 'not-a-uuid',
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
+        });
+        assert.strictEqual(res1.status, 'denied');
+        assert.strictEqual(queryCount, 0, 'Query must not be executed for malformed tenantId');
+
+        // Malformed examInstanceId
+        const res2 = await authorizeExplicitProctorAssignment(pool, {
+            tenantId: validTenantId,
+            examInstanceId: '11111111-2222-4333-a444',
+            personId: validPersonId
+        });
+        assert.strictEqual(res2.status, 'denied');
+        assert.strictEqual(queryCount, 0, 'Query must not be executed for malformed examInstanceId');
+
+        // Malformed personId
+        const res3 = await authorizeExplicitProctorAssignment(pool, {
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: '33333333-3333-4333-a444-55555555555!'
+        });
+        assert.strictEqual(res3.status, 'denied');
+        assert.strictEqual(queryCount, 0, 'Query must not be executed for malformed personId');
     });
 
     await t.test('16. database query failure -> authorization_unavailable', async () => {
@@ -214,9 +265,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'authorization_unavailable');
@@ -231,9 +282,9 @@ test('authorizeExplicitProctorAssignment', async (t) => {
         } as unknown as Pool;
 
         const res = await authorizeExplicitProctorAssignment(pool, {
-            tenantId: 't1',
-            examInstanceId: 'e1',
-            personId: 'p1'
+            tenantId: validTenantId,
+            examInstanceId: validExamInstanceId,
+            personId: validPersonId
         });
 
         assert.strictEqual(res.status, 'authorization_unavailable');
