@@ -24,8 +24,9 @@ BU-001 — Minimum Foundation Identity/Tenant Persistence Bootstrap
 - date-range ordering integrity (start_date <= end_date);
 - date-range containment integrity (child Period within parent Year);
 - tenant isolation;
-- versioned PostgreSQL migrations (0009 base + 0010 remediation);
-- real PostgreSQL verification;
+- versioned PostgreSQL migrations (0009 base + 0010 remediation + 0011 concurrency hardening);
+- concurrency-safe containment integrity under concurrent parent updates and child inserts/updates (Race A and Race B);
+- real PostgreSQL verification (full-chain 0001–0011 SQL harness and JS concurrency harness);
 - migration repeat safety;
 - BU-001 predecessor regression;
 - required Fast-Track control/state documentation.
@@ -60,13 +61,15 @@ BU-001 — Minimum Foundation Identity/Tenant Persistence Bootstrap
 - docs/build/units/BU-036_ACADEMIC_CORE_ACADEMIC_YEAR_AND_PERIOD_CORE_STATE_PERSISTENCE_BOOTSTRAP.md
 - database/migrations/0009_bu036_academic_core_academic_year_period_core_state.sql
 - database/migrations/0010_bu036_academic_core_academic_year_period_core_state_remediation.sql
+- database/migrations/0011_bu036_academic_core_academic_year_period_concurrency_hardening.sql
 - database/verification/verify_bu036_academic_core_academic_year_period_core_state.sql
+- database/verification/verify_bu036_academic_core_academic_year_period_concurrency.js
 - docs/build/BUILD_PHASE_INDEX.md
 - docs/state/CURRENT_STATE.md
 - docs/state/HANDOFF_PACKET.md
 - docs/DOCUMENT_MANIFEST.md
 
-## PERSISTENCE CONTRACT (AFTER MIGRATION 0009 + 0010 REMEDIATION)
+## PERSISTENCE CONTRACT (AFTER MIGRATION 0009 + 0010 REMEDIATION + 0011 CONCURRENCY HARDENING)
 Table `academic_core_academic_years`:
 - `id` UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - `tenant_id` UUID NOT NULL
@@ -76,6 +79,7 @@ Table `academic_core_academic_years`:
 - `created_at` TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 - CHECK `chk_ac_year_dates` (start_date <= end_date)
 - UNIQUE `uq_ac_academic_years_tenant` (id, tenant_id)
+- TRIGGER `trg_ac_year_date_containment` (enforces Academic Year date contraction does not exclude existing child Periods)
 
 *(Note: unapproved status column introduced in migration 0009 was removed by remediation migration 0010)*
 
@@ -90,7 +94,7 @@ Table `academic_core_academic_periods`:
 - `created_at` TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 - CHECK `chk_ac_period_dates` (start_date <= end_date)
 - CONSTRAINT `fk_ac_period_year` FOREIGN KEY (academic_year_id, tenant_id) REFERENCES academic_core_academic_years (id, tenant_id) ON DELETE RESTRICT
-- TRIGGER `trg_ac_period_date_containment` (enforces Period start_date >= parent Year start_date AND Period end_date <= parent Year end_date)
+- TRIGGER `trg_ac_period_date_containment_concurrency` (enforces Period start_date >= parent Year start_date AND Period end_date <= parent Year end_date with parent `SELECT ... FOR SHARE` row-level locking)
 
 ## TENANT / FK INVARIANTS
 - Academic Year requires a composite uniqueness constraint: `UNIQUE (id, tenant_id)`.
@@ -98,11 +102,12 @@ Table `academic_core_academic_periods`:
 - Academic Period tenant == parent Academic Year tenant.
 - Cross-tenant pairing is rejected at database level.
 
-## DATE INTEGRITY INVARIANTS
+## DATE INTEGRITY & CONCURRENCY INVARIANTS
 - Academic Year start_date <= end_date.
 - Academic Period start_date <= end_date.
 - Academic Period date range must lie entirely within parent Academic Year date range.
 - Updating parent Academic Year date range to exclude existing child Academic Periods is rejected.
+- Concurrency serialization: parent row locking (`SELECT ... FOR SHARE`) prevents parent date contraction from invalidating child period containment during concurrent transactions.
 
 ## HISTORICAL / CONFIGURABILITY INVARIANTS
 - Multiple configurable periods per Academic Year are supported (no hardcoded exactly-two-semester rule).
@@ -114,26 +119,31 @@ Table `academic_core_academic_periods`:
 
 ## VERIFICATION REQUIREMENTS
 Real PostgreSQL verification must prove at minimum:
-A. full migrations 0001–0010 apply successfully to a fresh database.
+A. full migrations 0001–0011 apply successfully to a fresh database.
 B. migration 0009 remains valid historical migration.
-C. migration 0010 applies successfully.
-D. repeat invocation of migration 0009 is safe.
-E. repeat invocation of migration 0010 is safe.
-F. migration history contains exactly one registration for 0009 and 0010.
-G. exact BU-036 Academic Core table set remains: `academic_core_academic_years` and `academic_core_academic_periods`.
-H. unapproved status column no longer exists.
-I. Academic Year and Period tenant_id are required.
-J. Academic Year start_date > end_date is rejected.
-K. Academic Period start_date > end_date is rejected.
-L. Academic Period before parent year start is rejected.
-M. Academic Period after parent year end is rejected.
-N. valid Academic Period fully inside parent year succeeds.
-O. three or more valid Academic Periods may exist inside one Academic Year.
-P. cross-tenant Year/Period linkage is rejected.
-Q. nonexistent Academic Year reference is rejected.
-R. historical Academic Years and Periods can be read back by stable identity.
-S. BU-001 predecessor regression remains PASS.
-T. disposable database cleanup succeeds.
+C. migration 0010 applies successfully and is repeat-safe.
+D. migration 0011 applies successfully, hardens concurrency, and is repeat-safe with true skip.
+E. repeat invocation of migration 0009 is safe.
+F. repeat invocation of migration 0010 is safe.
+G. repeat invocation of migration 0011 is safe.
+H. migration history contains exactly one registration for 0009, 0010, and 0011.
+I. exact BU-036 Academic Core table set remains: `academic_core_academic_years` and `academic_core_academic_periods`.
+J. unapproved status column no longer exists.
+K. Academic Year and Period tenant_id are required.
+L. Academic Year start_date > end_date is rejected.
+M. Academic Period start_date > end_date is rejected.
+N. Academic Period before parent year start is rejected.
+O. Academic Period after parent year end is rejected.
+P. valid Academic Period fully inside parent year succeeds.
+Q. three or more valid Academic Periods may exist inside one Academic Year.
+R. cross-tenant Year/Period linkage is rejected.
+S. nonexistent Academic Year reference is rejected.
+T. historical Academic Years and Periods can be read back by stable identity.
+U. concurrency verifier proves Race A blocking before release and domain rejection after release (timeout/deadlock is FAIL).
+V. concurrency verifier proves Race B blocking before release and domain rejection after release (timeout/deadlock is FAIL).
+W. final out-of-range Period count is 0.
+X. BU-001 predecessor regression remains PASS.
+Y. disposable database cleanup succeeds.
 
 ## STOP CONDITIONS
 - Implementation requires runtime endpoint creation.
@@ -148,9 +158,14 @@ T. disposable database cleanup succeeds.
 ## FAST-TRACK LIFECYCLE STATUS
 IMPLEMENTATION EXECUTED /
 PRIOR CONTROLLER PHYSICAL AUDIT FAIL /
-TARGETED FORWARD REMEDIATION COMPLETE /
-TARGETED REMEDIATION REPOSITORY FINALIZED /
-AWAITING CONTROLLER PHYSICAL RE-AUDIT
+FIRST TARGETED FORWARD REMEDIATION COMPLETE /
+FIRST TARGETED REMEDIATION REPOSITORY FINALIZED /
+FIRST CONTROLLER PHYSICAL RE-AUDIT FAIL /
+SECOND TARGETED CONCURRENCY + VERIFICATION + MANIFEST REMEDIATION COMPLETE /
+SECOND CONTROLLER PHYSICAL RE-AUDIT FAIL /
+THIRD TARGETED VERIFICATION + CONTROL + PROCESS REMEDIATION COMPLETE /
+THIRD TARGETED REMEDIATION REPOSITORY FINALIZED /
+AWAITING THIRD CONTROLLER PHYSICAL RE-AUDIT
 
 DONE: NO
 FULL BU-036 REPOSITORY FINALIZED: NO
