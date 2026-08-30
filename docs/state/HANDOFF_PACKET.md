@@ -1,7 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.220
-**Supersedes:** 0.1.219
-0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closes BU-035.
+**Version:** 0.1.221
+**Supersedes:** 0.1.220
+0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -74,7 +74,7 @@ ACTIVE BUILD UNIT:
 NONE
 
 NEXT BUILD UNIT:
-NONE
+NOT YET REGISTERED
 
 LATEST LOCKED ARCHITECTURE SEQUENCE:
 SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
@@ -732,10 +732,10 @@ ACTIVE BUILD UNIT:
 NONE
 
 LAST COMPLETED BUILD UNIT:
-BU-035
+BU-035 — Secure Assessment Explicit Proctor Assignment Authorization Runtime Bootstrap
 
 NEXT BUILD UNIT:
-NONE
+NOT YET REGISTERED
 
 BU-034:
 
@@ -928,13 +928,13 @@ IMPLEMENTED / PROVEN /
 CAPABILITY MATRIX SYNCHRONIZED
 
 NEXT BUILD UNIT:
-NONE
+NOT YET REGISTERED
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 07 — BU-035 SECOND CONTROLLER PHYSICAL RE-AUDIT
+MAIN PROJECT CONTROL 07 — BU-035 FINAL PHYSICAL VERIFICATION
 
 NEXT STAGE:
-BU-035 STAGE 3 — SECOND CONTROLLER PHYSICAL RE-AUDIT
+BU-035 STAGE 5 — FINAL PHYSICAL VERIFICATION
 
 PB06:
 OPEN / NOT READY FOR CLOSURE
@@ -1657,10 +1657,10 @@ ACTIVE BUILD UNIT:
 NONE
 
 LAST COMPLETED BUILD UNIT:
-BU-035
+BU-035 — Secure Assessment Explicit Proctor Assignment Authorization Runtime Bootstrap
 
 NEXT BUILD UNIT:
-NONE
+NOT YET REGISTERED
 
 BU-035:
 
@@ -1671,14 +1671,16 @@ CONTROLLER PHYSICAL RE-AUDIT FAIL /
 SECOND TARGETED REAL-DB MISSING-ASSIGNMENT + HANDOFF NAVIGATION REMEDIATION COMPLETE /
 SECOND CONTROLLER PHYSICAL RE-AUDIT PASS /
 FAST-TRACK LIFECYCLE CLOSE COMPLETE /
-FAST-TRACK REPOSITORY FINALIZED /
-FINAL PHYSICAL VERIFICATION PASS
+FAST-TRACK REPOSITORY FINALIZED
 
 DONE:
 YES
 
 FULL BU-035 REPOSITORY FINALIZED:
 YES
+
+FINAL PHYSICAL VERIFICATION:
+NOT YET
 
 PB06:
 OPEN / NOT READY FOR CLOSURE
