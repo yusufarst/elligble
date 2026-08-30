@@ -17,11 +17,13 @@ Establish authoritative tenant-scoped stable Subject identity in Academic Core a
 ## 5. In-Scope
 - Tenant-scoped stable Subject persistence.
 - Minimum human-readable Subject identity (`display_label`).
+- Non-blank Subject identity constraint (`btrim(display_label) <> ''`).
 - UUID identity.
 - Created timestamp (`created_at`).
 - Academic Core table ownership.
 - Tenant isolation via composite unique constraint (`id`, `tenant_id`).
 - Versioned PostgreSQL migration 0012 (`0012_bu037_academic_core_subject_core_state.sql`).
+- Versioned PostgreSQL migration 0013 (`0013_bu037_academic_core_subject_display_label_integrity_remediation.sql`).
 - Migration-history registration.
 - Migration repeat safety.
 - Real PostgreSQL verification.
@@ -64,44 +66,48 @@ Establish authoritative tenant-scoped stable Subject identity in Academic Core a
 - Subject identity remains stable across Academic Years.
 - Subject is structurally independent from Academic Year, Academic Period, Grade Level, Program, Curriculum, and Rombel.
 
-## 8. Tenant Invariants
+## 8. Tenant & Identity Invariants
 - `tenant_id` UUID NOT NULL.
+- `display_label` VARCHAR(255) NOT NULL.
+- Non-blank invariant: `display_label` must contain at least one non-whitespace character (`btrim(display_label) <> ''` via `chk_ac_subject_display_label_non_blank`).
 - Same `display_label` across different tenants is ALLOWED.
 - No global uniqueness on `display_label`.
 - Composite uniqueness on `(id, tenant_id)`.
 
 ## 9. Verification Requirements
-- Full migrations 0001–0012 apply successfully.
-- Migration 0012 applies exactly once and is repeat-safe.
+- Full migrations 0001–0013 apply successfully.
+- Migrations 0012 and 0013 apply exactly once and are repeat-safe.
 - `academic_core_subjects` exists and has no unintended breadth.
 - Subject identity remains independent from Academic Year rows.
 - Same Subject display label can exist in two different tenants.
 - Multiple different Subject rows can coexist in one tenant.
+- NULL, empty, and whitespace-only `display_label` are rejected.
 - BU-001 and BU-036 regression checks PASS.
 
 ## 10. Authorized Paths
-1. `docs/build/units/BU-037_ACADEMIC_CORE_SUBJECT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md`
-2. `database/migrations/0012_bu037_academic_core_subject_core_state.sql`
-3. `database/verification/verify_bu037_academic_core_subject_core_state.sql`
+1. `database/migrations/0013_bu037_academic_core_subject_display_label_integrity_remediation.sql`
+2. `database/verification/verify_bu037_academic_core_subject_core_state.sql`
+3. `docs/build/units/BU-037_ACADEMIC_CORE_SUBJECT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md`
 4. `docs/build/BUILD_PHASE_INDEX.md`
 5. `docs/state/CURRENT_STATE.md`
 6. `docs/state/HANDOFF_PACKET.md`
 7. `docs/DOCUMENT_MANIFEST.md`
 
-## 11. Stop Conditions
-- Material gate failure.
-- Migration history count mismatch.
-- Process discipline violation.
+## 11. Historical Process Defect Record
+- Stage-2 initial execution recorded process defects: `manage_task` usage, PowerShell pipeline usage, `git add .`, command chaining, environment enumeration, and commit subject drift.
+- Targeted forward remediation remediates schema/verifier/navigation defects with strict foreground single-command discipline.
 
 ## 12. PB Relationship
 - PB06: PRESERVED (OPEN)
 - PB07: PRESERVED (OPEN)
 
 ## 13. Fast-Track Lifecycle Status
-- STAGE 2: COMPLETE
-- IMPLEMENTATION: EXECUTED
-- TERMINAL / REAL POSTGRESQL VERIFICATION: PASS
-- IMPLEMENTATION REPOSITORY FINALIZED: YES
-- CONTROLLER PHYSICAL AUDIT: NOT YET
+- STAGE 2 IMPLEMENTATION: EXECUTED
+- TERMINAL / REAL POSTGRESQL VERIFICATION: PRIOR PASS
+- PRIOR CONTROLLER PHYSICAL AUDIT: FAIL
+- TARGETED FORWARD INTEGRITY + VERIFICATION + CONTROL REMEDIATION: COMPLETE
+- TARGETED REMEDIATION REPOSITORY FINALIZED: YES
+- CONTROLLER PHYSICAL RE-AUDIT: NOT YET
 - DONE: NO
 - FULL BU-037 REPOSITORY FINALIZED: NO
+- FINAL PHYSICAL VERIFICATION: NOT YET
