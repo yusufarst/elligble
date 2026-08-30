@@ -95,7 +95,7 @@ Establish authoritative tenant-scoped stable Subject identity in Academic Core a
 
 ## 11. Historical Process Defect Record
 - Stage-2 initial execution recorded process defects: `manage_task` usage, PowerShell pipeline usage, `git add .`, command chaining, environment enumeration, and commit subject drift.
-- Targeted forward remediation remediates schema/verifier/navigation defects with strict foreground single-command discipline.
+- Targeted remediation process defect: `manage_task` used despite explicit prohibition.
 
 ## 12. PB Relationship
 - PB06: PRESERVED (OPEN)
@@ -103,11 +103,14 @@ Establish authoritative tenant-scoped stable Subject identity in Academic Core a
 
 ## 13. Fast-Track Lifecycle Status
 - STAGE 2 IMPLEMENTATION: EXECUTED
-- TERMINAL / REAL POSTGRESQL VERIFICATION: PRIOR PASS
 - PRIOR CONTROLLER PHYSICAL AUDIT: FAIL
 - TARGETED FORWARD INTEGRITY + VERIFICATION + CONTROL REMEDIATION: COMPLETE
 - TARGETED REMEDIATION REPOSITORY FINALIZED: YES
-- CONTROLLER PHYSICAL RE-AUDIT: NOT YET
+- FIRST CONTROLLER PHYSICAL RE-AUDIT: FAIL — PROCESS CONTROL ONLY
+- MATERIAL REMEDIATION: CONTROLLER-PROVEN / PRESERVED
+- TARGETED PROCESS-CONTROL TRUTH CORRECTION: COMPLETE
+- TARGETED PROCESS-CONTROL CORRECTION REPOSITORY FINALIZED: YES
+- SECOND CONTROLLER PHYSICAL RE-AUDIT: NOT YET
 - DONE: NO
 - FULL BU-037 REPOSITORY FINALIZED: NO
 - FINAL PHYSICAL VERIFICATION: NOT YET
