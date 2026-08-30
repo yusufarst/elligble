@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.237
-**Supersedes:** 0.1.236
+**Version:** 0.1.238
+**Supersedes:** 0.1.237
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -1983,7 +1983,8 @@ MIGRATION 0014: CONTROLLER-PROVEN / PRESERVED
 SECOND TARGETED VERIFIER COVERAGE REMEDIATION: COMPLETE
 SECOND TARGETED REAL POSTGRESQL REVERIFICATION: PASS / EXPLICIT TARGET verify_bu038_091bf317_reaudit
 SECOND TARGETED REMEDIATION REPOSITORY FINALIZED: YES only after successful push
-CONTROLLER PHYSICAL RE-AUDIT: NOT YET
-DONE: NO
-FULL BU-038 REPOSITORY FINALIZED: NO
+CONTROLLER PHYSICAL RE-AUDIT: PASS
+FAST-TRACK LIFECYCLE CLOSE: COMPLETE
+DONE: YES
+FULL BU-038 REPOSITORY FINALIZED: YES
 FINAL PHYSICAL VERIFICATION: NOT YET
