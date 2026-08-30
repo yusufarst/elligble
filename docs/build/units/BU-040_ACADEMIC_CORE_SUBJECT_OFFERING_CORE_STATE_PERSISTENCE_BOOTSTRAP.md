@@ -22,6 +22,7 @@ Establish authoritative tenant-scoped, academic-period-bound Subject Offering co
 ### Physical Architecture
 - Table: `academic_core_subject_offerings`
 - Migration: `0016_bu040_academic_core_subject_offering_core_state.sql`
+- Remediation Migration: `0017_bu040_subject_offering_migration_repeat_safety_remediation.sql`
 - Verifier: `verify_bu040_academic_core_subject_offering_core_state.sql`
 
 ### Technical Design Constraints
@@ -52,7 +53,8 @@ Establish authoritative tenant-scoped, academic-period-bound Subject Offering co
 
 - [x] STAGE 1: NEXT UNIT SELECTION / SCOPE FREEZE
 - [x] STAGE 2: SINGLE MAIN BU EXECUTION
-- [x] TARGETED PRE-PUSH VERIFIER / CONTROL CORRECTION
-- [ ] STAGE 3: CONTROLLER PHYSICAL AUDIT
+- [x] FIRST CONTROLLER PHYSICAL AUDIT: FAIL
+- [x] TARGETED MIGRATION-SAFETY / VERIFIER / MANIFEST REMEDIATION: COMPLETE
+- [ ] CONTROLLER PHYSICAL RE-AUDIT
 - [ ] STAGE 4: LIFECYCLE CLOSE
 - [ ] STAGE 5: FINAL PHYSICAL VERIFICATION
