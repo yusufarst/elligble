@@ -48,9 +48,14 @@ Establish authoritative tenant-scoped, academic-year-scoped Academic Group/Rombe
 
 - [x] STAGE 1: NEXT UNIT SELECTION / SCOPE FREEZE
 - [x] STAGE 2: SINGLE MAIN BU EXECUTION
-- [ ] STAGE 3: CONTROLLER PHYSICAL AUDIT
+- [x] STAGE 3: FIRST CONTROLLER PHYSICAL AUDIT (FAIL)
+- [x] STAGE 3A: TARGETED VERIFIER REMEDIATION (COMPLETE)
+- [x] STAGE 3B: REAL POSTGRESQL REVERIFICATION (PASS)
+- [ ] STAGE 3C: CONTROLLER PHYSICAL RE-AUDIT
 - [ ] STAGE 4: LIFECYCLE CLOSE
 - [ ] STAGE 5: FINAL PHYSICAL VERIFICATION
 
 ## 3. Verifier
 `verify_bu039_academic_core_academic_group_core_state.sql` execution PASS across fresh PostgreSQL instance.
+Original Stage-2 execution used background/manage-task database setup and repository-local PostgreSQL scratch state plus credential/environment inspection.
+Classification: NON-MATERIAL TO COMMITTED MIGRATION / DO NOT REPEAT / NO SECRET CONTENT TO BE RECORDED.
