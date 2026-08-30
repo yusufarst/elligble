@@ -1,5 +1,5 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.189
+**Version:** 0.1.190
 **Supersedes:** 0.1.188
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
@@ -450,11 +450,10 @@
 - **FINAL PHYSICAL VERIFICATION:** PASS
 
 ### LAST COMPLETED BUILD UNIT
-BU-039 — Academic Core Academic Group (Rombel) Core State Persistence Bootstrap
+BU-039 - Academic Core Academic Group (Rombel) Core State Persistence Bootstrap
 
 ### ACTIVE BUILD UNIT
-NONE
-
+BU-040 - Academic Core Subject Offering Core State Persistence Bootstrap
 ### NEXT BUILD UNIT
 NOT YET REGISTERED
 
@@ -737,12 +736,17 @@ OPEN
 - **FAST-TRACK LIFECYCLE CLOSE:** COMPLETE
 - **DONE:** YES
 - **FULL BU-039 REPOSITORY FINALIZED:** YES
+
+## BU-040
+| BU-040 | Academic Core Subject Offering Core State Persistence Bootstrap | 1.0.0 | PENDING CONTROLLER PHYSICAL AUDIT |
+
+### BU-040 STATUS
+- **FULL BU-040 REPOSITORY FINALIZED:** NO
 - **FIRST FINAL PHYSICAL VERIFICATION:** FAIL — MANIFEST HASH INTEGRITY
 - **TARGETED FINAL-PHYSICAL CONTROL CORRECTION:** COMPLETE
 - **FINAL PHYSICAL RE-VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **PB06:** OPEN / NOT READY FOR CLOSURE
-- **PB07:** OPEN
 
 ## Build Unit Fast-Track Control v1
 

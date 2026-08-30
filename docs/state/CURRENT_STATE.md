@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.5.137
+**Version:** 1.5.138
 **Canonical:** YES
 **Supersedes:** CURRENT_STATE v1.5.136
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
@@ -1414,6 +1414,12 @@ DONE: YES
 FULL BU-038 REPOSITORY FINALIZED: YES
 FINAL PHYSICAL VERIFICATION: PASS
 PB06: OPEN / NOT READY FOR CLOSURE
+
+BU-040:
+IMPLEMENTATION: EXECUTED
+CONTROLLER PHYSICAL AUDIT: PENDING
+DONE: NO
+FULL BU-040 REPOSITORY FINALIZED: NO
 PB07: OPEN
 SEC-002: NOT PROMOTED / TEACHER-MANAGED CONTEXTUAL SUPERVISION PATH STILL INCOMPLETE
 
