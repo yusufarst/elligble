@@ -1,5 +1,5 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.247
+**Version:** 0.1.248
 **Supersedes:** 0.1.245
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
@@ -71,7 +71,7 @@ LAST COMPLETED BUILD UNIT:
 BU-039 — Academic Core Academic Group (Rombel) Core State Persistence Bootstrap
 
 ACTIVE BUILD UNIT:
-NONE
+BU-040 — Academic Core Subject Offering Core State Persistence Bootstrap
 
 NEXT BUILD UNIT:
 NOT YET REGISTERED
@@ -80,13 +80,13 @@ CURRENT CONTROLLER:
 MAIN PROJECT CONTROL 08
 
 CURRENT RESPONSIBILITY:
-NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+BU-040 CONTROLLER PHYSICAL AUDIT
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 08 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+MAIN PROJECT CONTROL 08 — BU-040 CONTROLLER PHYSICAL AUDIT
 
 NEXT STAGE:
-NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+BU-040 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL AUDIT
 
 LATEST LOCKED ARCHITECTURE SEQUENCE:
 SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
@@ -718,19 +718,14 @@ BU-006 CLOSURE STATE-SYNC REPOSITORY FINALIZED:
 YES
 
 BU-006 CLOSURE STATE-SYNC GIT FINALIZATION COMMIT:
-bb14bb0da3fffe6cbb50fbb3e92acd8edfa7f7f2
-
-BU-006 DONE:
-YES
-
-NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 07 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+bb14bb0da3fffe6cbb50fbb3e92acd8edfa7f7fNEXT SAFE ACTION:
+MAIN PROJECT CONTROL 08 — BU-040 CONTROLLER PHYSICAL AUDIT
 
 NEXT STAGE:
-NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+BU-040 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL AUDIT
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 08 — BU-039 CONTROLLER PHYSICAL RE-AUDIT
+MAIN PROJECT CONTROL 08 — BU-040 CONTROLLER PHYSICAL AUDIT
 
 ## CONTROLLER CHAT HANDOFF
 
@@ -738,13 +733,13 @@ CURRENT CONTROLLER:
 MAIN PROJECT CONTROL 08
 
 CURRENT RESPONSIBILITY:
-BU-039 CONTROLLER PHYSICAL RE-AUDIT
+BU-040 CONTROLLER PHYSICAL AUDIT
 
 ACTIVE BUILD UNIT:
-BU-039 — Academic Core Academic Group (Rombel) Core State Persistence Bootstrap
+BU-040 — Academic Core Subject Offering Core State Persistence Bootstrap
 
 LAST COMPLETED BUILD UNIT:
-BU-038 — Academic Core Grade Level Core State Persistence Bootstrap
+BU-039 — Academic Core Academic Group (Rombel) Core State Persistence Bootstrap
 
 NEXT BUILD UNIT:
 NONE

@@ -1,5 +1,9 @@
 -- BU-040 Verifier
 
+\set ON_ERROR_STOP 0
+\ir ../migrations/0016_bu040_academic_core_subject_offering_core_state.sql
+\set ON_ERROR_STOP 1
+
 DO $$
 DECLARE
     v_table_exists BOOLEAN;
@@ -41,7 +45,37 @@ DECLARE
     v_created_at TIMESTAMP WITH TIME ZONE;
     v_period_year UUID;
     v_rejected BOOLEAN;
+    v_migration_count INTEGER;
 BEGIN
+    ---------------------------------------------------------------------------
+    -- 0. MIGRATION REPEAT / HISTORY VERIFICATION
+    ---------------------------------------------------------------------------
+    
+    SELECT count(*) INTO v_migration_count 
+    FROM elligble_migration_history 
+    WHERE migration_id IN (
+        '0001_bu001_identity_tenant_foundation',
+        '0002_bu002_secure_assessment_core_state',
+        '0003_bu003_secure_assessment_question_core_state',
+        '0004_bu004_secure_assessment_answer_persistence_core_state',
+        '0005_bu007_secure_assessment_timer_core_state',
+        '0006_bu009_secure_assessment_idempotent_submission_core_state',
+        '0007_bu017_secure_assessment_one_active_session_core_state',
+        '0008_bu034_secure_assessment_explicit_proctor_assignment_core_state',
+        '0009_bu036_academic_core_academic_year_period_core_state',
+        '0010_bu036_academic_core_academic_year_period_core_state_remediation',
+        '0011_bu036_academic_core_academic_year_period_concurrency_hardening',
+        '0012_bu037_academic_core_subject_core_state',
+        '0013_bu037_academic_core_subject_display_label_integrity_remediation',
+        '0014_bu038_academic_core_grade_level_core_state',
+        '0015_bu039_academic_core_academic_group_core_state',
+        '0016_bu040_academic_core_subject_offering_core_state'
+    );
+    ASSERT v_migration_count = 16, 'Exactly 16 specific migrations must exist in history';
+
+    SELECT count(*) INTO v_migration_count FROM elligble_migration_history WHERE migration_id = '0016_bu040_academic_core_subject_offering_core_state';
+    ASSERT v_migration_count = 1, '0016_bu040_academic_core_subject_offering_core_state must exist exactly once in history';
+
     ---------------------------------------------------------------------------
     -- 1. STRUCTURAL VERIFICATION
     ---------------------------------------------------------------------------
