@@ -95,7 +95,8 @@ Establish authoritative tenant-scoped stable Subject identity in Academic Core a
 
 ## 11. Historical Process Defect Record
 - Stage-2 initial execution recorded process defects: `manage_task` usage, PowerShell pipeline usage, `git add .`, command chaining, environment enumeration, and commit subject drift.
-- Targeted remediation process defect: `manage_task` used despite explicit prohibition.
+- Targeted material-remediation process defect: `manage_task` used despite explicit prohibition.
+- First process-control correction defects: semicolon command chaining used during post-push verification (`git rev-parse origin/main; git rev-parse HEAD`), commit-subject drift (used `docs(academic-core): record BU-037 process defect truth forward correction` instead of authorized `docs(build): correct BU-037 remediation process state`), and missing pre-commit `git diff --check` evidence.
 
 ## 12. PB Relationship
 - PB06: PRESERVED (OPEN)
@@ -103,14 +104,17 @@ Establish authoritative tenant-scoped stable Subject identity in Academic Core a
 
 ## 13. Fast-Track Lifecycle Status
 - STAGE 2 IMPLEMENTATION: EXECUTED
-- PRIOR CONTROLLER PHYSICAL AUDIT: FAIL
-- TARGETED FORWARD INTEGRITY + VERIFICATION + CONTROL REMEDIATION: COMPLETE
-- TARGETED REMEDIATION REPOSITORY FINALIZED: YES
+- INITIAL CONTROLLER PHYSICAL AUDIT: FAIL
+- MATERIAL TARGETED REMEDIATION: COMPLETE
+- MATERIAL REMEDIATION REPOSITORY FINALIZED: YES
 - FIRST CONTROLLER PHYSICAL RE-AUDIT: FAIL — PROCESS CONTROL ONLY
-- MATERIAL REMEDIATION: CONTROLLER-PROVEN / PRESERVED
-- TARGETED PROCESS-CONTROL TRUTH CORRECTION: COMPLETE
-- TARGETED PROCESS-CONTROL CORRECTION REPOSITORY FINALIZED: YES
-- SECOND CONTROLLER PHYSICAL RE-AUDIT: NOT YET
+- FIRST TARGETED PROCESS-CONTROL TRUTH CORRECTION: COMPLETE
+- FIRST PROCESS-CONTROL CORRECTION REPOSITORY FINALIZED: YES
+- SECOND CONTROLLER PHYSICAL RE-AUDIT: FAIL — CONTROL METADATA + PROCESS DISCIPLINE ONLY
+- MATERIAL IMPLEMENTATION / REMEDIATION: CONTROLLER-PROVEN / PRESERVED
+- SECOND TARGETED PROCESS + CONTROL-METADATA CORRECTION: COMPLETE
+- SECOND TARGETED PROCESS + CONTROL-METADATA CORRECTION REPOSITORY FINALIZED: YES
+- THIRD CONTROLLER PHYSICAL RE-AUDIT: NOT YET
 - DONE: NO
 - FULL BU-037 REPOSITORY FINALIZED: NO
 - FINAL PHYSICAL VERIFICATION: NOT YET
