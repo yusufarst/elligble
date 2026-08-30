@@ -1,6 +1,6 @@
 **Status:** ACTIVE  
-**Version:** 1.0.220
-**Supersedes:** 1.0.219
+**Version:** 1.0.221
+**Supersedes:** 1.0.220
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 
@@ -151,5 +151,5 @@ NEVER_DEFAULT
 | `database/migrations/0014_bu038_academic_core_grade_level_core_state.sql` | Migration 0014 - BU-038 Academic Core Grade Level Core State Persistence. (EC69416D7DF05A38C10CD9654CA31621B8163A97A71AD4B3510F2235A76A8199) | DATABASE MIGRATION | PHASE: Build |
 | `database/verification/verify_bu038_academic_core_grade_level_core_state.sql` | BU-038 Verification SQL — type-safe, comprehensive structural/functional assertions with full BU-001/036/037 regression, composite unique proof, zero-FK, forbidden columns. (ACB4E11D8BDBEC9E55182B4D86B2E759DE45FE8F02E04FD21F356046D5BBA698) | VERIFICATION HARNESS | PHASE: Build |
 | `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. (94633DBB9A2118229FFA2491C0165C08C12C336CF1F59E920C11A5EC9F5083E8) | BUILD PHASE CONTROL | PHASE: Build |
-| `docs/state/CURRENT_STATE.md` | Current State navigation. (FEF52512AFF0CB6DC33DC4CD26B7586AAEB25859E3A5C6D578F2CC6640C9AB92) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet navigation. (49D0489D2DC93359B138A67DD7419868E803ECEE0B8C94A6C36EB87709DE6F5B) | CANONICAL STATE | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State navigation. (93E6427B80BA473893B4B6B7B4056EA7B7E7264444F2A5283C83C2F9B4086DE2) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet navigation. (57ACF153607ECDDFCA3D75A147DC1B303CBEA78CE85DD357FE4E38043ACBA95D) | CANONICAL STATE | PHASE: Build |
