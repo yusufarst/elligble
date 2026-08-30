@@ -1,7 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.230
-**Supersedes:** 0.1.229
-0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction.
+**Version:** 0.1.231
+**Supersedes:** 0.1.230
+0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
@@ -68,25 +68,25 @@ MASTER BLUEPRINT
 → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 
 LAST COMPLETED BUILD UNIT:
-BU-036 — Academic Core Academic Year and Period Core State Persistence Bootstrap
-
-ACTIVE BUILD UNIT:
 BU-037 — Academic Core Subject Core State Persistence Bootstrap
 
-NEXT BUILD UNIT:
+ACTIVE BUILD UNIT:
 NONE
+
+NEXT BUILD UNIT:
+NOT YET REGISTERED
 
 CURRENT CONTROLLER:
 MAIN PROJECT CONTROL 08
 
 CURRENT RESPONSIBILITY:
-BU-037 THIRD CONTROLLER PHYSICAL RE-AUDIT
+BU-037 FINAL PHYSICAL VERIFICATION
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 08 — BU-037 THIRD CONTROLLER PHYSICAL RE-AUDIT
+MAIN PROJECT CONTROL 08 — BU-037 FINAL PHYSICAL VERIFICATION
 
 NEXT STAGE:
-BU-037 STAGE 3 — THIRD CONTROLLER PHYSICAL RE-AUDIT
+BU-037 STAGE 5 — FINAL PHYSICAL VERIFICATION
 
 LATEST LOCKED ARCHITECTURE SEQUENCE:
 SEQUENCE 7 - ARCHITECTURE TRACEABILITY & EXIT GATE / LOCKED v1.0.0 / REPOSITORY FINALIZED
@@ -730,7 +730,7 @@ NEXT STAGE:
 NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 08 — BU-037 THIRD CONTROLLER PHYSICAL RE-AUDIT
+MAIN PROJECT CONTROL 08 — BU-037 FINAL PHYSICAL VERIFICATION
 
 ## CONTROLLER CHAT HANDOFF
 
@@ -738,16 +738,16 @@ CURRENT CONTROLLER:
 MAIN PROJECT CONTROL 08
 
 CURRENT RESPONSIBILITY:
-BU-037 THIRD CONTROLLER PHYSICAL RE-AUDIT
+BU-037 FINAL PHYSICAL VERIFICATION
 
 ACTIVE BUILD UNIT:
-BU-037 — Academic Core Subject Core State Persistence Bootstrap
+NONE
 
 LAST COMPLETED BUILD UNIT:
-BU-036 — Academic Core Academic Year and Period Core State Persistence Bootstrap
+BU-037 — Academic Core Subject Core State Persistence Bootstrap
 
 NEXT BUILD UNIT:
-NONE
+NOT YET REGISTERED
 
 BU-034:
 
