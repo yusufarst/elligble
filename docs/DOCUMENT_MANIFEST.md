@@ -1,6 +1,6 @@
 **Status:** ACTIVE  
-**Version:** 1.0.217
-**Supersedes:** 1.0.216
+**Version:** 1.0.218
+**Supersedes:** 1.0.217
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 
@@ -147,3 +147,9 @@ NEVER_DEFAULT
 | `database/migrations/0012_bu037_academic_core_subject_core_state.sql` | Migration 0012 - BU-037 Academic Core Subject Core State Persistence. (E670B98129E313FBF816A0D30B88A606B17CD624403BA3D2525D1A2A318ED267) | DATABASE MIGRATION | PHASE: Build |
 | `database/migrations/0013_bu037_academic_core_subject_display_label_integrity_remediation.sql` | Migration 0013 - BU-037 Academic Core Subject Display Label Integrity Remediation. (56CE54D19FCF9E016B554576729D70637641412CF675A1CCAE37C8D7C2A90992) | DATABASE MIGRATION | PHASE: Build |
 | `database/verification/verify_bu037_academic_core_subject_core_state.sql` | BU-037 Verification SQL. (8053404B53E109B32F033E32F2C505B52C114E86EB01799AA25408DD6B7429F3) | VERIFICATION HARNESS | PHASE: Build |
+| `docs/build/units/BU-038_ACADEMIC_CORE_GRADE_LEVEL_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-038 specification — Academic Core Grade Level Core State Persistence Bootstrap. (6E33BE4AD6D5AB298F643E0DC350CAC85B84B3151185D18187C2EC943C82AB59) | BUILD UNIT SPEC | PHASE: Build |
+| `database/migrations/0014_bu038_academic_core_grade_level_core_state.sql` | Migration 0014 - BU-038 Academic Core Grade Level Core State Persistence. (EC69416D7DF05A38C10CD9654CA31621B8163A97A71AD4B3510F2235A76A8199) | DATABASE MIGRATION | PHASE: Build |
+| `database/verification/verify_bu038_academic_core_grade_level_core_state.sql` | BU-038 Verification SQL. (DF5CC7F881CB293F25BC6DCAEC4064FE87316907FBD8C6A37B7145D346771C64) | VERIFICATION HARNESS | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. (18FF4145F0655630CAA4E064103A5363565516AB6CD2417268F20059463BFF7A) | BUILD PHASE CONTROL | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State navigation. (488F02A391E6E21481AEB1D168B2F9706550D4DBE87097B980CA2A0B029188B0) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet navigation. (F5E4ED5BFFCE39FADC1EA80BD1C31E6F3C48255847F44107C472407379008982) | CANONICAL STATE | PHASE: Build |

@@ -1,5 +1,4 @@
 \set ON_ERROR_STOP on
-\c verify_bu038_db
 
 -- Apply migrations
 \ir ../migrations/0001_bu001_identity_tenant_foundation.sql
