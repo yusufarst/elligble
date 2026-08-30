@@ -1,6 +1,6 @@
 **Status:** ACTIVE  
-**Version:** 1.0.205
-**Supersedes:** 1.0.204
+**Version:** 1.0.206
+**Supersedes:** 1.0.205
 **Canonical:** YES  
 **Last Reviewed:** 2026-08-24
 
@@ -72,7 +72,6 @@ NEVER_DEFAULT
 | `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
 | `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control and Index. Status: ACTIVE v0.1.166 / SHA256: 01D1A20B3AE925107FEF65B5DBB2EF6BFA79F7DDE45F7C6369C4DB12243A2A87) | DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES | PHASE: Build |
 | `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (2952AD2EDC5AA5EA8CA559AD71A441D5FC003357C849548B4CBCB6C6BC3BD5B9) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-002_SECURE_ASSESSMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-002 Specification - Secure Assessment Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (C2D2A111ACE7B0E615AFF69992E980DD61C9F503CB6ABBA2564DFA40996CAB46) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-003_SECURE_ASSESSMENT_QUESTION_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-003 Specification - Secure Assessment Question Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (19DE33263442893B9DDFDDD9F0244467FFC5F66E714F46E79E58597978E1EE10) | BUILD UNIT SPEC | PHASE: Build |
@@ -141,4 +140,6 @@ NEVER_DEFAULT
 | `docs/build/units/BU-036_ACADEMIC_CORE_ACADEMIC_YEAR_AND_PERIOD_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-036 specification — Academic Core Academic Year and Period Core State Persistence Bootstrap. Version: 1.0.0. Status: IMPLEMENTATION EXECUTED / PRIOR CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD REMEDIATION COMPLETE / TARGETED REMEDIATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT. (8E1E16474E1EE4AD25463588DACE1BB81263AEAE9870499577949C19593FA548) | BUILD UNIT SPEC | PHASE: Build |
 | `database/migrations/0009_bu036_academic_core_academic_year_period_core_state.sql` | Migration 0009 - BU-036 Academic Core Academic Year and Period Core State Persistence. (D518D8264ABE19461616B646C56942868FC24C6E1FAE31C0E87A343175880F08) | DATABASE MIGRATION | PHASE: Build |
 | `database/migrations/0010_bu036_academic_core_academic_year_period_core_state_remediation.sql` | Migration 0010 - BU-036 Academic Core Academic Year and Period Core State Remediation. (2A8D4F88AE349260E8346E65B3131BBE5F8045C76318DAD2C9D82A36B1C452A0) | DATABASE MIGRATION | PHASE: Build |
-| `database/verification/verify_bu036_academic_core_academic_year_period_core_state.sql` | BU-036 Verification SQL. (2C9DA448E1DB8B195639A954630E00B47AB29D40114568C9ED82B6E4B159307C) | VERIFICATION HARNESS | PHASE: Build |
+| `database/verification/verify_bu036_academic_core_academic_year_period_core_state.sql` | BU-036 Verification SQL. (B000C77A988AFDBD3A2318BCC80EAA38A5DC56426BF0EA1DE0433F86B4861022) | VERIFICATION HARNESS | PHASE: Build |
+| `database/migrations/0011_bu036_academic_core_academic_year_period_concurrency_hardening.sql` | Migration 0011 - BU-036 Academic Core Academic Year and Period Concurrency Hardening. (3D34C0C0B0DAD0C4DC3A7B2E168C87AFF6D009B80D11D6709823C9D22B0B0D18) | DATABASE MIGRATION | PHASE: Build |
+| `database/verification/verify_bu036_academic_core_academic_year_period_concurrency.js` | BU-036 Concurrency Verification JS. (14F2DA2C4A1924A19E5214F2DC0978FE2D0BFAE69EC7C3DD337F36CB93D10995) | VERIFICATION HARNESS | PHASE: Build |

@@ -1,7 +1,27 @@
 -- Verification for BU-036: Academic Core Academic Year and Period Core State Persistence Bootstrap + Remediation
+-- Run this against a fresh disposable database.
 
-BEGIN;
+\set ON_ERROR_STOP on
 
+\echo 'Applying migrations 0001 through 0011...'
+\ir ../migrations/0001_bu001_identity_tenant_foundation.sql
+\ir ../migrations/0002_bu002_secure_assessment_core_state.sql
+\ir ../migrations/0003_bu003_secure_assessment_question_core_state.sql
+\ir ../migrations/0004_bu004_secure_assessment_answer_persistence_core_state.sql
+\ir ../migrations/0005_bu007_secure_assessment_timer_core_state.sql
+\ir ../migrations/0006_bu009_secure_assessment_idempotent_submission_core_state.sql
+\ir ../migrations/0007_bu017_secure_assessment_one_active_session_core_state.sql
+\ir ../migrations/0008_bu034_secure_assessment_explicit_proctor_assignment_core_state.sql
+\ir ../migrations/0009_bu036_academic_core_academic_year_period_core_state.sql
+\ir ../migrations/0010_bu036_academic_core_academic_year_period_core_state_remediation.sql
+\ir ../migrations/0011_bu036_academic_core_academic_year_period_concurrency_hardening.sql
+
+\echo 'Verifying repeat safety...'
+\ir ../migrations/0009_bu036_academic_core_academic_year_period_core_state.sql
+\ir ../migrations/0010_bu036_academic_core_academic_year_period_core_state_remediation.sql
+\ir ../migrations/0011_bu036_academic_core_academic_year_period_concurrency_hardening.sql
+
+\echo 'Running assertions...'
 DO $$
 DECLARE
     t_count INT;
@@ -10,6 +30,7 @@ DECLARE
     constraint_count INT;
     m0009_count INT;
     m0010_count INT;
+    m0011_count INT;
     v_year_id UUID;
     v_period_id UUID;
     v_read_label VARCHAR;
@@ -81,6 +102,16 @@ BEGIN
 
     SELECT count(*) INTO m0010_count FROM elligble_migration_history WHERE migration_id = '0010_bu036_academic_core_academic_year_period_core_state_remediation';
     IF m0010_count != 1 THEN RAISE EXCEPTION 'FAIL: Migration history count for 0010 is % (expected 1)', m0010_count; END IF;
+
+    SELECT count(*) INTO m0011_count FROM elligble_migration_history WHERE migration_id = '0011_bu036_academic_core_academic_year_period_concurrency_hardening';
+    IF m0011_count != 1 THEN RAISE EXCEPTION 'FAIL: Migration history count for 0011 is % (expected 1)', m0011_count; END IF;
+
+    -- 8b. Trigger and Function Counts
+    SELECT count(*) INTO t_count FROM pg_proc WHERE proname IN ('fn_academic_core_period_date_containment', 'fn_academic_core_year_date_containment', 'fn_academic_core_period_date_containment_concurrency');
+    IF t_count != 3 THEN RAISE EXCEPTION 'FAIL: Expected exactly 3 functions for containment, found %', t_count; END IF;
+
+    SELECT count(*) INTO t_count FROM pg_trigger WHERE tgname IN ('trg_ac_period_date_containment', 'trg_ac_year_date_containment', 'trg_ac_period_date_containment_concurrency');
+    IF t_count != 3 THEN RAISE EXCEPTION 'FAIL: Expected exactly 3 triggers for containment, found %', t_count; END IF;
 
     -- 9. Predecessor BU-001 regression check
     SELECT count(*) INTO t_count
@@ -209,5 +240,3 @@ BEGIN
 
     RAISE NOTICE 'BU-036 Verification SUCCESS';
 END $$;
-
-ROLLBACK;
