@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.206
-**Supersedes:** 0.1.205
+**Version:** 0.1.207
+**Supersedes:** 0.1.206
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -816,7 +816,7 @@ OPEN
 - **FINAL PHYSICAL RE-VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 ## BU-044
-| BU-044 | Secure Assessment Exam Instance Teaching-Assignment Context Persistence Bootstrap | 1.0.0 | FAST-TRACK LIFECYCLE CLOSE COMPLETE / AWAITING FINAL PHYSICAL VERIFICATION |
+| BU-044 | Secure Assessment Exam Instance Teaching-Assignment Context Persistence Bootstrap | 1.0.0 | COMPLETE / FINAL PHYSICAL VERIFICATION PASS |
 
 ### BU-044 STATUS
 - **IMPLEMENTATION:** EXECUTED
@@ -834,7 +834,7 @@ OPEN
 - **FAST-TRACK LIFECYCLE CLOSE:** COMPLETE
 - **DONE:** YES
 - **FULL BU-044 REPOSITORY FINALIZED:** YES
-- **FINAL PHYSICAL VERIFICATION:** NOT YET
+- **FINAL PHYSICAL VERIFICATION:** PASS
 - **PB05:** OPEN
 ## Build Unit Fast-Track Control v1
 
