@@ -9,6 +9,7 @@ Bootstrap the core persistence model for Student Academic Enrollment, establishi
 - Enforce Group/Period Academic-Year coherence.
 - Implement explicit, opaque status and source/provenance fields without enumerating taxonomies.
 - Support historical start/end lifecycle semantics.
+- Add materially necessary non-unique retrieval indexes for Academic Enrollment.
 
 ## Out of Scope
 - Final Student Academic Status vocabulary / taxonomy / enum.
@@ -41,6 +42,10 @@ Bootstrap the core persistence model for Student Academic Enrollment, establishi
 - `tenant_memberships (id, tenant_id)`
 - `academic_core_academic_groups (id, tenant_id, academic_year_id)`
 - `academic_core_academic_periods (id, tenant_id, academic_year_id)`
+
+### Indexes
+- `idx_ac_student_enrollments_tenant_period_group` ON `(tenant_id, academic_period_id, academic_group_id)`
+- `idx_ac_student_enrollments_tenant_membership_period` ON `(tenant_id, membership_id, academic_period_id)`
 
 ### Supporting Modifications
 - Add `uq_tenant_memberships_id_tenant` to `tenant_memberships`.
