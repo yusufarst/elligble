@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.251
-**Supersedes:** 1.0.250
+**Version:** 1.0.252
+**Supersedes:** 1.0.251
 **Canonical:** YES
 **Last Reviewed:** 2026-08-24
 
@@ -32,7 +32,7 @@ NEVER_DEFAULT
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
 | `docs/master/MASTER_CONTEXT.md` | Cross-project context | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Active phase/task guard. (908A4D0F2F7FE18DEF5AAE79DBDF1B27A6A886ABD37B6DA048619E50C2F304A7) | Canonical/Dynamic | ALWAYS |
+| `docs/state/CURRENT_STATE.md` | Active phase/task guard. (3F0B36E5493F07816920D51DD4515EEEE0036B8343846B922CF1F4FA0D5C3683) | Canonical/Dynamic | ALWAYS |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -153,9 +153,9 @@ NEVER_DEFAULT
 | `docs/build/units/BU-039_ACADEMIC_CORE_ACADEMIC_GROUP_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-039 specification — Academic Core Academic Group Core State Persistence Bootstrap. Version: 1.0.0. Status: EXECUTED / FIRST CONTROLLER PHYSICAL AUDIT FAIL / FIRST TARGETED VERIFIER REMEDIATION COMPLETE / FIRST CONTROLLER PHYSICAL RE-AUDIT FAIL / SECOND / RESIDUAL VERIFIER REMEDIATION COMPLETE / REAL POSTGRESQL REVERIFICATION PASS / CONTROLLER PHYSICAL RE-AUDIT PASS / FAST-TRACK LIFECYCLE CLOSE COMPLETE / FIRST FINAL PHYSICAL VERIFICATION FAIL / TARGETED FINAL-PHYSICAL CONTROL CORRECTION COMPLETE / FINAL PHYSICAL RE-VERIFICATION PASS / FINAL PHYSICAL VERIFICATION PASS. (EF0BEB5608FA62D32070B50A67FA6742B157119EF46DCBF7BCAD531224E717F8) | BUILD UNIT SPEC | PHASE: Build |
 | `database/migrations/0015_bu039_academic_core_academic_group_core_state.sql` | Migration 0015 - BU-039 Academic Core Academic Group Core State Persistence. (23F8D9AE63EA0F509857D5FB7FD186D59A5AB0BA9B5CBB1FA84ABA9AC495A75D) | DATABASE MIGRATION | PHASE: Build |
 | `database/verification/verify_bu039_academic_core_academic_group_core_state.sql` | BU-039 Verification SQL. (337C813FA120FC8435C49580255112432C9AB96FD78FB9A45C35CC83D2377429) | VERIFICATION HARNESS | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. (F145BED5AC087EF96725F80107877C5379BBAD1BD4AD2868191477C2592EF9FE) | BUILD PHASE CONTROL | PHASE: Build |
-| `docs/state/CURRENT_STATE.md` | Current State navigation. (908A4D0F2F7FE18DEF5AAE79DBDF1B27A6A886ABD37B6DA048619E50C2F304A7) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet navigation. (7FD877FEB7E7AD8CE8516A23856237237460142AEB78E3209C69780B65C2F760) | CANONICAL STATE | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. BU-046 targeted remediation complete / real PostgreSQL re-verification PASS / awaiting Controller Physical Re-Audit. (7704B9CE5F5A5A2C12D830D04CF0B04509F4464A96DB36BBE4828A37CF18D17B) | BUILD PHASE CONTROL | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State navigation. BU-046 awaiting Controller Physical Re-Audit. (3F0B36E5493F07816920D51DD4515EEEE0036B8343846B922CF1F4FA0D5C3683) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet navigation. BU-046 awaiting Controller Physical Re-Audit. (E6DA560D890955342356724EBA5928B8D12F2228C0F770A352493086272ADD51) | CANONICAL STATE | PHASE: Build |
 | `docs/build/units/BU-040_ACADEMIC_CORE_SUBJECT_OFFERING_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-040 specification - Academic Core Subject Offering Core State Persistence Bootstrap. Version: 1.0.0. Status: COMPLETE / DONE YES / FULL BU-040 REPOSITORY FINALIZED YES / FINAL PHYSICAL VERIFICATION PASS. (7531638B0B572E3D25B635DF1A29B091C02153E217100A15ACED32BE168F690C) | BUILD UNIT SPEC | PHASE: Build |
 | `database/migrations/0016_bu040_academic_core_subject_offering_core_state.sql` | Migration 0016 - BU-040 Academic Core Subject Offering Core State Persistence. (C1410989B75D13D71551FBC87F79530D471C45B7658DBB727566A75AF2E0535A) | DATABASE MIGRATION | PHASE: Build |
 | `database/migrations/0017_bu040_subject_offering_migration_repeat_safety_remediation.sql` | Migration 0017 - BU-040 Subject Offering Migration Repeat Safety Remediation. (EB80EF66733F07CFDA92DD363CE8D10F2F8E81C98BD1EA6354B3A10B2AD10C9C) | DATABASE MIGRATION | PHASE: Build |
@@ -178,6 +178,6 @@ NEVER_DEFAULT
 | `runtime/secure-assessment/test/teacher-managed-exam-instance-creation.test.ts` | BU-045 focused runtime unit tests. (B2D629E80E2BEB72CB749CCB05E0E6B38E2D8A991F6C3D66BE768040240FB892) | BUILD VERIFICATION | PHASE: Build |
 | `runtime/secure-assessment/verification/verify_bu045_teacher_managed_exam_instance_creation.ts` | BU-045 PostgreSQL 18 real-database verification harness. (1E29808A8D61691E1B0B8793E76F8C4A29282B255B5085CF041952B3142FABBD) | BUILD VERIFICATION | PHASE: Build |
 | `database/migrations/0021_bu046_academic_core_student_enrollment_core_state.sql` | Migration 0021 - BU-046 Academic Core Student Enrollment Core State Persistence Bootstrap. (DAA83BB506507BAC40BBACA67E84F9275F6CA8DF602E4EC437AB86712A7DA4A9) | DATABASE MIGRATION | PHASE: Build |
-| `database/verification/verify_bu046_academic_core_student_enrollment_core_state.sql` | BU-046 Academic Core Student Enrollment Core State Verification SQL. | VERIFICATION HARNESS | PHASE: Build |
-| `database/migrations/0022_bu046_academic_core_student_enrollment_retrieval_index_remediation.sql` | Migration 0022 - BU-046 Academic Core Student Enrollment Retrieval Index Remediation. | DATABASE MIGRATION | PHASE: Build |
-| `docs/build/units/BU-046_ACADEMIC_CORE_STUDENT_ENROLLMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-046 spec. FAST-TRACK MAIN EXECUTION COMPLETE / IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT. | BUILD UNIT SPEC | PHASE: Build |
+| `database/verification/verify_bu046_academic_core_student_enrollment_core_state.sql` | BU-046 Academic Core Student Enrollment Core State Verification SQL. REAL POSTGRESQL RE-VERIFICATION PASS / AWAITING CONTROLLER PHYSICAL RE-AUDIT. (BEBFF2A60C5B280F49E5E8D4CAD877C6596B4D18A7222BEBEB1AEB13D34F524E) | VERIFICATION HARNESS | PHASE: Build |
+| `database/migrations/0022_bu046_academic_core_student_enrollment_retrieval_index_remediation.sql` | Migration 0022 - BU-046 Academic Core Student Enrollment Retrieval Index Remediation. REPEAT-SAFETY PASS / HISTORY COUNT EXACTLY 1 / RETRIEVAL INDEX CONTRACT VERIFIED. (82A6A1C6F736656AAF895CDB34ECFCAD4E39F90B11D18B05CE6DC91B916BB7E2) | DATABASE MIGRATION | PHASE: Build |
+| `docs/build/units/BU-046_ACADEMIC_CORE_STUDENT_ENROLLMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-046 spec. FIRST CONTROLLER PHYSICAL AUDIT FAIL / TARGETED RETRIEVAL-INDEX + VERIFIER + MANIFEST REMEDIATION COMPLETE / REAL POSTGRESQL RE-VERIFICATION PASS / AWAITING CONTROLLER PHYSICAL RE-AUDIT / DONE NO. (B1678639377590637A75807873686F465EC4075800C5BEF5AEE0853C266F6F71) | BUILD UNIT SPEC | PHASE: Build |
