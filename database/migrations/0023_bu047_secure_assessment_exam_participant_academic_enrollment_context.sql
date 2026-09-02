@@ -12,9 +12,9 @@ BEGIN
 
     -- 1. Add academic_enrollment_id UUID NULL to secure_assessment_exam_participants
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'secure_assessment_exam_participants' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'secure_assessment_exam_participants'
         AND column_name = 'academic_enrollment_id'
     ) THEN
         ALTER TABLE secure_assessment_exam_participants ADD COLUMN academic_enrollment_id UUID NULL;
@@ -31,10 +31,10 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint WHERE conname = 'fk_sa_exam_participants_academic_enrollment'
     ) THEN
-        ALTER TABLE secure_assessment_exam_participants 
-            ADD CONSTRAINT fk_sa_exam_participants_academic_enrollment 
-            FOREIGN KEY (academic_enrollment_id, tenant_id) 
-            REFERENCES academic_core_student_enrollments(id, tenant_id) 
+        ALTER TABLE secure_assessment_exam_participants
+            ADD CONSTRAINT fk_sa_exam_participants_academic_enrollment
+            FOREIGN KEY (academic_enrollment_id, tenant_id)
+            REFERENCES academic_core_student_enrollments(id, tenant_id)
             ON DELETE RESTRICT;
     END IF;
 
@@ -42,7 +42,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'idx_sa_exam_participants_tenant_academic_enrollment' AND n.nspname = 'public'
     ) THEN
-        CREATE INDEX idx_sa_exam_participants_tenant_academic_enrollment 
+        CREATE INDEX idx_sa_exam_participants_tenant_academic_enrollment
         ON secure_assessment_exam_participants (tenant_id, academic_enrollment_id);
     END IF;
 

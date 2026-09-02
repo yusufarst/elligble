@@ -4,39 +4,39 @@
 DO $$
 DECLARE
     v_migration_count INTEGER;
-    
+
     v_tenant_1 UUID := gen_random_uuid();
     v_tenant_2 UUID := gen_random_uuid();
-    
+
     v_person_1 UUID := gen_random_uuid();
     v_person_2 UUID := gen_random_uuid();
-    
+
     v_member_1 UUID := gen_random_uuid();
     v_member_2 UUID := gen_random_uuid();
-    
+
     v_year_1 UUID := gen_random_uuid();
     v_year_2 UUID := gen_random_uuid();
-    
+
     v_period_1 UUID := gen_random_uuid();
     v_period_2 UUID := gen_random_uuid();
-    
+
     v_grade_1 UUID := gen_random_uuid();
     v_grade_2 UUID := gen_random_uuid();
-    
+
     v_group_1 UUID := gen_random_uuid();
     v_group_2 UUID := gen_random_uuid();
-    
+
     v_enroll_1_t1 UUID := gen_random_uuid();
     v_enroll_2_t1_historical UUID := gen_random_uuid();
     v_enroll_3_t2 UUID := gen_random_uuid();
-    
+
     v_exam_instance_1_t1 UUID := gen_random_uuid();
     v_exam_instance_2_t2 UUID := gen_random_uuid();
-    
+
     v_participant_1 UUID := gen_random_uuid();
     v_participant_2 UUID := gen_random_uuid();
     v_participant_3 UUID := gen_random_uuid();
-    
+
     v_count INTEGER;
 BEGIN
     -- A, B, C: History check
@@ -47,9 +47,9 @@ BEGIN
 
     -- D: academic_enrollment_id exists, UUID, nullable, no default
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'secure_assessment_exam_participants' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'secure_assessment_exam_participants'
         AND column_name = 'academic_enrollment_id'
         AND data_type = 'uuid'
         AND is_nullable = 'YES'
@@ -60,9 +60,9 @@ BEGIN
 
     -- E: person_id remains physically present and unchanged
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'secure_assessment_exam_participants' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND table_name = 'secure_assessment_exam_participants'
         AND column_name = 'person_id'
         AND data_type = 'uuid'
         AND is_nullable = 'NO'
@@ -109,8 +109,8 @@ BEGIN
 
     -- P: no forbidden scope-leak columns added
     IF EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
         AND table_name = 'secure_assessment_exam_participants'
         AND column_name NOT IN ('id', 'tenant_id', 'exam_instance_id', 'person_id', 'created_at', 'academic_enrollment_id')
     ) THEN
@@ -120,32 +120,32 @@ BEGIN
     -- Set up baseline data
     INSERT INTO tenant_tenants (id) VALUES (v_tenant_1), (v_tenant_2);
     INSERT INTO identity_persons (id) VALUES (v_person_1), (v_person_2);
-    INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES 
-        (v_member_1, v_tenant_1, v_person_1), 
+    INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES
+        (v_member_1, v_tenant_1, v_person_1),
         (v_member_2, v_tenant_2, v_person_2);
 
-    INSERT INTO academic_core_academic_years (id, tenant_id, display_label, start_date, end_date) VALUES 
+    INSERT INTO academic_core_academic_years (id, tenant_id, display_label, start_date, end_date) VALUES
         (v_year_1, v_tenant_1, 'Y1', '2026-07-01', '2027-06-30'),
         (v_year_2, v_tenant_2, 'Y2', '2026-07-01', '2027-06-30');
-        
-    INSERT INTO academic_core_academic_periods (id, tenant_id, academic_year_id, display_label, start_date, end_date) VALUES 
+
+    INSERT INTO academic_core_academic_periods (id, tenant_id, academic_year_id, display_label, start_date, end_date) VALUES
         (v_period_1, v_tenant_1, v_year_1, 'P1', '2026-07-01', '2026-12-31'),
         (v_period_2, v_tenant_2, v_year_2, 'P2', '2026-07-01', '2026-12-31');
 
-    INSERT INTO academic_core_grade_levels (id, tenant_id, display_label) VALUES 
+    INSERT INTO academic_core_grade_levels (id, tenant_id, display_label) VALUES
         (v_grade_1, v_tenant_1, 'G1'),
         (v_grade_2, v_tenant_2, 'G2');
-        
-    INSERT INTO academic_core_academic_groups (id, tenant_id, academic_year_id, grade_level_id, display_label) VALUES 
+
+    INSERT INTO academic_core_academic_groups (id, tenant_id, academic_year_id, grade_level_id, display_label) VALUES
         (v_group_1, v_tenant_1, v_year_1, v_grade_1, 'Grp1'),
         (v_group_2, v_tenant_2, v_year_2, v_grade_2, 'Grp2');
 
-    INSERT INTO academic_core_student_enrollments (id, tenant_id, academic_year_id, membership_id, academic_group_id, academic_period_id, start_date, end_date, status, source) VALUES 
+    INSERT INTO academic_core_student_enrollments (id, tenant_id, academic_year_id, membership_id, academic_group_id, academic_period_id, start_date, end_date, status, source) VALUES
         (v_enroll_1_t1, v_tenant_1, v_year_1, v_member_1, v_group_1, v_period_1, '2026-07-01', NULL, 'ACTIVE', 'MANUAL'),
         (v_enroll_2_t1_historical, v_tenant_1, v_year_1, v_member_1, v_group_1, v_period_1, '2025-07-01', '2025-12-31', 'HISTORICAL', 'MANUAL'),
         (v_enroll_3_t2, v_tenant_2, v_year_2, v_member_2, v_group_2, v_period_2, '2026-07-01', NULL, 'ACTIVE', 'MANUAL');
 
-    INSERT INTO secure_assessment_exam_instances (id, tenant_id) VALUES 
+    INSERT INTO secure_assessment_exam_instances (id, tenant_id) VALUES
         (v_exam_instance_1_t1, v_tenant_1),
         (v_exam_instance_2_t2, v_tenant_2);
 
