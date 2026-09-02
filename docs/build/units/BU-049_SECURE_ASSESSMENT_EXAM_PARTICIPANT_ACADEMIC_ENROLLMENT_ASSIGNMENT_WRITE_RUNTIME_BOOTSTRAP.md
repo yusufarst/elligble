@@ -111,7 +111,7 @@ Done: YES
 Full BU-049 repository finalized: YES
 First final physical verification: FAIL — residual lower CURRENT_STATE navigation prematurely authorized NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 Targeted final-physical CURRENT_STATE / control correction: COMPLETE
-Final physical re-verification: NOT YET
-Final physical verification: NOT YET
+Final physical re-verification: PASS
+Final physical verification: PASS
 
 PB05 remains OPEN.
