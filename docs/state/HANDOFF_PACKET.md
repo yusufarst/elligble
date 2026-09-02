@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.276
-**Supersedes:** 0.1.275
+**Version:** 0.1.277
+**Supersedes:** 0.1.276
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -843,7 +843,7 @@ NEXT STAGE:
 BU-047 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL RE-AUDIT
 
 ## EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 09 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+MAIN PROJECT CONTROL 09 — BU-047 CONTROLLER PHYSICAL RE-AUDIT
 
 ## CONTROLLER CHAT HANDOFF
 
@@ -1770,7 +1770,7 @@ NEXT STAGE:
 BU-047 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL RE-AUDIT
 
 EXACT NEXT AUTHORIZED ACTION:
-MAIN PROJECT CONTROL 09 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+MAIN PROJECT CONTROL 09 — BU-047 CONTROLLER PHYSICAL RE-AUDIT
 
 CURRENT CONTROLLER:
 MAIN PROJECT CONTROL 09

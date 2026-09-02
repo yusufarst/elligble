@@ -1,7 +1,7 @@
 **Status:** ACTIVE
-**Version:** 1.5.167
+**Version:** 1.5.168
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.166
+**Supersedes:** CURRENT_STATE v1.5.167
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
