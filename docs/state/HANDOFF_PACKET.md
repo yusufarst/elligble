@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.286
-**Supersedes:** 0.1.285
+**Version:** 0.1.287
+**Supersedes:** 0.1.286
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -123,6 +123,9 @@ IMPLEMENTATION REPOSITORY FINALIZED YES
 FAST-TRACK LIFECYCLE CLOSE COMPLETE
 DONE YES
 FULL BU-049 REPOSITORY FINALIZED YES
+FIRST FINAL PHYSICAL VERIFICATION FAIL — RESIDUAL LOWER CURRENT_STATE NAVIGATION PREMATURELY AUTHORIZED NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+TARGETED FINAL-PHYSICAL CURRENT_STATE / CONTROL CORRECTION COMPLETE
+FINAL PHYSICAL RE-VERIFICATION NOT YET
 FINAL PHYSICAL VERIFICATION NOT YET
 PB05 OPEN
 BU-048 CURRENT STATUS:
