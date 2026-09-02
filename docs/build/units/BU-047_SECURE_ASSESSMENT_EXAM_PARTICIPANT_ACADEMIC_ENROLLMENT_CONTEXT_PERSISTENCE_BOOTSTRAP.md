@@ -108,5 +108,5 @@ Persist only the minimum Academic Core Enrollment reference required by an exist
 - Fast-Track lifecycle close: COMPLETE
 - Done: YES
 - Full BU-047 repository finalized: YES
-- Final physical verification: NOT YET
+- Final physical verification: PASS
 - PB05: OPEN
