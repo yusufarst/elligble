@@ -106,5 +106,8 @@ Implementation repository finalized: YES
 Fast-Track lifecycle close: COMPLETE
 Done: YES
 Full BU-048 repository finalized: YES
+First final physical verification: FAIL — DOCUMENT_MANIFEST path-format / verifier-row corruption
+Targeted final-physical manifest / control correction: COMPLETE
+Final physical re-verification: NOT YET
 Final physical verification: NOT YET
 PB05: OPEN
