@@ -7,7 +7,7 @@ Version: 1.0.0
 Implement one bounded runtime primitive that creates a new Secure Assessment Exam Participant from a canonically resolved Academic Enrollment context. Secure Assessment consumes Academic Core truth; it does NOT re-own or mutate Academic Core truth.
 
 ## PREDECESSORS:
-- BU-001
+- BU-002
 - BU-046
 - BU-047
 - BU-048
@@ -108,7 +108,9 @@ First Stage-2 control state-sync / implementation-finalization attempt: STOP —
 Second targeted finalization continuation: STOP — over-broad BUILD_PHASE_INDEX navigation tail still contained a historical duplicate NEXT BUILD UNIT block / Controller script only / no source defect
 Third targeted finalization continuation: EXECUTED
 Control doc state-sync: EXECUTED
-Controller physical audit: NOT YET
+Controller physical audit: FAIL — Stage-3 physical audit found predecessor-contract drift: BU-001 was listed instead of frozen BU-002
+Targeted Stage-3 predecessor-contract remediation: COMPLETE
+Controller physical re-audit: NOT YET
 Implementation Git finalization: COMPLETE
 Implementation repository finalized: YES
 Fast-Track lifecycle close: NOT YET
