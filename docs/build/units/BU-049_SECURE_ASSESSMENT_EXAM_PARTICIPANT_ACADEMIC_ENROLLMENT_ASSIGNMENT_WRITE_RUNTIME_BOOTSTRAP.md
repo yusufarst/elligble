@@ -103,12 +103,12 @@ Control doc state-sync: EXECUTED
 First final pre-commit physical audit: FAIL — staged diff check detected trailing whitespace in BU-049 focused test / verifier
 Targeted pre-commit whitespace hygiene correction: COMPLETE — non-semantic only; prior execution evidence preserved
 Final pre-commit physical re-audit: PASS
-Controller physical audit: NOT YET
+Controller physical audit: PASS
 Implementation Git finalization: COMPLETE
 Implementation repository finalized: YES
-Fast-Track lifecycle close: NOT YET
-Done: NO
-Full BU-049 repository finalized: NO
+Fast-Track lifecycle close: COMPLETE
+Done: YES
+Full BU-049 repository finalized: YES
 Final physical verification: NOT YET
 
 PB05 remains OPEN.
