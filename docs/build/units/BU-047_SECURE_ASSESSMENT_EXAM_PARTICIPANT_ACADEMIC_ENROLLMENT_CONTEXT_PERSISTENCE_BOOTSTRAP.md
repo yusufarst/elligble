@@ -99,10 +99,14 @@ Persist only the minimum Academic Core Enrollment reference required by an exist
 - Second targeted Stage-3 HANDOFF / spec / manifest / control-truth remediation: COMPLETE
 - Second Controller Physical Re-Audit: FAIL — DOCUMENT_MANIFEST omitted / CURRENT_STATE + HANDOFF audit history incomplete / Agent background + checkout process deviation
 - Third targeted Stage-3 control / manifest / process-truth remediation: COMPLETE
+- Third Controller Physical Re-Audit: PASS
+- Controller Physical Re-Audit: PASS
+- Stage 4 Minimal Lifecycle Close: COMPLETE
 - Awaiting Controller Physical Audit: NO
 - Awaiting Controller Physical Re-Audit: NO
-- Awaiting Third Controller Physical Re-Audit: YES
-- Fast-Track lifecycle close: NOT YET
-- Done: NO
+- Awaiting Third Controller Physical Re-Audit: NO
+- Fast-Track lifecycle close: COMPLETE
+- Done: YES
+- Full BU-047 repository finalized: YES
 - Final physical verification: NOT YET
 - PB05: OPEN
