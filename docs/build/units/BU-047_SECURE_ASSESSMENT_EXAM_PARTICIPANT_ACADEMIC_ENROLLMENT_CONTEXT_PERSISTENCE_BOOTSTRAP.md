@@ -95,9 +95,13 @@ Persist only the minimum Academic Core Enrollment reference required by an exist
 - First Controller Physical Audit: FAIL — DOCUMENT_MANIFEST corruption / stale dynamic identities / control version drift / residual lower navigation / incomplete BU-047 spec
 - Targeted Stage-3 control / manifest / spec / process-truth remediation: COMPLETE
 - Implementation repository finalized: YES
-- First Controller Physical Re-Audit: FAIL
+- First Controller Physical Re-Audit: FAIL — HANDOFF exact-next-action residual / BU-047 spec control-character corruption
 - Second targeted Stage-3 HANDOFF / spec / manifest / control-truth remediation: COMPLETE
-- Awaiting next Controller Physical Re-Audit: YES
+- Second Controller Physical Re-Audit: FAIL — DOCUMENT_MANIFEST omitted / CURRENT_STATE + HANDOFF audit history incomplete / Agent background + checkout process deviation
+- Third targeted Stage-3 control / manifest / process-truth remediation: COMPLETE
+- Awaiting Controller Physical Audit: NO
+- Awaiting Controller Physical Re-Audit: NO
+- Awaiting Third Controller Physical Re-Audit: YES
 - Fast-Track lifecycle close: NOT YET
 - Done: NO
 - Final physical verification: NOT YET
