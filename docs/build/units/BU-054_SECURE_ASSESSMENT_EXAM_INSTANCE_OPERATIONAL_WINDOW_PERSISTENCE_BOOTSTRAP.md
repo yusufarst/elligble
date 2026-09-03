@@ -169,7 +169,9 @@ OPEN / CARRIED FORWARD
 - Fast-Track lifecycle close: COMPLETE
 - Done: YES
 - Full BU-054 repository finalized: YES
-- Final physical verification: NOT YET
+- Final physical verification: PASS
+- PB05: OPEN / CARRIED FORWARD
+- Next Build Unit Selection / Scope Freeze: AUTHORIZED
 
 ## Final Engineering Hashes
 - Migration: 441202B3924EC101ABEE0268A441CFBCE93C8DD89341E409A8F935E7B185520E
