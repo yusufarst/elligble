@@ -108,7 +108,10 @@ OPEN / CARRIED FORWARD
 - Fast-Track lifecycle close: COMPLETE
 - Done: YES
 - Full BU-053 repository finalized: YES
-- Final physical verification: NOT YET
+- Final physical verification: PASS
+- PB05: OPEN / CARRIED FORWARD
+- Next Build Unit Selection / Scope Freeze: AUTHORIZED
+- BU-053 is now TERMINAL.
 
 ## Final Engineering Hashes
 - Migration (`database/migrations/0025_bu053_secure_assessment_exam_instance_lifecycle_state.sql`): `D59A312805949BA4B614E7241BCB35223C02601C1208BFC197540345F9C037EF`
