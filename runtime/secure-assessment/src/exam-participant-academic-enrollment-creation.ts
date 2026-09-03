@@ -79,7 +79,10 @@ export async function createExamParticipantAcademicEnrollment(
       personId: row.person_id,
       academicEnrollmentId: row.academic_enrollment_id,
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === '23505' && error?.constraint === 'uq_sa_exam_participants_tenant_instance_person') {
+      return { type: 'denied' };
+    }
     return { type: 'creation_unavailable' };
   }
 }
