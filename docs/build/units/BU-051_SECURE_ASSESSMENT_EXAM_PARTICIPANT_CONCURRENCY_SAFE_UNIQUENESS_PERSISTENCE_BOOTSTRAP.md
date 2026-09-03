@@ -96,7 +96,6 @@ Stop execution if remediation requires:
 - destructive production data cleanup
 - scope expansion
 - LOCKED/FROZEN supersession
-
 ## STATUS
 
 Stage 1 scope freeze: PASS
@@ -116,5 +115,8 @@ Stage 3 Controller Physical Audit: PASS
 Fast-Track lifecycle close: COMPLETE
 Done: YES
 Full BU-051 repository finalized: YES
+First final physical verification: FAIL — residual lower navigation contradictions in HANDOFF_PACKET / BUILD_PHASE_INDEX
+Targeted final-physical control correction: COMPLETE
+Final physical re-verification: NOT YET
 Final physical verification: NOT YET
 PB05: OPEN / CARRIED FORWARD
