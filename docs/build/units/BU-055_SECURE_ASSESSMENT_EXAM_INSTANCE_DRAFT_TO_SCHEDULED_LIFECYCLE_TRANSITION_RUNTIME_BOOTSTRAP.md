@@ -141,14 +141,25 @@ OPEN / CARRIED FORWARD
 - Package typecheck: PASS
 - Focused tests: PASS / 13 TESTS
 - Secure Assessment package regression: PASS / 145 TESTS
-- Verifier strict typecheck: PASS
-- Real PostgreSQL: PASS
+- Verifier strict typecheck before first Stage-3: PASS
+- Stage-2 real PostgreSQL: PASS
 - BU-054 real PostgreSQL regression: PASS
 - Disposable database cleanup: PASS
 - Post-execution source immutability: PASS
 - Control state-sync: EXECUTED
-- Implementation repository finalized: YES / EFFECTIVE UPON THE STAGE-2 CONTROLLED COMMIT+PUSH REPRESENTED BY THIS STATE-SYNC
-- Stage 3 Controller Physical Audit: NOT YET
+- Stage 2 Implementation repository finalized: YES
+- Stage-2 implementation commit: 6d38d01ceb49e8ee9a40004ba11c2913c48e1c3e
+- First Stage-3 Controller Physical Audit: FAIL — PROTECTED-SCHEMA VERIFIER PROOF GAP
+- First Stage-3 finding classification: VERIFIER-OWNED PROOF GAP / NO RUNTIME DEFECT
+- Targeted Stage-3 verifier remediation: EXECUTED
+- Targeted Stage-3 remediation verification: PASS
+- Targeted verifier strict typecheck: PASS
+- Targeted BU-055 real PostgreSQL re-verification: PASS
+- Targeted BU-054 real PostgreSQL regression: PASS
+- Targeted disposable database cleanup: PASS / COUNT 0
+- Targeted post-execution source immutability: PASS
+- Targeted Stage-3 correction repository finalized: YES / EFFECTIVE THROUGH THE CONTROLLED CORRECTION COMMIT REPRESENTED BY THIS STATE
+- Stage-3 Controller Physical Re-Audit: NOT YET
 - Fast-Track lifecycle close: NOT YET
 - Done: NO
 - Full BU-055 repository finalized: NO
@@ -158,4 +169,4 @@ OPEN / CARRIED FORWARD
 ## Final Engineering Hashes
 - Runtime: `F207D0514A885A2FD7C64F58C5E0D37B2ED16D4DDCEE2995F88FF8AC0A7EE44F`
 - Focused Test: `04B1D314181A178E591B6DD44DF4FC6F874CE5C2366FF77286A0D9D6C394489C`
-- Verifier: `746C933ED6AF3033B1153FD265C7A4BFBDDB6395E99C8D64D8B8EE98E90692C1`
+- Verifier: `628118F46D1A412FF8579257BE6D2A0ADC99516B8270307976D008C04B76097E`

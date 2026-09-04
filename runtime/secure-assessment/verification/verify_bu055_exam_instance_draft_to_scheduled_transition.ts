@@ -170,8 +170,54 @@ async function runVerification() {
       )
     ).rows[0].id;
 
+    // Deterministic schema snapshot helper
+    const getSchemaSnapshot = async (tables: string[]) => {
+      const snapshot: Record<string, any> = {};
+      for (const table of tables) {
+        const columns = (await mainClient!.query(`
+          SELECT column_name, data_type, is_nullable, column_default
+          FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = $1
+          ORDER BY column_name
+        `, [table])).rows;
+
+        const constraints = (await mainClient!.query(`
+          SELECT c.conname, pg_get_constraintdef(c.oid) as def
+          FROM pg_constraint c
+          JOIN pg_class t ON c.conrelid = t.oid
+          JOIN pg_namespace n ON n.oid = t.relnamespace
+          WHERE n.nspname = 'public' AND t.relname = $1
+          ORDER BY c.conname
+        `, [table])).rows;
+
+        const indexes = (await mainClient!.query(`
+          SELECT indexname, indexdef
+          FROM pg_indexes
+          WHERE schemaname = 'public' AND tablename = $1
+          ORDER BY indexname
+        `, [table])).rows;
+
+        snapshot[table] = { columns, constraints, indexes };
+      }
+      return snapshot;
+    };
+
+    const protectedTables = [
+      'secure_assessment_exam_participants',
+      'secure_assessment_exam_attempts',
+      'secure_assessment_exam_sessions',
+      'academic_core_academic_years',
+      'academic_core_academic_periods',
+      'academic_core_subjects',
+      'academic_core_grade_levels',
+      'academic_core_academic_groups',
+      'academic_core_subject_offerings',
+      'academic_core_teaching_assignments',
+      'academic_core_student_enrollments'
+    ];
+
     // Academic Core data snapshot
-    const getAcademicCoreSnapshot = async () => {
+    const getAcademicCoreDataSnapshot = async () => {
       const q = async (table: string) => {
         return (await mainClient!.query(`SELECT * FROM public.${table} ORDER BY id`)).rows;
       };
@@ -183,10 +229,12 @@ async function runVerification() {
         subjects: await q('academic_core_subjects'),
         offerings: await q('academic_core_subject_offerings'),
         teachingAssignments: await q('academic_core_teaching_assignments'),
+        enrollments: await q('academic_core_student_enrollments')
       };
     };
 
-    const academicCoreBefore = await getAcademicCoreSnapshot();
+    const schemaBefore = await getSchemaSnapshot(protectedTables);
+    const academicCoreDataBefore = await getAcademicCoreDataSnapshot();
 
     const grantEvaluator: ExamInstanceSchedulingCapabilityEvaluator =
       async (): Promise<ExamInstanceSchedulingCapabilityDecision> => 'granted';
@@ -527,15 +575,23 @@ async function runVerification() {
     );
     log('BU-053 lifecycle and BU-054 operational window constraints preserved');
 
-    // 11. Prove NO Academic Core schema or data mutation
-    const academicCoreAfter = await getAcademicCoreSnapshot();
+    // 11. Prove strict pre/post protected schema equality
+    const schemaAfter = await getSchemaSnapshot(protectedTables);
     assertStrict(
-      JSON.stringify(academicCoreBefore) === JSON.stringify(academicCoreAfter),
+      JSON.stringify(schemaBefore) === JSON.stringify(schemaAfter),
+      'Protected tables schema (columns, constraints, indexes) must remain exactly identical'
+    );
+    log('Protected tables schema strict pre/post equality proven');
+
+    // 12. Prove NO Academic Core data mutation
+    const academicCoreDataAfter = await getAcademicCoreDataSnapshot();
+    assertStrict(
+      JSON.stringify(academicCoreDataBefore) === JSON.stringify(academicCoreDataAfter),
       'Academic Core data must remain completely unmutated'
     );
-    log('Zero Academic Core schema or data mutation proven');
+    log('Academic Core row data strict pre/post equality proven');
 
-    // 12. Prove NO Participant / Attempt / Session schema mutation
+    // 13. Preserve the specific explicit structural checks for Participant, Attempt, and Session
     const verifyTableColumns = async (table: string, expected: number | string[]) => {
       const res = await mainClient!.query(
         `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
@@ -565,7 +621,7 @@ async function runVerification() {
       'ended_at',
       'superseded_by_session_id',
     ]);
-    log('Participant, Attempt, and Session schemas preserved with zero mutation');
+    log('Participant, Attempt, and Session explicit structural checks preserved');
 
   } catch (err) {
     console.error('FAIL: Verification encountered error', err);
