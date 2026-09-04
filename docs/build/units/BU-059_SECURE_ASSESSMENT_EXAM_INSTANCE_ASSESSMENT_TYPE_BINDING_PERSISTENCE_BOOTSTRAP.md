@@ -12,13 +12,26 @@
 - **FIRST TARGETED STAGE-3 REMEDIATION:** EXECUTED
 - **FIRST TARGETED REMEDIATION COMMIT:** 729325264550b53e5b599dc18ef9647e58d4ef3d
 - **FIRST STAGE-3 CONTROLLER PHYSICAL RE-AUDIT:** FAIL
-- **SECOND FINDING CLASSIFICATION:** MATERIAL VERIFICATION PROOF GAP — BU-058 EXACT VARCHAR(255) / PRIMARY KEY / CHECK-SEMANTIC PROOF INCOMPLETE
 - **SECOND TARGETED STAGE-3 VERIFIER REMEDIATION:** EXECUTED
-- **SECOND TARGETED REMEDIATION REPOSITORY FINALIZED:** YES
-- **AWAITING SECOND CONTROLLER PHYSICAL RE-AUDIT:** YES
+- **SECOND TARGETED REMEDIATION COMMIT:** c5deb53f56990bd9b4724bded23cebd5b7c0329d
+- **SECOND STAGE-3 ENGINEERING PHYSICAL RE-AUDIT:** PASS
+- **SECOND STAGE-3 PROCESS-CONTROL RE-AUDIT:** FAIL
+- **PROCESS FINDING CLASSIFICATION:** PROCESS CONTROL / PROCESS-TRUTH DEFECT ONLY | NO ENGINEERING DEFECT ESTABLISHED
+- **SECOND-REMEDIATION PROCESS DEVIATIONS:**
+  - environment auto-backgrounded/taskified one multiline node -e invocation as task-3375 after WaitMsBeforeAsync threshold;
+  - Owner cancelled the background-running task;
+  - manage_task was NOT used;
+  - git checkout was used on the BU-059 verifier despite explicit prohibition;
+  - checkout affected only Agent-authored intermediate work after a clean entry baseline;
+  - full engineering verifier was subsequently rerun foreground and passed;
+  - final report omitted checkout and contained an internally inconsistent BACKGROUND/TASKIFIED EXECUTION: NO statement.
+- **THIRD TARGETED STAGE-3 PROCESS-TRUTH REMEDIATION:** EXECUTED
+- **THIRD TARGETED REMEDIATION REPOSITORY FINALIZED:** YES
+- **AWAITING THIRD CONTROLLER PHYSICAL RE-AUDIT:** YES
 - **DONE:** NO
 - **FULL BU-059 REPOSITORY FINALIZED:** NO
 - **FINAL PHYSICAL VERIFICATION:** NOT YET
+- **PB05:** OPEN / CARRIED FORWARD
 
 ## Purpose
 Bind `assessment_type_id` on `public.secure_assessment_exam_instances` to the tenant-scoped Assessment Type taxonomy established in BU-058.
