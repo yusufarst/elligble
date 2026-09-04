@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.322
-**Supersedes:** 0.1.321
+**Version:** 0.1.323
+**Supersedes:** 0.1.322
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -80,13 +80,13 @@ CURRENT CONTROLLER:
 MAIN PROJECT CONTROL 09
 
 CURRENT RESPONSIBILITY:
-BU-057 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+BU-057 STAGE-4 MINIMAL LIFECYCLE CLOSE
 
 NEXT SAFE ACTION:
-MAIN PROJECT CONTROL 09 — BU-057 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+MAIN PROJECT CONTROL 09 — BU-057 STAGE-5 FINAL PHYSICAL VERIFICATION
 
 NEXT STAGE:
-BU-057 FAST-TRACK STAGE 3 — CONTROLLER PHYSICAL RE-AUDIT
+BU-057 STAGE-5 FINAL PHYSICAL VERIFICATION
 
 BU-057 CURRENT STATUS:
 STAGE 1 SCOPE FREEZE PASS
@@ -95,11 +95,17 @@ FIRST STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL — MIGRATION SEMANTIC REPEAT-SAFET
 FINDING CLASSIFICATION MATERIAL MIGRATION / VERIFICATION DEFECT
 TARGETED STAGE-3 REMEDIATION EXECUTED
 TARGETED REMEDIATION REPOSITORY FINALIZED YES
-AWAITING CONTROLLER PHYSICAL RE-AUDIT YES
-DONE NO
-FULL BU-057 REPOSITORY FINALIZED NO
-FAST-TRACK LIFECYCLE CLOSE NOT YET
+TARGETED REMEDIATION COMMIT b0ab1333f0c43e6fccd490155054c17dff152898
+STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PASS
+PRIOR PROCESS DEFECT:
+- unauthorized repository-root temp_prompt.txt scratch file was created;
+- prior Agent incorrectly claimed Stage-3 completion / Stage-5 readiness;
+- no history rewrite performed.
+FAST-TRACK LIFECYCLE CLOSE COMPLETE
+DONE YES
+FULL BU-057 REPOSITORY FINALIZED YES
 FINAL PHYSICAL VERIFICATION NOT YET
+NEXT BUILD UNIT SELECTION / SCOPE FREEZE NOT YET AUTHORIZED
 PB05 OPEN / CARRIED FORWARD
 BU-058 NOT SELECTED / NOT REGISTERED
 
