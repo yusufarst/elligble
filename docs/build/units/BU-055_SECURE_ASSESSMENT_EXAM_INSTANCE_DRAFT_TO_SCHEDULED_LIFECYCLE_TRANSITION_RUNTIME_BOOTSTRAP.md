@@ -153,12 +153,14 @@ OPEN / CARRIED FORWARD
 - First Stage-5 Final Physical Verification: FAIL — HANDOFF TERMINAL LIVE/CURRENT NAVIGATION STALE / CONTROL-STATE CONFLICT
 - Finding classification: CONTROL-DOC / HANDOFF NAVIGATION DEFECT / NO ENGINEERING DEFECT
 - Targeted Stage-5 Final-Physical Control Correction: EXECUTED
-- Final Physical Re-Verification: NOT YET
-- Final physical verification: NOT YET
+- Targeted Stage-5 Correction Repository Finalized: YES
+- Targeted correction commit: f9042b9dd50b192ccd249fd59b630ced6e5ddeff
+- Final Physical Re-Verification: PASS
+- Final Physical Verification: PASS
 - Done: YES
-- Full BU-055 repository finalized: YES
+- Full BU-055 Repository Finalized: YES
 - PB05: OPEN / CARRIED FORWARD
-- Next Build Unit Selection / Scope Freeze: NOT AUTHORIZED YET
+- Next Build Unit Selection / Scope Freeze: AUTHORIZED
 
 ## Final Engineering Hashes
 - Runtime: `F207D0514A885A2FD7C64F58C5E0D37B2ED16D4DDCEE2995F88FF8AC0A7EE44F`
