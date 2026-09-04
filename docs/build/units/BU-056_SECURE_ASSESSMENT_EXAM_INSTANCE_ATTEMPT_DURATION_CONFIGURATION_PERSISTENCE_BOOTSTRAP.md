@@ -29,12 +29,12 @@
 - PROCESS DEVIATIONS: RECORDED TRUTHFULLY
 - TARGETED STAGE-3 CORRECTION REPOSITORY FINALIZED: YES / AWAITING CONTROLLER PHYSICAL RE-AUDIT
 - STAGE-3 CONTROLLER PHYSICAL RE-AUDIT: PASS
-- FAST-TRACK LIFECYCLE CLOSE: PASS
+- FAST-TRACK LIFECYCLE CLOSE: COMPLETE
 - DONE: YES
 - FULL BU-056 REPOSITORY FINALIZED: YES
-- FINAL PHYSICAL VERIFICATION: PASS
+- FINAL PHYSICAL VERIFICATION: NOT YET
 - PB05: OPEN / CARRIED FORWARD
-- NEXT BUILD UNIT SELECTION / SCOPE FREEZE AUTHORIZED
+- NEXT BUILD UNIT SELECTION / SCOPE FREEZE: NOT YET AUTHORIZED
 - BU-057: NOT SELECTED / NOT REGISTERED
 
 ## Final Engineering Hashes
@@ -49,6 +49,8 @@
 - No committed semantic engineering defect resulted from these actions.
 - Final material commit `64a332087878e774e40cf61070807e4c5aed5ec0` remains preserved; no history rewrite.
 - Process deviations during this Stage-3 targeted remediation: NONE.
+- Process defect: Commit `96e3648e83228449b3bbb1662777f75b82750707` prematurely combined Stage-4 lifecycle-close state with Stage-5 final-physical PASS / next-BU authorization, leaving a repository control contradiction.
+- Correction method: TARGETED FORWARD CORRECTION / NO HISTORY REWRITE.
 
 ## Predecessors
 - BU-002 Exam Instance persistence
