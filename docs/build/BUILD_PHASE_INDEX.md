@@ -470,6 +470,13 @@ MAIN PROJECT CONTROL 09 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 ### NEXT STAGE
 NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
+### BU-059
+- **TITLE:** Secure Assessment Exam Instance Assessment Type Binding Persistence Bootstrap
+- **STAGE 1 SCOPE FREEZE:** PASS
+- **STAGE 2 SOURCE EXECUTION:** EXECUTED
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **AWAITING CONTROLLER PHYSICAL AUDIT:** YES
+
 ### BU-058
 - **TITLE:** Secure Assessment Assessment Type Taxonomy Core State Persistence Bootstrap
 - **STAGE 1 SCOPE FREEZE:** PASS
