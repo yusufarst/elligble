@@ -310,6 +310,92 @@ async function runTest() {
         assertStrict(threw22b, "Migration 0029 must fail loudly when history exists but schema is incompatible");
         log("22b. Migration-history false claim with incompatible physical schema rejected loudly");
 
+        // Negative Scenario A: Incompatible id default (history absent) rejected loudly
+        await client.query('BEGIN');
+        let threwScenarioA = false;
+        try {
+            await client.query(`
+                CREATE TABLE public.secure_assessment_assessment_types (
+                    id UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000000'::uuid,
+                    tenant_id UUID NOT NULL,
+                    display_label VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT uq_sa_assessment_types_tenant UNIQUE (id, tenant_id),
+                    CONSTRAINT ck_sa_assessment_types_display_label_non_blank CHECK (btrim(display_label) <> '')
+                )
+            `);
+            try {
+                await client.query(migration0029Sql);
+            } catch (err) {
+                threwScenarioA = true;
+                assertStrict(err.message.includes('MIGRATION REJECTED'), `Expected MIGRATION REJECTED, got: ${err.message}`);
+            }
+        } finally {
+            await client.query('ROLLBACK');
+        }
+        assertStrict(threwScenarioA, "Migration 0029 must fail loudly on incompatible id default");
+        const histCheckA = await client.query(`SELECT 1 FROM public.elligble_migration_history WHERE migration_id = $1`, [exactMigrationId]);
+        assertStrict(histCheckA.rows.length === 0, "Migration history remains absent on incompatible id default");
+        log("Negative Scenario A: Wrong id default (history absent) rejected loudly and history remains absent");
+
+        // Negative Scenario B: Incompatible created_at default (history absent) rejected loudly
+        await client.query('BEGIN');
+        let threwScenarioB = false;
+        try {
+            await client.query(`
+                CREATE TABLE public.secure_assessment_assessment_types (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    tenant_id UUID NOT NULL,
+                    display_label VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (CURRENT_TIMESTAMP - interval '1 day'),
+                    CONSTRAINT uq_sa_assessment_types_tenant UNIQUE (id, tenant_id),
+                    CONSTRAINT ck_sa_assessment_types_display_label_non_blank CHECK (btrim(display_label) <> '')
+                )
+            `);
+            try {
+                await client.query(migration0029Sql);
+            } catch (err) {
+                threwScenarioB = true;
+                assertStrict(err.message.includes('MIGRATION REJECTED'), `Expected MIGRATION REJECTED, got: ${err.message}`);
+            }
+        } finally {
+            await client.query('ROLLBACK');
+        }
+        assertStrict(threwScenarioB, "Migration 0029 must fail loudly on incompatible created_at default");
+        const histCheckB = await client.query(`SELECT 1 FROM public.elligble_migration_history WHERE migration_id = $1`, [exactMigrationId]);
+        assertStrict(histCheckB.rows.length === 0, "Migration history remains absent on incompatible created_at default");
+        log("Negative Scenario B: Wrong created_at default (history absent) rejected loudly and history remains absent");
+
+        // Negative Scenario C: False history claim + incompatible required default rejected loudly
+        await client.query('BEGIN');
+        let threwScenarioC = false;
+        try {
+            await client.query(`
+                CREATE TABLE public.secure_assessment_assessment_types (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    tenant_id UUID NOT NULL,
+                    display_label VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT '2026-01-01 00:00:00+00'::timestamptz,
+                    CONSTRAINT uq_sa_assessment_types_tenant UNIQUE (id, tenant_id),
+                    CONSTRAINT ck_sa_assessment_types_display_label_non_blank CHECK (btrim(display_label) <> '')
+                )
+            `);
+            await client.query(`
+                INSERT INTO public.elligble_migration_history (migration_id)
+                VALUES ($1)
+            `, [exactMigrationId]);
+            try {
+                await client.query(migration0029Sql);
+            } catch (err) {
+                threwScenarioC = true;
+                assertStrict(err.message.includes('MIGRATION REJECTED'), `Expected MIGRATION REJECTED, got: ${err.message}`);
+            }
+        } finally {
+            await client.query('ROLLBACK');
+        }
+        assertStrict(threwScenarioC, "Migration 0029 must fail loudly on false history with incompatible default");
+        log("Negative Scenario C: False history claim + wrong required default rejected loudly");
+
         // Scenario 20: Compatible pre-existing exact table with history absent is safely recognized and history registered once
         await client.query('BEGIN');
         try {
@@ -360,15 +446,21 @@ async function runTest() {
 
         // Verification requirement 7: id column UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid()
         const idColRes = await client.query(`
-            SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = 'secure_assessment_assessment_types' AND column_name = 'id'
+            SELECT c.column_name, c.data_type, c.is_nullable, c.column_default,
+                   pg_get_expr(d.adbin, d.adrelid) AS catalog_default
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public' AND c.table_name = 'secure_assessment_assessment_types' AND c.column_name = 'id'
         `);
         assertStrict(idColRes.rows.length === 1, "id column exists");
         const idCol = idColRes.rows[0];
         assertStrict(idCol.data_type === 'uuid', "id is uuid");
         assertStrict(idCol.is_nullable === 'NO', "id is NOT NULL");
-        assertStrict(idCol.column_default && idCol.column_default.includes('gen_random_uuid'), "id default is gen_random_uuid()");
+        assertStrict(idCol.column_default === 'gen_random_uuid()', `id column_default is exact gen_random_uuid(), got: ${idCol.column_default}`);
+        assertStrict(idCol.catalog_default === 'gen_random_uuid()', `id catalog_default is exact gen_random_uuid(), got: ${idCol.catalog_default}`);
 
         const pkRes = await client.query(`
             SELECT c.conname, pg_get_constraintdef(c.oid) as def
@@ -379,47 +471,65 @@ async function runTest() {
         `);
         assertStrict(pkRes.rows.length === 1, "Primary key exists");
         assertStrict(pkRes.rows[0].def === 'PRIMARY KEY (id)', "Primary key is on id");
-        log("7. id: UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid()");
+        log("7. id: UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid() (exact physical default expression)");
 
         // Verification requirement 8: tenant_id UUID NOT NULL NO DEFAULT
         const tenantColRes = await client.query(`
-            SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = 'secure_assessment_assessment_types' AND column_name = 'tenant_id'
+            SELECT c.column_name, c.data_type, c.is_nullable, c.column_default,
+                   d.adbin IS NOT NULL AS has_catalog_default
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            LEFT JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public' AND c.table_name = 'secure_assessment_assessment_types' AND c.column_name = 'tenant_id'
         `);
         assertStrict(tenantColRes.rows.length === 1, "tenant_id column exists");
         const tenantCol = tenantColRes.rows[0];
         assertStrict(tenantCol.data_type === 'uuid', "tenant_id is uuid");
         assertStrict(tenantCol.is_nullable === 'NO', "tenant_id is NOT NULL");
-        assertStrict(tenantCol.column_default === null, "tenant_id has NO DEFAULT");
+        assertStrict(tenantCol.column_default === null, "tenant_id has NO DEFAULT in information_schema");
+        assertStrict(tenantCol.has_catalog_default === false, "tenant_id has NO DEFAULT in pg_attrdef");
         log("8. tenant_id: UUID NOT NULL NO DEFAULT");
 
         // Verification requirement 9: display_label VARCHAR(255) NOT NULL NO DEFAULT
         const labelColRes = await client.query(`
-            SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = 'secure_assessment_assessment_types' AND column_name = 'display_label'
+            SELECT c.column_name, c.data_type, c.character_maximum_length, c.is_nullable, c.column_default,
+                   d.adbin IS NOT NULL AS has_catalog_default
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            LEFT JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public' AND c.table_name = 'secure_assessment_assessment_types' AND c.column_name = 'display_label'
         `);
         assertStrict(labelColRes.rows.length === 1, "display_label column exists");
         const labelCol = labelColRes.rows[0];
         assertStrict(labelCol.data_type === 'character varying', "display_label is VARCHAR");
         assertStrict(labelCol.character_maximum_length === 255, "display_label max length is 255");
         assertStrict(labelCol.is_nullable === 'NO', "display_label is NOT NULL");
-        assertStrict(labelCol.column_default === null, "display_label has NO DEFAULT");
+        assertStrict(labelCol.column_default === null, "display_label has NO DEFAULT in information_schema");
+        assertStrict(labelCol.has_catalog_default === false, "display_label has NO DEFAULT in pg_attrdef");
         log("9. display_label: VARCHAR(255) NOT NULL NO DEFAULT");
 
         // Verification requirement 10: created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
         const createdColRes = await client.query(`
-            SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = 'secure_assessment_assessment_types' AND column_name = 'created_at'
+            SELECT c.column_name, c.data_type, c.is_nullable, c.column_default,
+                   pg_get_expr(d.adbin, d.adrelid) AS catalog_default
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public' AND c.table_name = 'secure_assessment_assessment_types' AND c.column_name = 'created_at'
         `);
         assertStrict(createdColRes.rows.length === 1, "created_at column exists");
         const createdCol = createdColRes.rows[0];
         assertStrict(createdCol.data_type === 'timestamp with time zone', "created_at is TIMESTAMPTZ");
         assertStrict(createdCol.is_nullable === 'NO', "created_at is NOT NULL");
-        assertStrict(createdCol.column_default !== null, "created_at has default");
-        log("10. created_at: TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP");
+        assertStrict(createdCol.column_default === 'CURRENT_TIMESTAMP', `created_at column_default is exact CURRENT_TIMESTAMP, got: ${createdCol.column_default}`);
+        assertStrict(createdCol.catalog_default === 'CURRENT_TIMESTAMP', `created_at catalog_default is exact CURRENT_TIMESTAMP, got: ${createdCol.catalog_default}`);
+        log("10. created_at: TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP (exact physical default expression)");
 
         // Verification requirement 11: exact composite unique constraint uq_sa_assessment_types_tenant UNIQUE (id, tenant_id)
         const uqRes = await client.query(`

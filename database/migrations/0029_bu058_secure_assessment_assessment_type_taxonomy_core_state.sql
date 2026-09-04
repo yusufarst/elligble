@@ -15,6 +15,8 @@ DECLARE
     v_ck_ok BOOLEAN;
     v_fk_count INT;
     v_schema_is_compatible BOOLEAN;
+    c_expected_id_default CONSTANT TEXT := 'gen_random_uuid()';
+    c_expected_created_at_default CONSTANT TEXT := 'CURRENT_TIMESTAMP';
     c_expected_ck_def CONSTANT TEXT := 'CHECK ((btrim((display_label)::text) <> ''''::text))';
     c_expected_uq_def CONSTANT TEXT := 'UNIQUE (id, tenant_id)';
     c_expected_pk_def CONSTANT TEXT := 'PRIMARY KEY (id)';
@@ -36,53 +38,71 @@ BEGIN
     ) INTO v_table_exists;
 
     IF v_table_exists THEN
-        -- Check column id
+        -- Check column id: UUID, NOT NULL, DEFAULT gen_random_uuid()
         SELECT EXISTS (
             SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'secure_assessment_assessment_types'
-              AND column_name = 'id'
-              AND data_type = 'uuid'
-              AND is_nullable = 'NO'
-              AND column_default LIKE '%gen_random_uuid%'
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public'
+              AND c.table_name = 'secure_assessment_assessment_types'
+              AND c.column_name = 'id'
+              AND c.data_type = 'uuid'
+              AND c.is_nullable = 'NO'
+              AND pg_get_expr(d.adbin, d.adrelid) = c_expected_id_default
         ) INTO v_id_ok;
 
-        -- Check column tenant_id
+        -- Check column tenant_id: UUID, NOT NULL, NO DEFAULT
         SELECT EXISTS (
             SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'secure_assessment_assessment_types'
-              AND column_name = 'tenant_id'
-              AND data_type = 'uuid'
-              AND is_nullable = 'NO'
-              AND column_default IS NULL
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            LEFT JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public'
+              AND c.table_name = 'secure_assessment_assessment_types'
+              AND c.column_name = 'tenant_id'
+              AND c.data_type = 'uuid'
+              AND c.is_nullable = 'NO'
+              AND c.column_default IS NULL
+              AND d.adbin IS NULL
         ) INTO v_tenant_id_ok;
 
-        -- Check column display_label
+        -- Check column display_label: VARCHAR(255), NOT NULL, NO DEFAULT
         SELECT EXISTS (
             SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'secure_assessment_assessment_types'
-              AND column_name = 'display_label'
-              AND data_type = 'character varying'
-              AND character_maximum_length = 255
-              AND is_nullable = 'NO'
-              AND column_default IS NULL
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            LEFT JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public'
+              AND c.table_name = 'secure_assessment_assessment_types'
+              AND c.column_name = 'display_label'
+              AND c.data_type = 'character varying'
+              AND c.character_maximum_length = 255
+              AND c.is_nullable = 'NO'
+              AND c.column_default IS NULL
+              AND d.adbin IS NULL
         ) INTO v_display_label_ok;
 
-        -- Check column created_at
+        -- Check column created_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP
         SELECT EXISTS (
             SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = 'secure_assessment_assessment_types'
-              AND column_name = 'created_at'
-              AND data_type = 'timestamp with time zone'
-              AND is_nullable = 'NO'
-              AND column_default IS NOT NULL
+            FROM information_schema.columns c
+            JOIN pg_class t ON t.relname = c.table_name
+            JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attname = c.column_name
+            JOIN pg_attrdef d ON d.adrelid = t.oid AND d.adnum = a.attnum
+            WHERE c.table_schema = 'public'
+              AND c.table_name = 'secure_assessment_assessment_types'
+              AND c.column_name = 'created_at'
+              AND c.data_type = 'timestamp with time zone'
+              AND c.is_nullable = 'NO'
+              AND pg_get_expr(d.adbin, d.adrelid) = c_expected_created_at_default
         ) INTO v_created_at_ok;
 
         -- Check PK constraint
