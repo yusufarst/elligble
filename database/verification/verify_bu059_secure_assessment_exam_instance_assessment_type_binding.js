@@ -68,7 +68,7 @@ async function runTest() {
         const data = {};
         for (const table of tables) {
             const schemaCols = (await targetClient.query(`
-                SELECT column_name, data_type, is_nullable, column_default
+                SELECT column_name, data_type, is_nullable, column_default, character_maximum_length
                 FROM information_schema.columns
                 WHERE table_schema = 'public' AND table_name = $1
                 ORDER BY column_name
@@ -292,6 +292,9 @@ async function runTest() {
         // SECTION A (CONTINUED): CANONICAL APPLY OF MIGRATION 0030
         // =========================================================================
         console.log("\n--- CANONICAL APPLY OF MIGRATION 0030 ---");
+        const preAtSchema = await getSchemaSnapshot(client, ['secure_assessment_assessment_types']);
+        const preAtRowCount = parseInt((await client.query(`SELECT COUNT(*) as c FROM public.secure_assessment_assessment_types`)).rows[0].c, 10);
+
         await client.query(migration0030Sql);
         log("3. Corrected 0030 clean apply PASS");
 
@@ -503,7 +506,7 @@ async function runTest() {
         // =========================================================================
         console.log("\n--- SECTION F: BU-058 CONTRACT PRESERVATION ---");
         const atCols = (await client.query(`
-            SELECT column_name, data_type, is_nullable, column_default
+            SELECT column_name, data_type, is_nullable, column_default, character_maximum_length
             FROM information_schema.columns
             WHERE table_schema = 'public' AND table_name = 'secure_assessment_assessment_types'
             ORDER BY column_name
@@ -511,11 +514,41 @@ async function runTest() {
         const colMap = {};
         for (const r of atCols) { colMap[r.column_name] = r; }
 
-        assertStrict(colMap['id'] && colMap['id'].data_type === 'uuid' && colMap['id'].is_nullable === 'NO' && colMap['id'].column_default === 'gen_random_uuid()', "id is UUID PK DEFAULT gen_random_uuid()");
+        assertStrict(colMap['id'] && colMap['id'].data_type === 'uuid' && colMap['id'].is_nullable === 'NO' && colMap['id'].column_default === 'gen_random_uuid()', "id is UUID NOT NULL DEFAULT gen_random_uuid()");
         assertStrict(colMap['tenant_id'] && colMap['tenant_id'].data_type === 'uuid' && colMap['tenant_id'].is_nullable === 'NO' && colMap['tenant_id'].column_default === null, "tenant_id is UUID NOT NULL NO DEFAULT");
-        assertStrict(colMap['display_label'] && colMap['display_label'].data_type === 'character varying' && colMap['display_label'].is_nullable === 'NO' && colMap['display_label'].column_default === null, "display_label is VARCHAR(255) NOT NULL NO DEFAULT");
+        assertStrict(
+            colMap['display_label'] &&
+            colMap['display_label'].data_type === 'character varying' &&
+            colMap['display_label'].character_maximum_length === 255 &&
+            colMap['display_label'].is_nullable === 'NO' &&
+            colMap['display_label'].column_default === null,
+            "display_label is VARCHAR(255) NOT NULL NO DEFAULT"
+        );
         assertStrict(colMap['created_at'] && colMap['created_at'].data_type === 'timestamp with time zone' && colMap['created_at'].is_nullable === 'NO' && colMap['created_at'].column_default === 'CURRENT_TIMESTAMP', "created_at is TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP");
-        log("25. secure_assessment_assessment_types still has id, tenant_id, display_label, created_at contracts exact");
+
+        // Finding B: Physical query on pg_constraint / pg_class / pg_namespace for primary key
+        const atPkRes = await client.query(`
+            SELECT
+                c.conname,
+                c.contype,
+                pg_get_constraintdef(c.oid) AS def,
+                (
+                    SELECT array_agg(a.attname::text ORDER BY k.ord)
+                    FROM unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord)
+                    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = k.attnum
+                ) AS columns
+            FROM pg_constraint c
+            JOIN pg_class t ON c.conrelid = t.oid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            WHERE n.nspname = 'public'
+              AND t.relname = 'secure_assessment_assessment_types'
+              AND c.contype = 'p'
+        `);
+        assertStrict(atPkRes.rows.length === 1, "Exactly one primary key constraint exists on secure_assessment_assessment_types");
+        assertStrict(atPkRes.rows[0].def === 'PRIMARY KEY (id)', `Primary key definition must be exactly PRIMARY KEY (id), got: ${atPkRes.rows[0].def}`);
+        assertStrict(JSON.stringify(atPkRes.rows[0].columns) === JSON.stringify(['id']), "Primary key ordered column must be exactly ['id']");
+
+        log("25. secure_assessment_assessment_types still has id UUID PRIMARY KEY (id), tenant_id, display_label VARCHAR(255), created_at contracts exact");
 
         // 26. uq_sa_assessment_types_tenant remains exact
         const uqRes = await client.query(`
@@ -528,16 +561,18 @@ async function runTest() {
         assertStrict(uqRes.rows.length === 1 && uqRes.rows[0].def === 'UNIQUE (id, tenant_id)', "uq_sa_assessment_types_tenant remains exact");
         log("26. uq_sa_assessment_types_tenant remains exact");
 
-        // 27. ck_sa_assessment_types_display_label_non_blank remains exact
+        // Finding C: ck_sa_assessment_types_display_label_non_blank remains exact CHECK with btrim semantics
         const ckRes = await client.query(`
-            SELECT pg_get_constraintdef(c.oid) as def
+            SELECT c.contype, pg_get_constraintdef(c.oid) as def
             FROM pg_constraint c
             JOIN pg_class t ON c.conrelid = t.oid
             JOIN pg_namespace n ON n.oid = t.relnamespace
             WHERE n.nspname = 'public' AND t.relname = 'secure_assessment_assessment_types' AND c.conname = 'ck_sa_assessment_types_display_label_non_blank'
         `);
         assertStrict(ckRes.rows.length === 1, "ck_sa_assessment_types_display_label_non_blank exists");
-        log("27. ck_sa_assessment_types_display_label_non_blank remains exact");
+        assertStrict(ckRes.rows[0].contype === 'c', "ck_sa_assessment_types_display_label_non_blank must be a CHECK constraint (contype = 'c')");
+        assertStrict(ckRes.rows[0].def === "CHECK ((btrim((display_label)::text) <> ''::text))", `ck_sa_assessment_types_display_label_non_blank must have exact semantics: btrim(display_label) <> '', got: ${ckRes.rows[0].def}`);
+        log("27. ck_sa_assessment_types_display_label_non_blank remains exact with btrim non-blank semantics");
 
         // 28. Assessment Type table still has ZERO foreign keys
         const atFkCount = await client.query(`
@@ -550,10 +585,13 @@ async function runTest() {
         assertStrict(parseInt(atFkCount.rows[0].c, 10) === 0, "Assessment Type table has ZERO foreign keys");
         log("28. Assessment Type table still has ZERO foreign keys");
 
-        // 29. migration 0030 introduces ZERO Assessment Type seed rows
-        const atTotalCount = await client.query(`SELECT COUNT(*) as c FROM public.secure_assessment_assessment_types`);
-        assertStrict(parseInt(atTotalCount.rows[0].c, 10) === 2, "Only the 2 test fixtures exist, zero seeds introduced by 0030");
-        log("29. Migration 0030 introduces ZERO Assessment Type seed rows");
+        // Finding D: migration 0030 introduces ZERO Assessment Type seed rows and preserves Assessment Type schema immutability
+        const postAtSchema = await getSchemaSnapshot(client, ['secure_assessment_assessment_types']);
+        const postAtRowCount = parseInt((await client.query(`SELECT COUNT(*) as c FROM public.secure_assessment_assessment_types`)).rows[0].c, 10);
+        assertStrict(postAtRowCount === preAtRowCount, "Assessment Type row count immediately before and after migration 0030 must be identical");
+        assertStrict(JSON.stringify(preAtSchema) === JSON.stringify(postAtSchema), "Assessment Type schema/constraints/indexes must be completely immutable across migration 0030");
+        assertStrict(postAtRowCount === 2, "Only the 2 test fixtures exist, zero seeds introduced by 0030");
+        log("29. Migration 0030 introduces ZERO Assessment Type seed rows and preserves Assessment Type schema immutability");
 
         // 30. assessment_type_code remains absent
         const codeColCheck = await client.query(`
