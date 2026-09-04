@@ -150,10 +150,15 @@ OPEN / CARRIED FORWARD
 - Correction commit: 96b315d382193ebd740d70eec369f0e50a6e9f52
 - Stage-3 Controller Physical Re-Audit: PASS
 - Fast-Track lifecycle close: COMPLETE
-- Done: YES
-- Full BU-055 repository finalized: YES / EFFECTIVE THROUGH THE CONTROLLED STAGE-4 LIFECYCLE-CLOSE COMMIT REPRESENTED BY THIS STATE
+- First Stage-5 Final Physical Verification: FAIL — HANDOFF TERMINAL LIVE/CURRENT NAVIGATION STALE / CONTROL-STATE CONFLICT
+- Finding classification: CONTROL-DOC / HANDOFF NAVIGATION DEFECT / NO ENGINEERING DEFECT
+- Targeted Stage-5 Final-Physical Control Correction: EXECUTED
+- Final Physical Re-Verification: NOT YET
 - Final physical verification: NOT YET
+- Done: YES
+- Full BU-055 repository finalized: YES
 - PB05: OPEN / CARRIED FORWARD
+- Next Build Unit Selection / Scope Freeze: NOT AUTHORIZED YET
 
 ## Final Engineering Hashes
 - Runtime: `F207D0514A885A2FD7C64F58C5E0D37B2ED16D4DDCEE2995F88FF8AC0A7EE44F`
