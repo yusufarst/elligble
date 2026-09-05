@@ -1,5 +1,19 @@
 import type { PoolClient } from 'pg';
 
+export type AssessmentTypeReadinessCapabilityDecision =
+  | 'granted'
+  | 'denied'
+  | 'unavailable';
+
+export interface AssessmentTypeReadinessAuthorizationContext {
+  tenantId: string;
+  examInstanceId: string;
+}
+
+export type AssessmentTypeReadinessCapabilityEvaluator = (
+  context: AssessmentTypeReadinessAuthorizationContext
+) => Promise<AssessmentTypeReadinessCapabilityDecision> | AssessmentTypeReadinessCapabilityDecision;
+
 export type AssessmentTypeReadinessResult =
   | { type: 'assessment_type_ready'; examInstanceId: string; tenantId: string; assessmentTypeId: string; assessmentTypeDisplayLabel: string }
   | { type: 'not_ready'; blocker: 'assessment_type_missing' }
@@ -7,17 +21,43 @@ export type AssessmentTypeReadinessResult =
   | { type: 'denied' }
   | { type: 'unavailable' };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(id: string): boolean {
+  return typeof id === 'string' && UUID_REGEX.test(id);
+}
+
 export async function checkExamInstanceAssessmentTypeReadiness(
   client: PoolClient,
   tenantId: string,
   examInstanceId: string,
-  capability: 'granted' | 'denied' | 'unavailable'
+  evaluateCapability: AssessmentTypeReadinessCapabilityEvaluator
 ): Promise<AssessmentTypeReadinessResult> {
-  if (capability === 'unavailable') {
+  if (!isValidUUID(tenantId) || !isValidUUID(examInstanceId)) {
+    return { type: 'denied' };
+  }
+
+  if (typeof evaluateCapability !== 'function') {
+    return { type: 'denied' };
+  }
+
+  const authContext: AssessmentTypeReadinessAuthorizationContext = {
+    tenantId,
+    examInstanceId,
+  };
+
+  let capabilityDecision: AssessmentTypeReadinessCapabilityDecision;
+  try {
+    capabilityDecision = await evaluateCapability(authContext);
+  } catch {
     return { type: 'unavailable' };
   }
 
-  if (capability === 'denied') {
+  if (capabilityDecision === 'unavailable') {
+    return { type: 'unavailable' };
+  }
+
+  if (capabilityDecision !== 'granted') {
     return { type: 'denied' };
   }
 

@@ -37,7 +37,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'granted'
+      async () => 'granted' as const
     );
 
     assert.strictEqual(result.type, 'assessment_type_ready');
@@ -65,7 +65,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'granted'
+      async () => 'granted' as const
     );
 
     assert.strictEqual(result.type, 'not_ready');
@@ -90,7 +90,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'granted'
+      async () => 'granted' as const
     );
 
     assert.strictEqual(result.type, 'invalid_state');
@@ -105,7 +105,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'denied'
+      async () => 'denied' as const
     );
 
     assert.strictEqual(result.type, 'denied');
@@ -121,10 +121,42 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'unavailable'
+      async () => 'unavailable' as const
     );
 
     assert.strictEqual(result.type, 'unavailable');
+    assert.strictEqual(state.queries.length, 0);
+  });
+
+  it('throwing evaluator -> unavailable', async () => {
+    const { client, state } = createMockClient(async () => {
+      return { rows: [], rowCount: 0 } as any;
+    });
+
+    const result = await checkExamInstanceAssessmentTypeReadiness(
+      client,
+      mockTenantId,
+      mockExamInstanceId,
+      async () => { throw new Error('Evaluator error'); }
+    );
+
+    assert.strictEqual(result.type, 'unavailable');
+    assert.strictEqual(state.queries.length, 0);
+  });
+
+  it('invalid UUID fail-closed before DB', async () => {
+    const { client, state } = createMockClient(async () => {
+      return { rows: [], rowCount: 0 } as any;
+    });
+
+    const result = await checkExamInstanceAssessmentTypeReadiness(
+      client,
+      'invalid-uuid',
+      mockExamInstanceId,
+      async () => 'granted' as const
+    );
+
+    assert.strictEqual(result.type, 'denied');
     assert.strictEqual(state.queries.length, 0);
   });
 
@@ -137,7 +169,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'granted'
+      async () => 'granted' as const
     );
 
     assert.strictEqual(result.type, 'denied');
@@ -152,7 +184,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'granted'
+      async () => 'granted' as const
     );
 
     assert.strictEqual(result.type, 'unavailable');
@@ -174,7 +206,7 @@ describe('checkExamInstanceAssessmentTypeReadiness', () => {
       client,
       mockTenantId,
       mockExamInstanceId,
-      'granted'
+      async () => 'granted' as const
     );
 
     assert.strictEqual(state.queries.length, 1);
