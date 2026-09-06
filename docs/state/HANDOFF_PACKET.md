@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.372
-**Supersedes:** 0.1.371
+**Version:** 0.1.373
+**Supersedes:** 0.1.372
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -75,11 +75,11 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** STAGE-5 FINAL PHYSICAL VERIFICATION
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — STAGE-5 FINAL PHYSICAL VERIFICATION
+**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT STAGE:** STAGE-5 FINAL PHYSICAL VERIFICATION
+**NEXT STAGE:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
 BU-065 CURRENT STATUS:
 BUILD UNIT: BU-065 — Secure Assessment Exam Instance Existing Readiness Checks Composition Preflight Runtime Bootstrap
@@ -109,10 +109,12 @@ STAGE-3 CONTROLLER PHYSICAL RE-AUDIT: PASS
 CONTROLLER FINDING: NO MATERIAL DEFECT REMAINS
 FAST-TRACK STAGE-4 LIFECYCLE CLOSE: COMPLETE
 STAGE-4 REPOSITORY FINALIZED: YES
+STAGE-4 LIFECYCLE CLOSE COMMIT: 5ec7e36a0c1b24ac5fed345ffeb8340d017c380f
 DONE: YES
 FULL BU-065 REPOSITORY FINALIZED: YES
-STAGE-5 FINAL PHYSICAL VERIFICATION: PENDING
-FINAL PHYSICAL VERIFICATION: PENDING
+STAGE-5 FINAL PHYSICAL VERIFICATION: PASS
+FINAL PHYSICAL VERIFICATION: PASS
+NEXT BUILD UNIT SELECTION / SCOPE FREEZE: AUTHORIZED
 NEXT BUILD UNIT: NOT YET REGISTERED
 SUCCESSOR: NOT SELECTED / NOT REGISTERED
 PB05: OPEN / CARRIED FORWARD
