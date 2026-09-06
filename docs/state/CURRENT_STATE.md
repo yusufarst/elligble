@@ -1,7 +1,7 @@
 **Status:** ACTIVE
-**Version:** 1.5.259
+**Version:** 1.5.260
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.258
+**Supersedes:** CURRENT_STATE v1.5.259
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
@@ -60,7 +60,6 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **SUCCESSOR:** NOT SELECTED / NOT REGISTERED
 - **PB05:** OPEN / CARRIED FORWARD
 - **OWNER DECISION REQUIRED:** NO
-- **TERMINAL STATE-RECORD SYNC:** EXECUTED / AWAITING CONTROLLED REPOSITORY FINALIZATION
 
 ### BU-063 CURRENT STATUS
 - **BUILD UNIT:** BU-063
