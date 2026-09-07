@@ -1,15 +1,22 @@
 # BU-070: Secure Assessment Exam Instance Active Proctor Assignment Presence Readiness Preflight Runtime Bootstrap
 
 ## PURPOSE
-To ensure an Exam Instance in SCHEDULED state has at least one active (non-revoked) proctor assignment before it can proceed to ACTIVE state.
+BU-070 is a bounded READ-ONLY presence preflight that determines ONLY whether one same-tenant SCHEDULED Exam Instance has at least one active explicit Proctor Assignment where revoked_at IS NULL.
+
+It does NOT determine whether proctoring is required.
+It does NOT claim overall READY.
+It does NOT claim per-room Proctor coverage.
+It does NOT transition SCHEDULED -> READY.
+It does NOT transition READY -> ACTIVE.
 
 ## CANONICAL BASIS
-- PB05: Secure Assessment Delivery
+- PB05: Permission Matrix
 - BU-069: Secure Assessment Exam Instance Baseline Scoring Readiness Preflight Runtime Bootstrap
 
 ## DIRECT PREDECESSORS
-- BU-069 (Secure Assessment Exam Instance Baseline Scoring Readiness Preflight Runtime Bootstrap)
-- BU-034/BU-035 (Proctor Assignment tracking)
+- BU-034 — Secure Assessment Explicit Proctor Assignment Core State Persistence Bootstrap
+- BU-053 — Secure Assessment Exam Instance Lifecycle State Persistence Bootstrap
+- BU-069 — Secure Assessment Exam Instance Baseline Scoring Readiness Preflight Runtime Bootstrap
 
 ## EXACT RUNTIME CONTRACT
 - Checks if `tenantId` and `examInstanceId` are valid UUIDs.
@@ -122,6 +129,43 @@ Must prove at least 19 scenarios:
 - **DISPOSABLE DATABASE CLEANUP FAIL-CLOSED:** VERIFIED
 - **STAGE-2 REPOSITORY FINALIZED:** YES
 - **STAGE-3 CONTROLLER PHYSICAL AUDIT:** PENDING
+- **DONE:** NO
+- **FULL BU-070 REPOSITORY FINALIZED:** NO
+- **PB05:** OPEN / CARRIED FORWARD
+- **OWNER DECISION REQUIRED:** NO
+- **BU-071:** NOT SELECTED / NOT REGISTERED
+
+## Stage-3 Targeted Remediation State
+
+- STAGE-2 REPOSITORY FINALIZED: YES
+- STAGE-2 COMMIT: 479b54688067713007c62846fc5f40d7f6cc2088
+- STAGE-3 CONTROLLER PHYSICAL AUDIT: FAIL / MATERIAL VERIFIER-COVERAGE + SPEC-TRUTH GAP
+- BU-070 RUNTIME DEFECT ESTABLISHED: NO
+- TARGETED STAGE-3 REMEDIATION: EXECUTED / NOT YET VERIFIED
+- PACKAGE TYPECHECK: PASS / PRESERVED / NOT RERUN
+- BU-070 FOCUSED TEST: PASS / 19 / 19 / PRESERVED / NOT RERUN
+- DONE: NO
+- FULL BU-070 REPOSITORY FINALIZED: NO
+- PB05: OPEN / CARRIED FORWARD
+- OWNER DECISION REQUIRED: NO
+- BU-071: NOT SELECTED / NOT REGISTERED
+
+
+## Targeted Stage-3 Remediation Verification / Finalization
+
+- **STAGE-2 COMMIT:** 479b54688067713007c62846fc5f40d7f6cc2088
+- **STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL / MATERIAL VERIFIER-COVERAGE + SPEC-TRUTH GAP
+- **BU-070 RUNTIME DEFECT ESTABLISHED:** NO
+- **TARGETED STAGE-3 REMEDIATION:** EXECUTED / VERIFIED
+- **PACKAGE TYPECHECK:** PASS / PRESERVED / NOT RERUN
+- **BU-070 FOCUSED TEST:** PASS / 19 / 19 / PRESERVED / NOT RERUN
+- **VERIFIER STRICT TYPECHECK:** PASS
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **PRE-RUN ZERO-LEAK:** PASS
+- **POST-RUN ZERO-LEAK:** PASS
+- **DISPOSABLE DATABASE CLEANUP FAIL-CLOSED:** VERIFIED
+- **TARGETED STAGE-3 REMEDIATION REPOSITORY FINALIZED:** YES
+- **STAGE-3 CONTROLLER PHYSICAL RE-AUDIT:** PENDING
 - **DONE:** NO
 - **FULL BU-070 REPOSITORY FINALIZED:** NO
 - **PB05:** OPEN / CARRIED FORWARD
