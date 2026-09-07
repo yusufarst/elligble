@@ -31,16 +31,33 @@ function createClient(options: any = {}, checks?: { insertUpdateDelete?: boolean
       if (options.dbError) throw new Error('DB Error');
       if (options.missingExam && text.includes('secure_assessment_exam_instances')) return { rows: [] };
 
+      let configuredAttemptDuration: number | null = 3600;
+      let latestStartPolicy: string | null = 'FULL_DURATION_BEYOND_WINDOW';
+
+      if (options.timing_configuration_missing || options.attempt_duration_missing) {
+        configuredAttemptDuration = null;
+      } else if (options.duration_window_incompatible) {
+        configuredAttemptDuration = 10800; // > 7200s window duration
+        latestStartPolicy = 'LATE_START_BLOCKED';
+      }
+
+      if (options.configured_attempt_duration_seconds !== undefined) {
+        configuredAttemptDuration = options.configured_attempt_duration_seconds;
+      }
+      if (options.latest_start_policy !== undefined) {
+        latestStartPolicy = options.latest_start_policy;
+      }
+
       const row: any = {
         lifecycle_state: options.lifecycle_state || 'SCHEDULED',
         assessment_type_id: options.assessment_type_missing ? null : 'uuid',
         assessment_type_display_label: options.assessment_type_missing ? null : 'SUMMATIVE',
         snapshot_count: options.question_snapshot_presence_missing ? 0 : 5,
         participant_count: options.participant_presence_missing ? '0' : '5',
-        window_starts_at: options.timing_configuration_missing ? null : new Date(Date.now() - 10000),
-        window_ends_at: options.timing_configuration_missing ? null : new Date(Date.now() + 10000),
-        configured_attempt_duration_seconds: options.attempt_duration_missing ? null : 3600,
-        latest_start_policy: options.duration_window_policy_invalid ? 'INVALID_POLICY' : 'FULL_DURATION_BEYOND_WINDOW',
+        window_starts_at: '2026-10-01T08:00:00.000Z',
+        window_ends_at: '2026-10-01T10:00:00.000Z',
+        configured_attempt_duration_seconds: configuredAttemptDuration,
+        latest_start_policy: latestStartPolicy,
       };
 
       if (text.includes('ORDER BY s.id ASC')) {
@@ -114,14 +131,32 @@ describe('BU-068: Baseline Readiness Checks Composition Preflight', () => {
 
   // 10. timing configuration blocker preserved
   test('10. timing configuration blocker preserved', async () => {
-    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(createClient({ timing_configuration_missing: true }), VALID_TENANT, VALID_EXAM, () => 'granted');
-    assert.deepEqual(res, { type: 'not_ready', category: 'timing_configuration_presence', blocker: 'window_starts_at_missing' }); // from BU-063 assuming window_starts_at_missing
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ timing_configuration_missing: true }),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(res, {
+      type: 'not_ready',
+      category: 'timing_configuration_presence',
+      blocker: 'attempt_duration_missing'
+    });
   });
 
   // 11. duration/window compatibility blocker preserved
   test('11. duration/window compatibility blocker preserved', async () => {
-    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(createClient({ attempt_duration_missing: true }), VALID_TENANT, VALID_EXAM, () => 'granted');
-    assert.deepEqual(res, { type: 'not_ready', category: 'duration_window_policy_compatibility', blocker: 'attempt_duration_missing' });
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ duration_window_incompatible: true }),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(res, {
+      type: 'not_ready',
+      category: 'duration_window_policy_compatibility',
+      blocker: 'attempt_duration_exceeds_window'
+    });
   });
 
   // 12. BU-067 question_snapshot_empty mapped to category question_snapshot_content
@@ -147,7 +182,7 @@ describe('BU-068: Baseline Readiness Checks Composition Preflight', () => {
   // 15. BU-066 contentBlocker preserved exactly
   test('15. BU-066 contentBlocker preserved exactly', async () => {
     const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(createClient({ invalidContent: true }), VALID_TENANT, VALID_EXAM, () => 'granted');
-    assert.equal((res as any).contentBlocker, 'question_type_invalid'); // from my mock returning questionType: 'INVALID'
+    assert.equal((res as any).contentBlocker, 'question_type_invalid');
   });
 
   // 16. existing readiness blocker wins before content blocker
