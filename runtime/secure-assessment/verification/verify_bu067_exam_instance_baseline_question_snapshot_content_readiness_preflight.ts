@@ -1,4 +1,5 @@
-import { Client, PoolClient } from 'pg';
+import { Client } from 'pg';
+import type { PoolClient } from 'pg';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -79,7 +80,7 @@ async function runVerification() {
     const ta1 = (await testClient.query(`INSERT INTO public.academic_core_teaching_assignments (tenant_id, teacher_assignment_id, subject_offering_id, academic_group_id) VALUES ($1, $2, $3, $4) RETURNING id`, [tenantA, teacher1, offering1, group1])).rows[0].id;
     const atId = (await testClient.query(`INSERT INTO public.secure_assessment_assessment_types (tenant_id, display_label) VALUES ($1, 'SUMMATIVE') RETURNING id`, [tenantA])).rows[0].id;
 
-    // Exam SCHEDULED
+    // Main SCHEDULED Exam Instance
     const examInstRow = (await testClient.query(`
       INSERT INTO public.secure_assessment_exam_instances (
         tenant_id, teaching_assignment_id, assessment_type_id, lifecycle_state, window_starts_at, window_ends_at, configured_attempt_duration_seconds, latest_start_policy
@@ -89,7 +90,16 @@ async function runVerification() {
     const examInstId = examInstRow.id;
     const examInstXminBefore = examInstRow.xmin;
 
-    // Exam DRAFT
+    // Empty SCHEDULED Exam Instance (for zero snapshots block)
+    const emptyExamInstRow = (await testClient.query(`
+      INSERT INTO public.secure_assessment_exam_instances (
+        tenant_id, teaching_assignment_id, assessment_type_id, lifecycle_state, window_starts_at, window_ends_at, configured_attempt_duration_seconds, latest_start_policy
+      ) VALUES ($1, $2, $3, 'SCHEDULED', TIMESTAMPTZ '2026-10-01 08:00:00Z', TIMESTAMPTZ '2026-10-01 10:00:00Z', 3600, 'FULL_DURATION_BEYOND_WINDOW')
+      RETURNING id
+    `, [tenantA, ta1, atId])).rows[0];
+    const emptyExamId = emptyExamInstRow.id;
+
+    // DRAFT Exam Instance
     const draftExamRow = (await testClient.query(`
       INSERT INTO public.secure_assessment_exam_instances (
         tenant_id, teaching_assignment_id, assessment_type_id, lifecycle_state, window_starts_at, window_ends_at, configured_attempt_duration_seconds, latest_start_policy
@@ -101,7 +111,7 @@ async function runVerification() {
     // Different tenant
     const tenantB = (await testClient.query(`INSERT INTO public.tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id`)).rows[0].id;
 
-    // 3. insert valid snapshots
+    // 3. insert valid snapshots into Main SCHEDULED Exam Instance
     const validPayload = {
       schemaVersion: 1,
       questionType: 'MULTIPLE_CHOICE_SINGLE',
@@ -127,8 +137,17 @@ async function runVerification() {
       VALUES ($1, $2, $3::jsonb)
     `, [tenantA, examInstId, JSON.stringify(validPayload)]);
 
-    // Check valid multiple snapshots
     let poolClient = testClient as unknown as PoolClient;
+
+    // Check Question Bank non-mutation proof (Before)
+    const qbCountBefore = await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_question_bank_items`);
+
+    // Check Snapshot non-mutation proof (Before)
+    const snapshotRowsBefore = (await testClient.query(`
+      SELECT id, xmin, frozen_content FROM public.secure_assessment_exam_question_snapshots WHERE exam_instance_id = $1 ORDER BY id ASC
+    `, [examInstId])).rows;
+
+    // Check valid multiple snapshots
     const res1 = await checkExamInstanceBaselineQuestionSnapshotContentReadiness(
       poolClient, tenantA, examInstId, () => 'granted'
     );
@@ -136,17 +155,28 @@ async function runVerification() {
       throw new Error(`Expected ready with 2 snapshots, got: ${JSON.stringify(res1)}`);
     }
 
-    // Exam with zero snapshots (the draft one but we'll manually change to SCHEDULED just to test empty block)
-    await testClient.query(`UPDATE public.secure_assessment_exam_instances SET lifecycle_state = 'SCHEDULED' WHERE id = $1`, [draftExamId]);
+    // Check Snapshot non-mutation proof (After)
+    const snapshotRowsAfter = (await testClient.query(`
+      SELECT id, xmin, frozen_content FROM public.secure_assessment_exam_question_snapshots WHERE exam_instance_id = $1 ORDER BY id ASC
+    `, [examInstId])).rows;
+    if (snapshotRowsBefore.length !== snapshotRowsAfter.length) {
+      throw new Error('Snapshot count mutated by preflight');
+    }
+    for (let i = 0; i < snapshotRowsBefore.length; i++) {
+      if (snapshotRowsBefore[i].id !== snapshotRowsAfter[i].id) throw new Error('Snapshot ID mutated by preflight');
+      if (snapshotRowsBefore[i].xmin !== snapshotRowsAfter[i].xmin) throw new Error('Snapshot xmin mutated by preflight (UPDATE occurred)');
+      if (JSON.stringify(snapshotRowsBefore[i].frozen_content) !== JSON.stringify(snapshotRowsAfter[i].frozen_content)) throw new Error('Snapshot frozen_content mutated by preflight');
+    }
+
+    // Exam with zero snapshots (Empty SCHEDULED)
     const res2 = await checkExamInstanceBaselineQuestionSnapshotContentReadiness(
-      poolClient, tenantA, draftExamId, () => 'granted'
+      poolClient, tenantA, emptyExamId, () => 'granted'
     );
     if (res2.type !== 'not_ready' || res2.blocker !== 'question_snapshot_empty') {
       throw new Error(`Expected zero snapshots blocker, got: ${JSON.stringify(res2)}`);
     }
 
-    // Back to draft to test non-SCHEDULED
-    await testClient.query(`UPDATE public.secure_assessment_exam_instances SET lifecycle_state = 'DRAFT' WHERE id = $1`, [draftExamId]);
+    // Exam with DRAFT state
     const res3 = await checkExamInstanceBaselineQuestionSnapshotContentReadiness(
       poolClient, tenantA, draftExamId, () => 'granted'
     );
@@ -154,12 +184,21 @@ async function runVerification() {
       throw new Error(`Expected invalid_state, got: ${JSON.stringify(res3)}`);
     }
 
-    // Tenant isolation / nonexistent
+    // Tenant isolation
     const res4 = await checkExamInstanceBaselineQuestionSnapshotContentReadiness(
       poolClient, tenantB, examInstId, () => 'granted'
     );
     if (res4.type !== 'denied') {
       throw new Error(`Expected denied for cross tenant, got: ${JSON.stringify(res4)}`);
+    }
+
+    // Explicit Nonexistent Exam Proof
+    const nonexistentExamId = '00000000-0000-0000-0000-000000000000';
+    const resNonexistent = await checkExamInstanceBaselineQuestionSnapshotContentReadiness(
+      poolClient, tenantA, nonexistentExamId, () => 'granted'
+    );
+    if (resNonexistent.type !== 'denied') {
+      throw new Error(`Expected denied for nonexistent exam, got: ${JSON.stringify(resNonexistent)}`);
     }
 
     // Insert an invalid snapshot to test exact BU-066 blocker propagation & deterministic first block
@@ -171,8 +210,6 @@ async function runVerification() {
       VALUES ($1, $2, $3::jsonb) RETURNING id
     `, [tenantA, examInstId, JSON.stringify(invalidPayload1)]);
     
-    // Wait slightly to ensure different insert order although ID is uuid, order is by ID ASC so it's deterministic based on generated UUID.
-    // We will just insert two and verify the one with smaller UUID is returned as blocker.
     const inv2Res = await testClient.query(`
       INSERT INTO public.secure_assessment_exam_question_snapshots (tenant_id, exam_instance_id, frozen_content)
       VALUES ($1, $2, $3::jsonb) RETURNING id
@@ -188,6 +225,15 @@ async function runVerification() {
     );
     if (res5.type !== 'not_ready' || res5.blocker !== 'question_snapshot_content_invalid' || res5.snapshotId !== firstId || res5.contentBlocker !== firstBlocker) {
       throw new Error(`Expected first invalid blocker ${firstBlocker} on ${firstId}, got: ${JSON.stringify(res5)}`);
+    }
+
+    // Verify Question Bank non-mutation proof (After)
+    const qbCountAfter = await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_question_bank_items`);
+    if (qbCountBefore.rows[0].count !== qbCountAfter.rows[0].count) {
+      throw new Error('Question bank mutation detected');
+    }
+    if (parseInt(qbCountAfter.rows[0].count, 10) !== 0) {
+      throw new Error('Question bank items were created');
     }
 
     // Verify mutations

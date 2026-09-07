@@ -2,7 +2,7 @@ import type { PoolClient } from 'pg';
 import {
   validateBaselineQuestionSnapshotFrozenContent,
   type BaselineQuestionSnapshotBlocker
-} from './question-snapshot-baseline-frozen-content-contract';
+} from './question-snapshot-baseline-frozen-content-contract.ts';
 
 export type CapabilityContext = {
   tenantId: string;
