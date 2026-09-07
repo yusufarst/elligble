@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.394
-**Supersedes:** 0.1.393
+**Version:** 0.1.395
+**Supersedes:** 0.1.394
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -69,17 +69,41 @@ MASTER BLUEPRINT
 
 **LAST COMPLETED BUILD UNIT:** BU-070 — Secure Assessment Exam Instance Active Proctor Assignment Presence Readiness Preflight Runtime Bootstrap
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-071 — Secure Assessment Exam Room Core State Persistence Bootstrap
 
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** BU-071 STAGE-3 CONTROLLER PHYSICAL AUDIT
 
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — BU-071 STAGE-3 CONTROLLER PHYSICAL AUDIT
 
-**NEXT STAGE:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**NEXT STAGE:** BU-071 STAGE-3 CONTROLLER PHYSICAL AUDIT
+BU-071 CURRENT STATUS:
+BUILD UNIT: BU-071
+TITLE: Secure Assessment Exam Room Core State Persistence Bootstrap
+STAGE-1: PASS / FROZEN
+SOURCE AUTHORING: EXECUTED / COMPLETE
+FIRST/SECOND POSTGRESQL ATTEMPTS: FAIL / VERIFIER MIGRATION-DISCOVERY DEFECT
+THIRD POSTGRESQL ATTEMPT: FAIL / VERIFIER DELETE-RESTRICT SQLSTATE ASSERTION DEFECT
+BU-071 MIGRATION DEFECT ESTABLISHED: NO
+TARGETED VERIFIER REMEDIATIONS: COMPLETE
+STATIC SOURCE CONTRACT AUDIT: PASS / PRESERVED
+VERIFIER JS SYNTAX CHECK: PASS
+REAL POSTGRESQL VERIFICATION: PASS
+MIGRATION HISTORY: 30 -> 31 / PASS
+MIGRATION 0031 REPEAT SAFETY: PASS
+PRE-RUN ZERO-LEAK: PASS
+POST-RUN ZERO-LEAK: PASS
+DISPOSABLE DATABASE CLEANUP FAIL-CLOSED: VERIFIED
+STAGE-2 REPOSITORY FINALIZED: YES
+STAGE-3 CONTROLLER PHYSICAL AUDIT: PENDING
+DONE: NO
+FULL BU-071 REPOSITORY FINALIZED: NO
+PB05: OPEN / CARRIED FORWARD
+OWNER DECISION REQUIRED: NO
+BU-072: NOT SELECTED / NOT REGISTERED
 BU-070 CURRENT STATUS:
 BUILD UNIT: BU-070 — Secure Assessment Exam Instance Active Proctor Assignment Presence Readiness Preflight Runtime Bootstrap
 STAGE-1: PASS / FROZEN

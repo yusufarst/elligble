@@ -1,0 +1,94 @@
+# BU-071: Secure Assessment Exam Room Core State Persistence Bootstrap
+
+## PURPOSE
+Implement the smallest Secure Assessment persistence foundation for Exam Room.
+
+Canonical boundaries:
+- Exam Room is Secure Assessment operational state.
+- Academic Group / Rombel != Exam Room.
+- Exam Room belongs to one Exam Instance in one tenant.
+- Creating an Exam Room MUST NOT mutate Academic Core.
+- BU-071 does NOT decide whether an exam requires rooms.
+- BU-071 does NOT implement readiness evaluation.
+
+## FROZEN PERSISTENCE CONTRACT
+Create table:
+`public.secure_assessment_exam_rooms`
+
+Columns exactly:
+- `id` UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- `tenant_id` UUID NOT NULL
+- `exam_instance_id` UUID NOT NULL
+- `display_label` TEXT NOT NULL
+- `created_at` TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+Constraints:
+1. `UNIQUE (id, tenant_id)` (Constraint name: `uq_sa_exam_room`)
+2. `FOREIGN KEY (exam_instance_id, tenant_id) REFERENCES public.secure_assessment_exam_instances (id, tenant_id) ON DELETE RESTRICT` (Constraint name: `fk_sa_exam_room_exam_instance`)
+
+Cross-domain boundary:
+- NO direct FK from tenant_id to tenant_tenants.
+- NO FK to Academic Core.
+- NO FK to Academic Group/Rombel.
+
+Migration ID:
+`0031_bu071_secure_assessment_exam_room_core_state`
+
+## DIRECT PREDECESSORS
+- BU-002 — Secure Assessment Core State Persistence Bootstrap
+- BU-070 — sequence/predecessor gate; terminally closed
+
+## STRICT OUT OF SCOPE
+- Participant-to-Room assignment
+- Proctor-to-Room assignment
+- per-room Proctor coverage
+- deciding whether room-based operation is required
+- room capacity
+- building/physical-location taxonomy
+- room lifecycle/status taxonomy
+- room transfer
+- participant relocation
+- Attempt/Session creation
+- anti-cheating policy
+- technical/device compatibility
+- overall READY
+- SCHEDULED -> READY
+- READY -> ACTIVE
+- Academic Core mutation
+- Permission Matrix
+- PB05 closure
+- BU-072 selection
+
+## Execution State
+- **STAGE-1:** PASS / FROZEN
+- **SOURCE AUTHORING:** EXECUTED / NOT YET VERIFIED
+- **STAGE-2 REPOSITORY FINALIZED:** NO
+- **STAGE-3:** NOT STARTED
+- **DONE:** NO
+- **FULL BU-071 REPOSITORY FINALIZED:** NO
+- **PB05:** OPEN / CARRIED FORWARD
+- **OWNER DECISION REQUIRED:** NO
+- **BU-072:** NOT SELECTED / NOT REGISTERED
+
+
+## Stage-2 Verification / Repository Finalization
+
+- **FIRST/SECOND POSTGRESQL ATTEMPTS:** FAIL / VERIFIER MIGRATION-DISCOVERY DEFECT
+- **THIRD POSTGRESQL ATTEMPT:** FAIL / VERIFIER DELETE-RESTRICT SQLSTATE ASSERTION DEFECT
+- **BU-071 MIGRATION DEFECT ESTABLISHED:** NO
+- **TARGETED VERIFIER REMEDIATIONS:** COMPLETE
+- **STATIC SOURCE CONTRACT AUDIT:** PASS / PRESERVED / NOT RERUN
+- **VERIFIER JS SYNTAX CHECK:** PASS
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **MIGRATION HISTORY:** 30 -> 31 / PASS
+- **MIGRATION 0031 REPEAT SAFETY:** PASS
+- **PRE-RUN ZERO-LEAK:** PASS
+- **POST-RUN ZERO-LEAK:** PASS
+- **DISPOSABLE DATABASE CLEANUP FAIL-CLOSED:** VERIFIED
+- **STAGE-2 REPOSITORY FINALIZED:** YES
+- **STAGE-3 CONTROLLER PHYSICAL AUDIT:** PENDING
+- **DONE:** NO
+- **FULL BU-071 REPOSITORY FINALIZED:** NO
+- **PB05:** OPEN / CARRIED FORWARD
+- **OWNER DECISION REQUIRED:** NO
+- **BU-072:** NOT SELECTED / NOT REGISTERED
