@@ -1,7 +1,7 @@
 **Status:** ACTIVE
-**Version:** 1.5.280
+**Version:** 1.5.281
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.279
+**Supersedes:** CURRENT_STATE v1.5.280
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
@@ -77,8 +77,6 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **DONE:** NO
-- **FULL BU-069 REPOSITORY FINALIZED:** NO
 - **PB05:** OPEN / CARRIED FORWARD
 - **OWNER DECISION REQUIRED:** NO
 - **BU-070:** NOT SELECTED / NOT REGISTERED
