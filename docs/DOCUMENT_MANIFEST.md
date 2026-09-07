@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.347
-**Supersedes:** 1.0.346
+**Version:** 1.0.348
+**Supersedes:** 1.0.347
 **Canonical:** YES
 **Last Reviewed:** 2026-09-07
 # ELLIGBLE Document Manifest
