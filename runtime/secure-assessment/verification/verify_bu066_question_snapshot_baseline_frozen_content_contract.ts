@@ -273,30 +273,38 @@ async function runVerification() {
       throw new Error(`Expected 30 migrations, got ${migrationCheck.rows[0].count}`);
     }
 
+    // 16. cleanup disposable database
+    if (testClient) {
+      await testClient.end();
+      testClient = null;
+    }
+    if (rootClient && dbName) {
+      await rootClient.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+      const checkDb = await rootClient.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [dbName]);
+      if (checkDb.rowCount !== null && checkDb.rowCount > 0) {
+        throw new Error(`DATABASE CLEANUP FAILED: Database ${dbName} still exists.`);
+      }
+    }
+
     console.log('REAL POSTGRESQL VERIFICATION: PASS');
   } catch (error) {
     console.error('REAL POSTGRESQL VERIFICATION: FAIL', error);
     process.exitCode = 1;
   } finally {
-    // 16. cleanup disposable database
     if (testClient) {
       try {
         await testClient.end();
       } catch {}
-      testClient = null;
     }
     if (rootClient) {
       if (dbName) {
         try {
           await rootClient.query(`DROP DATABASE IF EXISTS "${dbName}"`);
-        } catch (dropErr) {
-          console.error(`Failed to drop database ${dbName}:`, dropErr);
-        }
+        } catch {}
       }
       try {
         await rootClient.end();
       } catch {}
-      rootClient = null;
     }
   }
 }

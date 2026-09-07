@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 1.5.265
+**Version:** 1.5.266
 **Canonical:** YES
 **Supersedes:** CURRENT_STATE v1.5.264
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.

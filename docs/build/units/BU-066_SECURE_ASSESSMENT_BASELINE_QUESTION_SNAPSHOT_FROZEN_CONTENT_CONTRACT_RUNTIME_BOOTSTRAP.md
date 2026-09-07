@@ -15,6 +15,7 @@ Establish the concrete runtime validation contract for the existing `secure_asse
 ## DIRECT CANONICAL BASIS
 - D04.2-15: question snapshot readiness is a mandatory READY category
 - D04.2-16: runnable exam cannot contain zero questions, broken references, invalid answer keys, or unsupported malformed content
+- D04.2-20: scoring configuration must be internally consistent
 - D04.3-14: each A-E option may contain text, image, or text + image with at least one meaningful content element
 - D04.3-20: answer key / scoring metadata must never be leaked to student runtime
 - D04.3-21: baseline type is MULTIPLE_CHOICE_SINGLE with 5 choices (A-E) and exactly one underlying correct option
@@ -23,9 +24,9 @@ Establish the concrete runtime validation contract for the existing `secure_asse
 - D04.3-31: option identity stability independent of display order
 - D04.3-32: correctness references stable option identity, not display letter/order
 - D04.3-47: each question must have explicit maximum score / weight
-- D04.3-48: weight configuration must be strictly positive
+- D04.3-48: equal weight can be default
 - D04.8-04: baseline auto-scoring remains only single-answer multiple choice A-E
-- D04.8-05: deterministic evaluation against stable option identity
+- D04.8-05: standard A-E single choice uses equal weight by default
 - BU-003: Secure Assessment Question Core State Persistence Bootstrap
 - BU-061: Secure Assessment Exam Instance Question Snapshot Presence Readiness Preflight Runtime Bootstrap
 - BU-065: terminal predecessor
