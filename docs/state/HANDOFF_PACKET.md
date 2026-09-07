@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.393
-**Supersedes:** 0.1.392
+**Version:** 0.1.394
+**Supersedes:** 0.1.393
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -67,19 +67,19 @@ DISCOVERY 04
 MASTER BLUEPRINT
 → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 
-**LAST COMPLETED BUILD UNIT:** BU-069 — Secure Assessment Exam Instance Baseline Scoring Readiness Preflight Runtime Bootstrap
+**LAST COMPLETED BUILD UNIT:** BU-070 — Secure Assessment Exam Instance Active Proctor Assignment Presence Readiness Preflight Runtime Bootstrap
 
-**ACTIVE BUILD UNIT:** BU-070 — Secure Assessment Exam Instance Active Proctor Assignment Presence Readiness Preflight Runtime Bootstrap
+**ACTIVE BUILD UNIT:** NONE
 
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-070 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — BU-070 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT STAGE:** BU-070 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+**NEXT STAGE:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 BU-070 CURRENT STATUS:
 BUILD UNIT: BU-070 — Secure Assessment Exam Instance Active Proctor Assignment Presence Readiness Preflight Runtime Bootstrap
 STAGE-1: PASS / FROZEN
@@ -107,8 +107,10 @@ STAGE-3 CONTROLLER PHYSICAL RE-AUDIT: PASS
 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT FINDING: PASS / NO MATERIAL DEFECT REMAINS
 FAST-TRACK STAGE-4 LIFECYCLE CLOSE: COMPLETE
 STAGE-4 REPOSITORY FINALIZED: YES
-STAGE-5 FINAL PHYSICAL VERIFICATION: PENDING
-NEXT BUILD UNIT SELECTION / SCOPE FREEZE: NOT YET AUTHORIZED
+STAGE-4 LIFECYCLE CLOSE COMMIT: 76c0868086e18967aa354d0c7223cb444041719d
+STAGE-5 FINAL PHYSICAL VERIFICATION: PASS
+FINAL PHYSICAL VERIFICATION: PASS
+NEXT BUILD UNIT SELECTION / SCOPE FREEZE: AUTHORIZED
 DONE: YES
 FULL BU-070 REPOSITORY FINALIZED: YES
 PB05: OPEN / CARRIED FORWARD
