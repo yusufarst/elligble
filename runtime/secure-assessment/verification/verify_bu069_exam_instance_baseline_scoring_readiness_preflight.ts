@@ -4,7 +4,12 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as crypto from 'node:crypto';
-import { checkExamInstanceBaselineScoringReadiness } from '../src/exam-instance-baseline-scoring-readiness-preflight.ts';
+import {
+  checkExamInstanceBaselineScoringReadiness,
+  type CapabilityEvaluator
+} from '../src/exam-instance-baseline-scoring-readiness-preflight.ts';
+
+const grantedCapability: CapabilityEvaluator = async () => 'granted' as const;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -205,7 +210,7 @@ async function runVerification() {
     };
 
     // 1. One valid snapshot -> baseline_scoring_ready -> exact count -> exact totalMaxScore
-    const res1 = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, validExamId, async () => true);
+    const res1 = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, validExamId, grantedCapability);
     if (res1.type !== 'baseline_scoring_ready' || res1.questionSnapshotCount !== 1 || res1.totalMaxScore !== 5) {
       throw new Error(`Expected baseline_scoring_ready with count 1 and max score 5, got: ${JSON.stringify(res1)}`);
     }
@@ -260,14 +265,14 @@ async function runVerification() {
 
     // 2. Multiple valid snapshots -> exact aggregate count -> exact aggregate score
     const multiValidExamId = await createExamFixture({ snapshotSetup: 'multi_valid' });
-    const resMultiValid = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, multiValidExamId, async () => true);
+    const resMultiValid = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, multiValidExamId, grantedCapability);
     if (resMultiValid.type !== 'baseline_scoring_ready' || resMultiValid.questionSnapshotCount !== 2 || resMultiValid.totalMaxScore !== 15) {
       throw new Error(`Expected baseline_scoring_ready with count 2 and max score 15, got: ${JSON.stringify(resMultiValid)}`);
     }
 
     // 3. Empty snapshot set -> question_snapshot_empty
     const emptySnapExamId = await createExamFixture({ snapshotSetup: 'none' });
-    const resEmpty = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, emptySnapExamId, async () => true);
+    const resEmpty = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, emptySnapExamId, grantedCapability);
     if (resEmpty.type !== 'not_ready' || resEmpty.blocker !== 'question_snapshot_empty') {
       throw new Error(`Expected question_snapshot_empty, got: ${JSON.stringify(resEmpty)}`);
     }
@@ -278,7 +283,7 @@ async function runVerification() {
       `SELECT id FROM public.secure_assessment_exam_question_snapshots WHERE exam_instance_id = $1`,
       [invalidSnapExamId]
     )).rows[0].id;
-    const resInvalid = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, invalidSnapExamId, async () => true);
+    const resInvalid = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, invalidSnapExamId, grantedCapability);
     if (
       resInvalid.type !== 'not_ready' ||
       resInvalid.blocker !== 'scoring_snapshot_invalid' ||
@@ -296,7 +301,7 @@ async function runVerification() {
         second: SECOND_STABLE_SNAPSHOT_ID
       }
     });
-    const resMultiInvalid = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, multiInvalidExamId, async () => true);
+    const resMultiInvalid = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, multiInvalidExamId, grantedCapability);
     if (
       resMultiInvalid.type !== 'not_ready' ||
       resMultiInvalid.blocker !== 'scoring_snapshot_invalid' ||
@@ -308,21 +313,21 @@ async function runVerification() {
 
     // 6. non-SCHEDULED -> invalid_state
     const draftExamId = await createExamFixture({ lifecycle: 'DRAFT', snapshotSetup: 'one_valid' });
-    const resDraft = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, draftExamId, async () => true);
+    const resDraft = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, draftExamId, grantedCapability);
     if (resDraft.type !== 'invalid_state') {
       throw new Error(`Expected invalid_state, got: ${JSON.stringify(resDraft)}`);
     }
 
     // 7. cross-tenant -> denied
     const tenantB = (await testClient.query(`INSERT INTO public.tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id`)).rows[0].id;
-    const resCrossTenant = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantB, validExamId, async () => true);
+    const resCrossTenant = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantB, validExamId, grantedCapability);
     if (resCrossTenant.type !== 'denied') {
       throw new Error(`Expected denied cross-tenant, got: ${JSON.stringify(resCrossTenant)}`);
     }
 
     // 8. nonexistent Exam Instance -> denied
     const nonexistent = '00000000-0000-0000-0000-000000000000';
-    const resNonexistent = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, nonexistent, async () => true);
+    const resNonexistent = await checkExamInstanceBaselineScoringReadiness(poolClient, tenantA, nonexistent, grantedCapability);
     if (resNonexistent.type !== 'denied') {
       throw new Error(`Expected denied nonexistent, got: ${JSON.stringify(resNonexistent)}`);
     }

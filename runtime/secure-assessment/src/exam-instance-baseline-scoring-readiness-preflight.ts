@@ -4,6 +4,15 @@ import {
   type BaselineQuestionSnapshotBlocker
 } from './question-snapshot-baseline-frozen-content-contract.ts';
 
+export type CapabilityContext = {
+  tenantId: string;
+  examInstanceId: string;
+};
+
+export type CapabilityDecision = 'granted' | 'denied' | 'unavailable';
+
+export type CapabilityEvaluator = (ctx: CapabilityContext) => Promise<CapabilityDecision> | CapabilityDecision;
+
 export type ExamInstanceBaselineScoringReadinessResult =
   | {
       type: 'baseline_scoring_ready';
@@ -34,20 +43,27 @@ export async function checkExamInstanceBaselineScoringReadiness(
   client: PoolClient,
   tenantId: string,
   examInstanceId: string,
-  evaluateCapability: () => Promise<boolean>
+  evaluateCapability: CapabilityEvaluator
 ): Promise<ExamInstanceBaselineScoringReadinessResult> {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(tenantId) || !uuidRegex.test(examInstanceId)) {
     return { type: 'denied' };
   }
 
-  let capabilityGranted = false;
+  let capabilityDecision: CapabilityDecision;
   try {
-    capabilityGranted = await evaluateCapability();
+    capabilityDecision = await evaluateCapability({ tenantId, examInstanceId });
   } catch (e) {
     return { type: 'unavailable' };
   }
-  if (!capabilityGranted) {
+
+  if (capabilityDecision === 'unavailable') {
+    return { type: 'unavailable' };
+  }
+  if (capabilityDecision === 'denied') {
+    return { type: 'denied' };
+  }
+  if (capabilityDecision !== 'granted') {
     return { type: 'denied' };
   }
 
