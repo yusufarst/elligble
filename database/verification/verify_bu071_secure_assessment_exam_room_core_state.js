@@ -240,9 +240,17 @@ async function runVerification() {
     await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Duplicate Label')`, [tenantA, examInstanceA1]);
 
     // 14. verify rooms for another Exam Instance and another tenant are isolated
+    await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Room A2')`, [tenantA, examInstanceA2]);
     await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Room B1')`, [tenantB, examInstanceB1]);
-    const examBRooms = (await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_exam_rooms WHERE exam_instance_id = $1`, [examInstanceB1])).rows[0].count;
-    if (parseInt(examBRooms, 10) !== 1) throw new Error(`Expected 1 room for examInstanceB1, got ${examBRooms}`);
+
+    const roomsA1 = (await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_exam_rooms WHERE tenant_id = $1 AND exam_instance_id = $2`, [tenantA, examInstanceA1])).rows[0].count;
+    if (parseInt(roomsA1, 10) !== 4) throw new Error(`Expected 4 rooms for tenantA + examInstanceA1, got ${roomsA1}`);
+
+    const roomsA2 = (await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_exam_rooms WHERE tenant_id = $1 AND exam_instance_id = $2`, [tenantA, examInstanceA2])).rows[0].count;
+    if (parseInt(roomsA2, 10) !== 1) throw new Error(`Expected 1 room for tenantA + examInstanceA2, got ${roomsA2}`);
+
+    const roomsB1 = (await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_exam_rooms WHERE tenant_id = $1 AND exam_instance_id = $2`, [tenantB, examInstanceB1])).rows[0].count;
+    if (parseInt(roomsB1, 10) !== 1) throw new Error(`Expected 1 room for tenantB + examInstanceB1, got ${roomsB1}`);
 
     // 10. verify cross-tenant Exam Instance binding rejected
     try {
