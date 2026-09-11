@@ -66,7 +66,7 @@ Exact four policy states evaluated deterministically:
 Preserves exact predecessor blocker semantics:
 - `participant_empty` (from BU-075 via BU-062)
 - `participant_room_assignment_incomplete` (from BU-075)
-- `active_proctor_assignment_empty` (from BU-074 via BU-064)
+- `active_proctor_assignment_empty` (from BU-074 via BU-070)
 - `active_proctor_room_coverage_incomplete` (from BU-074)
 
 Maps predecessor zero-room result:
@@ -246,6 +246,10 @@ Proves 27 required scenarios:
 - **POST-RUN ZERO-LEAK:** PASS
 - **DISPOSABLE DATABASE CLEANUP:** PASS / FAIL-CLOSED VERIFIED
 - **STAGE-2 REPOSITORY FINALIZED:** YES
+- **STAGE-2 PROCESS DEVIATION:** YES / task-1461 automatically backgrounded during hash command / manage_task used to cancel it despite Controller prohibition
+- **PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **MATERIAL ENGINEERING DEFECT:** NONE ESTABLISHED BY THIS PROCESS FINDING
+- **TARGETED CONTROL-TRUTH REMEDIATION:** COMPLETE
 - **STAGE-3:** PENDING
 - **DONE:** NO
 - **FULL BU-077 REPOSITORY FINALIZED:** NO
