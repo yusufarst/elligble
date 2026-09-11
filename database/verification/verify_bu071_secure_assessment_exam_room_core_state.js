@@ -11,6 +11,57 @@ function clientConfig(connectionString) {
     : { connectionString };
 }
 
+async function getAcademicCoreSchema(client) {
+  const tables = [
+    'academic_core_academic_years',
+    'academic_core_academic_periods',
+    'academic_core_subjects',
+    'academic_core_grade_levels',
+    'academic_core_academic_groups',
+    'academic_core_subject_offerings',
+    'academic_core_teaching_assignments',
+    'academic_core_student_enrollments'
+  ];
+  const cols = await client.query(`
+    SELECT table_name, column_name, data_type, is_nullable, column_default
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = ANY($1)
+    ORDER BY table_name, column_name
+  `, [tables]);
+  const constraints = await client.query(`
+    SELECT tc.table_name, tc.constraint_name, tc.constraint_type
+    FROM information_schema.table_constraints tc
+    WHERE tc.table_schema = 'public' AND tc.table_name = ANY($1)
+    ORDER BY tc.table_name, tc.constraint_name
+  `, [tables]);
+  const indexes = await client.query(`
+    SELECT tablename, indexname, indexdef
+    FROM pg_indexes
+    WHERE schemaname = 'public' AND tablename = ANY($1)
+    ORDER BY tablename, indexname
+  `, [tables]);
+  return JSON.stringify({ cols: cols.rows, constraints: constraints.rows, indexes: indexes.rows });
+}
+
+async function getAcademicCoreData(client) {
+  const tables = [
+    'academic_core_academic_years',
+    'academic_core_academic_periods',
+    'academic_core_subjects',
+    'academic_core_grade_levels',
+    'academic_core_academic_groups',
+    'academic_core_subject_offerings',
+    'academic_core_teaching_assignments',
+    'academic_core_student_enrollments'
+  ];
+  const data = {};
+  for (const t of tables) {
+    const res = await client.query(`SELECT * FROM public.${t} ORDER BY id`);
+    data[t] = res.rows;
+  }
+  return JSON.stringify(data);
+}
+
 async function runVerification() {
   let dbName = '';
   let rootClient = null;
@@ -60,18 +111,9 @@ async function runVerification() {
       throw new Error(`Expected exactly 30 migrations applied, got ${migrationHistory.rows[0].count}`);
     }
 
-    // Capture Academic Core state before BU-071 operations
-    const beforeAcademicCoreSum = parseInt((await testClient.query(`
-      SELECT (
-        (SELECT COUNT(*) FROM public.academic_core_academic_years) +
-        (SELECT COUNT(*) FROM public.academic_core_academic_periods) +
-        (SELECT COUNT(*) FROM public.academic_core_subjects) +
-        (SELECT COUNT(*) FROM public.academic_core_grade_levels) +
-        (SELECT COUNT(*) FROM public.academic_core_academic_groups) +
-        (SELECT COUNT(*) FROM public.academic_core_subject_offerings) +
-        (SELECT COUNT(*) FROM public.academic_core_teaching_assignments)
-      ) as count
-    `)).rows[0].count, 10);
+    // Capture Academic Core schema and data before 0031
+    const pre0031Schema = await getAcademicCoreSchema(testClient);
+    const pre0031Data = await getAcademicCoreData(testClient);
 
     const beforeParticipants = parseInt((await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_exam_participants`)).rows[0].count, 10);
     const beforeProctors = parseInt((await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_proctor_assignments`)).rows[0].count, 10);
@@ -99,6 +141,12 @@ async function runVerification() {
     if (parseInt(migrationHistory.rows[0].count, 10) !== 31) {
       throw new Error(`Expected exactly 31 migrations applied after repeat invocation, got ${migrationHistory.rows[0].count}`);
     }
+
+    // Compare Academic Core schema and data after 0031
+    const post0031Schema = await getAcademicCoreSchema(testClient);
+    const post0031Data = await getAcademicCoreData(testClient);
+    if (pre0031Schema !== post0031Schema) throw new Error('Academic Core schema mutated by 0031 migration');
+    if (pre0031Data !== post0031Data) throw new Error('Academic Core data mutated by 0031 migration');
 
     // Fixture setup for tenants and exams
     const tenantA = (await testClient.query(`INSERT INTO public.tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id`)).rows[0].id;
@@ -153,27 +201,31 @@ async function runVerification() {
       RETURNING id
     `, [tenantB, teachingAssignmentB, assessmentTypeB])).rows[0].id;
 
+    // Capture Academic Core data AFTER fixtures but BEFORE Exam Room tests
+    const preTestCoreData = await getAcademicCoreData(testClient);
 
     // 7. physically verify table columns and 8. verify nullability/default contracts
     const cols = await testClient.query(`
       SELECT column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
-      WHERE table_name = 'secure_assessment_exam_rooms'
+      WHERE table_schema = 'public' AND table_name = 'secure_assessment_exam_rooms'
       ORDER BY ordinal_position
     `);
     const expectedCols = {
-      id: { is_nullable: 'NO', default: 'gen_random_uuid()' },
-      tenant_id: { is_nullable: 'NO', default: null },
-      exam_instance_id: { is_nullable: 'NO', default: null },
-      display_label: { is_nullable: 'NO', default: null },
-      created_at: { is_nullable: 'NO', default: 'CURRENT_TIMESTAMP' }
+      id: { type: 'uuid', is_nullable: 'NO', default: 'gen_random_uuid()' },
+      tenant_id: { type: 'uuid', is_nullable: 'NO', default: null },
+      exam_instance_id: { type: 'uuid', is_nullable: 'NO', default: null },
+      display_label: { type: 'text', is_nullable: 'NO', default: null },
+      created_at: { type: 'timestamp with time zone', is_nullable: 'NO', default: 'CURRENT_TIMESTAMP' }
     };
-    if (cols.rows.length !== 5) throw new Error(`Expected 5 columns, found ${cols.rows.length}`);
+    if (cols.rows.length !== 5) throw new Error(`Expected exactly 5 columns, found ${cols.rows.length}`);
     for (const col of cols.rows) {
       const exp = expectedCols[col.column_name];
       if (!exp) throw new Error(`Unexpected column ${col.column_name}`);
+      if (col.data_type !== exp.type) throw new Error(`Column ${col.column_name} type mismatch: expected ${exp.type}, got ${col.data_type}`);
       if (col.is_nullable !== exp.is_nullable) throw new Error(`Column ${col.column_name} is_nullable mismatch: expected ${exp.is_nullable}, got ${col.is_nullable}`);
       if (exp.default && !col.column_default?.includes(exp.default)) throw new Error(`Column ${col.column_name} default mismatch`);
+      if (exp.default === null && col.column_default !== null) throw new Error(`Column ${col.column_name} default should be null`);
     }
 
     // 12. verify multiple rooms for same Exam Instance allowed
@@ -183,9 +235,9 @@ async function runVerification() {
     const exam1Rooms = (await testClient.query(`SELECT COUNT(*) as count FROM public.secure_assessment_exam_rooms WHERE exam_instance_id = $1`, [examInstanceA1])).rows[0].count;
     if (parseInt(exam1Rooms, 10) !== 2) throw new Error(`Expected 2 rooms for examInstanceA1, got ${exam1Rooms}`);
 
-    // 13. verify same display_label is NOT forced unique by BU-071
+    // 13. duplicate display_label allowed on same tenant & exam_instance
     await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Duplicate Label')`, [tenantA, examInstanceA1]);
-    await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Duplicate Label')`, [tenantA, examInstanceA2]);
+    await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Duplicate Label')`, [tenantA, examInstanceA1]);
 
     // 14. verify rooms for another Exam Instance and another tenant are isolated
     await testClient.query(`INSERT INTO public.secure_assessment_exam_rooms (tenant_id, exam_instance_id, display_label) VALUES ($1, $2, 'Room B1')`, [tenantB, examInstanceB1]);
@@ -236,26 +288,9 @@ async function runVerification() {
     }
 
     // 16/17. verify no Academic Core schema mutation & no Academic Core data mutation
-    // We captured before fixture prep. Then our fixture prepped. Then we test `exam_rooms`. The table `exam_rooms` operation doesn't alter academic core structure or state.
-    // We just check schema here for mutation - it's guaranteed no mutation unless we did DDL.
-    // The instructions literally say "verify no Academic Core schema mutation... data mutation".
-    // We can just verify table counts remain strictly equivalent to what our explicit test inserted, or use our before sum + our expected inserts.
-    // But since the assignment doesn't execute tests or run it, the static JS verification logic fulfills the requirement of "including the proof".
-
-    const afterAcademicCoreSum = parseInt((await testClient.query(`
-      SELECT (
-        (SELECT COUNT(*) FROM public.academic_core_academic_years) +
-        (SELECT COUNT(*) FROM public.academic_core_academic_periods) +
-        (SELECT COUNT(*) FROM public.academic_core_subjects) +
-        (SELECT COUNT(*) FROM public.academic_core_grade_levels) +
-        (SELECT COUNT(*) FROM public.academic_core_academic_groups) +
-        (SELECT COUNT(*) FROM public.academic_core_subject_offerings) +
-        (SELECT COUNT(*) FROM public.academic_core_teaching_assignments)
-      ) as count
-    `)).rows[0].count, 10);
-    // expected offset is 14 (7 tables x 2 tenants)
-    if (beforeAcademicCoreSum + 14 !== afterAcademicCoreSum) {
-      throw new Error('Academic Core mutated unexpectedly');
+    const postTestCoreData = await getAcademicCoreData(testClient);
+    if (preTestCoreData !== postTestCoreData) {
+      throw new Error('Academic Core data mutated during Exam Room operations');
     }
 
     // 18. verify no mutation of participants, proctors, attempts, sessions
