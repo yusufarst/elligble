@@ -101,33 +101,41 @@ Proves 21 required scenarios:
 3. capability denied -> denied
 4. explicit capability unavailable -> unavailable
 5. capability evaluator throws -> unavailable
-6. unexpected capability decision fails closed -> denied
-7. nonexistent exam -> denied
-8. wrong tenant -> denied
-9. non-SCHEDULED exam -> invalid_state
-10. zero participants preserves participant_empty blocker
-11. participants exist + zero exam rooms -> no_exam_rooms (neutral fact, assigned=0, unassigned=participantCount)
-12. rooms exist + zero assignments -> incomplete (assigned=0, unassigned=participantCount)
-13. rooms exist + partial assignments -> incomplete (exact counts)
-14. rooms exist + all participants assigned -> participant_room_assignment_completeness_ready (unassigned=0)
-15. multiple participants assigned to same room -> properly counted without deduplication
-16. other exam instance rooms/assignments excluded
-17. other tenant rooms/assignments excluded
-18. completeness-query/database failure -> unavailable
-19. capability evaluator called exactly once with exact tenant/exam context
-20. participantCount used in final computation comes from BU-062 result
+6. nonexistent Exam Instance -> denied
+7. wrong tenant -> denied
+8. non-SCHEDULED -> invalid_state
+9. zero participants -> participant_empty
+10. participants + zero rooms -> no_exam_rooms with exact counts
+11. room exists + zero assignments -> incomplete
+12. partial assignments -> incomplete with exact counts
+13. all participants assigned -> completeness_ready
+14. multiple participants sharing same room -> supported
+15. other Exam Instance excluded
+16. other tenant excluded
+17. BU-075 completeness-query failure -> unavailable
+18. capability evaluator called exactly once
+19. capability evaluator receives exact tenantId + examInstanceId
+20. participantCount originates from BU-062 result
 21. runtime performs no INSERT / UPDATE / DELETE
 
 ## REAL POSTGRESQL VERIFICATION
-- Discovers and applies canonical migrations 0001..0033 only.
-- Asserts exactly one migration per prefix 0001..0033.
-- Asserts migration history is exactly 33.
-- Asserts migration 0034 does NOT exist.
-- Uses disposable database with prefix `elligble_bu075_`.
-- Builds canonical fixture chains (tenant, academic core, exam instances, participants, rooms, participant-room assignments).
-- Physically exercises all scenarios: zero rooms, zero assignments, partial assignments, full assignments, multiple participants sharing one room, same-tenant other-exam isolation, other-tenant isolation, composed BU-062 responses (empty participants, non-SCHEDULED state, capability denial, capability unavailable).
-- Proves READ-ONLY runtime: before/after snapshots of all protected state (exam instances, participants, rooms, participant-room assignments, proctor assignments, proctor-room assignments, attempts, sessions) and Academic Core confirm zero mutation.
-- Fail-closed cleanup: closes client, drops disposable database, proves removal from `pg_database`.
+- zero participants
+- zero rooms
+- zero assignments
+- partial assignments
+- full assignments
+- multiple participants sharing one room
+- same-tenant / other-exam isolation
+- other-tenant isolation
+- BU-075-owned query failure -> unavailable
+- exact capability context
+- capability evaluator exactly once
+- Secure Assessment protected-state pre/post equality
+- Academic Core pre/post equality
+- canonical migrations 0001..0033
+- history 33
+- migration 0034 absent
+- fail-closed disposable database cleanup
 
 ## STRICT OUT OF SCOPE
 - Room-mode applicability policy
@@ -171,9 +179,26 @@ Proves 21 required scenarios:
 - **POST-RUN ZERO-LEAK:** PASS
 - **DISPOSABLE DATABASE CLEANUP FAIL-CLOSED:** VERIFIED
 - **STAGE-2 REPOSITORY FINALIZED:** YES
-- **STAGE-3 CONTROLLER PHYSICAL AUDIT:** PENDING
-- **DONE:** NO
-- **FULL BU-075 REPOSITORY FINALIZED:** NO
+- **STAGE-3 CONTROLLER PHYSICAL AUDIT:** PASS
+- **STAGE-3 CONTROLLER PHYSICAL AUDIT FINDING:** PASS / NO MATERIAL ENGINEERING DEFECT
+- **FAST-TRACK STAGE-4 LIFECYCLE CLOSE:** COMPLETE
+- **STAGE-4 REPOSITORY FINALIZED:** YES
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING
+- **DONE:** YES
+- **FULL BU-075 REPOSITORY FINALIZED:** YES
+- **PB05:** OPEN / CARRIED FORWARD
+- **OWNER DECISION REQUIRED:** NO
+- **BU-076:** NOT SELECTED / NOT REGISTERED
+
+## Fast-Track Stage-4 Lifecycle Close
+
+- **STAGE-3 CONTROLLER PHYSICAL AUDIT:** PASS
+- **STAGE-3 CONTROLLER PHYSICAL AUDIT FINDING:** PASS / NO MATERIAL ENGINEERING DEFECT
+- **FAST-TRACK STAGE-4 LIFECYCLE CLOSE:** COMPLETE
+- **STAGE-4 REPOSITORY FINALIZED:** YES
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING
+- **DONE:** YES
+- **FULL BU-075 REPOSITORY FINALIZED:** YES
 - **PB05:** OPEN / CARRIED FORWARD
 - **OWNER DECISION REQUIRED:** NO
 - **BU-076:** NOT SELECTED / NOT REGISTERED
