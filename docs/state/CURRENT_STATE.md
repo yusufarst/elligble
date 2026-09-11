@@ -1,7 +1,7 @@
 **Status:** ACTIVE
-**Version:** 1.5.305
+**Version:** 1.5.306
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.304
+**Supersedes:** CURRENT_STATE v1.5.305
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
@@ -23,14 +23,38 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### 2. Navigation
 **LAST COMPLETED UNIT:** BU-076
 **LAST COMPLETED BUILD UNIT:** BU-076 — Secure Assessment Exam Instance Room and Proctor Requirement Policy Core State Persistence Bootstrap
-**ACTIVE UNIT:** NONE
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE UNIT:** BU-077
+**ACTIVE BUILD UNIT:** BU-077 — Secure Assessment Exam Instance Conditional Room and Proctor Readiness Composition Preflight Runtime Bootstrap
 **NEXT UNIT:** NOT YET REGISTERED
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-**NEXT STAGE:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** BU-077 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 — BU-077 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**NEXT STAGE:** BU-077 STAGE-3 CONTROLLER PHYSICAL AUDIT
+### BU-077 CURRENT STATUS
+- **BUILD UNIT:** BU-077
+- **TITLE:** Secure Assessment Exam Instance Conditional Room and Proctor Readiness Composition Preflight Runtime Bootstrap
+- **STAGE-1:** PASS / FROZEN
+- **SOURCE AUTHORING:** COMPLETE
+- **PACKAGE TYPECHECK:** PASS
+- **BU-077 FOCUSED TEST:** PASS / 27
+- **VERIFIER STRICT TYPECHECK:** PASS
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **MIGRATION HISTORY:** 34 / PASS
+- **MIGRATION 0035 ABSENCE:** PASS
+- **PRE-RUN ZERO-LEAK:** PASS
+- **POST-RUN ZERO-LEAK:** PASS
+- **POLICY STATE MATRIX:** PASS
+- **CAPABILITY EVALUATOR EXACTLY ONCE:** PASS
+- **ZERO MUTATION:** PASS
+- **DISPOSABLE DATABASE CLEANUP:** PASS / FAIL-CLOSED VERIFIED
+- **STAGE-2 REPOSITORY FINALIZED:** YES
+- **STAGE-3:** PENDING
+- **DONE:** NO
+- **FULL BU-077 REPOSITORY FINALIZED:** NO
+- **PB05:** OPEN / CARRIED FORWARD
+- **OWNER DECISION REQUIRED:** NO
+- **BU-078:** NOT SELECTED / NOT REGISTERED
 ### BU-076 CURRENT STATUS
 - **BUILD UNIT:** BU-076
 - **TITLE:** Secure Assessment Exam Instance Room and Proctor Requirement Policy Core State Persistence Bootstrap

@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.388
-**Supersedes:** 1.0.387
+**Version:** 1.0.389
+**Supersedes:** 1.0.388
 **Canonical:** YES
 **Last Reviewed:** 2026-09-07
 # ELLIGBLE Document Manifest
@@ -31,7 +31,7 @@ NEVER_DEFAULT
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
 | `docs/master/MASTER_CONTEXT.md` | Cross-project context | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-076 / ACTIVE NONE / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / next Build Unit selection authorized. Version 1.5.305. (7D6B3219EBF55B1B1E7BCC72492630407EBF360FF36CF1F353F63A566A3BC4DD) | CANONICAL STATE | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-076 / ACTIVE BU-077 / STAGE-1 PASS / FROZEN / STAGE-2 REPOSITORY FINALIZED YES / STAGE-3 PENDING / DONE NO. Version 1.5.306. (780A6F92352D208B39F41A3C92501DBB46CF42F0623989E1802CC4C6C01B0347) | CANONICAL STATE | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -287,3 +287,7 @@ NEVER_DEFAULT
 | `database/migrations/0034_bu076_secure_assessment_exam_instance_room_proctor_requirement_policy.sql` | BU-076 migration 0034 — Secure Assessment Exam Instance Room and Proctor Requirement Policy Core State Persistence / room_based_operations_enabled and proctor_per_room_required nullable boolean columns / policy check constraint / migration history 33 -> 34 / repeat-safe. (596CE3E85EAD22EA248B87169F2C846F91661633B8B572D0E6CAB61D7B999954) | DATABASE MIGRATION | PHASE: Build |
 | `database/verification/verify_bu076_secure_assessment_exam_instance_room_proctor_requirement_policy.js` | BU-076 PostgreSQL verifier — canonical migrations 0001..0033 / history 33 -> 34 / migration 0035 absence / policy state matrix / SQLSTATE 23514 / Academic Core + protected-state non-mutation / fail-closed cleanup / PostgreSQL PASS. (F9B8F3C5C8FEC4D11A5EC262EEA5B8B837237846ECADE16DA28341DE36D25A19) | BUILD VERIFICATION | PHASE: Build |
 | `docs/build/units/BU-076_SECURE_ASSESSMENT_EXAM_INSTANCE_ROOM_AND_PROCTOR_REQUIREMENT_POLICY_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-076 Specification — Fast-Track lifecycle close COMPLETE / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / next Build Unit selection authorized. (E784324BA4B19F52B3911C059990853B08B625D6BC3A4CC232BEF60A0836CEB7) | BUILD UNIT SPEC | PHASE: Build |
+| `runtime/secure-assessment/src/exam-instance-conditional-room-proctor-readiness-composition-preflight.ts` | BU-077 runtime — Secure Assessment Exam Instance Conditional Room and Proctor Readiness Composition Preflight / BU-074 + BU-075 + BU-076 composition / conditional Room and Proctor readiness / read-only. (ED9E8690CE80FD557E94271214B9AD881DCD27B92673008E6BF8F1FEF7EE69CE) | RUNTIME SOURCE | PHASE: Build |
+| `runtime/secure-assessment/test/exam-instance-conditional-room-proctor-readiness-composition-preflight.test.ts` | BU-077 focused tests — capability, lifecycle, four policy states, zero-room mapping, incomplete/complete participant and proctor coverage, single capability invocation, zero mutation proofs. PASS / 27 / 27. (90868257DE34326CAF363009FB25FD109222F8D3F18D55B55928AFD107F407A4) | TEST HARNESS | PHASE: Build |
+| `runtime/secure-assessment/verification/verify_bu077_exam_instance_conditional_room_proctor_readiness_composition_preflight.ts` | BU-077 PostgreSQL verifier — canonical migrations 0001..0034 / history 34 / migration 0035 absence / policy matrix / single capability invocation / protected-state non-mutation / fail-closed cleanup / PostgreSQL PASS. (D9934BF069DAD18855B34C32B6499EB955429672D571BAF7635D25331DEB6CB9) | BUILD VERIFICATION | PHASE: Build |
+| `docs/build/units/BU-077_SECURE_ASSESSMENT_EXAM_INSTANCE_CONDITIONAL_ROOM_PROCTOR_READINESS_COMPOSITION_PREFLIGHT_RUNTIME_BOOTSTRAP.md` | BU-077 Specification — Stage-1 PASS / FROZEN / Stage-2 implementation and verification COMPLETE / STAGE-2 REPOSITORY FINALIZED YES / STAGE-3 PENDING. (D077470834EFC02CB7ADE898AB5B7ECCB425AC1C488B55493323CF5759A67D7E) | BUILD UNIT SPEC | PHASE: Build |
