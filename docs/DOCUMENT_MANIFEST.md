@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.404
-**Supersedes:** 1.0.403
+**Version:** 1.0.405
+**Supersedes:** 1.0.404
 **Canonical:** YES
 **Last Reviewed:** 2026-09-07
 # ELLIGBLE Document Manifest
@@ -30,8 +30,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-080 / ACTIVE BU-081 / NEXT NOT YET REGISTERED / BU-078 REJECTED RECOVERY CANDIDATE / BU-080 terminal / Frontend Entry Gate PASS / BU-081 Stage-2 complete / React + TypeScript + Vite workstation implemented / verification pass. Version 1.5.321. (93BE83E22D4012F39337EDDCFC132DC6F1D66A47738E2D32638BAC2D6D90239B) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. Frontend Entry Gate PASS / React + TypeScript + Vite / BU-081 Stage-2 complete / next safe action: MAIN PROJECT CONTROL 010 - BU-081 STAGE-3 CONTROLLER PHYSICAL AUDIT. Version 0.1.430. (C557F7CD3CB71E86975479037C3AFA0C56D932C8EC0FAD32784DF96145BFE417) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-081 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-078 REJECTED RECOVERY CANDIDATE / BU-080 terminal / Frontend Entry Gate PASS / BU-081 STAGE-3 PASS / FAST-TRACK STAGE-4 LIFECYCLE CLOSE COMPLETE / STAGE-4 REPOSITORY FINALIZED YES / DONE YES / FULL BU-081 REPOSITORY FINALIZED YES / STAGE-5 PENDING. Version 1.5.322. (1250C064658778668EFECB050C34A263A1888A774D28C60D2C3771B6AE0F795E) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. Frontend Entry Gate PASS / React + TypeScript + Vite / BU-081 STAGE-3 PASS / FAST-TRACK STAGE-4 LIFECYCLE CLOSE COMPLETE / STAGE-4 REPOSITORY FINALIZED YES / DONE YES / FULL BU-081 REPOSITORY FINALIZED YES / STAGE-5 PENDING / next safe action: MAIN PROJECT CONTROL 010 - INDEPENDENT BU-081 STAGE-5 FINAL PHYSICAL VERIFICATION. Version 0.1.431. (2B8580166558266305F41A1C0BC842D055691B97D8673908DDAADC7D6B6E62F2) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -41,7 +41,7 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (5CA58622FABBB07C09AB2BC399321F2DC6F1EA8589A8A32C2BA5DE16FD893829) | Canonical / LOCKED v1.1.0 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Index. Dynamic build phase control, BU status tracking, BU-081 Stage-2 complete. Version 0.1.372. (A5066BB6FF800A7B7E606CE4424AA10488981CA05D826A817D10573C589AEA7D) | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Index. Dynamic build phase control, BU status tracking, BU-081 FAST-TRACK STAGE-4 LIFECYCLE CLOSE COMPLETE / STAGE-4 REPOSITORY FINALIZED YES / DONE YES / FULL BU-081 REPOSITORY FINALIZED YES / STAGE-5 PENDING. Version 0.1.373. (D2211624C6F9B96144F26CCB6A7BB276D8932B8338AF533AA5A53E747418AF90) | DYNAMIC BUILD CONTROL | PHASE: Build |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, and Frontend Entry Gate PASS. Version 1.0.4. (300458D4164A5DDC67280B5F7BC6B5545E114D56AEBF857C733C355B680DC7D4) | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
@@ -308,4 +308,4 @@ NEVER_DEFAULT
 | `runtime/secure-assessment/src/server.ts` | BU-080 server — Authoritative HTTP server with /api/v1/assessment/questions route integration. (6889C7E2A621268D0D1FE970CE0A58C100A375550ED29FCEB65CC18288EC9021) | RUNTIME SOURCE | PHASE: Build |
 | `runtime/secure-assessment/test/server.test.ts` | BU-080 server test — Route delegation, context check, and unsupported method regression / 15/15 TESTS PASS. (519E65B716392E96D1B4C4B1A842352188E2A5A4E646CCAEB52DA12C75754875) | TEST HARNESS | PHASE: Build |
 | `docs/build/units/BU-080_SECURE_ASSESSMENT_STUDENT_ATTEMPT_QUESTION_DELIVERY_READ_API_INTEGRATION_BOOTSTRAP.md` | BU-080 Specification — Fast-Track lifecycle close COMPLETE / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / final physical verification PASS / terminal / next Build Unit selection authorized. (B4D0A0865505AB2019093460DCC61BF29CC9471835AFA8344EEE87E115C57D93) | BUILD UNIT SPEC | PHASE: Build |
-| `docs/build/units/BU-081_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_CORE_WORKSTATION_BOOTSTRAP.md` | BU-081 Specification — Secure Assessment Student Exam Client Core Workstation Bootstrap. Version 1.0.0. STAGE-1 PASS / STAGE-2 COMPLETE / VERIFICATION PASS / STAGE-3 PENDING. (F08C800726B708C19CD8000E1FC32DE78D9CC3DF8554DB853F1499E469DB51FD) | BUILD UNIT SPEC | PHASE: Build |
+| `docs/build/units/BU-081_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_CORE_WORKSTATION_BOOTSTRAP.md` | BU-081 Specification — Secure Assessment Student Exam Client Core Workstation Bootstrap. Version 1.0.0. STAGE-1 PASS / FROZEN / STAGE-2 COMPLETE / STAGE-3 CONTROLLER PHYSICAL AUDIT PASS / FAST-TRACK STAGE-4 LIFECYCLE CLOSE COMPLETE / STAGE-4 REPOSITORY FINALIZED YES / DONE YES / FULL BU-081 REPOSITORY FINALIZED YES / STAGE-5 PENDING. (A317B224E5CB8811D6AA82137301346D5FC6AFCEBFF836A355F51ECA163F76DA) | BUILD UNIT SPEC | PHASE: Build |
