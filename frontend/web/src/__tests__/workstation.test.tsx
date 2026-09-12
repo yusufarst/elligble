@@ -1588,4 +1588,164 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
       expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull();
     });
   });
+
+  it('39. four workstation actions are present with accessible semantics (Soal Sebelumnya, Daftar Soal, Soal Berikutnya, Selesaikan Ujian) and visible mobile labels', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Verify all four buttons exist in workstation-actions with full accessible names
+    const prevBtn = screen.getByRole('button', { name: 'Soal Sebelumnya' }) as HTMLButtonElement;
+    const navBtn = screen.getByRole('button', { name: 'Daftar Soal' }) as HTMLButtonElement;
+    const nextBtn = screen.getByRole('button', { name: 'Soal Berikutnya' }) as HTMLButtonElement;
+    const submitBtn = screen.getByRole('button', { name: 'Selesaikan Ujian' }) as HTMLButtonElement;
+
+    expect(prevBtn).toBeTruthy();
+    expect(navBtn).toBeTruthy();
+    expect(nextBtn).toBeTruthy();
+    expect(submitBtn).toBeTruthy();
+
+    // Verify visible mobile short labels are present inside each action button
+    expect(prevBtn.textContent).toContain('Sebelum');
+    expect(navBtn.textContent).toContain('Daftar');
+    expect(nextBtn.textContent).toContain('Berikut');
+    expect(submitBtn.textContent).toContain('Selesai');
+
+    // Initial state: question 1 of 2
+    expect(prevBtn.disabled).toBe(true);
+    expect(nextBtn.disabled).toBe(false);
+    expect(submitBtn.disabled).toBe(false);
+  });
+
+  it('40. workstation Selesaikan Ujian action opens SubmitConfirmModal and is blocked when unresolved saves exist', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/answer/save')) {
+        return new Response(JSON.stringify({ error: 'server_down' }), { status: 500 });
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Action button on workstation
+    const workstationSubmitBtn = screen.getByRole('button', { name: 'Selesaikan Ujian' }) as HTMLButtonElement;
+    expect(workstationSubmitBtn.disabled).toBe(false);
+
+    // Trigger save failure to produce unresolved save state
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    expect(await screen.findByText('Gagal menyimpan')).toBeTruthy();
+
+    // Workstation Selesaikan Ujian button must now be disabled
+    expect(workstationSubmitBtn.disabled).toBe(true);
+  });
+
+  it('41. persistent current-question save status presents Belum dijawab when pristine, Menyimpan... during save, Tersimpan upon server acknowledgement, and Gagal menyimpan on failure', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    let resolveSave: (() => void) | null = null;
+    let shouldFail = false;
+
+    fetchSpy.mockImplementation(async (url: string, opts?: RequestInit) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/answer/save')) {
+        if (shouldFail) {
+          return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
+        }
+        const body = JSON.parse(opts?.body as string);
+        return new Promise<Response>(resolve => {
+          resolveSave = () => {
+            resolve(
+              new Response(
+                JSON.stringify({
+                  status: 'acknowledged',
+                  clientWriteIdentity: body.clientWriteIdentity,
+                  writeVersion: 1,
+                }),
+                { status: 200 }
+              )
+            );
+          };
+        });
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // 1. Pristine state: persistent status is "Belum dijawab"
+    const statusBadge = document.querySelector('.save-status-badge') as HTMLElement;
+    expect(statusBadge).toBeTruthy();
+    expect(statusBadge.textContent).toContain('Belum dijawab');
+    expect(statusBadge.classList.contains('unanswered')).toBe(true);
+
+    // 2. Select option: triggers save in flight -> "Menyimpan..."
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    expect(await screen.findByText('Menyimpan...')).toBeTruthy();
+    expect(statusBadge.classList.contains('saving')).toBe(true);
+
+    // 3. Server acknowledges -> transitions to "Tersimpan"
+    act(() => {
+      if (resolveSave) {
+        resolveSave();
+      }
+    });
+    expect(await screen.findByText('Tersimpan')).toBeTruthy();
+    expect(statusBadge.classList.contains('saved')).toBe(true);
+
+    // 4. Move to question 2 (pristine) -> verifies pristine state on question 2
+    const nextBtn = screen.getByRole('button', { name: 'Soal Berikutnya' });
+    await userEvent.click(nextBtn);
+    expect(await screen.findByText('Berapakah jumlah sudut siku-siku pada persegi?')).toBeTruthy();
+    expect(screen.getByText('Belum dijawab')).toBeTruthy();
+
+    // 5. Select option on question 2 with save failure -> "Gagal menyimpan"
+    shouldFail = true;
+    await userEvent.click(screen.getByLabelText(/4/));
+    expect(await screen.findByText('Gagal menyimpan')).toBeTruthy();
+    expect(statusBadge.classList.contains('failed')).toBe(true);
+  });
 });

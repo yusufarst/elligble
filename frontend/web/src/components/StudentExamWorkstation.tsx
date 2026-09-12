@@ -331,6 +331,50 @@ export const StudentExamWorkstation: React.FC = () => {
 
   const currentSaveState = currentQuestion ? saveStates[currentQuestion.snapshotId] : undefined;
 
+  const getSaveStatusPresentation = () => {
+    if (!currentSaveState || currentSaveState.status === 'pristine') {
+      return {
+        statusClass: 'unanswered',
+        icon: '○',
+        text: 'Belum dijawab',
+      };
+    }
+    switch (currentSaveState.status) {
+      case 'saving':
+        return {
+          statusClass: 'saving',
+          icon: '…',
+          text: 'Menyimpan...',
+        };
+      case 'saved':
+        return {
+          statusClass: 'saved',
+          icon: '✓',
+          text: 'Tersimpan',
+        };
+      case 'failed':
+        return {
+          statusClass: 'failed',
+          icon: '!',
+          text: 'Gagal menyimpan',
+        };
+      case 'unsupported_payload':
+        return {
+          statusClass: 'unsupported',
+          icon: '✕',
+          text: 'Format jawaban tidak didukung',
+        };
+      default:
+        return {
+          statusClass: 'unanswered',
+          icon: '○',
+          text: 'Belum dijawab',
+        };
+    }
+  };
+
+  const saveStatus = getSaveStatusPresentation();
+
   return (
     <div className="workstation-container">
       {/* Persistent Top Navigation Bar */}
@@ -388,23 +432,16 @@ export const StudentExamWorkstation: React.FC = () => {
           <section className="question-card" aria-label={`Soal nomor ${currentIndex + 1}`}>
             <div className="question-card-header">
               <h2 className="question-number-heading">Soal Nomor {currentIndex + 1}</h2>
-              {/* Save Status Badge */}
+              {/* Persistent Save Status Badge */}
               <div
-                className={`save-status-badge ${
-                  currentSaveState?.status === 'saved'
-                    ? 'saved'
-                    : currentSaveState?.status === 'saving'
-                    ? 'saving'
-                    : currentSaveState?.status === 'failed'
-                    ? 'failed'
-                    : ''
-                }`}
+                className={`save-status-badge ${saveStatus.statusClass}`}
                 aria-live="polite"
+                aria-label={`Status penyimpanan: ${saveStatus.text}`}
               >
-                {currentSaveState?.status === 'saved' && 'Tersimpan'}
-                {currentSaveState?.status === 'saving' && 'Menyimpan...'}
-                {currentSaveState?.status === 'failed' && 'Gagal menyimpan'}
-                {currentSaveState?.status === 'unsupported_payload' && 'Format jawaban tidak didukung'}
+                <span className="save-status-icon" aria-hidden="true">
+                  {saveStatus.icon}
+                </span>
+                <span className="save-status-text">{saveStatus.text}</span>
               </div>
             </div>
 
@@ -442,47 +479,51 @@ export const StudentExamWorkstation: React.FC = () => {
 
             {/* Workstation Actions Footer / Mobile Bottom Action Area */}
             <footer className="workstation-actions">
-              <div className="nav-buttons-group">
+              <div className="action-buttons-group">
                 <button
                   type="button"
-                  className="btn btn-secondary nav-btn-prev"
+                  className="btn btn-secondary action-btn action-btn-prev nav-btn-prev"
                   onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentIndex === 0}
                   aria-label="Soal Sebelumnya"
                 >
-                  Soal Sebelumnya
+                  <span className="btn-label-mobile">Sebelum</span>
+                  <span className="btn-label-desktop">Soal Sebelumnya</span>
                 </button>
                 <button
                   ref={navSheetTriggerRef}
                   type="button"
-                  className="btn btn-secondary mobile-nav-trigger"
+                  className="btn btn-secondary action-btn action-btn-nav mobile-nav-trigger"
                   onClick={() => setIsNavSheetOpen(true)}
                   aria-haspopup="dialog"
                   aria-expanded={isNavSheetOpen}
                   aria-label="Daftar Soal"
                 >
-                  Daftar Soal
+                  <span className="btn-label-mobile">Daftar</span>
+                  <span className="btn-label-desktop">Daftar Soal</span>
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary nav-btn-next"
+                  className="btn btn-secondary action-btn action-btn-next nav-btn-next"
                   onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
                   disabled={currentIndex === totalQuestions - 1}
                   aria-label="Soal Berikutnya"
                 >
-                  Soal Berikutnya
+                  <span className="btn-label-mobile">Berikut</span>
+                  <span className="btn-label-desktop">Soal Berikutnya</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary action-btn action-btn-submit workstation-submit-btn"
+                  onClick={() => setIsSubmitModalOpen(true)}
+                  disabled={hasUnresolvedSaves}
+                  aria-haspopup="dialog"
+                  aria-label="Selesaikan Ujian"
+                >
+                  <span className="btn-label-mobile">Selesai</span>
+                  <span className="btn-label-desktop">Selesaikan Ujian</span>
                 </button>
               </div>
-
-              <button
-                type="button"
-                className="btn btn-primary workstation-submit-btn"
-                onClick={() => setIsSubmitModalOpen(true)}
-                disabled={hasUnresolvedSaves}
-                aria-haspopup="dialog"
-              >
-                Selesaikan Ujian
-              </button>
             </footer>
           </section>
         )}
