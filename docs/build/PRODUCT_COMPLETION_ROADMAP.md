@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.4
+**Version:** 1.0.5
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.3
+**Supersedes:** 1.0.4
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -136,9 +136,15 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **HTTP SERVER FOUNDATION:** EXISTS. The existing authoritative server (`runtime/secure-assessment/src/server.ts`) already exposes bounded HTTP routes for current Attempt/runtime functionality (`/healthz`, `/readyz`, `/api/v1/assessment/answer/save`, `/api/v1/assessment/timer/start`, `/api/v1/assessment/timer`, `/api/v1/assessment/submit`, `/api/v1/assessment/expiry-finalize`, `/api/v1/assessment/session/activate`, `/api/v1/assessment/submission`, `/api/v1/assessment/resume`).
     - **API LAYER STATUS:** PARTIAL / PRODUCT COMPOSITION INCOMPLETE. Remaining work is NOT "create an HTTP server foundation". Remaining work must focus on dependency-valid product-facing composition such as missing browser-facing entry, question/readiness, teacher/proctor operational boundaries, and other required vertical routes, subject to future Controller scope freeze. (Do NOT preselect exact next API endpoint; do NOT select WebSocket/polling; do NOT invent authentication/token mechanics).
     - **AUTHENTICATION / TRUSTED CONTEXT:** Existing runtime uses an injected trusted authorization seam and remains fail-closed where real authentication integration is absent. Do NOT treat `X-Tenant-ID` or `Bearer <attempt-id>` request-header extraction as canonical.
-  - **Student Exam Client UI:** Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
-  - **Proctor / Teacher Client UI:** Minimal room and readiness inspection views.
-  - **End-to-End Browser Verification:** Verifying the full round-trip from browser interaction to PostgreSQL database persistence.
+  - **Student Exam Client Core Workstation:** IMPLEMENTED via BU-081. Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
+  - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082 / Stage-3 pending after Stage-2. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
+  - **Remaining Milestone 1 Gaps:**
+    - Real authentication / trusted context integration (PB04 remains OPEN).
+    - Browser-facing assigned-exam entry.
+    - Proctor operational UI (minimal room and active session monitoring views).
+    - Teacher delivery/readiness UI (minimal scheduled exam and readiness inspection views).
+    - Full authenticated browser -> runtime -> PostgreSQL end-to-end verification.
+  - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
 
 ---
 

@@ -4,6 +4,7 @@ import { getResume, getQuestions, postSubmit, postExpiryFinalize, ApiError } fro
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
 import { useAnswerManager } from '../hooks/useAnswerManager.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
+import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -31,6 +32,8 @@ export const StudentExamWorkstation: React.FC = () => {
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isNavSheetOpen, setIsNavSheetOpen] = useState<boolean>(false);
+  const navSheetTriggerRef = useRef<HTMLButtonElement>(null);
 
   const expiryFinalizedRef = useRef<boolean>(false);
 
@@ -332,11 +335,13 @@ export const StudentExamWorkstation: React.FC = () => {
     <div className="workstation-container">
       {/* Persistent Top Navigation Bar */}
       <header className="workstation-header">
-        <h1 className="workstation-header-title">Ruang Ujian Aman</h1>
-        <div className="workstation-header-meta">
+        <div className="workstation-header-brand">
+          <h1 className="workstation-header-title">Ruang Ujian Aman</h1>
           <span className="question-progress-indicator">
             Soal {currentIndex + 1} dari {totalQuestions}
           </span>
+        </div>
+        <div className="workstation-header-meta">
           <div
             className={`timer-badge ${isUrgent ? 'urgent' : isWarning ? 'warning' : ''}`}
             aria-live="polite"
@@ -349,7 +354,7 @@ export const StudentExamWorkstation: React.FC = () => {
 
       {/* Main Split Workstation */}
       <main className="workstation-main">
-        {/* Left Pane: Question Navigator */}
+        {/* Left Pane: Question Navigator (Desktop) */}
         <nav className="navigator-card" aria-label="Daftar Soal Ujian">
           <h2 className="navigator-title">Daftar Soal</h2>
           <div className="navigator-grid" role="group" aria-label="Nomor Soal">
@@ -435,22 +440,35 @@ export const StudentExamWorkstation: React.FC = () => {
               </div>
             </fieldset>
 
-            {/* Workstation Actions Footer */}
+            {/* Workstation Actions Footer / Mobile Bottom Action Area */}
             <footer className="workstation-actions">
               <div className="nav-buttons-group">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary nav-btn-prev"
                   onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentIndex === 0}
+                  aria-label="Soal Sebelumnya"
                 >
                   Soal Sebelumnya
                 </button>
                 <button
+                  ref={navSheetTriggerRef}
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary mobile-nav-trigger"
+                  onClick={() => setIsNavSheetOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={isNavSheetOpen}
+                  aria-label="Daftar Soal"
+                >
+                  Daftar Soal
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary nav-btn-next"
                   onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
                   disabled={currentIndex === totalQuestions - 1}
+                  aria-label="Soal Berikutnya"
                 >
                   Soal Berikutnya
                 </button>
@@ -458,7 +476,7 @@ export const StudentExamWorkstation: React.FC = () => {
 
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary workstation-submit-btn"
                 onClick={() => setIsSubmitModalOpen(true)}
                 disabled={hasUnresolvedSaves}
                 aria-haspopup="dialog"
@@ -469,6 +487,20 @@ export const StudentExamWorkstation: React.FC = () => {
           </section>
         )}
       </main>
+
+      {/* Mobile Question Navigator Sheet */}
+      <QuestionNavigatorSheet
+        isOpen={isNavSheetOpen}
+        onClose={() => setIsNavSheetOpen(false)}
+        questions={questions}
+        currentIndex={currentIndex}
+        selectedOptions={selectedOptions}
+        saveStates={saveStates}
+        onSelectQuestion={idx => setCurrentIndex(idx)}
+        onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+        hasUnresolvedSaves={hasUnresolvedSaves}
+        triggerRef={navSheetTriggerRef}
+      />
 
       {/* Submit Confirmation Modal */}
       <SubmitConfirmModal

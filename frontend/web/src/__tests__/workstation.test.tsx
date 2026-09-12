@@ -119,8 +119,8 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     // Renders header and progress
     expect(await screen.findByText('Ruang Ujian Aman')).toBeTruthy();
-    expect(screen.getByText('Soal 1 dari 2')).toBeTruthy();
-    expect(screen.getByText('Daftar Soal')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Daftar Soal' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Daftar Soal' })).toBeTruthy();
 
     // Renders first question prompt and all 5 options
     expect(screen.getByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
@@ -1097,5 +1097,495 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     // Presented as safe terminal success
     expect(await screen.findByText('Ujian Berhasil Dikumpulkan')).toBeTruthy();
+  });
+
+  it('29. mobile question navigator trigger exists and opens QuestionNavigatorSheet dialog with aria-modal and summary', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    const triggerBtn = screen.getByRole('button', { name: 'Daftar Soal' });
+    expect(triggerBtn.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(triggerBtn.getAttribute('aria-expanded')).toBe('false');
+
+    // Click trigger to open sheet
+    await userEvent.click(triggerBtn);
+    expect(triggerBtn.getAttribute('aria-expanded')).toBe('true');
+
+    // Dialog is present with role="dialog" and aria-modal="true"
+    const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
+    expect(dialog).toBeTruthy();
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+
+    // Summary counts rendered inside dialog
+    expect(screen.getByText('Total Soal:').nextElementSibling?.textContent).toBe('2');
+    expect(screen.getByText('Sudah Dijawab:').nextElementSibling?.textContent).toBe('0');
+    expect(screen.getByText('Belum Dijawab:').nextElementSibling?.textContent).toBe('2');
+
+    // Close button present
+    expect(screen.getByRole('button', { name: 'Tutup daftar soal' })).toBeTruthy();
+  });
+
+  it('30. QuestionNavigatorSheet traps focus and closes on Escape, restoring focus to trigger', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    const triggerBtn = screen.getByRole('button', { name: 'Daftar Soal' });
+    await userEvent.click(triggerBtn);
+
+    expect(screen.getByRole('dialog', { name: 'Daftar Soal' })).toBeTruthy();
+
+    // Focus close button on open
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Tutup daftar soal' }));
+    });
+
+    // Press Escape
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+
+    // Dialog closes
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull();
+    });
+
+    // Focus returns to trigger button
+    expect(document.activeElement).toBe(triggerBtn);
+  });
+
+  it('31. selecting a question from QuestionNavigatorSheet navigates to that question and closes the sheet', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Open sheet
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
+    const question2Btn = dialog.querySelector('button.sheet-nav-btn:nth-child(2)') as HTMLButtonElement;
+    expect(question2Btn).toBeTruthy();
+
+    // Click question 2 in sheet
+    await userEvent.click(question2Btn);
+
+    // Sheet closes
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull();
+    });
+
+    // Question 2 prompt is active
+    expect(await screen.findByText('Berapakah jumlah sudut siku-siku pada persegi?')).toBeTruthy();
+    expect(screen.getByText('Soal 2 dari 2')).toBeTruthy();
+  });
+
+  it('32. QuestionNavigatorSheet accurately updates answered and unanswered counts upon answer selection', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string, opts?: RequestInit) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/answer/save')) {
+        const body = JSON.parse(opts?.body as string);
+        return new Response(
+          JSON.stringify({
+            status: 'acknowledged',
+            clientWriteIdentity: body.clientWriteIdentity,
+            writeVersion: 1,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Answer question 1
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    await waitFor(() => expect(screen.getByText('Tersimpan')).toBeTruthy());
+
+    // Open sheet
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
+    expect(dialog).toBeTruthy();
+
+    // Verified updated summary counts
+    expect(screen.getByText('Sudah Dijawab:').nextElementSibling?.textContent).toBe('1');
+    expect(screen.getByText('Belum Dijawab:').nextElementSibling?.textContent).toBe('1');
+
+    // Question 1 button has answered indicator
+    const btn1 = dialog.querySelector('button.sheet-nav-btn:nth-child(1)') as HTMLButtonElement;
+    expect(btn1.classList.contains('answered')).toBe(true);
+    expect(btn1.textContent).toContain('✓');
+  });
+
+  it('33. "Selesaikan Ujian" is reachable through QuestionNavigatorSheet and requires SubmitConfirmModal declaration before submission', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    let submitCalled = false;
+
+    fetchSpy.mockImplementation(async (url: string, opts?: RequestInit) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/answer/save')) {
+        const body = JSON.parse(opts?.body as string);
+        return new Response(
+          JSON.stringify({
+            status: 'acknowledged',
+            clientWriteIdentity: body.clientWriteIdentity,
+            writeVersion: 1,
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/submit')) {
+        submitCalled = true;
+        return new Response(
+          JSON.stringify({
+            status: 'submitted',
+            submissionId: 'sub-sheet-1',
+            submittedAt: '2026-09-12T09:15:00.000Z',
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Answer question 1
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    await waitFor(() => expect(screen.getByText('Tersimpan')).toBeTruthy());
+
+    // Open sheet
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
+    const sheetSubmitBtn = dialog.querySelector('button.sheet-submit-btn') as HTMLButtonElement;
+    expect(sheetSubmitBtn).toBeTruthy();
+
+    // Click submit in sheet
+    await userEvent.click(sheetSubmitBtn);
+
+    // Sheet closes, SubmitConfirmModal opens
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull();
+      expect(screen.getByText('Konfirmasi Pengumpulan Ujian')).toBeTruthy();
+    });
+
+    // Check declaration and confirm
+    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
+
+    expect(await screen.findByText('Ujian Berhasil Dikumpulkan')).toBeTruthy();
+    expect(submitCalled).toBe(true);
+  });
+
+  it('34. opening and closing QuestionNavigatorSheet makes zero network requests and introduces no auth headers', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    const baselineCalls = fetchSpy.mock.calls.length;
+
+    // Open sheet
+    const trigger = screen.getByRole('button', { name: 'Daftar Soal' });
+    await userEvent.click(trigger);
+    expect(screen.getByRole('dialog', { name: 'Daftar Soal' })).toBeTruthy();
+
+    // Close sheet via close button
+    await userEvent.click(screen.getByRole('button', { name: 'Tutup daftar soal' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull());
+
+    // Open sheet again
+    await userEvent.click(trigger);
+    expect(screen.getByRole('dialog', { name: 'Daftar Soal' })).toBeTruthy();
+
+    // Close via Escape
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull());
+
+    // Zero extra network calls introduced
+    expect(fetchSpy.mock.calls.length).toBe(baselineCalls);
+
+    // No forbidden auth headers
+    for (const call of fetchSpy.mock.calls) {
+      const init = call[1] as RequestInit | undefined;
+      const headers = init?.headers as Record<string, string> | undefined;
+      if (headers) {
+        expect(headers['X-Tenant-ID']).toBeUndefined();
+        expect(headers['X-Person-ID']).toBeUndefined();
+        expect(headers['Authorization']).toBeUndefined();
+      }
+    }
+  });
+
+  it('35. previous and next navigation controls in bottom action bar function correctly and disable at boundaries', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    const prevBtn = screen.getByRole('button', { name: 'Soal Sebelumnya' }) as HTMLButtonElement;
+    const nextBtn = screen.getByRole('button', { name: 'Soal Berikutnya' }) as HTMLButtonElement;
+
+    // At question 1 (index 0), prev is disabled, next is enabled
+    expect(prevBtn.disabled).toBe(true);
+    expect(nextBtn.disabled).toBe(false);
+
+    // Click next
+    await userEvent.click(nextBtn);
+
+    // Now at question 2 (index 1), next is disabled, prev is enabled
+    expect(await screen.findByText('Berapakah jumlah sudut siku-siku pada persegi?')).toBeTruthy();
+    expect(prevBtn.disabled).toBe(false);
+    expect(nextBtn.disabled).toBe(true);
+
+    // Click prev
+    await userEvent.click(prevBtn);
+
+    // Back to question 1
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+    expect(prevBtn.disabled).toBe(true);
+    expect(nextBtn.disabled).toBe(false);
+  });
+
+  it('36. sheet question grid presents non-color-only state indicators for active, answered, and unresolved states', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(
+          JSON.stringify(
+            createMockResume({
+              answers: [
+                {
+                  snapshotId: SNAPSHOT_1,
+                  answerPayload: { selectedOptionId: 'opt-1b' },
+                  clientWriteIdentity: 'initial-id-1',
+                  writeVersion: 1,
+                  updatedAt: '2026-09-12T08:05:00.000Z',
+                },
+              ],
+            })
+          ),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Open sheet
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
+    const btn1 = dialog.querySelector('button.sheet-nav-btn:nth-child(1)') as HTMLButtonElement;
+    const btn2 = dialog.querySelector('button.sheet-nav-btn:nth-child(2)') as HTMLButtonElement;
+
+    // Button 1 is both active and answered: has aria-current, active class, answered class, and visual marker
+    expect(btn1.getAttribute('aria-current')).toBe('true');
+    expect(btn1.classList.contains('active')).toBe(true);
+    expect(btn1.classList.contains('answered')).toBe(true);
+    expect(btn1.textContent).toContain('•');
+    expect(btn1.textContent).toContain('✓');
+
+    // Button 2 is unanswered and inactive
+    expect(btn2.getAttribute('aria-current')).toBeNull();
+    expect(btn2.classList.contains('answered')).toBe(false);
+    expect(btn2.textContent).not.toContain('✓');
+  });
+
+  it('37. "Selesaikan Ujian" inside QuestionNavigatorSheet is disabled when unresolved saves exist', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      if (url.includes('/api/v1/assessment/answer/save')) {
+        return new Response(JSON.stringify({ error: 'server_down' }), { status: 500 });
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Trigger save failure
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    expect(await screen.findByText('Gagal menyimpan')).toBeTruthy();
+
+    // Open sheet
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
+    const sheetSubmitBtn = dialog.querySelector('button.sheet-submit-btn') as HTMLButtonElement;
+    expect(sheetSubmitBtn.disabled).toBe(true);
+  });
+
+  it('38. QuestionNavigatorSheet backdrop click closes the sheet safely', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume()), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(
+          JSON.stringify({
+            attemptId: VALID_ATTEMPT_ID,
+            questions: sampleQuestions,
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();
+
+    // Open sheet
+    await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
+    expect(screen.getByRole('dialog', { name: 'Daftar Soal' })).toBeTruthy();
+
+    // Click backdrop
+    const backdrop = document.querySelector('.sheet-backdrop') as HTMLElement;
+    expect(backdrop).toBeTruthy();
+    await userEvent.click(backdrop);
+
+    // Sheet closes
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Daftar Soal' })).toBeNull();
+    });
   });
 });

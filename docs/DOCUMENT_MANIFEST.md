@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.406
-**Supersedes:** 1.0.405
+**Version:** 1.0.407
+**Supersedes:** 1.0.406
 **Canonical:** YES
 **Last Reviewed:** 2026-09-07
 # ELLIGBLE Document Manifest
@@ -30,8 +30,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-081 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-078 REJECTED RECOVERY CANDIDATE / BU-080 terminal / Frontend Entry Gate PASS / BU-081 Stage-5 final physical verification PASS / final physical verification PASS / terminal / DO NOT REOPEN / next Build Unit selection / scope freeze authorized. Version 1.5.323. (E552E9B068BE728D155EC092321463C8F7C8978DE4438EBD29EAF47B67F0DB9E) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. Frontend Entry Gate PASS / React + TypeScript + Vite / BU-081 Stage-5 final physical verification PASS / final physical verification PASS / terminal / DO NOT REOPEN / next Build Unit selection / scope freeze authorized. Version 0.1.432. (54050CA9A606499BC8471D6F70C27F820CE64E5AC49CF651AF42AB6827B65C58) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-081 / ACTIVE BU-082 / NEXT NOT YET REGISTERED / BU-078 REJECTED RECOVERY CANDIDATE / BU-080 terminal / BU-081 terminal / Frontend Entry Gate PASS / BU-082 Stage-2 implementation complete / Stage-3 Controller physical audit pending. Version 1.5.324. (757BF684775B855DCC35438C41FF16DCC48CC6133B270C3EFB06A82D071B7E5E) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. Frontend Entry Gate PASS / React + TypeScript + Vite / BU-081 terminal / BU-082 active / Stage-2 implementation complete / Stage-3 Controller physical audit pending. Version 0.1.433. (A53A8146B453AB251AD21655C599170D2A28C0128E11DD044D88FF01B5F65F62) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -41,8 +41,8 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (5CA58622FABBB07C09AB2BC399321F2DC6F1EA8589A8A32C2BA5DE16FD893829) | Canonical / LOCKED v1.1.0 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Index. Dynamic build phase control, BU status tracking, BU-081 Stage-5 final physical verification PASS / final physical verification PASS / terminal / DO NOT REOPEN / next Build Unit selection / scope freeze authorized. Version 0.1.374. (7112E1098EB5B0573360C7EE13E00596F12FD4C77D7A3B3452A48C19AAF5CC74) | DYNAMIC BUILD CONTROL | PHASE: Build |
-| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, and Frontend Entry Gate PASS. Version 1.0.4. (300458D4164A5DDC67280B5F7BC6B5545E114D56AEBF857C733C355B680DC7D4) | DYNAMIC ROADMAP | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Index. Dynamic build phase control, BU status tracking, BU-081 terminal, BU-082 active / Stage-2 implementation complete / Stage-3 Controller physical audit pending. Version 0.1.375. (7B88FCE5590DBD3910ED2193C81A2233FCBDCCF989EDF9FB734DD171A2DE0E8D) | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, BU-081 core workstation implemented, BU-082 mobile-first UX hardening implemented. Version 1.0.5. (56DEE237BB82E90264560A5FF3C1F7FCAEB0296B882BE49D9242F7156F0863F4) | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
 | `docs/00-recovery/00.02_TENANT_IDENTITY_AND_ACCESS.md` | Identity/Tenant Recovery | Frozen | DOMAIN |
@@ -309,3 +309,9 @@ NEVER_DEFAULT
 | `runtime/secure-assessment/test/server.test.ts` | BU-080 server test — Route delegation, context check, and unsupported method regression / 15/15 TESTS PASS. (519E65B716392E96D1B4C4B1A842352188E2A5A4E646CCAEB52DA12C75754875) | TEST HARNESS | PHASE: Build |
 | `docs/build/units/BU-080_SECURE_ASSESSMENT_STUDENT_ATTEMPT_QUESTION_DELIVERY_READ_API_INTEGRATION_BOOTSTRAP.md` | BU-080 Specification — Fast-Track lifecycle close COMPLETE / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / final physical verification PASS / terminal / next Build Unit selection authorized. (B4D0A0865505AB2019093460DCC61BF29CC9471835AFA8344EEE87E115C57D93) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-081_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_CORE_WORKSTATION_BOOTSTRAP.md` | BU-081 Specification — Secure Assessment Student Exam Client Core Workstation Bootstrap. Version 1.0.0. Stage-5 final physical verification PASS / final physical verification PASS / terminal / DO NOT REOPEN / next Build Unit selection / scope freeze authorized. (16D5A25B53BF514434DAA11F6531658AC77B8F1D532725B137160ED6612A129B) | BUILD UNIT SPEC | PHASE: Build |
+| `docs/build/units/BU-082_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_MOBILE_FIRST_UX_HARDENING_BOOTSTRAP.md` | BU-082 Specification — Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap. Version 1.0.0. STAGE-1 PASS / STAGE-2 COMPLETE / VERIFICATION PASS / STAGE-3 PENDING. (E5F63AAE9ABFE498B4268CB8C75090FF9E2CA069AF495C5759E5BA836181C503) | BUILD UNIT SPEC | PHASE: Build |
+| `frontend/web/src/components/QuestionNavigatorSheet.tsx` | BU-082 frontend component — Accessible mobile-first question navigator sheet with focus containment, Escape dismissal, responsive touch targets, and submission access. (82C7307AD4A8F5F2C64B0E2296DA56A9F63E647C50744ACDEB2EBC3A05D3308D) | FRONTEND COMPONENT | PHASE: Build |
+| `frontend/web/src/components/StudentExamWorkstation.tsx` | BU-082 frontend workstation — Student Exam Workstation hardened with compact mobile sticky header, mobile bottom navigation action bar, and responsive layout coordination. (3F1A738A8D66B6421C7973BEBE10A26354F61F3ACBDBFC163725151CA0F169E8) | FRONTEND COMPONENT | PHASE: Build |
+| `frontend/web/src/styles/workstation.css` | BU-082 frontend styling — Mobile-first workstation CSS with 100dvh dynamic viewport hardening, safe-area-inset padding, bottom sheet styling, and >= 52px touch rhythm. (9CCEEBF8AFC37C313BEBA0A6AB4EDE5BC0DA9543FA0D1178FF0684F7E129EC81) | FRONTEND STYLING | PHASE: Build |
+| `frontend/web/src/__tests__/workstation.test.tsx` | BU-082 frontend tests — Workstation unit test suite covering mobile navigator sheet, focus management, question navigation, submission flow, and BU-081 regression proofs / 38/38 TESTS PASS. (160CFFA45F429E41EA59FF809156C1407CA74EA737203615E9DF318D2E4194F3) | TEST HARNESS | PHASE: Build |
+| `frontend/web/index.html` | BU-082 frontend entry — HTML shell configured with viewport-fit=cover meta viewport for mobile safe-area support. (E817B2F14A68D6D7709139536EFA0C21EEF1E5ECF6D0D07CAA3023679F2459E1) | FRONTEND ENTRY | PHASE: Build |
