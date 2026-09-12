@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.402
-**Supersedes:** 1.0.401
+**Version:** 1.0.403
+**Supersedes:** 1.0.402
 **Canonical:** YES
 **Last Reviewed:** 2026-09-07
 # ELLIGBLE Document Manifest
@@ -30,8 +30,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/master/MASTER_CONTEXT.md` | Cross-project context | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-080 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-078 REJECTED RECOVERY CANDIDATE / BU-080 terminal / Stage-5 final physical verification PASS / final physical verification PASS / next Build Unit selection authorized. Version 1.5.319. (C3A4F9AC88E44B33B86805A0A927597E73A51D5D7C21BFFDCE7B96D0BCF4E6C6) | CANONICAL STATE | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-080 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-078 REJECTED RECOVERY CANDIDATE / BU-080 terminal / Frontend Entry Gate PASS / React + TypeScript + Vite stack / locked Design System & Copy Style / next Build Unit selection authorized. Version 1.5.320. (E77DD8541A4CC6D005F76BEF2D87F652B065E75662A9450059D8BE5A8AADEE3A) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. Frontend Entry Gate PASS / React + TypeScript + Vite / verified skill / locked design foundations / next safe action: FIRST PRODUCTION FRONTEND BUILD UNIT SELECTION / SCOPE FREEZE. Version 0.1.429. (DC7678E57E53A7BF35B28F003F50FBDFD421A33713B6EF7DF04752618A9B7671) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -41,6 +41,8 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (5CA58622FABBB07C09AB2BC399321F2DC6F1EA8589A8A32C2BA5DE16FD893829) | Canonical / LOCKED v1.1.0 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Index. Dynamic build phase control, BU status tracking, and Frontend Entry Gate PASS. Version 0.1.371. (9E3A8747021BACA54C0C3489566C388D9E2CA85E81F7848330A99DA264D66591) | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, and Frontend Entry Gate PASS. Version 1.0.4. (300458D4164A5DDC67280B5F7BC6B5545E114D56AEBF857C733C355B680DC7D4) | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
 | `docs/00-recovery/00.02_TENANT_IDENTITY_AND_ACCESS.md` | Identity/Tenant Recovery | Frozen | DOMAIN |
@@ -55,7 +57,7 @@ NEVER_DEFAULT
 | `docs/00-recovery/00.11_LEGACY_CBT_RECOVERY.md` | Legacy classification | Frozen | ON_DEMAND |
 | `docs/00-recovery/00.12_OPEN_PROVISIONAL_FUTURE_REGISTER.md` | Unresolved status register | Frozen/Canonical handoff | PHASE/DOMAIN |
 | `docs/00-recovery/archive/ELLIGBLE_RECOVERY_FULL_ARCHIVE.md` | Complete Recovery history | Frozen historical | NEVER_DEFAULT |
-| `docs/decisions/DECISION_LOG.md` | Concise decision register. Version: 1.0.3. (4DB03DC987374D152C21F515A1E1BEC80785BFA4592256ACFC36B649BFE7D3C9) | Canonical/Dynamic | PHASE |
+| `docs/decisions/DECISION_LOG.md` | Concise decision register. DEC-037 production frontend stack foundation & Frontend Entry Gate completion recorded. Version 1.0.5. (DCA2B9AFADDCE2AC6B3AA77B94BE3F4B6D9E49C6E6C107343B597FD1C0E1794F) | Canonical/Dynamic | PHASE |
 | `docs/01-discovery/01.01_PRODUCT_VISION_AND_BOUNDARIES.md` | Discovery 01 — Product Vision & Boundaries | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md` | Discovery 02 — Tenant / Organization / Identity / Access Foundation | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/03.01_ACADEMIC_CORE.md` | Discovery 03 — Academic Core | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
@@ -71,7 +73,9 @@ NEVER_DEFAULT
 | `docs/architecture/RUNTIME_RELIABILITY_AND_OPERATIONS_ARCHITECTURE.md` | Architecture Sequence 6 Runtime / Reliability / Operations Architecture covering runtime boundaries, failure containment, observability, backup/restore, incident-response hooks, deployment requirements, technology-selection criteria. (63863D539E875190A69610166AB03AE5B212C4879FAAD3C9AD93F559CCD9CDD1) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/ARCHITECTURE_TRACEABILITY_AND_EXIT_GATE.md` | Architecture Sequence 7 traceability, coverage, contradiction verification, Architecture exit gate, and Build-entry control boundary. (947D8EF2F0D94478FA5F84A0DA322B00FB0BC96D5CD8804BA81A4EC9B34DFF73) | Canonical / LOCKED v1.0.0 | PHASE: Architecture |
 | `docs/architecture/README.md` | Architecture phase gate / placeholder | phase-state guidance | PHASE: Architecture |
-| `docs/design/README.md` | Design phase gate / placeholder | phase-state guidance | PHASE: Design |
+| `docs/design/README.md` | Canonical design index. Frontend Entry Gate PASS / React + TypeScript + Vite stack / locked Design System & Copy Style / react-typescript-vite skill verified. Version 1.0.0. (FC1749F844442742C34E50F50B1C7E8EFC14101C406335AE595F95898480051D) | CANONICAL DESIGN INDEX | PHASE: Design |
+| `docs/design/FRONTEND_DESIGN_SYSTEM.md` | Canonical Frontend Design System. Platform-wide design tokens, typography, surfaces, spacing scale, component patterns, anti-AI-slop rules, WCAG 2.1 AA accessibility, and Secure Assessment distraction control. Version 1.0.0. (89FFD58AFDF6E3DDE06DD82D3EF8263A7CC7682F7832F28628CA02BEABB5A30E) | Canonical / LOCKED v1.0.0 | ALWAYS/Frontend |
+| `docs/design/UI_CONTENT_AND_COPY_STYLE.md` | Canonical UI Content and Copy Style Guide. Bahasa Indonesia school-facing copy standard, em dash prohibition, calm institutional tone, and assessment workflow terminology. Version 1.0.0. (CA30C9FCA1ED341C5D143EAF23541384B7AA7425036B730E3FEA1C23560C1AC9) | Canonical / LOCKED v1.0.0 | ALWAYS/Frontend |
 | `docs/build/units/BU-001_MINIMUM_FOUNDATION_IDENTITY_TENANT_PERSISTENCE_BOOTSTRAP.md` | BU-001 Specification - Minimum Foundation: Identity/Tenant Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (2952AD2EDC5AA5EA8CA559AD71A441D5FC003357C849548B4CBCB6C6BC3BD5B9) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-002_SECURE_ASSESSMENT_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-002 Specification - Secure Assessment Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (C2D2A111ACE7B0E615AFF69992E980DD61C9F503CB6ABBA2564DFA40996CAB46) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-003_SECURE_ASSESSMENT_QUESTION_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-003 Specification - Secure Assessment Question Core State Persistence Bootstrap. Status: COMPLETE / TERMINAL VERIFICATION PASS / REPOSITORY FINALIZED. (19DE33263442893B9DDFDDD9F0244467FFC5F66E714F46E79E58597978E1EE10) | BUILD UNIT SPEC | PHASE: Build |

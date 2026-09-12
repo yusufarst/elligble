@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.0.4
+**Version:** 1.0.5
 **Canonical:** YES  
-**Supersedes:** 1.0.2
+**Supersedes:** 1.0.4
 **Used By:** Governance, Discovery, Architecture  
 **Last Reviewed:** 2026-09-12
 
@@ -47,6 +47,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-034 | Build Fast-Track | Build Unit Fast-Track Control v1 applies from BU-011+, reducing administrative lifecycle loops while preserving one-BU, verification, scope, repository, and safety gates | LOCKED | Owner / 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md |
 | DEC-035 | Full-Product Build Control | Full-Product / Baseline-First / Product-Milestone-Driven Build Control | LOCKED | Owner / 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md |
 | DEC-036 | Frontend Entry Gate | Frontend Entry, Design-System, and UI Quality Gate | LOCKED | Owner / Governance |
+| DEC-037 | Frontend Stack & Entry Completion | React + TypeScript + Vite canonical production frontend stack foundation & Frontend Entry Gate completion | LOCKED | Owner / Frontend Entry Gate |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -202,3 +203,18 @@ Owner-approved meaning:
 - consistent design language across roles/modules required;
 - em dash prohibited in user-facing UI copy;
 - exact skill/design-token choices intentionally deferred until frontend entry when stack/tool availability is known.
+
+### DEC-037 — Production Frontend Stack Foundation & Frontend Entry Gate Completion (2026-09-12)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/design/FRONTEND_DESIGN_SYSTEM.md`, `docs/design/UI_CONTENT_AND_COPY_STYLE.md`, `docs/design/README.md`
+
+Owner explicitly approved the production frontend stack foundation and completed the Frontend Entry Gate:
+
+- **Canonical Production Frontend Stack Foundation:** React + TypeScript + Vite is the canonical production frontend stack foundation for ELLIGBLE Program 1, beginning with the Secure Assessment browser vertical product.
+- **Unapproved Technologies Not Preselected:** This approval does NOT preselect or authorize Tailwind, shadcn/ui, Material UI, Chakra, Bootstrap, Redux, Zustand, React Router, TanStack Router, Next.js, SSR, hosting vendor, authentication provider, or third-party component/animation libraries.
+- **Purpose-Fit Frontend Agent Skill Selected & Verified:** `react-typescript-vite` (v1.0.0, Antigravity Customization Ecosystem: `~/.gemini/config/skills/react-typescript-vite/SKILL.md`) is selected, installed, and verified for strictly-typed React component architecture, Vite ESM native bundling, WCAG 2.1 AA accessibility, and mobile-first responsive design.
+- **Canonical Design System Locked:** `docs/design/FRONTEND_DESIGN_SYSTEM.md` (v1.0.0, LOCKED) establishes the platform-wide design tokens, typography, surfaces, spacing scale, component patterns, anti-AI-slop quality rules, and Secure Assessment distraction-control requirements.
+- **Canonical UI Content and Copy Style Locked:** `docs/design/UI_CONTENT_AND_COPY_STYLE.md` (v1.0.0, LOCKED) establishes Bahasa Indonesia as the primary school-facing UI language, strictly prohibits the em dash ("—") in user-facing UI copy, and standardizes calm, institutional academic terminology.
+- **Frontend Entry Gate Status:** PASS. The prerequisites to commence production user-facing frontend Build Units are fully satisfied.
