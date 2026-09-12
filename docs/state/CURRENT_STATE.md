@@ -1,7 +1,7 @@
 **Status:** ACTIVE
-**Version:** 1.5.324
+**Version:** 1.5.325
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.323
+**Supersedes:** CURRENT_STATE v1.5.324
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
@@ -57,11 +57,12 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **TITLE:** Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap
 - **VERSION:** 1.0.0
 - **STAGE-1:** PASS / FROZEN BY MAIN PROJECT CONTROL 010
-- **STAGE-2:** COMPLETE / REPOSITORY FINALIZED
 - **STAGE-2 IMPLEMENTATION:** COMPLETE
 - **STAGE-2 ENGINEERING VERIFICATION:** PASS
 - **STAGE-2 REPOSITORY FINALIZED:** YES
-- **CURRENT STATUS:** IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL AUDIT
+- **STAGE-2 TASKIFICATION DEVIATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **BU-082 TARGETED FORWARD REMEDIATION:** COMPLETE
+- **CURRENT STATUS:** TARGETED FORWARD REMEDIATION COMPLETE / AWAITING CONTROLLER PHYSICAL AUDIT
 - **DONE:** NO
 - **STAGE-3:** PENDING
 - **LAST COMPLETED BUILD UNIT:** BU-081
@@ -93,10 +94,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **FRONTEND TYPECHECK:** PASS
 - **FRONTEND TEST:** PASS / 38 TESTS
 - **FRONTEND BUILD:** PASS
-- **PB04:** OPEN
-- **PB05:** OPEN / CARRIED FORWARD
-- **PB06:** OPEN / NOT CLOSED
-- **PB07:** OPEN / NOT CLOSED
+- **PB04:** Full Authentication Policy / Authentication-Security Policy (OPEN / CARRIED FORWARD)
+- **PB05:** Permission Matrix (OPEN / CARRIED FORWARD)
+- **PB06:** Assessment Capability Testing (OPEN / NOT CLOSED)
+- **PB07:** Zero-Lost-Answer Verification (OPEN / NOT CLOSED)
 
 ### BU-081 CURRENT STATUS
 - **BUILD UNIT:** BU-081

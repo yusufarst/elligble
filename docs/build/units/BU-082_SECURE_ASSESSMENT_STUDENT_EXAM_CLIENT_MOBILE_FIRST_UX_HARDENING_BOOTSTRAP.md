@@ -29,10 +29,10 @@ BU-082 closes this user-facing baseline gap to fulfill the locked Frontend Desig
 - `docs/design/UI_CONTENT_AND_COPY_STYLE.md` (v1.0.0, LOCKED)
 - `~/.gemini/config/skills/react-typescript-vite/SKILL.md` (v1.0.0, VERIFIED)
 - `docs/build/units/BU-081_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_CORE_WORKSTATION_BOOTSTRAP.md`
-- PB04: Real Browser E2E (OPEN)
+- PB04: Full Authentication Policy / Authentication-Security Policy (OPEN / CARRIED FORWARD)
 - PB05: Permission Matrix (OPEN / CARRIED FORWARD)
-- PB06: Production Blocker 06 (OPEN / NOT CLOSED)
-- PB07: Durable Offline Recovery (OPEN / NOT CLOSED)
+- PB06: Assessment Capability Testing (OPEN / NOT CLOSED)
+- PB07: Zero-Lost-Answer Verification (OPEN / NOT CLOSED)
 
 ## DIRECT PREDECESSOR
 - BU-081 — Secure Assessment Student Exam Client Core Workstation Bootstrap (TERMINAL / DO NOT REOPEN)
@@ -45,7 +45,7 @@ BU-082 closes this user-facing baseline gap to fulfill the locked Frontend Desig
 
 ## FROZEN SCOPE & INVARIANTS
 1. **Zero Runtime/API Mutation:** Preserves all BU-081 runtime contracts, payload schemas, headers, and endpoints. Zero modifications to `assessment-client.ts`, `useAnswerManager.ts`, `useAuthoritativeTimer.ts`, or `types/assessment.ts`.
-2. **Auth Seam Preserved:** No authentication SDK, login UI, or token handling introduced. PB04 remains OPEN.
+2. **Auth Seam Preserved:** No authentication SDK, login UI, or token handling introduced. PB04 remains OPEN / CARRIED FORWARD.
 3. **No New Dependencies:** Zero packages added to `package.json` or `package-lock.json`.
 4. **Dynamic Viewport & Safe Area:** `index.html` configured with `viewport-fit=cover`. Workstation CSS implements `min-height: 100dvh` and `env(safe-area-inset-*)`.
 5. **Mobile Question Navigator Sheet:** `frontend/web/src/components/QuestionNavigatorSheet.tsx` implements accessible bottom sheet with `role="dialog"`, `aria-modal="true"`, focus trap, Escape close, and focus restoration to trigger.
@@ -58,6 +58,15 @@ BU-082 closes this user-facing baseline gap to fulfill the locked Frontend Desig
 - Production Build: `npm run build` PASS (Vite production bundle generated in `dist/`).
 - PostgreSQL Verifier: NOT RUN (No database or backend files changed).
 
+## HISTORICAL STAGE-2 PROCESS RECORD
+- STAGE-2 TASKIFICATION DEVIATION: YES
+- DETAIL: schedule/task-style execution occurred despite Controller prohibition; original Stage-2 execution did not stop before commit.
+- CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT
+- MATERIAL APPLICATION ENGINEERING DEFECT: NONE ESTABLISHED
+- TARGETED FORWARD REMEDIATION: COMPLETE
+- STAGE-3: PENDING
+- DONE: NO
+
 ## CONTROL STATUS
 - BUILD UNIT: BU-082
 - TITLE: Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap
@@ -66,6 +75,11 @@ BU-082 closes this user-facing baseline gap to fulfill the locked Frontend Desig
 - STAGE-2 IMPLEMENTATION: COMPLETE
 - STAGE-2 ENGINEERING VERIFICATION: PASS
 - STAGE-2 REPOSITORY FINALIZED: YES
+- STAGE-2 TASKIFICATION DEVIATION: YES
+- DETAIL: schedule/task-style execution occurred despite Controller prohibition; original Stage-2 execution did not stop before commit.
+- CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT
+- MATERIAL APPLICATION ENGINEERING DEFECT: NONE ESTABLISHED
+- TARGETED FORWARD REMEDIATION: COMPLETE
 - STAGE-3: PENDING
 - DONE: NO
 - LAST COMPLETED BUILD UNIT: BU-081
@@ -74,7 +88,7 @@ BU-082 closes this user-facing baseline gap to fulfill the locked Frontend Desig
 - CURRENT RESPONSIBILITY: BU-082 STAGE-3 CONTROLLER PHYSICAL AUDIT
 - NEXT SAFE ACTION: MAIN PROJECT CONTROL 010 - BU-082 STAGE-3 CONTROLLER PHYSICAL AUDIT
 - FRONTEND ENTRY GATE: PASS
-- PB04: OPEN
-- PB05: OPEN / CARRIED FORWARD
-- PB06: OPEN / NOT CLOSED
-- PB07: OPEN / NOT CLOSED
+- PB04: Full Authentication Policy / Authentication-Security Policy (OPEN / CARRIED FORWARD)
+- PB05: Permission Matrix (OPEN / CARRIED FORWARD)
+- PB06: Assessment Capability Testing (OPEN / NOT CLOSED)
+- PB07: Zero-Lost-Answer Verification (OPEN / NOT CLOSED)
