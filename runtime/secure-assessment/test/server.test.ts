@@ -98,6 +98,20 @@ test('server tests', async (t) => {
         assert.equal(res.status, 403);
     });
 
+    await t.test('GET /api/v1/assessment/questions?attemptId=uuid -> reaches bounded Question Delivery handler (403 missing context)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/questions?attemptId=11111111-2222-4333-8444-555555555555`);
+        assert.equal(res.status, 403);
+    });
+
+    await t.test('POST /api/v1/assessment/questions -> unsupported method on exact route is bounded (405 method_not_allowed)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/questions?attemptId=11111111-2222-4333-8444-555555555555`, {
+            method: 'POST'
+        });
+        assert.equal(res.status, 405);
+        const data = await res.json();
+        assert.deepEqual(data, { error: 'method_not_allowed' });
+    });
+
     await t.test('38, 40. POST /api/v1/assessment/session/activate -> reaches bounded Session handler (403 missing context)', async () => {
         const res = await fetch(`${baseUrl}/api/v1/assessment/session/activate`, {
             method: 'POST',

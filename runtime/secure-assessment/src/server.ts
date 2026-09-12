@@ -5,6 +5,7 @@ import { handleTimerStart, handleTimerGet } from './timer.ts';
 import { handleSubmit, handleSubmissionGet, handleExpiryFinalize } from './submission.ts';
 import { handleResumeGet } from './resume.ts';
 import { handleSessionActivate } from './session.ts';
+import { handleQuestionDelivery } from './question-delivery.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
@@ -96,6 +97,14 @@ export function createServer(deps: ServerDependencies): http.Server {
             const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
             if (parsedUrl.pathname === '/api/v1/assessment/resume') {
                 handleResumeGet(req, res, deps);
+                return;
+            }
+        }
+
+        if (req.url && req.url.startsWith('/api/v1/assessment/questions')) {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            if (parsedUrl.pathname === '/api/v1/assessment/questions') {
+                handleQuestionDelivery(req, res, deps);
                 return;
             }
         }
