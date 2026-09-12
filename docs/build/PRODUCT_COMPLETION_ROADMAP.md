@@ -1,6 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.1
+**Version:** 1.0.2
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
+**Supersedes:** 1.0.1
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -40,7 +41,7 @@
 │  [Milestone 3] Academic Core: Full Operational Management & School OS Integration  │
 │         │                                                                         │
 │         ▼                                                                         │
-│  [Milestone 4] Track & Care: Core Attendance, Progress, and Counseling Boundaries │
+│  [Milestone 4] Track & Care: Academic Development / Progress and Care Boundaries   │
 │         │                                                                         │
 │         ▼                                                                         │
 │  [Milestone 5] Passport & Path: Student Provenance Records & Future Planning      │
@@ -100,8 +101,8 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 |---|---|---|---|---|
 | **Identity / Tenant / Access** | `IN — CORE / IN — MANDATORY BASELINE` | BU-001, BU-034, BU-035 (Tenant isolation, user persistence, proctor authorization) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
 | **Academic Core** | `IN — CORE` | BU-036–BU-042, BU-046 (Academic year, period, subjects, offerings, classes, enrollments) | Curriculum mapping UI, bulk CSV imports, administrative management views | Partially Built |
-| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), live WebSocket/polling sync | Foundation Complete / Vertical UI In Progress |
-| **Track** | `IN — MANDATORY BASELINE` | Baseline schemas & domain events planned | Gradebook engine, academic risk indicators | Not Started |
+| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), browser/server operational synchronization | Foundation Built / Vertical Product Integration Pending |
+| **Track** | `IN — MANDATORY BASELINE` | Baseline schemas & domain events planned | Longitudinal academic development and progress tracking (applicable concepts: Academic Progress, Early Warning, Targets / Follow-Up, Portfolio Workbench; Track != Care; Track does NOT own Official School Grade truth; attendance/timetable out of current baseline) | Not Started |
 | **Care** | `IN — MANDATORY BASELINE` | Security & counseling privacy boundaries established in MB-06 | Confidential notes CRUD, counseling case tracking, access authorization | Not Started |
 | **Passport** | `IN — CORE` | Provenance architecture in MB-05 | Student achievement records, verified transcript export, granular visibility controls | Not Started |
 | **Path** | `IN — CORE` | Journey flows documented in MB-04 | Target university/career mapping, study plan tracking, student questionnaire | Not Started |
