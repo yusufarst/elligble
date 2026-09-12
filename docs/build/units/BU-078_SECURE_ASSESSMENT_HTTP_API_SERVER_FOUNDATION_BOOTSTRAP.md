@@ -1,9 +1,9 @@
-**Status:** DRAFT / NOT YET IMPLEMENTED
+**Status:** UNAUTHORIZED / RECOVERY HOLD
 **Version:** 1.0.0
 **Canonical:** YES
 **Phase:** BUILD
 
-# BU-078 Specification
+# UNAUTHORIZED / RECOVERY HOLD (BU-078 Specification)
 ## Secure Assessment HTTP API Server Foundation Bootstrap
 
 ### 1. Purpose
