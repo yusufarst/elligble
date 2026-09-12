@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.393
-**Supersedes:** 1.0.392
+**Version:** 1.0.394
+**Supersedes:** 1.0.393
 **Canonical:** YES
 **Last Reviewed:** 2026-09-07
 # ELLIGBLE Document Manifest
@@ -31,7 +31,7 @@ NEVER_DEFAULT
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
 | `docs/master/MASTER_CONTEXT.md` | Cross-project context | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-077 / ACTIVE NONE / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / next Build Unit selection authorized. Version 1.5.309. (CFF1FED2FD4A519FCBC5F54E08CE3AAFD738E1A63662AF55094AF5B63E003C48) | CANONICAL STATE | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-077 / ACTIVE NONE / NEXT BU-078 / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / next Build Unit selection authorized. Version 1.5.311. (BB7CCDAD3F660A68CDA91BB2993A8CE68D129809179174FD726B3A3543FBFC20) | CANONICAL STATE | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -117,7 +117,7 @@ NEVER_DEFAULT
 | `database/verification/verify_bu034_secure_assessment_explicit_proctor_assignment_core_state.sql` | BU-034 Verification SQL. (B51C019848BCC73DF8735119A104C8906075E62E0035ADDFEFBD5485573B1185) | VERIFICATION HARNESS | PHASE: Build |
 | `docs/build/evidence/BU-014_ASSESSMENT_CAPABILITY_TESTING_EVIDENCE.md` | BU-014 Integrated Real PostgreSQL Capability Verification Evidence. (028BC688185A58D4B9EFE725B30193A7638591B9892E0E840E8F36BD43844E91) | BUILD UNIT EVIDENCE | PHASE: Build |
 | `runtime/secure-assessment/verification/verify_bu014_active_exam.ts` | BU-014 Verification Harness. (2C549A7612E3F97920D483956384A35A1CECE8B6E08713C9B0E4C93B929FBDEC) | VERIFICATION HARNESS | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. BU-077 fully terminal / Stage-5 final physical verification PASS / next Build Unit selection authorized. Version 0.1.418. (48AEDEB9E8115C064D271E97CB6DB8D909D0D060BEA88E9E287B49C4F3A62E61) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. BU-077 fully terminal / NEXT BU-078 / Stage-5 final physical verification PASS / next Build Unit selection authorized. Version 0.1.420. (4EBE228107F2B55918C5862492E97462DD234F09822E0ABB317EAF1FACDFF88D) | CANONICAL STATE | PHASE: Build |
 | `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. (5B5DF97432538AF7E48B85939091983CE488EBFAA702D4D84E94F88189CF693D) | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
 | `docs/02-master-blueprint/02.01_PLATFORM_SYSTEM_MAP.md` | Authoritative Platform System Map for MB-02 and subsequent Master Blueprint units. | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-01 |
@@ -135,7 +135,7 @@ NEVER_DEFAULT
 | `docs/build/units/BU-035_SECURE_ASSESSMENT_EXPLICIT_PROCTOR_ASSIGNMENT_AUTHORIZATION_RUNTIME_BOOTSTRAP.md` | BU-035 specification — Secure Assessment Explicit Proctor Assignment Authorization Runtime Bootstrap. Version: 1.0.0. Status: COMPLETE / PRIOR CONTROLLER PHYSICAL AUDIT FAIL / TARGETED RUNTIME VALIDATION + VERIFICATION + HANDOFF CONTROL REMEDIATION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT FAIL / SECOND TARGETED REAL-DB MISSING-ASSIGNMENT + HANDOFF NAVIGATION REMEDIATION COMPLETE / SECOND CONTROLLER PHYSICAL RE-AUDIT PASS / FAST-TRACK LIFECYCLE CLOSE COMPLETE / FAST-TRACK REPOSITORY FINALIZED / FINAL PHYSICAL VERIFICATION PASS. (537EDEFC30AC49B8505052DE1EB1A6869590C3ECE10371CCBC6C17BCD3645550) | BUILD UNIT SPEC | PHASE: Build |
 | `runtime/secure-assessment/src/proctor-authorization.ts` | BU-035 Proctor Authorization Runtime Primitive. (3A262AFA75AE1C4104F8109A7997FB0D3DFDDFC820ED8AD8E04F1BF28E134E75) | RUNTIME SOURCE | PHASE: Build |
 | `runtime/secure-assessment/test/proctor-authorization.test.ts` | BU-035 Proctor Authorization Unit Tests. (68A99FE1656B2BAC70D447F89F13F1ED43C291284788CF437F6B8514F4CF6A09) | TEST HARNESS | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. BU-077 DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / successor selection authorized. Version 0.1.361. (7390FE4CA318E2D34392B98A9012366CFE72EC896E5825FBF00D340D0760718C) | BUILD PHASE CONTROL | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. BU-077 DONE YES / BU-078 STAGE-1 PASS / full repository finalized YES / Stage-5 final physical verification PASS / successor selection authorized. (D8D74F71780164EE63FF5B025FF6FD3EC43D27E16C5BF659E946D15A20322602) | BUILD PHASE CONTROL | PHASE: Build |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap — active tracking of full ELLIGBLE baseline completion, active product milestones, domain statuses, role-flow and E2E readiness, and post-baseline expansion. Version 1.0.0. (E95895BA05D2EBC3B7B33CFC298169BDD61C378B713D9B254064C84A0E62C22E) | ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL | PHASE: Build |
 | `docs/build/units/BU-036_ACADEMIC_CORE_ACADEMIC_YEAR_AND_PERIOD_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-036 specification — Academic Core Academic Year and Period Core State Persistence Bootstrap. Version: 1.0.0. Status: COMPLETE / THIRD TARGETED VERIFICATION + CONTROL + PROCESS REMEDIATION COMPLETE / THIRD TARGETED REMEDIATION REPOSITORY FINALIZED / THIRD CONTROLLER PHYSICAL RE-AUDIT PASS / FAST-TRACK LIFECYCLE CLOSE COMPLETE / FAST-TRACK REPOSITORY FINALIZED / FINAL PHYSICAL VERIFICATION PASS. (F5CC72A98DF7562AFF58420412F895AA46998025366EA40AD9FF8D05A498F223) | BUILD UNIT SPEC | PHASE: Build |
 | `database/migrations/0009_bu036_academic_core_academic_year_period_core_state.sql` | Migration 0009 - BU-036 Academic Core Academic Year and Period Core State Persistence. (D518D8264ABE19461616B646C56942868FC24C6E1FAE31C0E87A343175880F08) | DATABASE MIGRATION | PHASE: Build |
@@ -293,3 +293,4 @@ NEVER_DEFAULT
 | `runtime/secure-assessment/test/exam-instance-conditional-room-proctor-readiness-composition-preflight.test.ts` | BU-077 focused tests — capability, lifecycle, four policy states, zero-room mapping, incomplete/complete participant and proctor coverage, single capability invocation, zero mutation proofs. PASS / 27 / 27. (90868257DE34326CAF363009FB25FD109222F8D3F18D55B55928AFD107F407A4) | TEST HARNESS | PHASE: Build |
 | `runtime/secure-assessment/verification/verify_bu077_exam_instance_conditional_room_proctor_readiness_composition_preflight.ts` | BU-077 PostgreSQL verifier — canonical migrations 0001..0034 / history 34 / migration 0035 absence / policy matrix / single capability invocation / protected-state non-mutation / fail-closed cleanup / PostgreSQL PASS. (D9934BF069DAD18855B34C32B6499EB955429672D571BAF7635D25331DEB6CB9) | BUILD VERIFICATION | PHASE: Build |
 | `docs/build/units/BU-077_SECURE_ASSESSMENT_EXAM_INSTANCE_CONDITIONAL_ROOM_PROCTOR_READINESS_COMPOSITION_PREFLIGHT_RUNTIME_BOOTSTRAP.md` | BU-077 Specification — Fast-Track lifecycle close COMPLETE / DONE YES / full repository finalized YES / Stage-5 final physical verification PASS / next Build Unit selection authorized. (C38FC066AE6F4F4DE0C6FEDFDC05BA3BC7A72EBC0F684A37314CACD170D87B55) | BUILD UNIT SPEC | PHASE: Build |
+| `docs/build/units/BU-078_SECURE_ASSESSMENT_HTTP_API_SERVER_FOUNDATION_BOOTSTRAP.md` | BU-078 Specification - Secure Assessment HTTP API Server Foundation Bootstrap. (271B7E69A8B77094144A71EAFB061007F6EBAAA9210CFC9E0CB99B6E2FD153FC) | BUILD UNIT SPEC | PHASE: Build |

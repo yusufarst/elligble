@@ -1,5 +1,5 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.0
+**Version:** 1.0.1
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
@@ -16,6 +16,11 @@
 - **CURRENT PRODUCT MILESTONE:** SECURE ASSESSMENT — MINIMUM BROWSER-USABLE END-TO-END VERTICAL PRODUCT
 - **CURRENT MILESTONE IS FINAL PROJECT COMPLETION:** NO
 - **POST-BASELINE EXPANSION PROGRAM:** PROGRAM 2 — OPTIONAL THEN FUTURE CAPABILITIES (DEFERRED UNTIL BASELINE PASS)
+- **FRONTEND ENTRY GATE:** DEFERRED / NOT YET TRIGGERED
+- **FRONTEND AGENT SKILL:** NOT YET SELECTED
+- **FRONTEND DESIGN SYSTEM:** NOT YET AUTHORED
+- **UI CONTENT/COPY STYLE:** NOT YET AUTHORED
+- **ANTI-AI-SLOP QUALITY GATE:** REQUIRED AT FRONTEND ENTRY
 - **GOVERNING DOCTRINE:** The product is the goal; Build Units are controlled execution tools. Development tracks product capabilities, user workflows, and end-to-end usability rather than Build Unit quantity.
 
 ---
@@ -93,20 +98,20 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 
 | Domain | Canonical Scope | Proven Construction Assets (BU-001..BU-077) | Remaining Baseline Gaps | Completion Status |
 |---|---|---|---|---|
-| **Identity / Tenant / Access** | `IN — CORE` | BU-001, BU-034, BU-035 (Tenant isolation, user persistence, proctor authorization) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
+| **Identity / Tenant / Access** | `IN — CORE / IN — MANDATORY BASELINE` | BU-001, BU-034, BU-035 (Tenant isolation, user persistence, proctor authorization) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
 | **Academic Core** | `IN — CORE` | BU-036–BU-042, BU-046 (Academic year, period, subjects, offerings, classes, enrollments) | Curriculum mapping UI, bulk CSV imports, administrative management views | Partially Built |
-| **Secure Assessment (Flagship)** | `IN — CORE` | BU-002–BU-035, BU-043–BU-077 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), live WebSocket/polling sync | Foundation Complete / Vertical UI In Progress |
-| **Track** | `IN — CORE` | Baseline schemas & domain events planned | Attendance recording UI, gradebook engine, academic risk indicators | Not Started |
-| **Care** | `IN — CORE` | Security & counseling privacy boundaries established in MB-06 | Confidential notes CRUD, counseling case tracking, access authorization | Not Started |
+| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), live WebSocket/polling sync | Foundation Complete / Vertical UI In Progress |
+| **Track** | `IN — MANDATORY BASELINE` | Baseline schemas & domain events planned | Gradebook engine, academic risk indicators | Not Started |
+| **Care** | `IN — MANDATORY BASELINE` | Security & counseling privacy boundaries established in MB-06 | Confidential notes CRUD, counseling case tracking, access authorization | Not Started |
 | **Passport** | `IN — CORE` | Provenance architecture in MB-05 | Student achievement records, verified transcript export, granular visibility controls | Not Started |
-| **Path** | `IN — MANDATORY BASELINE` | Journey flows documented in MB-04 | Target university/career mapping, study plan tracking, student questionnaire | Not Started |
-| **Opportunity** | `IN — MANDATORY BASELINE` | Contract boundaries documented in MB-08 | Opportunity catalog, internship/scholarship listings, eligibility evaluator | Not Started |
-| **Application** | `IN — MANDATORY BASELINE` | Cross-domain flows in MB-04 | Application submission flow, status tracker, institution review portal | Not Started |
-| **Verified Connection** | `IN — MANDATORY BASELINE` | Trust model in MB-05 | School verification signatures, student-opportunity link audit | Not Started |
-| **Outcome** | `IN — MANDATORY BASELINE` | Traceability matrix in MB-11 | Graduation tracking, placement records, aggregate school outcome statistics | Not Started |
-| **Alumni / Impact** | `IN — MANDATORY BASELINE` | Ecosystem recovery definitions in 00.07 | Alumni registration, directory search, tracer study surveys, impact dashboards | Not Started |
-| **Parent / Guardian** | `IN — MANDATORY BASELINE` | Actor map in MB-03 | Parent linkage authentication, student attendance/grade portal, consent workflows | Not Started |
-| **Partner** | `IN — MANDATORY BASELINE` | Boundaries in MB-06 | Scoped partner portal, opportunity listing management, applicant viewing | Not Started |
+| **Path** | `IN — CORE` | Journey flows documented in MB-04 | Target university/career mapping, study plan tracking, student questionnaire | Not Started |
+| **Opportunity** | `IN — CORE` | Contract boundaries documented in MB-08 | Opportunity catalog, internship/scholarship listings, eligibility evaluator | Not Started |
+| **Application** | `IN — CORE` | Cross-domain flows in MB-04 | Application submission flow, status tracker, institution review portal | Not Started |
+| **Verified Connection** | `IN — CORE` | Trust model in MB-05 | School verification signatures, student-opportunity link audit | Not Started |
+| **Outcome** | `IN — CORE` | Traceability matrix in MB-11 | Graduation tracking, placement records, aggregate school outcome statistics | Not Started |
+| **Alumni / Impact** | `IN — CORE / IN — CORE STRATEGIC` | Ecosystem recovery definitions in 00.07 | Alumni registration, tracer study surveys, impact dashboards | Not Started |
+| **Parent / Guardian** | `IN — CORE` | Actor map in MB-03 | Parent linkage authentication, student grade portal, consent workflows | Not Started |
+| **Partner** | `IN — CORE` | Boundaries in MB-06 | Scoped partner portal, opportunity listing management, applicant viewing | Not Started |
 | **Shared Platform Core** | `IN — CORE` | Database migrations 0001–0034, verification harnesses, isolation guards | Bantuan & Feedback widget, localized UI shell, system health check endpoints | Partially Built |
 
 ---
@@ -136,12 +141,18 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 
 Active Production Blockers must be systematically resolved prior to the Baseline Completion Gate:
 
-- **PB01 (Database Connection & Pool Sizing):** Validated disposable harnesses in place; production pool tuning pending full load profiling.
-- **PB02 (Migration Idempotency & Repeat-Safety):** Migrations 0001..0034 verified repeat-safe in disposable tests.
-- **PB03 (Zero-Mutation Verification):** Automated 16-table snapshot mutation checks enforced in BU-074, BU-075, BU-076, BU-077.
-- **PB04 (Authoritative Clock Skew):** Server-authoritative timer verified in BU-007, BU-008, BU-031, BU-032.
-- **PB05 (Permission Matrix / Role-Based Access Control):** `OPEN / CARRIED FORWARD`. Explicit capability evaluators currently injected per Build Unit. Full matrix closure required for multi-role production launch.
-- **PB06–PB12 (Multi-Tenant, Privacy, Offline, Anti-Cheating, Error Containment):** Boundaries established and tracked through respective domain implementation.
+- **PB-01:** Controller / Processor Legal Allocation
+- **PB-02:** Final Retention Periods / Retention Matrix
+- **PB-03:** Required DPIA
+- **PB-04:** Full Authentication Policy / Security Policy
+- **PB-05:** Permission Matrix
+- **PB-06:** Assessment Capability Testing
+- **PB-07:** Zero-Lost-Answer Verification
+- **PB-08:** Care Safeguarding Policy / Rules
+- **PB-09:** Partner Verification / Moderation Policy
+- **PB-10:** Data Classification + Consent Governance
+- **PB-11:** Backup + Restore Verification
+- **PB-12:** Security / Incident-Response Readiness
 
 ---
 

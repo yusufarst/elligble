@@ -1,5 +1,5 @@
 **Status:** ACTIVE  
-**Version:** 1.0.3
+**Version:** 1.0.4
 **Canonical:** YES  
 **Supersedes:** 1.0.2
 **Used By:** Governance, Discovery, Architecture  
@@ -45,6 +45,8 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-032 | Discovery 04 | Secure Assessment finalized v1.0.1 | LOCKED | D04.1–D04.10 |
 | DEC-033 | Governance | Context & Governance Continuity Amendment | LOCKED | Owner |
 | DEC-034 | Build Fast-Track | Build Unit Fast-Track Control v1 applies from BU-011+, reducing administrative lifecycle loops while preserving one-BU, verification, scope, repository, and safety gates | LOCKED | Owner / 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md |
+| DEC-035 | Full-Product Build Control | Full-Product / Baseline-First / Product-Milestone-Driven Build Control | LOCKED | Owner / 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md |
+| DEC-036 | Frontend Entry Gate | Frontend Entry, Design-System, and UI Quality Gate | LOCKED | Owner / Governance |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -184,3 +186,19 @@ Owner explicitly approved Full-Product / Baseline-First / Product-Milestone-Driv
 - **Scope Preservation:** Existing MB-10 capability classifications are preserved until properly updated by canonical Owner decision.
 - **Asset Reuse:** Proven persistence, runtime, reliability, readiness, and verification implementations from BU-001 through BU-077 are construction assets and must be reused/composed by vertical product work.
 - **Controlled Execution Preserved:** Exactly one Build Unit per controlled execution, Fast-Track Control v1, and material verification gates remain mandatory.
+
+### DEC-036 — Frontend Entry, Design-System, and UI Quality Gate (2026-09-12)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md`, `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md`, `docs/build/PRODUCT_COMPLETION_ROADMAP.md`
+
+Owner-approved meaning:
+- frontend production coding cannot start before Frontend Entry Gate PASS;
+- purpose-fit frontend/UI Agent Skill required at frontend entry;
+- Design System required before production UI implementation;
+- UI Content/Copy Style required before production UI implementation;
+- anti-AI-slop quality gate required;
+- consistent design language across roles/modules required;
+- em dash prohibited in user-facing UI copy;
+- exact skill/design-token choices intentionally deferred until frontend entry when stack/tool availability is known.

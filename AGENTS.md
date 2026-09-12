@@ -94,6 +94,14 @@ Follow `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` and 
 - No scope expansion. No random vendors. No hidden AI dependencies.
 - Terminal verification (typecheck, unit, regression, real PostgreSQL) is mandatory before `DONE`.
 
+## Frontend Guardrails
+
+- **FRONTEND ENTRY GATE:** Production frontend implementation MUST NOT START until FRONTEND ENTRY GATE = PASS.
+- **FRONTEND AGENT SKILL CHECKPOINT:** At Frontend Entry Gate, a PURPOSE-FIT frontend/UI Agent Skill MUST be selected, verified, installed, and recorded before frontend coding. Do NOT select a random broad skill or freeze a skill name now.
+- **FUTURE FRONTEND DESIGN SYSTEM GATE:** Before first production frontend implementation, `docs/design/FRONTEND_DESIGN_SYSTEM.md` and `docs/design/UI_CONTENT_AND_COPY_STYLE.md` MUST exist and be LOCKED. Do not choose final visual values now.
+- **ANTI-AI-SLOP QUALITY GATE:** Mandatory frontend quality review prevents generic AI-generated SaaS appearance. Deliberate use of gradients, glassmorphism, rounded cards, shadows, bento layouts, pill badges, and animations is allowed ONLY when consistent with the locked design system and actual product need.
+- **CROSS-ROLE VISUAL CONSISTENCY:** ELLIGBLE must have ONE coherent core design language. Individual Build Units may NOT independently invent their own colors, fonts, spacing, buttons, forms, cards, or navigation patterns.
+
 ## Secrets
 
 Never expose or commit:
@@ -110,5 +118,8 @@ private student data
 ## User-Facing Language
 
 Initial school-facing product UI is Bahasa Indonesia.
+
+**THE EM DASH CHARACTER "—" IS PROHIBITED IN USER-FACING UI COPY.**
+Use appropriate Indonesian punctuation instead. This rule applies to UI copy only; it must NOT rewrite internal canonical terminology (e.g., `IN — CORE`).
 
 Internal code/API/database naming uses canonical English terminology.
