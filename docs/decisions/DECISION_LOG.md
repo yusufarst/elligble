@@ -1,9 +1,9 @@
 **Status:** ACTIVE  
-**Version:** 1.0.5
+**Version:** 1.0.6
 **Canonical:** YES  
-**Supersedes:** 1.0.4
+**Supersedes:** 1.0.5
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-09-12
+**Last Reviewed:** 2026-09-13
 
 # ELLIGBLE — Decision Log
 
@@ -48,6 +48,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-035 | Full-Product Build Control | Full-Product / Baseline-First / Product-Milestone-Driven Build Control | LOCKED | Owner / 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md |
 | DEC-036 | Frontend Entry Gate | Frontend Entry, Design-System, and UI Quality Gate | LOCKED | Owner / Governance |
 | DEC-037 | Frontend Stack & Entry Completion | React + TypeScript + Vite canonical production frontend stack foundation & Frontend Entry Gate completion | LOCKED | Owner / Frontend Entry Gate |
+| DEC-038 | Frontend Agent Skill Stack | Supplemental Frontend Design/Responsive/Rendered-QA Skill Stack | LOCKED | Owner / DEC-038 |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -218,3 +219,20 @@ Owner explicitly approved the production frontend stack foundation and completed
 - **Canonical Design System Locked:** `docs/design/FRONTEND_DESIGN_SYSTEM.md` (v1.0.0, LOCKED) establishes the platform-wide design tokens, typography, surfaces, spacing scale, component patterns, anti-AI-slop quality rules, and Secure Assessment distraction-control requirements.
 - **Canonical UI Content and Copy Style Locked:** `docs/design/UI_CONTENT_AND_COPY_STYLE.md` (v1.0.0, LOCKED) establishes Bahasa Indonesia as the primary school-facing UI language, strictly prohibits the em dash ("—") in user-facing UI copy, and standardizes calm, institutional academic terminology.
 - **Frontend Entry Gate Status:** PASS. The prerequisites to commence production user-facing frontend Build Units are fully satisfied.
+
+### DEC-038 — Supplemental Frontend Design/Responsive/Rendered-QA Skill Stack (2026-09-13)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/design/FRONTEND_AGENT_SKILL_STACK.md`, `docs/design/README.md`, `AGENTS.md`
+
+DEC-038 is ADDITIVE and does NOT supersede DEC-036 or DEC-037. Owner explicitly approved the installation, canonical registration, and operational governance of the supplemental frontend design skill stack:
+
+- **Engineering Foundation Preserved:** `react-typescript-vite` (v1.0.0) remains the canonical frontend implementation and engineering discipline baseline.
+- **Supplemental Design/UX Skill Approved:** `frontend-design` (v2.0, PracticalSwan/agent-skills@afbb609) is added to elevate visual hierarchy, task fit, art direction within locked tokens, and interaction craft.
+- **Supplemental Responsive/Adaptive Skill Approved:** `frontend-responsive-ui` (am-will/codex-skills@198e289) is added to provide specialist guidance for mobile-first fluid layouts, dynamic viewports (`100dvh`), safe-area insets, breakpoint discipline, and touch target sizing across all screen sizes.
+- **Rendered Visual QA Skill Approved:** `web-design-reviewer` (github/awesome-copilot@4214189) is added for rendered browser-level inspection, multi-viewport layout defect detection, and post-implementation visual verification.
+- **Subordination & Conflict Rule:** External skills are strictly supplemental and subordinate to canonical repository decisions. No external skill may silently alter the Design System, tokens, or technology stack. REPOSITORY WINS in all cases.
+- **Mandatory Rendered Visual Verification:** Automated test PASS or static code review alone is insufficient; rendered visual verification across representative viewports (narrow mobile to wide desktop) is required for material UI changes.
+- **Optional Skills Not Preselected:** `ui-ux-pro-max`, `TasteSkill`, and `Impeccable` are not selected as mandatory stack components in this execution, avoiding instruction overlap and context overhead.
+- **Multi-Viewport Quality Standard:** The skill stack is established to ensure ELLIGBLE interfaces achieve a premium, modern, elegant, calm, professional, and institution-grade standard across all viewports without generic AI template appearance ("AI slop").

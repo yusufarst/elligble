@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.434
-**Supersedes:** 0.1.433
+**Version:** 0.1.435
+**Supersedes:** 0.1.434
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -91,11 +91,11 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-082 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**CURRENT RESPONSIBILITY:** BU-082 STAGE-3 TARGETED VISUAL REMEDIATION
 
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 - BU-082 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 - BU-082 STAGE-3 TARGETED VISUAL REMEDIATION
 
-**NEXT STAGE:** BU-082 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**NEXT STAGE:** BU-082 STAGE-3 TARGETED VISUAL REMEDIATION
 
 **BU-081:** TERMINAL / DO NOT REOPEN
 
@@ -115,16 +115,32 @@ STAGE-2 ENGINEERING VERIFICATION: PASS
 STAGE-2 REPOSITORY FINALIZED: YES
 STAGE-2 TASKIFICATION DEVIATION: NON-MATERIAL EXECUTION-CONTROL DEFECT
 BU-082 TARGETED FORWARD REMEDIATION: COMPLETE
-CURRENT STATUS: TARGETED FORWARD REMEDIATION COMPLETE / AWAITING CONTROLLER PHYSICAL AUDIT
+STAGE-3 AUTOMATED PHYSICAL AUDIT: PASS
+ACTUAL MOBILE VISUAL REVIEW: FINDINGS PRESENT
+STAGE-3 FINAL RESULT: PENDING TARGETED VISUAL REMEDIATION
+STAGE-4: NOT AUTHORIZED / PROHIBITED
+CURRENT STATUS: STAGE-3 AUTOMATED AUDIT PASS / ACTUAL VISUAL REVIEW FINDINGS RECORDED / TARGETED VISUAL REMEDIATION PENDING
 DONE: NO
-STAGE-3: PENDING
+STAGE-3: IN PROGRESS / TARGETED VISUAL REMEDIATION PENDING
 LAST COMPLETED BUILD UNIT: BU-081
 ACTIVE BUILD UNIT: BU-082
 NEXT BUILD UNIT: NOT YET REGISTERED
+CURRENT RESPONSIBILITY: BU-082 STAGE-3 TARGETED VISUAL REMEDIATION
+NEXT SAFE ACTION: MAIN PROJECT CONTROL 010 - BU-082 STAGE-3 TARGETED VISUAL REMEDIATION
+CANONICAL SKILL STACK DOC: docs/design/FRONTEND_AGENT_SKILL_STACK.md (LOCKED v1.0.0 / DEC-038)
+FRONTEND AGENT SKILL STACK (ALL FOUR ROLES INSTALLED & VERIFIED):
+- Engineering Foundation: react-typescript-vite v1.0.0
+- Supplemental Design/UX Craft: frontend-design v2.0
+- Responsive/Adaptive Specialist: frontend-responsive-ui
+- Rendered Visual QA: web-design-reviewer
+OWNER VISUAL FINDINGS:
+1. Mobile bottom actions must be ONE symmetric row across available width ("Sebelumnya", "Daftar Soal", "Berikutnya", "Selesai").
+2. Persistent authoritative answer-save acknowledgement is not sufficiently visible in actual mobile rendering. Must clearly convey "Menyimpan...", "Tersimpan" (server-acknowledged), and "Gagal menyimpan".
+3. Fake battery, fake signal, fake system clock, or fake OS chrome are NOT authorized. Real device capabilities may only be considered if reliable, authorized, and justified.
+4. ELLIGBLE frontend across mobile, tablet, desktop, and wide/short/tall viewports must maintain a premium, modern, elegant, professional, calm, institution-grade aesthetic without generic AI template appearance.
 FRONTEND ENTRY GATE: PASS
 FRONTEND PACKAGE: frontend/web (@elligble/web)
 FRONTEND STACK: React + TypeScript + Vite
-FRONTEND AGENT SKILL: react-typescript-vite v1.0.0 / USED
 MOBILE-FIRST UX HARDENING: PASS
 360PX BASELINE: PASS
 DYNAMIC VIEWPORT 100DVH: PASS

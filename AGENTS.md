@@ -100,6 +100,9 @@ Follow `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` and 
 - **FRONTEND AGENT SKILL CHECKPOINT:** At Frontend Entry Gate, a PURPOSE-FIT frontend/UI Agent Skill MUST be selected, verified, installed, and recorded before frontend coding. Do NOT select a random broad skill or freeze a skill name now.
 - **FUTURE FRONTEND DESIGN SYSTEM GATE:** Before first production frontend implementation, `docs/design/FRONTEND_DESIGN_SYSTEM.md` and `docs/design/UI_CONTENT_AND_COPY_STYLE.md` MUST exist and be LOCKED. Do not choose final visual values now.
 - **ANTI-AI-SLOP QUALITY GATE:** Mandatory frontend quality review prevents generic AI-generated SaaS appearance. Deliberate use of gradients, glassmorphism, rounded cards, shadows, bento layouts, pill badges, and animations is allowed ONLY when consistent with the locked design system and actual product need.
+- **FRONTEND AGENT SKILL STACK:** Read `docs/design/FRONTEND_AGENT_SKILL_STACK.md` for all frontend UI work. Repository and locked design system remain the highest frontend authority.
+- **SPECIALIZED SKILL USAGE & TOKEN DISCIPLINE:** Use specialized skills (`react-typescript-vite`, `frontend-design`, `frontend-responsive-ui`, `web-design-reviewer`) according to their documented canonical roles. Do not activate every design skill indiscriminately; maintain strict token and context discipline.
+- **RENDERED VISUAL VERIFICATION:** Source code inspection, static typing, and automated unit/test PASS alone are not sufficient proof of visual quality or responsive correctness. Rendered visual verification across representative viewports (narrow mobile to wide desktop) is mandatory for all material UI changes.
 - **CROSS-ROLE VISUAL CONSISTENCY:** ELLIGBLE must have ONE coherent core design language. Individual Build Units may NOT independently invent their own colors, fonts, spacing, buttons, forms, cards, or navigation patterns.
 
 ## Secrets
