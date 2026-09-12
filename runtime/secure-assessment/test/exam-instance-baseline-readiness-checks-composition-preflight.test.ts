@@ -21,7 +21,10 @@ const validContent = {
   maxScore: 5
 };
 
-function createClient(options: any = {}, checks?: { insertUpdateDelete?: boolean; queriedContent?: boolean }): PoolClient {
+function createClient(
+  options: any = {},
+  checks?: { insertUpdateDelete?: boolean; queriedContent?: boolean; queriedConflict?: boolean }
+): PoolClient {
   return {
     query: async (text: string) => {
       if (/INSERT|UPDATE|DELETE/i.test(text)) {
@@ -30,6 +33,40 @@ function createClient(options: any = {}, checks?: { insertUpdateDelete?: boolean
       
       if (options.dbError) throw new Error('DB Error');
       if (options.missingExam && text.includes('secure_assessment_exam_instances')) return { rows: [] };
+
+      // Participant conflict query in BU-079
+      if (text.includes('secure_assessment_exam_participants other_part')) {
+        if (checks) checks.queriedConflict = true;
+        if (options.conflict_unavailable) throw new Error('Conflict DB Error');
+        if (options.participant_conflict) {
+          return {
+            rows: [
+              {
+                conflicting_exam_instance_id: '00000000-0000-0000-0000-000000000088',
+                conflicting_count: 2,
+              }
+            ]
+          };
+        }
+        return { rows: [] };
+      }
+
+      // Proctor conflict query in BU-079
+      if (text.includes('secure_assessment_proctor_assignments other_proc')) {
+        if (checks) checks.queriedConflict = true;
+        if (options.conflict_unavailable) throw new Error('Conflict DB Error');
+        if (options.proctor_conflict) {
+          return {
+            rows: [
+              {
+                conflicting_exam_instance_id: '00000000-0000-0000-0000-000000000089',
+                conflicting_count: 1,
+              }
+            ]
+          };
+        }
+        return { rows: [] };
+      }
 
       let configuredAttemptDuration: number | null = 3600;
       let latestStartPolicy: string | null = 'FULL_DURATION_BEYOND_WINDOW';
@@ -236,5 +273,145 @@ describe('BU-068: Baseline Readiness Checks Composition Preflight', () => {
     const checksPass = { queriedContent: false };
     await checkExamInstanceBaselineReadinessChecksCompositionPreflight(createClient({}, checksPass), VALID_TENANT, VALID_EXAM, () => 'granted');
     assert.equal(checksPass.queriedContent, true);
+  });
+
+  // 23. earlier BU-065 blocker prevents conflict preflight execution
+  test('23. earlier BU-065 blocker prevents conflict preflight execution', async () => {
+    const checks = { queriedConflict: false };
+    await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ assessment_type_missing: true, participant_conflict: true }, checks),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.equal(checks.queriedConflict, false);
+  });
+
+  // 24. participant conflict maps to category schedule_conflict
+  test('24. participant conflict maps to category schedule_conflict', async () => {
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ participant_conflict: true }),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(res, {
+      type: 'not_ready',
+      category: 'schedule_conflict',
+      blocker: 'participant_schedule_conflict',
+      conflictingExamInstanceId: '00000000-0000-0000-0000-000000000088',
+      conflictingParticipantCount: 2,
+    });
+  });
+
+  // 25. Proctor conflict maps to category schedule_conflict
+  test('25. Proctor conflict maps to category schedule_conflict', async () => {
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ proctor_conflict: true }),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(res, {
+      type: 'not_ready',
+      category: 'schedule_conflict',
+      blocker: 'proctor_schedule_conflict',
+      conflictingExamInstanceId: '00000000-0000-0000-0000-000000000089',
+      conflictingProctorCount: 1,
+    });
+  });
+
+  // 26. conflict prevents BU-067 content evaluation
+  test('26. conflict prevents BU-067 content evaluation', async () => {
+    const checks = { queriedContent: false };
+    await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ participant_conflict: true, invalidContent: true }, checks),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.equal(checks.queriedContent, false);
+  });
+
+  // 27. no conflict proceeds to BU-067
+  test('27. no conflict proceeds to BU-067', async () => {
+    const checks = { queriedContent: false, queriedConflict: false };
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ invalidContent: true }, checks),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.equal(checks.queriedConflict, true);
+    assert.equal(checks.queriedContent, true);
+    assert.equal(res.type, 'not_ready');
+    if (res.type === 'not_ready') {
+      assert.equal(res.category, 'question_snapshot_content');
+    }
+  });
+
+  // 28. existing content blockers remain preserved
+  test('28. existing content blockers remain preserved', async () => {
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ question_snapshot_empty: true }),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(res, {
+      type: 'not_ready',
+      category: 'question_snapshot_content',
+      blocker: 'question_snapshot_empty',
+    });
+  });
+
+  // 29. no-conflict successful path remains baseline_readiness_checks_pass
+  test('29. no-conflict successful path remains baseline_readiness_checks_pass', async () => {
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({}),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(res, {
+      type: 'baseline_readiness_checks_pass',
+      examInstanceId: VALID_EXAM,
+      tenantId: VALID_TENANT,
+    });
+  });
+
+  // 30. top-level external capability evaluator remains exactly once
+  test('30. top-level external capability evaluator remains exactly once', async () => {
+    let callCount = 0;
+    const res = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({}),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => {
+        callCount++;
+        return 'granted';
+      }
+    );
+    assert.equal(res.type, 'baseline_readiness_checks_pass');
+    assert.equal(callCount, 1);
+  });
+
+  // 31. denied/unavailable/invalid_state remain fail-closed
+  test('31. denied/unavailable/invalid_state remain fail-closed', async () => {
+    const resUnavailable = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({ conflict_unavailable: true }),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'granted'
+    );
+    assert.deepEqual(resUnavailable, { type: 'unavailable' });
+
+    const resDenied = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+      createClient({}),
+      VALID_TENANT,
+      VALID_EXAM,
+      () => 'denied'
+    );
+    assert.deepEqual(resDenied, { type: 'denied' });
   });
 });

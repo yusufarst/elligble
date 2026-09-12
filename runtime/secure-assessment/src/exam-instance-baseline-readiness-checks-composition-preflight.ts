@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import { checkExamInstanceExistingReadinessChecksCompositionPreflight } from './exam-instance-existing-readiness-checks-composition-preflight.ts';
+import { checkExamInstanceParticipantProctorScheduleConflictReadiness } from './exam-instance-participant-proctor-schedule-conflict-readiness-preflight.ts';
 import { checkExamInstanceBaselineQuestionSnapshotContentReadiness } from './exam-instance-baseline-question-snapshot-content-readiness-preflight.ts';
 import type { BaselineQuestionSnapshotBlocker } from './question-snapshot-baseline-frozen-content-contract.ts';
 
@@ -27,6 +28,20 @@ export type BaselineReadinessChecksCompositionResult =
         | 'timing_configuration_presence'
         | 'duration_window_policy_compatibility';
       blocker: string;
+    }
+  | {
+      type: 'not_ready';
+      category: 'schedule_conflict';
+      blocker: 'participant_schedule_conflict';
+      conflictingExamInstanceId: string;
+      conflictingParticipantCount: number;
+    }
+  | {
+      type: 'not_ready';
+      category: 'schedule_conflict';
+      blocker: 'proctor_schedule_conflict';
+      conflictingExamInstanceId: string;
+      conflictingProctorCount: number;
     }
   | {
       type: 'not_ready';
@@ -67,7 +82,7 @@ export async function checkExamInstanceBaselineReadinessChecksCompositionPreflig
   if (capability !== 'granted') return { type: 'denied' };
 
   try {
-    // 1. Existing checks
+    // 1. Existing checks (BU-065)
     const existingResult = await checkExamInstanceExistingReadinessChecksCompositionPreflight(
       client,
       tenantId,
@@ -86,7 +101,37 @@ export async function checkExamInstanceBaselineReadinessChecksCompositionPreflig
       };
     }
 
-    // 2. Snapshot Content checks
+    // 2. Participant / Proctor schedule-conflict preflight (BU-079)
+    const conflictResult = await checkExamInstanceParticipantProctorScheduleConflictReadiness(
+      client,
+      tenantId,
+      examInstanceId,
+      async () => 'granted' as const
+    );
+
+    if (conflictResult.type === 'denied') return { type: 'denied' };
+    if (conflictResult.type === 'unavailable') return { type: 'unavailable' };
+    if (conflictResult.type === 'invalid_state') return { type: 'invalid_state' };
+    if (conflictResult.type === 'not_ready') {
+      if (conflictResult.blocker === 'participant_schedule_conflict') {
+        return {
+          type: 'not_ready',
+          category: 'schedule_conflict',
+          blocker: 'participant_schedule_conflict',
+          conflictingExamInstanceId: conflictResult.conflictingExamInstanceId,
+          conflictingParticipantCount: conflictResult.conflictingParticipantCount,
+        };
+      }
+      return {
+        type: 'not_ready',
+        category: 'schedule_conflict',
+        blocker: 'proctor_schedule_conflict',
+        conflictingExamInstanceId: conflictResult.conflictingExamInstanceId,
+        conflictingProctorCount: conflictResult.conflictingProctorCount,
+      };
+    }
+
+    // 3. Snapshot Content checks (BU-067)
     const contentResult = await checkExamInstanceBaselineQuestionSnapshotContentReadiness(
       client,
       tenantId,
