@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.2
+**Version:** 1.0.3
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.1
+**Supersedes:** 1.0.2
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -131,7 +131,10 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - Runtime preflights: BU-060, BU-061, BU-062, BU-063, BU-064, BU-065, BU-067, BU-068, BU-069, BU-070, BU-074, BU-075, BU-077.
   - State persistence & convergence: BU-004..BU-010, BU-016..BU-020, BU-028..BU-032.
 - **Remaining Gaps for Milestone 1:**
-  - **API Layer:** HTTP/JSON route endpoints connecting frontend requests to existing runtime preflight and submission functions.
+  - **API Layer & HTTP Server Foundation:**
+    - **HTTP SERVER FOUNDATION:** EXISTS. The existing authoritative server (`runtime/secure-assessment/src/server.ts`) already exposes bounded HTTP routes for current Attempt/runtime functionality (`/healthz`, `/readyz`, `/api/v1/assessment/answer/save`, `/api/v1/assessment/timer/start`, `/api/v1/assessment/timer`, `/api/v1/assessment/submit`, `/api/v1/assessment/expiry-finalize`, `/api/v1/assessment/session/activate`, `/api/v1/assessment/submission`, `/api/v1/assessment/resume`).
+    - **API LAYER STATUS:** PARTIAL / PRODUCT COMPOSITION INCOMPLETE. Remaining work is NOT "create an HTTP server foundation". Remaining work must focus on dependency-valid product-facing composition such as missing browser-facing entry, question/readiness, teacher/proctor operational boundaries, and other required vertical routes, subject to future Controller scope freeze. (Do NOT preselect exact next API endpoint; do NOT select WebSocket/polling; do NOT invent authentication/token mechanics).
+    - **AUTHENTICATION / TRUSTED CONTEXT:** Existing runtime uses an injected trusted authorization seam and remains fail-closed where real authentication integration is absent. Do NOT treat `X-Tenant-ID` or `Bearer <attempt-id>` request-header extraction as canonical.
   - **Student Exam Client UI:** Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
   - **Proctor / Teacher Client UI:** Minimal room and readiness inspection views.
   - **End-to-End Browser Verification:** Verifying the full round-trip from browser interaction to PostgreSQL database persistence.

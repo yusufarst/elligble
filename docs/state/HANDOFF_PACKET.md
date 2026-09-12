@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.421
-**Supersedes:** 0.1.420
+**Version:** 0.1.422
+**Supersedes:** 0.1.421
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -91,44 +91,31 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-078 UNAUTHORIZED WORKING-CANDIDATE RECOVERY REVIEW / NEXT BUILD UNIT SELECTION
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 - INDEPENDENT REVIEW OF PRESERVED BU-078 HTTP CANDIDATE AND NEXT BUILD UNIT SCOPE FREEZE
+**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 - PRODUCT-MILESTONE-DRIVEN NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT STAGE:** CONTROLLER CANDIDATE REVIEW / NEXT BUILD UNIT SELECTION
+**NEXT STAGE:** STAGE-1 CONTROLLER UNIT SELECTION / SCOPE FREEZE
 
 **BU-077:** TERMINAL / DO NOT REOPEN
 
-**BU-078:** NOT VALIDLY REGISTERED / RECOVERY CANDIDATE PRESERVED / NOT ACTIVE
+**BU-078:** REJECTED RECOVERY CANDIDATE / NEVER VALIDLY REGISTERED / IDENTIFIER RETIRED / CLOSED CONTROL RECORD / DO NOT EXECUTE / NOT A COMPLETED BUILD UNIT
 
-**BU-078 CANDIDATE CLASSIFICATION:** UNAUTHORIZED PRE-AUTHORED CANDIDATE / PRESERVE / NOT ACCEPTED / NOT REJECTED / NOT ACTIVE
+**BU-078 CANDIDATE DISPOSITION:**
+- Candidate classification: REJECTED RECOVERY CANDIDATE / NOT ACCEPTED
+- Review date: 2026-09-12
+- Candidate working files: REMOVED AFTER HASH-VERIFIED CONTROLLER REVIEW
+- Tracked package.json: RESTORED TO HEAD
+- Untracked candidate files: DELETED
+- Repository worktree after finalization: CLEAN
+- Candidate code accepted: NO
+- Candidate auth model accepted: NO
+- Identifier status: RETIRED AS INCIDENT/RECOVERY RECORD (Do NOT reuse BU-078)
 
-**BU-078 PRESERVED PATHS (9 PATHS):**
-1. `runtime/secure-assessment/package.json`
-2. `runtime/secure-assessment/src/http/context.ts`
-3. `runtime/secure-assessment/src/http/error-handler.ts`
-4. `runtime/secure-assessment/src/http/router.ts`
-5. `runtime/secure-assessment/src/http/server.ts`
-6. `runtime/secure-assessment/test/http/context.test.ts`
-7. `runtime/secure-assessment/test/http/error-handler.test.ts`
-8. `runtime/secure-assessment/test/http/server.test.ts`
-9. `runtime/secure-assessment/verification/verify_bu078_http_api_server_foundation.ts`
-
-**WORKING TREE PRESERVATION:**
-- Dirty working tree is EXPECTED.
-- Do NOT clean it.
-- Do NOT restore package.json.
-- Do NOT delete untracked HTTP candidate.
-
-**BU-078 AUDIT AND LIFECYCLE TRUTH:**
-- Incident commit: `d0b745341bc4f61e57bd440a03f0171654dd9c48`
-- Partial recovery commit: `58e190cfa8646dc8f147439f0ce69379f13b0376`
-- Stage-1 Controller selection/scope freeze: NOT PERFORMED
-- Stage-2: UNAUTHORIZED LOCAL EXECUTION / CANDIDATE PRESERVED
-- Agent self-claimed Stage-3: INVALID
-- Controller Stage-3: NOT PERFORMED
-- Stage-4: NOT AUTHORIZED
-- Stage-5: NOT AUTHORIZED
+**CRITICAL INSTRUCTIONS FOR NEXT AGENT:**
+- Do NOT rebuild a generic Secure Assessment HTTP server foundation; the authoritative server already exists in `runtime/secure-assessment/src/server.ts` and must be reused/extended.
+- Do NOT adopt request-header-derived (`X-Tenant-ID` or `Bearer <attempt-id>`) trusted authorization context. Existing runtime uses an injected trusted authorization seam and remains fail-closed.
+- Next work must be selected against the active Secure Assessment vertical product milestone.
 
 **FRONTEND ENTRY GATE:** DEFERRED / NOT YET TRIGGERED
 **FRONTEND ENTRY GATE REQUIRED:** YES / BEFORE FIRST PRODUCTION USER-FACING FRONTEND BU
@@ -171,7 +158,7 @@ DONE: YES
 FULL BU-077 REPOSITORY FINALIZED: YES
 PB05: OPEN / CARRIED FORWARD
 OWNER DECISION REQUIRED: NO
-BU-078: NOT VALIDLY REGISTERED / RECOVERY CANDIDATE PRESERVED / NOT ACTIVE
+BU-078: REJECTED RECOVERY CANDIDATE / NEVER VALIDLY REGISTERED / IDENTIFIER RETIRED / CLOSED CONTROL RECORD / DO NOT EXECUTE / NOT A COMPLETED BUILD UNIT
 BU-076 CURRENT STATUS:
 BUILD UNIT: BU-076
 TITLE: Secure Assessment Exam Instance Room and Proctor Requirement Policy Core State Persistence Bootstrap
