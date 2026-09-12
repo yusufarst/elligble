@@ -83,11 +83,16 @@ DROP
 
 ## Build Guardrail
 
-Future implementation uses one Build Unit per execution.
+Follow `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` and `docs/build/PRODUCT_COMPLETION_ROADMAP.md` as canonical Build execution authority.
 
-No scope expansion. No random vendors. No hidden AI dependencies.
-
-Terminal verification is mandatory before `DONE`.
+- **PRODUCT COMPLETION > BU COUNT:** The product is the goal; Build Units are controlled execution tools.
+- **BASELINE PRIORITY:** `IN — CORE` + `IN — MANDATORY BASELINE` first. Exclusive implementation priority.
+- **OPTIONAL / FUTURE:** DEFERRED until the Baseline Completion Gate is passed.
+- **REUSE COMPLETED PROVEN BU CAPABILITIES:** BU-001 through BU-077 are construction assets. Do not reinvent or duplicate proven runtime/schema capabilities.
+- **ANTI-DRIFT GUARD:** Milestone-irrelevant micro-BU creation requires explicit Controller justification.
+- **ONE BU PER EXECUTION REMAINS:** Exactly one bounded Build Unit per implementation execution.
+- No scope expansion. No random vendors. No hidden AI dependencies.
+- Terminal verification (typecheck, unit, regression, real PostgreSQL) is mandatory before `DONE`.
 
 ## Secrets
 

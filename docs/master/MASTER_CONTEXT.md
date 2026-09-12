@@ -1,10 +1,10 @@
 **Status:** LOCKED  
-**Version:** 1.1.0  
+**Version:** 1.2.0
 **Canonical:** YES  
-**Supersedes:** Earlier incomplete project summaries  
+**Supersedes:** 1.1.0
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
-**Last Reviewed:** 2026-08-14
+**Last Reviewed:** 2026-09-12
 
 # ELLIGBLE — Master Context
 
@@ -233,22 +233,37 @@ Legacy CBT is a requirements/evidence source, not architecture authority.
 
 No legacy source, schema, migration, RLS, RPC, or UI component is automatically approved for reuse.
 
-## Build Philosophy
+## Build Philosophy & Execution Strategy
 
+### Phase Progression
 ```text
 Recovery
+→ Discovery
+→ Master Blueprint
+→ Architecture
+→ Build
+```
+
+### Build Execution Programs
+```text
+PROGRAM 1: 100% CANONICAL BASELINE COMPLETION
+(Exclusive implementation priority: IN — CORE + IN — MANDATORY BASELINE)
 ↓
-Discovery
+BASELINE COMPLETION GATE PASS
+(Full baseline usable, integrated, verified, role-ready, production-ready)
 ↓
-Master Blueprint
-↓
-Architecture / ADR
-↓
-ERD / API / Module Boundaries
-↓
-Build Units
-↓
-Implementation
+PROGRAM 2: OPTIONAL / FUTURE PRODUCT EXPANSION
+(1. OPTIONAL capabilities, 2. FUTURE capabilities)
+```
+
+Inside each program:
+```text
+Active Product Milestone
+→ Bounded Build Unit
+→ Implementation
+→ Verification
+→ DONE
+→ Next Milestone-Shortening BU
 ```
 
 One Build Unit per agent execution. Terminal verification is required before `DONE`.

@@ -1,8 +1,9 @@
 **Status:** ACTIVE  
-**Version:** 1.0.2
+**Version:** 1.0.3
 **Canonical:** YES  
+**Supersedes:** 1.0.2
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-08-15
+**Last Reviewed:** 2026-09-12
 
 # ELLIGBLE — Decision Log
 
@@ -165,3 +166,21 @@ Owner explicitly approved Build Unit Fast-Track Control v1:
 - External report/raw patch is NOT default; required only when Controller explicitly requests them.
 - Targeted forward correction is preferred over full lifecycle restart.
 - BU-011 must not start until the Fast-Track activation commit is physically verified by Controller.
+
+### DEC-035 — Full-Product / Baseline-First / Product-Milestone-Driven Build Control (2026-09-12)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md`, `docs/build/PRODUCT_COMPLETION_ROADMAP.md`
+
+Owner explicitly approved Full-Product / Baseline-First / Product-Milestone-Driven Build Control:
+
+- **Product completion is the objective; BU count is not:** Development tracks product capabilities, workflows, and user readiness rather than arbitrary Build Unit quantity.
+- **Baseline-First Priority:** `IN — CORE` and `IN — MANDATORY BASELINE` have highest and exclusive implementation priority.
+- **OPTIONAL and FUTURE Deferment:** `OPTIONAL` and `FUTURE` capabilities are deferred until the formal Baseline Completion Gate is passed. They are not eligible for normal successor selection during baseline work.
+- **Baseline Completion Criteria:** Baseline must be actually usable, integrated end-to-end, verified, cross-domain coherent, secure, reliable, and production-ready. Backend-only, DB-only, or UI-only does not satisfy completion.
+- **Current Milestone Scoping:** The current vertical milestone (Secure Assessment minimum browser-usable E2E vertical product) is the nearest operational milestone, not final project completion.
+- **Post-Baseline Product Expansion:** After baseline completion gate pass, development continues systematically into Program 2 (OPTIONAL capabilities, followed by FUTURE capabilities).
+- **Scope Preservation:** Existing MB-10 capability classifications are preserved until properly updated by canonical Owner decision.
+- **Asset Reuse:** Proven persistence, runtime, reliability, readiness, and verification implementations from BU-001 through BU-077 are construction assets and must be reused/composed by vertical product work.
+- **Controlled Execution Preserved:** Exactly one Build Unit per controlled execution, Fast-Track Control v1, and material verification gates remain mandatory.

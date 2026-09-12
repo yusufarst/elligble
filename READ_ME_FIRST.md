@@ -20,15 +20,23 @@ Before doing anything:
 - `CURRENT_STATE.md` may represent LAST SYNCHRONIZED BASELINE during an authorized active unit.
 - If working tree evidence shows an active draft/correction/review, reconstruct it using 00.04 before determining next action.
 
-Current project state:
+Current high-level phase truth:
 
 ```text
-Recovery: FROZEN v1.0.0
-Discovery 01–04: COMPLETE / LOCKED
-Master Blueprint: IN PROGRESS
-Architecture: NOT STARTED
-Implementation: NOT AUTHORIZED YET
+Recovery:         COMPLETE / FROZEN v1.0.0
+Discovery 01–04:  COMPLETE / LOCKED v1.0.0
+Master Blueprint: COMPLETE / LOCKED v1.0.0
+Architecture:     COMPLETE / EXIT GATE PASSED
+Build:            ACTIVE (Last terminal BU: BU-077)
 ```
+
+Exact live navigation: read `docs/state/CURRENT_STATE.md`.
+
+**Mandatory Build Context:**
+Build agents must read:
+- `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md`
+- `docs/build/PRODUCT_COMPLETION_ROADMAP.md`
+
 
 ## NEW AGENT / NEW CHAT ENTRY PATH
 
