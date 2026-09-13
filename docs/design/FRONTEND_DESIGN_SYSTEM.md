@@ -1,9 +1,9 @@
 **Status:** LOCKED
-**Version:** 1.0.0
+**Version:** 1.0.1
 **Canonical:** YES
-**Depends On:** DEC-036, DEC-037, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 04.01_SECURE_ASSESSMENT.md
+**Depends On:** DEC-036, DEC-037, DEC-039, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 04.01_SECURE_ASSESSMENT.md, SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md
 **Used By:** All frontend implementations, UI components, future Build Units
-**Last Reviewed:** 2026-09-12
+**Last Reviewed:** 2026-09-13
 
 # ELLIGBLE — Frontend Design System
 
@@ -229,7 +229,7 @@ Colors are defined via CSS custom properties adhering to strict contrast ratios 
 ## 25. Navigation
 
 - Top Bar: Fixed or sticky top navigation with school tenant label, role identifier, user avatar, and session actions.
-- Assessment Navigation: Suppressed global navigation. Only contains Exam Title, Question Progress Indicator, Authoritative Timer, and Connectivity Status.
+- Assessment Navigation: Suppressed global navigation. Contains Primary Assessment Context (Subject preferred; authoritative Exam Room fallback; omitted if neither is available), Question Progress Indicator, Authoritative Timer, and Reliable Connectivity/Recovery Status when supported. Exam Title is not mandatory student-facing active-exam chrome. Refer to [SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md](SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md) for canonical active-exam workspace presentation rules.
 
 ## 26. Tabs
 

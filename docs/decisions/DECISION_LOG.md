@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.0.6
+**Version:** 1.0.7
 **Canonical:** YES  
-**Supersedes:** 1.0.5
+**Supersedes:** 1.0.6
 **Used By:** Governance, Discovery, Architecture  
 **Last Reviewed:** 2026-09-13
 
@@ -49,6 +49,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-036 | Frontend Entry Gate | Frontend Entry, Design-System, and UI Quality Gate | LOCKED | Owner / Governance |
 | DEC-037 | Frontend Stack & Entry Completion | React + TypeScript + Vite canonical production frontend stack foundation & Frontend Entry Gate completion | LOCKED | Owner / Frontend Entry Gate |
 | DEC-038 | Frontend Agent Skill Stack | Supplemental Frontend Design/Responsive/Rendered-QA Skill Stack | LOCKED | Owner / DEC-038 |
+| DEC-039 | Assessment UI Context | Secure Assessment Exam Focus Workspace Context Presentation | LOCKED | Owner / SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -236,3 +237,23 @@ DEC-038 is ADDITIVE and does NOT supersede DEC-036 or DEC-037. Owner explicitly 
 - **Mandatory Rendered Visual Verification:** Automated test PASS or static code review alone is insufficient; rendered visual verification across representative viewports (narrow mobile to wide desktop) is required for material UI changes.
 - **Optional Skills Not Preselected:** `ui-ux-pro-max`, `TasteSkill`, and `Impeccable` are not selected as mandatory stack components in this execution, avoiding instruction overlap and context overhead.
 - **Multi-Viewport Quality Standard:** The skill stack is established to ensure ELLIGBLE interfaces achieve a premium, modern, elegant, calm, professional, and institution-grade standard across all viewports without generic AI template appearance ("AI slop").
+
+### DEC-039 — Secure Assessment Exam Focus Workspace Context Presentation (2026-09-13)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/design/SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md`, `docs/design/FRONTEND_DESIGN_SYSTEM.md`
+
+Owner explicitly approved the Secure Assessment student exam presentation supersession:
+
+- **Exam Title Not Mandatory Chrome:** Exam Title is not mandatory in active student exam chrome.
+- **Primary Context Resolution:** Generic "Ruang Ujian Aman" is not the final primary identity. Exactly ONE primary context label is resolved:
+  1. If an authoritative student-safe Subject display label is available: show Subject.
+  2. Otherwise, if an authoritative assigned Exam Room display label is available: show Exam Room.
+  3. Otherwise: omit the primary context label entirely.
+- **No Fabricated Fallbacks:** If neither Subject nor Exam Room is available, omit rather than fabricate. Fake subject, room, connectivity, or device information is strictly prohibited.
+- **Operational Information Hierarchy:** Question focus, question progress, authoritative timer, answer save confidence, and navigation dock remain higher operational priorities than decorative or redundant metadata.
+- **Subject vs Room Distinction:** Subject represents primary academic context. Exam Room represents operational Secure Assessment grouping and does not redefine Academic Core truth (not Rombel, class identity, or academic enrollment).
+- **Current Data-Contract Limitations:** The current BU-082 browser-facing assessment contract does not yet expose Subject or Exam Room display labels, reliable connectivity truth, or persisted Ragu-ragu / Tandai state. Current missing context data requires later bounded product-facing integration.
+- **Zero BU-082 Runtime Mutation:** BU-082 runtime, API, schemas, and types remain unchanged.
+- **Additive Decision Scope:** DEC-039 is ADDITIVE except for the explicitly superseded Exam-Title-mandatory presentation phrase in active assessment navigation.
