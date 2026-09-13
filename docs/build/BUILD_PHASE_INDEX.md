@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.380
-**Supersedes:** 0.1.379
+**Version:** 0.1.381
+**Supersedes:** 0.1.380
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -453,15 +453,15 @@
 
 **ACTIVE BUILD UNIT:** BU-082 — Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** NOT YET REGISTERED (BU-083 NOT REGISTERED)
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEEDMCP INSTALLATION READINESS & BU-082 ROUND-5 IMPLEMENTATION PREPARATION
+**CURRENT RESPONSIBILITY:** BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
 
-**NEXT SAFE ACTION:** controlled NeedMCP installation / elevenlabs style activation readiness before BU-082 Round-5 implementation
+**NEXT SAFE ACTION:** BU-082 Stage-3 Round-5 visual recomposition using DEC-039 + DEC-040 + style:elevenlabs + existing frontend skill stack
 
-**NEXT STAGE:** BU-082 STAGE-3 ROUND-5 IMPLEMENTATION PREPARATION
+**NEXT STAGE:** BU-082 STAGE-3 ROUND-5 IMPLEMENTATION
 
 ### Build Direction Control
 - **FINAL TARGET:** FULL ELLIGBLE PRODUCT COMPLETION
@@ -484,7 +484,8 @@
 - **EXAM FOCUS WORKSPACE:** LOCKED v1.1.0 (DEC-039, DEC-040)
 - **UI CONTENT/COPY STYLE:** LOCKED v1.0.0
 - **FRONTEND AGENT SKILL STACK:** DEC-038 / `react-typescript-vite` v1.0.0 (Foundation), `frontend-design` v2.0 (Supplemental Design), `frontend-responsive-ui` (Responsive Specialist), `web-design-reviewer` (Rendered Visual QA)
-- **NEEDMCP STATUS:** NOT YET INSTALLED / NOT YET ACTIVATED (Supplemental tooling)
+- **NEEDMCP STATUS:** VERIFIED / ACTIVE (needmcp@1.3.0 pinned, setup COMPLETE, Google Antigravity MCP CONFIGURED, runtime VERIFIED, 15/15 tools visible/enabled, active style: elevenlabs, runtime config path mismatch RESOLVED; supplemental tooling subordinate to repository canonical design authority)
+- **DESIGN & IMPLEMENTATION AUTHORITY HIERARCHY:** repository canonical design docs > Owner-approved UX > NeedMCP ElevenLabs style > supplemental frontend skills > implementation output (NeedMCP remains SUPPLEMENTAL and does not supersede repository canonical authority)
 - **ANTI-AI-SLOP QUALITY GATE:** ENFORCED VIA DESIGN SYSTEM & SKILL STACK
 - **USER-FACING EM DASH:** PROHIBITED IN USER-FACING UI COPY
 
@@ -514,15 +515,19 @@
 - **GENERIC "RUANG UJIAN AMAN":** NOT FINAL PRIMARY CONTEXT
 - **CURRENT DATA CONTRACT:** SUBJECT / ROOM CONTEXT NOT YET AVAILABLE
 - **BU-082 API/RUNTIME MUTATION:** NOT AUTHORIZED
-- **NEEDMCP STATUS:** NOT YET INSTALLED / NOT YET ACTIVATED
+- **NEEDMCP STATUS:** VERIFIED / ACTIVE (needmcp@1.3.0 pinned, setup COMPLETE, Google Antigravity MCP CONFIGURED, runtime VERIFIED, 15/15 tools visible/enabled, active style: elevenlabs, runtime config path mismatch RESOLVED; supplemental tooling subordinate to repository canonical authority)
+- **DESIGN AUTHORITY HIERARCHY:** repository canonical design docs > Owner-approved UX > NeedMCP ElevenLabs style > supplemental frontend skills > implementation output (NeedMCP remains SUPPLEMENTAL and does not supersede repository canonical authority)
+- **ROUND-5:** NOT IMPLEMENTED (Visual recomposition using DEC-039 + DEC-040 + style:elevenlabs + existing frontend skill stack pending)
 - **SUPPLEMENTAL FRONTEND SKILL STACK:** DEC-038 / INSTALLED / VERIFIED (`frontend-design`, `frontend-responsive-ui`, `web-design-reviewer` alongside `react-typescript-vite`)
 - **STAGE-4:** NOT AUTHORIZED
-- **CURRENT STATUS:** ROUND-4 NO-GO / DEC-040 LOCKED / AWAITING CONTROLLED NEEDMCP INSTALLATION & STAGE-3 ROUND-5 IMPLEMENTATION
+- **CURRENT STATUS:** ROUND-4 NO-GO / DEC-040 LOCKED / NEEDMCP VERIFIED & ACTIVE / AWAITING STAGE-3 ROUND-5 IMPLEMENTATION
 - **DONE:** NO
 - **STAGE-3:** PENDING
 - **LAST COMPLETED BUILD UNIT:** BU-081 (TERMINAL / DO NOT REOPEN)
 - **ACTIVE BUILD UNIT:** BU-082
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** NOT YET REGISTERED (BU-083 NOT REGISTERED)
+- **CURRENT RESPONSIBILITY:** BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+- **NEXT SAFE ACTION:** BU-082 Stage-3 Round-5 visual recomposition using DEC-039 + DEC-040 + style:elevenlabs + existing frontend skill stack
 - **FRONTEND ENTRY GATE:** PASS
 - **FRONTEND PACKAGE:** frontend/web (@elligble/web)
 - **FRONTEND STACK:** React + TypeScript + Vite

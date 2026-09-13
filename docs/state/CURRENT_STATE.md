@@ -1,7 +1,7 @@
 **Status:** ACTIVE
-**Version:** 1.5.329
+**Version:** 1.5.330
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.328
+**Supersedes:** CURRENT_STATE v1.5.329
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
@@ -34,11 +34,11 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **ACTIVE UNIT:** BU-082
 **ACTIVE BUILD UNIT:** BU-082 — Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap
 **NEXT UNIT:** NOT YET REGISTERED
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** NOT YET REGISTERED (BU-083 NOT REGISTERED)
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** NEEDMCP INSTALLATION READINESS & BU-082 ROUND-5 IMPLEMENTATION PREPARATION
-**NEXT SAFE ACTION:** controlled NeedMCP installation / elevenlabs style activation readiness before BU-082 Round-5 implementation
-**NEXT STAGE:** BU-082 STAGE-3 ROUND-5 IMPLEMENTATION PREPARATION
+**CURRENT RESPONSIBILITY:** BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+**NEXT SAFE ACTION:** BU-082 Stage-3 Round-5 visual recomposition using DEC-039 + DEC-040 + style:elevenlabs + existing frontend skill stack
+**NEXT STAGE:** BU-082 STAGE-3 ROUND-5 IMPLEMENTATION
 **BU-081:** TERMINAL / DO NOT REOPEN
 **BU-080:** TERMINAL / DO NOT REOPEN
 **BU-079:** TERMINAL / DO NOT REOPEN
@@ -55,7 +55,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **FRONTEND DESIGN SKILL:** frontend-design
 - **FRONTEND RESPONSIVE SKILL:** frontend-responsive-ui
 - **FRONTEND RENDERED QA SKILL:** web-design-reviewer
-**NEEDMCP STATUS:** NOT YET INSTALLED / NOT YET ACTIVATED (Supplemental tooling)
+**NEEDMCP STATUS:** VERIFIED / ACTIVE (needmcp@1.3.0 pinned, setup COMPLETE, Google Antigravity MCP CONFIGURED, runtime VERIFIED, 15/15 tools visible/enabled, active style: elevenlabs, runtime config path mismatch RESOLVED; supplemental tooling subordinate to repository canonical design authority)
+**DESIGN & IMPLEMENTATION AUTHORITY HIERARCHY:** repository canonical design docs > Owner-approved UX > NeedMCP ElevenLabs style > supplemental frontend skills > implementation output (NeedMCP remains SUPPLEMENTAL and does not supersede repository canonical authority)
 **ANTI-AI-SLOP QUALITY GATE:** ENFORCED VIA DESIGN SYSTEM
 **USER-FACING EM DASH:** PROHIBITED IN USER-FACING UI COPY
 
@@ -85,16 +86,18 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **GENERIC "RUANG UJIAN AMAN":** NOT FINAL PRIMARY CONTEXT
 - **CURRENT DATA CONTRACT:** SUBJECT / ROOM CONTEXT NOT YET AVAILABLE
 - **BU-082 API/RUNTIME MUTATION:** NOT AUTHORIZED
-- **NEEDMCP STATUS:** NOT YET INSTALLED / NOT YET ACTIVATED
+- **NEEDMCP STATUS:** VERIFIED / ACTIVE (needmcp@1.3.0 pinned, setup COMPLETE, Google Antigravity MCP CONFIGURED, runtime VERIFIED, 15/15 tools visible/enabled, active style: elevenlabs, runtime config path mismatch RESOLVED; supplemental tooling subordinate to repository canonical authority)
+- **DESIGN AUTHORITY HIERARCHY:** repository canonical design docs > Owner-approved UX > NeedMCP ElevenLabs style > supplemental frontend skills > implementation output (NeedMCP remains SUPPLEMENTAL and does not supersede repository canonical authority)
+- **ROUND-5:** NOT IMPLEMENTED (Visual recomposition using DEC-039 + DEC-040 + style:elevenlabs + existing frontend skill stack pending)
 - **STAGE-4:** NOT AUTHORIZED
-- **CURRENT STATUS:** ROUND-4 NO-GO / DEC-040 LOCKED / AWAITING CONTROLLED NEEDMCP INSTALLATION & STAGE-3 ROUND-5 IMPLEMENTATION
+- **CURRENT STATUS:** ROUND-4 NO-GO / DEC-040 LOCKED / NEEDMCP VERIFIED & ACTIVE / AWAITING STAGE-3 ROUND-5 IMPLEMENTATION
 - **DONE:** NO
 - **STAGE-3:** PENDING
 - **LAST COMPLETED BUILD UNIT:** BU-081 (TERMINAL / DO NOT REOPEN)
 - **ACTIVE BUILD UNIT:** BU-082
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
-- **CURRENT RESPONSIBILITY:** NEEDMCP INSTALLATION READINESS & BU-082 ROUND-5 IMPLEMENTATION PREPARATION
-- **NEXT SAFE ACTION:** controlled NeedMCP installation / elevenlabs style activation readiness before BU-082 Round-5 implementation
+- **NEXT BUILD UNIT:** NOT YET REGISTERED (BU-083 NOT REGISTERED)
+- **CURRENT RESPONSIBILITY:** BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+- **NEXT SAFE ACTION:** BU-082 Stage-3 Round-5 visual recomposition using DEC-039 + DEC-040 + style:elevenlabs + existing frontend skill stack
 - **SUPPLEMENTAL FRONTEND SKILL STACK:** DEC-038 / INSTALLED / FILESYSTEM VERIFIED
 - **FRONTEND DESIGN SKILL:** frontend-design
 - **FRONTEND RESPONSIVE SKILL:** frontend-responsive-ui
