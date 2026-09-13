@@ -1,8 +1,8 @@
 **Status:** LOCKED
-**Version:** 1.0.0
+**Version:** 1.0.1
 **Canonical:** YES
-**Source:** Owner approval / DEC-038
-**Depends On:** DEC-036, DEC-037, DEC-038, FRONTEND_DESIGN_SYSTEM.md, UI_CONTENT_AND_COPY_STYLE.md
+**Source:** Owner approval / DEC-038, DEC-040
+**Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, DEC-040, FRONTEND_DESIGN_SYSTEM.md, ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md, UI_CONTENT_AND_COPY_STYLE.md
 **Used By:** All frontend Build Units, UI component development, mobile/desktop responsive hardening, and visual QA
 
 # ELLIGBLE Frontend Agent Skill Stack
@@ -19,28 +19,29 @@ This stack is designed to elevate ELLIGBLE's user-facing surfaces to a premium, 
 
 When designing, implementing, reviewing, or remediating frontend code, agents MUST adhere strictly to the following authority hierarchy:
 
-1. **Repository Canonical Decisions & LOCKED Design Documents** (`FRONTEND_DESIGN_SYSTEM.md`, `UI_CONTENT_AND_COPY_STYLE.md`, `DECISION_LOG.md`, BU specs)
+1. **Repository Canonical Decisions & LOCKED Design Documents** (`FRONTEND_DESIGN_SYSTEM.md`, `ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md`, `UI_CONTENT_AND_COPY_STYLE.md`, `DECISION_LOG.md`, BU specs)
 2. **Explicit Owner-Approved UX Direction** (Recorded Controller/Owner guidance, user review findings)
-3. **`frontend-design` Supplemental Design/UX Guidance** (Design craft, hierarchy, composition, visual cohesion, accessibility)
-4. **`frontend-responsive-ui` Responsive/Adaptive Guidance** (Mobile-first layout, fluid typography/spacing, breakpoint discipline, touch ergonomics)
-5. **`react-typescript-vite` Implementation-Engineering Discipline** (Strict TypeScript typing, Vite bundling, component structure, DOM/ARIA interaction)
-6. **`web-design-reviewer` Rendered/Browser Verification** (Rendered DOM inspection, defect identification, multi-viewport layout validation)
-7. **Owner Actual Visual Review** (Final gate for user-facing visual changes when Controller explicitly requires it)
+3. **Supplemental NeedMCP Style Guidance** (e.g. `elevenlabs` style profile — when installed; strictly subordinate reference)
+4. **`frontend-design` Supplemental Design/UX Guidance** (Design craft, hierarchy, composition, visual cohesion, accessibility)
+5. **`frontend-responsive-ui` Responsive/Adaptive Guidance** (Mobile-first layout, fluid typography/spacing, breakpoint discipline, touch ergonomics)
+6. **`react-typescript-vite` Implementation-Engineering Discipline** (Strict TypeScript typing, Vite bundling, component structure, DOM/ARIA interaction)
+7. **`web-design-reviewer` Rendered/Browser Verification** (Rendered DOM inspection, defect identification, multi-viewport layout validation)
+8. **Owner Actual Visual Review** (Final gate for user-facing visual changes when Controller explicitly requires it)
 
-### Strict Non-Authority Rule for External Skills
-External agent skills are **SUPPLEMENTAL ONLY**. They provide techniques, heuristics, patterns, and checklists, but hold ZERO governance authority over ELLIGBLE architecture or locked design decisions.
+### Strict Non-Authority Rule for External Skills & Tooling
+External agent skills and tooling (including NeedMCP) are **SUPPLEMENTAL ONLY**. They provide techniques, heuristics, patterns, and checklists, but hold ZERO governance authority over ELLIGBLE architecture or locked design decisions.
 
-External skills may **NOT**:
-- Replace or circumvent the [ELLIGBLE Frontend Design System](file:///c:/Projects/ELLIGBLE/docs/design/FRONTEND_DESIGN_SYSTEM.md).
+External skills and tooling may **NOT**:
+- Replace or circumvent the [ELLIGBLE Frontend Design System](FRONTEND_DESIGN_SYSTEM.md) or [Warm Monochrome Visual Foundation](ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md).
 - Alter canonical colors, typography, surfaces, elevations, or tokens without explicit Owner-approved supersession.
 - Automatically introduce external CSS frameworks (Tailwind, Bootstrap, etc.) or component libraries (shadcn/ui, MUI, Chakra, etc.).
 - Automatically introduce animation libraries (Framer Motion, GSAP, etc.) or utility packages.
 - Override Secure Assessment distraction-control rules (e.g. no unnecessary decorative animations, badges, or clutter).
-- Override canonical UI copy rules in [UI Content and Copy Style Guide](file:///c:/Projects/ELLIGBLE/docs/design/UI_CONTENT_AND_COPY_STYLE.md) (including the prohibition of the em dash "—" in user-facing copy).
-- Override accessibility requirements (WCAG 2.1 AA) or scope/build gates.
+- Override canonical UI copy rules in [UI Content and Copy Style Guide](UI_CONTENT_AND_COPY_STYLE.md) (including the prohibition of the em dash "—" in user-facing copy).
+- Override accessibility requirements (WCAG 2.1 AA), API/runtime contracts, data truth, or scope/build gates.
 
 ### Conflict Rule
-**REPOSITORY WINS.** In any conflict between an external skill's guidance and canonical repository documentation, canonical repository documentation is absolute and unchallengeable.
+**REPOSITORY WINS.** In any conflict between an external skill/tool guidance and canonical repository documentation, canonical repository documentation is absolute and unchallengeable.
 
 ---
 
@@ -101,7 +102,13 @@ The following skills were evaluated but are **NOT** installed as mandatory stack
 - `TasteSkill`: Not selected in current mandatory baseline.
 - `Impeccable`: Not selected in current mandatory baseline.
 
-Agents must not activate or install additional design skills unless explicitly authorized by Controller or Owner decision.
+### NeedMCP Supplemental Tooling Governance
+- **Status:** **NEEDMCP: NOT YET INSTALLED / NOT YET ACTIVATED**
+- Owner intends to install and activate NeedMCP in a subsequent controlled execution (using the `elevenlabs` style profile).
+- When installed, NeedMCP provides supplemental style guidance subordinate to repository canonical documents.
+- NeedMCP must never silently override repository architecture, locked design decisions, or verified test gates.
+
+Agents must not activate or install additional design skills or tooling unless explicitly authorized by Controller or Owner decision.
 
 ---
 

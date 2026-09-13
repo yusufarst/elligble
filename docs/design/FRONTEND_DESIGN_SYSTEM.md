@@ -1,7 +1,7 @@
 **Status:** LOCKED
-**Version:** 1.0.1
+**Version:** 1.1.0
 **Canonical:** YES
-**Depends On:** DEC-036, DEC-037, DEC-039, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 04.01_SECURE_ASSESSMENT.md, SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md
+**Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, DEC-040, ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 04.01_SECURE_ASSESSMENT.md, SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md
 **Used By:** All frontend implementations, UI components, future Build Units
 **Last Reviewed:** 2026-09-13
 
@@ -100,89 +100,96 @@ Typographic scale is fluid, readable, and structured:
 
 ## 10. Color Roles and Semantic Tokens
 
-Colors are defined via CSS custom properties adhering to strict contrast ratios (minimum 4.5:1 for normal text, 3:1 for large text):
+Per Owner decision **DEC-040** ([ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md](ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md)), ELLIGBLE adopts a **Warm Monochrome Institutional Visual Foundation**. Institution Navy is explicitly superseded as the dominant UI interaction language (it is no longer the default for primary buttons, selected options, navigation, or focus rings).
 
-### Primary Brand & Action (Institution Navy)
+### Canonical Warm Monochrome Palette
+- `--color-primary` / `--color-primary-action`: `#000000` (Primary buttons, high-emphasis action, primary headings)
+- `--color-primary-fg`: `#ffffff` (Text on black primary surfaces)
+- `--color-secondary`: `#4e4e4e` (Secondary text, helper text, inactive labels)
+- `--color-background`: `#ffffff` (Base canvas background; restrained warm-stone variants permitted)
+- `--color-surface`: `#ffffff` (Cards, workstations, dialog surfaces)
+- `--color-surface-muted`: `#f9f9fb` (Stimulus backgrounds, secondary panels)
+- `--color-border`: `#e5e5e5` (Standard element borders, dividers)
+- `--color-border-subtle`: `#f0f0f0` (Subtle interior dividers)
+
+### Historical Institution Navy (Superseded Dominance / Limited Brand Accent Only)
 - `--color-primary-50`: `#f0f4f8`
 - `--color-primary-100`: `#d9e2ec`
 - `--color-primary-500`: `#334e68`
-- `--color-primary-600`: `#243b53` (Primary interactive buttons, focused states)
-- `--color-primary-700`: `#102a43` (Primary brand header, headings)
+- `--color-primary-600`: `#243b53` (Historical button/focus; superseded by `#000000`)
+- `--color-primary-700`: `#102a43` (Historical header; superseded by `#000000`)
 - `--color-primary-900`: `#0b1d30`
-
-### Neutral Grays
-- `--color-neutral-0`: `#ffffff` (Card and dialog surface)
-- `--color-neutral-50`: `#f8fafc` (Canvas background)
-- `--color-neutral-100`: `#f1f5f9` (Subtle borders, disabled inputs)
-- `--color-neutral-200`: `#e2e8f0` (Standard element borders)
-- `--color-neutral-300`: `#cbd5e1` (Input borders)
-- `--color-neutral-400`: `#94a3b8` (Placeholder text)
-- `--color-neutral-500`: `#64748b` (Secondary metadata text)
-- `--color-neutral-700`: `#334155` (Primary body text)
-- `--color-neutral-900`: `#0f172a` (Headings and emphasis)
+*Note: Retained for token compatibility. Prohibited from serving as dominant UI interaction color.*
 
 ## 11. Semantic States
 
+Semantic colors are sparse and purposeful. Saturated colors must never be used as expansive backdrops:
+
 - **Success (Green):**
-  `--color-success-bg`: `#f0fdf4`, `--color-success-border`: `#bbf7d0`, `--color-success-text`: `#166534`.
-  Application: Answer successfully saved, exam submitted, readiness preflight verified.
+  `--color-success-base`: `#10b981`, `--color-success-bg`: `#ecfdf5`, `--color-success-border`: `#a7f3d0`, `--color-success-text`: `#064e3b`.
+  Application: Immediate student answer selection, verified server-acknowledged save ("Tersimpan"), successful completion.
 - **Warning (Amber):**
-  `--color-warning-bg`: `#fffbeb`, `--color-warning-border`: `#fde68a`, `--color-warning-text`: `#92400e`.
-  Application: Timer under 5 minutes, answer save pending sync, proctor alert.
+  `--color-warning-base`: `#f59e0b`, `--color-warning-bg`: `#fffbeb`, `--color-warning-border`: `#fde68a`, `--color-warning-text`: `#92400e`.
+  Application: Timer under 5 minutes, unsaved retry queue, proctor alerts.
 - **Danger (Red):**
-  `--color-danger-bg`: `#fef2f2`, `--color-danger-border`: `#fecaca`, `--color-danger-text`: `#991b1b`.
-  Application: Validation errors, timer expired, connection failure, destructive actions.
+  `--color-danger-base`: `#ef4444`, `--color-danger-bg`: `#fef2f2`, `--color-danger-border`: `#fecaca`, `--color-danger-text`: `#991b1b`.
+  Application: Save failure ("Gagal menyimpan"), timer under 1 minute, validation errors, destructive actions.
 - **Info (Blue):**
-  `--color-info-bg`: `#eff6ff`, `--color-info-border`: `#bfdbfe`, `--color-info-text`: `#1e40af`.
-  Application: System notices, instructions, room announcements.
-- **Neutral (Slate):**
-  `--color-neutral-badge-bg`: `#f1f5f9`, `--color-neutral-badge-text`: `#475569`.
-  Application: Inactive questions, informational status tags.
+  `--color-info-base`: `#3b82f6`, `--color-info-bg`: `#eff6ff`, `--color-info-border`: `#bfdbfe`, `--color-info-text`: `#1e40af`.
+  Application: Verified instructions, room notices.
+- **Neutral:**
+  `--color-neutral-badge-bg`: `#f4f4f5`, `--color-neutral-badge-text`: `#4e4e4e`.
+  Application: Unanswered questions, neutral state tags.
 
 ## 12. Surfaces and Background Hierarchy
 
-- **Surface 0 (Base Canvas):** `--color-neutral-50` (`#f8fafc`). Background for viewport.
-- **Surface 1 (Card/Container):** `--color-neutral-0` (`#ffffff`). Background for content sections and question workbenches.
-- **Surface 2 (Elevated/Flyout):** `--color-neutral-0` with standard elevation. Dialogs, dropdowns, and modals.
-- **Surface Inset:** `--color-neutral-100` (`#f1f5f9`). Used for question stimulus code blocks, helper panels, and disabled states.
+- **Surface 0 (Base Canvas):** `--color-background` (`#ffffff` / warm-stone white).
+- **Surface 1 (Card/Container):** `--color-surface` (`#ffffff`) with `--color-border` (`#e5e5e5`).
+- **Surface 2 (Elevated/Flyout):** `--color-surface` (`#ffffff`) with low-opacity elevation. Dialogs, bottom sheets, and modals.
+- **Surface Inset / Muted:** `--color-surface-muted` (`#f9f9fb`). Used for stimulus passages, helper panels, disabled states.
 
 ## 13. Borders
 
-- `--border-subtle`: `1px solid var(--color-neutral-100)`
-- `--border-default`: `1px solid var(--color-neutral-200)`
-- `--border-active`: `1px solid var(--color-primary-600)`
-- `--border-error`: `1px solid var(--color-danger-text)`
-- `--border-focus`: `2px solid var(--color-primary-600)`
+- `--border-subtle`: `1px solid var(--color-border-subtle)` (`#f0f0f0`)
+- `--border-default`: `1px solid var(--color-border)` (`#e5e5e5`)
+- `--border-active`: `1px solid var(--color-primary)` (`#000000`)
+- `--border-error`: `1px solid var(--color-danger-base)` (`#ef4444`)
+- `--border-focus`: `2px solid var(--color-primary)` (`#000000`)
 
 ## 14. Radii Scale
 
-- `--radius-sm`: `4px` (Small badges, tags, checkboxes)
-- `--radius-md`: `6px` (Standard buttons, input fields, dropdowns)
-- `--radius-lg`: `8px` (Cards, panels, assessment workstation)
-- `--radius-xl`: `12px` (Modals, alert dialogs)
-- `--radius-full`: `9999px` (Status indicators, avatar placeholders)
-- Prohibited: Arbitrary oversized radii (`24px+`) on rectangular content cards.
+- `--radius-sm`: `4px` (Small tags, checkboxes)
+- `--radius-md`: `8px` (Standard buttons, input fields, option cards)
+- `--radius-lg`: `12px` (Cards, panels, modal dialogs, bottom sheets)
+- `--radius-xl`: `16px` (Large dialogs, elevated containers)
+- `--radius-full`: `9999px` (Pill status badges, dedicated pill CTAs, question number circles)
+- Prohibited: Arbitrary oversized radii (`24px+`) on rectangular content cards. Do not turn every rectangular element into a pill.
 
 ## 15. Shadows and Elevation
 
+Restrained multi-layer low-opacity shadows (3% to 8% total opacity) providing subtle depth without visual clutter:
+
 - `--shadow-none`: `none`
-- `--shadow-sm`: `0 1px 2px 0 rgba(0, 0, 0, 0.05)` (Cards, input fields)
-- `--shadow-md`: `0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04)` (Floating bars, dropdowns)
-- `--shadow-lg`: `0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05)` (Modals, confirm dialogs)
+- `--shadow-sm`: `0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02)` (Cards, input fields)
+- `--shadow-md`: `0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03)` (Floating bars, dropdowns, bottom sheets)
+- `--shadow-lg`: `0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.03)` (Modals, confirm dialogs)
 - Prohibited: Heavy neon glows, diffuse colored drop shadows, or floating aesthetic halos.
 
 ## 16. Iconography Rules
 
-- **Family:** Consistent, single-family outline icons (stroke width `1.5px` or `2px`).
+- **Family:** Consistent, single-family minimal outline icons (stroke width `1.5px` or `2px`, rounded caps and joins).
+- **Asset Origin:** Project-controlled SVG components or locally maintained SVG assets. Proprietary ElevenLabs SVG assets must NOT be copied.
 - **Sizes:** Micro `14x14px`, Default `18x18px`, Medium `24x24px`, Large `32x32px`.
-- **Purpose:** Icons must serve functional clarity (e.g. checkmark for saved, warning triangle for unsaved, clock for timer). Never use floating purely decorative icons.
+- **Purpose:** Functional metaphor first (clock for timer, check-circle for saved, alert-circle for error, grid/list for navigator, chevron for nav).
+- **Prohibitions:** Do NOT use emoji as production controls. Do NOT use raw Unicode glyphs as the primary production icon system.
+- **Icon Containers:** Soft circle or rounded square (`8px` radius) with warm neutral or subtle semantic background; use selectively where affordance is strengthened.
 
 ## 17. Button Hierarchy
 
-- **Primary:** High-emphasis actions. Solid background (`--color-primary-600`), white text. One primary button per visual view (e.g. "Simpan & Lanjutkan" or "Kirim Jawaban").
-- **Secondary:** Neutral emphasis. White background, `--border-default`, neutral text. (e.g. "Soal Sebelumnya").
-- **Subtle / Ghost:** Low-emphasis actions. Transparent background, neutral text, subtle hover. (e.g. "Daftar Soal").
-- **Destructive:** Irreversible or high-risk actions. Red background (`--color-danger-text`), white text. Always accompanied by a secondary confirmation modal.
+- **Primary:** High-emphasis actions. Solid black surface (`#000000`), white text (`#ffffff`), strong restrained emphasis (e.g. "Selesai", "Kirim Jawaban").
+- **Secondary:** Neutral emphasis. White surface (`#ffffff`), subtle border (`1px solid #e5e5e5`), near-black text (`#000000`). (e.g. "Berikutnya", "Daftar Soal").
+- **Subtle / Ghost:** Low-emphasis actions. Transparent background, dark gray text (`#4e4e4e`), subtle hover. (e.g. "Sebelumnya").
+- **Destructive:** Irreversible actions. Red surface (`#ef4444`), white text. Always accompanied by confirmation dialog.
 
 ## 18. Links
 
@@ -207,7 +214,7 @@ Colors are defined via CSS custom properties adhering to strict contrast ratios 
 ## 21. Checkboxes, Radios, and Selects
 
 - Radio Options (Multiple Choice Questions): Full-width selectable card component with radio indicator. Minimum 48px height to ensure effortless touch selection.
-- Selected State: Outlined in `--color-primary-600` with subtle `--color-primary-50` background tint.
+- Selected State (Owner Lock): When a student selects an option, the option becomes **GREEN IMMEDIATELY** (`--color-success-bg` / `#ecfdf5` background, `--color-success-border` / `#a7f3d0` border, green radio indicator, dark text). Meaning: **CURRENT STUDENT SELECTION** (does NOT mean server save completed). Dual-encoded via radio checked state and distinct border/surface tint.
 
 ## 22. Validation States
 
@@ -367,15 +374,18 @@ Colors are defined via CSS custom properties adhering to strict contrast ratios 
 ## 52. Authoritative Timer Visibility Principles
 
 - Persistent, fixed timer displaying authoritative remaining time.
-- Tabular figures (`font-variant-numeric: tabular-nums`) to prevent layout shaking.
-- Color transitions: Normal (Navy/Slate), Under 5 minutes (Amber Warning), Under 1 minute (Red Urgent).
+- Compact presentation with prominent numeric readout in monospace tabular figures (`font-variant-numeric: tabular-nums`). Optional minimal clock outline. No input-box or button-like appearance. Zero duplicate timers.
+- Urgency transitions: Normal (Near-black / Neutral), Under 5 minutes (Amber Warning `--color-warning-text`), Under 1 minute (Red Urgent `--color-danger-text`).
+- Prohibited: Displaying ambient OS clock or fake device time.
 
 ## 53. Answer Save and Sync State Visual Rules
 
-- Clear, immediate feedback for student selections:
-  - "Tersimpan": Subtle green checkmark indicator.
-  - "Menyimpan...": Subtle spinning indicator.
-  - "Belum Tersinkronisasi": Amber indicator with offline retry status.
+- Save state is **strictly separate** from selected-answer styling. It is NOT displayed inside the option, and NOT placed below the entire list of options. It belongs to the compact upper exam information area.
+- Exact semantic states:
+  - "Belum dijawab": No option selected.
+  - "Menyimpan...": Mutation in flight immediately upon selection.
+  - "Tersimpan": Displayed ONLY upon explicit server HTTP 200/201 response with matching write version.
+  - "Gagal menyimpan": Network or server failure, displayed in high-contrast danger styling with retry capability.
 
 ## 54. Connectivity and Recovery State Presentation
 

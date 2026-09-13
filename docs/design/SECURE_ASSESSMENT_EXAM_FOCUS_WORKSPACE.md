@@ -1,7 +1,7 @@
 **Status:** LOCKED
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Canonical:** YES
-**Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, FRONTEND_DESIGN_SYSTEM.md, UI_CONTENT_AND_COPY_STYLE.md, FRONTEND_AGENT_SKILL_STACK.md, 04.01_SECURE_ASSESSMENT.md
+**Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, DEC-040, FRONTEND_DESIGN_SYSTEM.md, ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md, UI_CONTENT_AND_COPY_STYLE.md, FRONTEND_AGENT_SKILL_STACK.md, 04.01_SECURE_ASSESSMENT.md
 **Used By:** Secure Assessment frontend implementations, BU-082, future assessment Build Units
 **Last Reviewed:** 2026-09-13
 
@@ -40,16 +40,18 @@ To maintain rigorous domain separation across ELLIGBLE, the following conceptual
 
 ## 3. Active Exam Information Hierarchy
 
-Visual hierarchy within the active workspace directly governs student focus and operational confidence. Information elements are prioritized in descending order:
+Per Owner direction and **DEC-040**, the active mobile exam is strictly **CONTENT-FIRST**. A large application header is prohibited. The student's cognitive focus belongs to the question content and responses. Information elements are prioritized in descending operational order:
 
 1. **Primary Assessment Context:** Authoritative Subject; otherwise authoritative assigned Exam Room; omitted if neither exists.
 2. **Question Progress:** Current question ordinal relative to total questions (e.g. "Soal 3 dari 40").
-3. **Authoritative Remaining Time:** Server-governed countdown timer rendered in tabular figures (`tabular-nums`) with clear semantic labeling ("Sisa waktu").
-4. **Reliable Connection / Recovery State:** Surfaced only when the browser runtime possesses authoritative, verified connectivity or sync status.
-5. **Question Focus:** Question number badge, stimulus passage / prompt content, and structured answer options.
-6. **Honest Answer Confidence:** Real-time save feedback reflecting verified server state ("Belum dijawab", "Menyimpan...", "Tersimpan", "Gagal menyimpan").
-7. **Question Progress Map:** Navigable matrix of question states (current, answered, unanswered).
-8. **Command Dock:** Direct tactile action bar ("Sebelumnya", "Daftar Soal", "Berikutnya", "Selesai").
+3. **Authoritative Remaining Time:** Server-governed countdown timer rendered in monospace tabular figures (`tabular-nums`) with optional minimal clock outline.
+4. **Compact Honest Save State:** Real-time save feedback reflecting verified server state ("Belum dijawab", "Menyimpan...", "Tersimpan", "Gagal menyimpan") housed exclusively in the compact upper information area.
+5. **Media / Stimulus (if present):** Visual diagrams, charts, reading passages, or tables.
+6. **Question Prompt:** The core question text.
+7. **Structured Answer Choices:** The interactive response options with immediate green selection feedback.
+8. **Command Dock:** Direct tactile action bar ("Sebelumnya", "Daftar Soal", "Berikutnya", "Selesai") anchored at the bottom.
+
+*The question prompt, stimulus media, and answer choices must visually dominate the viewport.*
 
 ---
 
@@ -76,7 +78,7 @@ In accordance with Owner decision DEC-039, the active exam header resolves exact
 
 ---
 
-## 5. Active-Exam Distraction Control
+## 5. Active-Exam Distraction Control & Mobile Information Composition
 
 To maximize cognitive focus during timed examinations, the workspace suppresses all non-essential user-interface elements:
 - No global platform navigation, app bars, or side drawers.
@@ -86,65 +88,141 @@ To maximize cognitive focus during timed examinations, the workspace suppresses 
 - No floating help widgets, feedback buttons, or ambient animations.
 - The question stimulus and response options must remain the visually dominant elements of the viewport.
 
+### Mobile Upper Information Area Composition
+The intended compact upper information composition is structured conceptually as:
+```text
+[ Authoritative Subject/Room if available ]        [ Remaining Time ]
+[ Question Progress ]                              [ Save State ]
+```
+**Compaction & Non-Reservation Rule:** When Subject/Room is unavailable (as in the current BU-082 data contract), the interface must **NOT** preserve blank space for it. The information block must compact and reflow responsively.
+
+### Elimination of Redundant Displays
+- **DO NOT show the same countdown timer twice.**
+- **DO NOT show save status twice.**
+- **DO NOT show both "Soal 1 dari 12" and "Soal Nomor 1"** when a single clear representation communicates the position.
+- Maximize information density without visual clutter.
+
 ---
 
-## 6. Authoritative Timer Presentation
+## 6. Media / Stimulus Presentation Guidance
 
-The countdown timer is a mission-critical component governed by server authority:
-- **Server Authority:** The timer is initialized from and periodically reconciled with the server-authoritative remaining seconds (`expires_at` / `remaining_seconds`). The local client clock is never trusted as the source of truth.
-- **Tabular Figures:** Rendered with `font-variant-numeric: tabular-nums` (using the monospace font token `--font-mono`) to prevent horizontal jitter as numbers tick down.
-- **Visual Hierarchy:** Composed of a small semantic label ("Sisa waktu") paired with a prominent, readable time display (`HH:MM:SS` or `MM:SS`).
-- **Urgency Transitions:** Follows canonical Design System thresholds:
-  - Normal (> 5 minutes): Neutral / Navy institutional tone.
-  - Warning (<= 5 minutes): Subtle amber highlight (`--color-warning-text`).
-  - Critical (<= 1 minute): High-contrast red alert (`--color-danger-text`).
-- **No Fake OS Time:** Displaying an ambient device clock or battery icon is prohibited unless authoritative native integration is explicitly authorized.
+For questions featuring supporting stimulus material (images, diagrams, tables, passages):
+- **Mobile Content Ordering:**
+  1. Compact upper context / progress / status
+  2. Image / diagram / table stimulus (IF ACTUALLY PRESENT)
+  3. Question prompt
+  4. Answer options
+- **Zero Empty Placeholders:** No empty image box or placeholder icon may be rendered when stimulus media does not exist.
+- **Responsive Constraints:** Media must fit available width, preserve intrinsic aspect ratio, avoid horizontal overflow, and remain readable without displacing navigation irrecoverably.
+- **Scope Rule:** This is layout composition guidance; it does not fabricate backend question schema capabilities beyond the actual data contract.
 
 ---
 
-## 7. Honest Answer Save-State Principles
+## 7. Selected Answer Treatment (Owner Lock)
+
+Owner explicitly requires immediate, unambiguous feedback for student input:
+- **Immediate Green Feedback:** When a student taps or clicks an option, that option becomes **GREEN IMMEDIATELY**.
+- **Meaning of Green Selection:**
+  ```text
+  GREEN SELECTED OPTION  =  CURRENT STUDENT SELECTION
+  ```
+  It does **NOT** mean: *Server save completed*.
+- **Restrained Semantic-Green Styling:**
+  - Background: Pale green subtle tint (`#ECFDF5` / `--color-success-bg`).
+  - Border: Refined green accent (`#10B981` / `--color-success-border`).
+  - Indicator: Green radio checked circle.
+  - Typography: High-contrast dark text (`#064E3B` or `#1F2937`).
+  - Restraint: No saturated dark-green solid fill, no neon glow, no celebratory animations.
+- **Single-Choice Rule:** Exactly one option in a single-choice question may appear selected at any time.
+- **Dual Visual Encoding:** Communicated via radio checked state, distinct border, and surface tint (never color alone).
+
+---
+
+## 8. Honest Answer Save-State Principles (Owner Lock)
 
 Student anxiety during digital examinations is minimized through clear, honest, and unambiguous feedback regarding their answers:
-- **"Belum dijawab":** Displayed when no option has been selected for the current question.
-- **"Menyimpan...":** Displayed immediately upon student input while the network mutation is in flight.
-- **"Tersimpan":** Displayed ONLY after the server returns an explicit 200/201 response with the matching `write_version`.
-- **"Gagal menyimpan":** Displayed with distinct high-contrast danger styling if the network mutation rejects or times out, accompanied by automatic retry capability.
+- **Separation from Selected Answer:** Save state is **STRICTLY SEPARATE** from selected-answer styling.
+  - Do NOT place save status text ("Tersimpan", "Menyimpan...", "Gagal menyimpan") inside the answer option card.
+  - Do NOT place the normal save-status block underneath the entire list of answer options.
+  - Save state belongs exclusively in the **compact upper exam information area**.
+- **Exact Semantic States:**
+  - **"Belum dijawab":** Displayed when no option has been selected for the current question.
+  - **"Menyimpan...":** Displayed immediately upon student input while the network mutation is in flight.
+  - **"Tersimpan":** Displayed ONLY after the server returns an explicit 200/201 response with the matching `write_version`.
+  - **"Gagal menyimpan":** Displayed with distinct high-contrast danger styling if the network mutation rejects or times out, accompanied by automatic retry capability.
+- **Operational Sequence:**
+  ```text
+  Student selects Option B
+  │
+  ├─► Option B becomes GREEN immediately (Current Student Selection)
+  │
+  ├─► Upper Information Area shows "Menyimpan..."
+  │
+  ├─► Server returns 200 ACK with matching write_version
+  │
+  └─► Upper Information Area transitions to "Tersimpan"
+  ```
+  If save fails: Option B remains visibly green (the student's intended selection is preserved), while the upper information area displays high-contrast "Gagal menyimpan".
 - **No Fake Sync:** Never display "Tersimpan" optimistically before HTTP acknowledgement is received.
 
 ---
 
-## 8. Progress Map Semantics and Accessibility
+## 9. Authoritative Timer Presentation
+
+The countdown timer is a mission-critical component governed by server authority:
+- **Server Authority:** The timer is initialized from and periodically reconciled with the server-authoritative remaining seconds (`expires_at` / `remaining_seconds`). The local client clock is never trusted as the source of truth.
+- **Tabular Figures:** Rendered with `font-variant-numeric: tabular-nums` (using the monospace font token `--font-mono`) to prevent horizontal jitter as numbers tick down.
+- **Visual Presentation:** Compact, prominent numeric value with optional minimal clock outline. Must NOT resemble an input box or clickable button.
+- **Zero Duplicate Timers:** The authoritative countdown timer appears in exactly one place.
+- **Urgency Transitions:**
+  - Normal (> 5 minutes): Near-black / neutral tone.
+  - Warning (<= 5 minutes): Subtle amber highlight (`--color-warning-text` / `#92400e`).
+  - Critical (<= 1 minute): High-contrast red alert (`--color-danger-text` / `#991b1b`).
+- **No Fake OS Time:** Displaying an ambient device clock or fake system time is strictly prohibited.
+
+---
+
+## 10. Device & Connectivity Information Restraint
+
+- **Battery State:** Do NOT add persistent battery indicators merely for visual richness. Normal battery state displays nothing. Low-battery warnings may appear only when backed by reliable native APIs and explicitly authorized.
+- **Connectivity State:** Normal connectivity displays nothing (suppress "Online", "Aman", "Sinkron"). Only exceptional disconnected or sync-recovery states appear, backed by verified runtime state. BU-082 must not fabricate connectivity confidence.
+
+---
+
+## 11. Progress Map Semantics and Accessibility
 
 The Question Navigator (Progress Map) provides an overview of the examination:
 - **States:**
-  - `Current` (Sedang dikerjakan): Highlighted with primary active border and indicator dot.
-  - `Answered` (Sudah dijawab): Marked with distinct background tint and checkmark (`✓`).
-  - `Unanswered` (Belum dijawab): Neutral outline, clearly distinguishable from answered items.
+  - `Current` (Sedang dikerjakan): Highlighted with black primary active border and indicator dot.
+  - `Answered` (Sudah dijawab): Marked with subtle green background tint (`#ECFDF5`), green border, and checkmark (`✓`).
+  - `Unanswered` (Belum dijawab): Clean light neutral outline (`#E5E5E5`), clearly distinguishable from answered items.
 - **Dual Visual Encoding:** State must never be communicated through color alone. Every button must include accessible text (`aria-label`) and distinct shape/icon markers.
 - **Direct Navigation:** Clicking or tapping any question button immediately focuses and loads that question.
 
 ---
 
-## 9. Responsive Composition
+## 12. Responsive Composition
 
-The workspace adapts cleanly between desktop workstations and compact mobile viewports without sacrificing capabilities.
+The workspace adapts cleanly between desktop workstations and compact mobile viewports in the unified Warm Monochrome visual grammar.
 
 ### Desktop Composition (>= 1024px)
 - **Split-Pane Layout:**
   - Left Pane (~280px to 320px): Question Navigator and progress summary.
   - Right Pane (Remaining flex width, capped at `max-w-assessment` / 1200px): Primary Question & Answer focus workspace.
+- **Visual Character:** Clean white surfaces, black primary buttons, subtle `#E5E5E5` borders. Progress map feels refined and instrumental, not a heavy calculator grid.
 - **Sticky Actions:** Navigation controls ("Sebelumnya", "Berikutnya", "Selesai") anchored clearly below the active question card.
 
 ### Mobile Composition (< 1024px)
 - **Fullscreen Focus:** Suppresses the permanent navigator card to give 100% of vertical height to the active question stimulus and response options.
-- **Sticky Top Bar:** Compact header containing primary assessment context, question progress, and countdown timer.
+- **Compact Sticky Top Bar:** Houses primary assessment context (when available), question progress, authoritative timer, and compact save state.
 - **Bottom Command Dock:** Viewport-bottom sticky bar containing a symmetric single row of primary actions:
-  - `Sebelumnya` (Previous question)
-  - `Daftar Soal` (Triggers Question Navigator bottom sheet)
-  - `Berikutnya` (Next question)
-  - `Selesai` (Triggers high-stakes submission modal)
-- **Symmetric Touch Targets:** All 4 action buttons share equal width in a single row with 48px minimum height. Buttons must not wrap into a second row under supported widths.
-- **Bottom Sheet Drawer:** The Question Navigator opens as an accessible bottom sheet dialog (`role="dialog"`, `aria-modal="true"`, Escape key dismiss, focus trapped, focus restored on close).
+  - `Sebelumnya` (Low emphasis, ghost / subtle border)
+  - `Daftar Soal` (Navigation trigger, white surface, subtle border)
+  - `Berikutnya` (Clear navigation, white surface, subtle border)
+  - `Selesai` (High-emphasis action, black primary surface, white text)
+- **Component Grammar:** Minimal outline icon + short text label. Previous and next controls must not be icon-only.
+- **Symmetric Touch Targets:** All 4 action buttons share balanced proportions in a single row with >= 44px (recommended 48px) minimum touch target height. Buttons must not wrap into a second row at canonical 360px baseline.
+- **Bottom Sheet Drawer:** The Question Navigator opens as an accessible bottom sheet dialog (`role="dialog"`, `aria-modal="true"`, Escape key dismiss, focus trapped, focus restored on close). Fixed header with summary numbers leading and minimal outline close icon (`✕`); scrollable number grid; fixed footer with primary black "Selesai" button.
 
 ### Tested Viewport Matrix
 The workspace must be visually verified across the full representative device spectrum:
@@ -165,7 +243,7 @@ The workspace must be visually verified across the full representative device sp
 
 ---
 
-## 10. Data-Contract Truth & Successor Dependencies
+## 13. Data-Contract Truth & Successor Dependencies
 
 The present client data contract must remain honest regarding its current backend capabilities.
 
@@ -190,7 +268,7 @@ Because BU-082 is strictly prohibited from mutating backend schemas, APIs, or co
 
 ---
 
-## 11. Accessibility and Content Style Standards
+## 14. Accessibility and Content Style Standards
 
 - **WCAG 2.1 AA Compliance:** Minimum 4.5:1 text contrast for body copy; 3:1 for graphical UI elements and large text.
 - **Keyboard Operability:** Full keyboard flow using `Tab`, `Shift+Tab`, `Arrow` keys for option selection, and `Escape` for sheet closure. Visible 2px focus ring (`--border-focus`) on all interactive targets.
@@ -199,9 +277,10 @@ Because BU-082 is strictly prohibited from mutating backend schemas, APIs, or co
 
 ---
 
-## 12. Cross-References
+## 15. Cross-References
 
 - [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md): Platform-wide tokens, spacing scale, typography, and anti-AI-slop rules.
+- [ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md](ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md): Canonical platform visual foundation and DEC-040 specifications.
 - [UI_CONTENT_AND_COPY_STYLE.md](UI_CONTENT_AND_COPY_STYLE.md): Canonical Indonesian terminology and copy guidelines.
 - [FRONTEND_AGENT_SKILL_STACK.md](FRONTEND_AGENT_SKILL_STACK.md): Canonical engineering and design agent skills.
-- [DECISION_LOG.md](../decisions/DECISION_LOG.md): DEC-039 authoritative decision record.
+- [DECISION_LOG.md](../decisions/DECISION_LOG.md): DEC-039 and DEC-040 authoritative decision records.

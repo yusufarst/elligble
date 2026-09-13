@@ -1,7 +1,7 @@
 **Status:** ACTIVE  
-**Version:** 1.0.7
+**Version:** 1.0.8
 **Canonical:** YES  
-**Supersedes:** 1.0.6
+**Supersedes:** 1.0.7
 **Used By:** Governance, Discovery, Architecture  
 **Last Reviewed:** 2026-09-13
 
@@ -50,6 +50,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-037 | Frontend Stack & Entry Completion | React + TypeScript + Vite canonical production frontend stack foundation & Frontend Entry Gate completion | LOCKED | Owner / Frontend Entry Gate |
 | DEC-038 | Frontend Agent Skill Stack | Supplemental Frontend Design/Responsive/Rendered-QA Skill Stack | LOCKED | Owner / DEC-038 |
 | DEC-039 | Assessment UI Context | Secure Assessment Exam Focus Workspace Context Presentation | LOCKED | Owner / SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md |
+| DEC-040 | Platform Visual Foundation | ELLIGBLE Warm Monochrome Institutional Visual Foundation | LOCKED | Owner / DEC-040 / ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -257,3 +258,28 @@ Owner explicitly approved the Secure Assessment student exam presentation supers
 - **Current Data-Contract Limitations:** The current BU-082 browser-facing assessment contract does not yet expose Subject or Exam Room display labels, reliable connectivity truth, or persisted Ragu-ragu / Tandai state. Current missing context data requires later bounded product-facing integration.
 - **Zero BU-082 Runtime Mutation:** BU-082 runtime, API, schemas, and types remain unchanged.
 - **Additive Decision Scope:** DEC-039 is ADDITIVE except for the explicitly superseded Exam-Title-mandatory presentation phrase in active assessment navigation.
+
+### DEC-040 — ELLIGBLE Warm Monochrome Institutional Visual Foundation (2026-09-13)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/design/ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md`, `docs/design/FRONTEND_DESIGN_SYSTEM.md`, `docs/design/SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md`
+
+Owner explicitly approved the platform-wide visual foundation supersession:
+
+- **Platform-Wide Scope:** Applies coherently across all future user-facing interfaces (Student, Teacher, Proctor, School Administrator, Guardian, Partner). Individual Build Units may not invent proprietary styling.
+- **Primary Visual Reference:** NeedMCP "elevenlabs" style profile / Owner-supplied ElevenLabs-inspired Design.md.
+- **Explicit Supersession of Institution Navy Dominance:** Institution navy is NO LONGER the dominant UI interaction language. Navy is prohibited as the default for primary buttons, selected controls, dominant navigation bars, or focus surfaces. Historical navy tokens are retained solely for token compatibility and limited brand accents.
+- **Inspiration vs. Copying Boundary:**
+  - ELLIGBLE adopts an ElevenLabs-inspired visual system; it strictly prohibits copying ElevenLabs branding.
+  - Prohibited: ElevenLabs logo, wordmark, proprietary illustrations, product wording, proprietary SVG/source assets, or trademarks.
+  - Adopted: Restrained monochrome foundation, crisp white and warm-white canvas, solid black primary actions (`#000000`), refined dark-gray secondary text (`#4E4E4E`), subtle neutral borders (`#E5E5E5`), generous whitespace, multi-layer low-opacity elevation, and minimal outline iconography.
+- **Palette Foundation:** Canonical light-mode palette: Primary Action / Foreground `#000000`, Secondary `#4E4E4E`, Canvas/Surface `#FFFFFF`, Border `#E5E5E5`, Success Base `#10B981` (subtle `#ECFDF5`), Info Base `#3B82F6` (subtle `#EFF6FF`), Warning Base `#F59E0B` (subtle `#FFFBEB`), Danger Base `#EF4444` (subtle `#FEF2F2`).
+- **Typography Direction:** Inter preferred for UI typography; Geist Mono or equivalent preferred for technical/tabular figures. Robust system fallback stack remains mandatory. External font CDN/npm downloads are prohibited without verified offline-safe delivery mechanisms.
+- **Iconography Language:** Minimal outline icons with single-family geometry (1.5px–2.0px stroke, rounded caps and joins). Project-controlled SVG components only. Emoji and raw Unicode glyphs are prohibited as primary production icon systems.
+- **Component Grammar:** ElevenLabs-inspired icon + short label structure. Buttons: primary black surface (`#000000`), secondary white surface with light border, ghost, and danger. Restrained low-opacity elevation (3%–8%).
+- **Selected Answer Option (Owner Lock):** Selecting an option turns it **GREEN IMMEDIATELY** (`#ECFDF5` background, `#10B981` border, dark text). Meaning: **CURRENT STUDENT SELECTION** (does NOT mean server save completed).
+- **Save State Separation (Owner Lock):** Save state is strictly separate from answer option styling; never placed inside an option card or below all options. Housed in the compact upper exam information area (`Belum dijawab`, `Menyimpan...`, `Tersimpan` [server ACK only], `Gagal menyimpan`).
+- **Content-First Active Exam:** Suppresses large headers; question prompt, stimulus media, and answer options dominate viewport. Compact upper information area (`[Subject/Room] [Time] / [Progress] [Save State]`). Zero duplicate timers or redundant labels. No fake battery, signal, or OS clock.
+- **Mobile Command Dock:** Single-row symmetric 4-button dock at viewport bottom (`Sebelumnya`, `Daftar Soal`, `Berikutnya`, `Selesai`). Minimum 44px (recommended 48px) touch targets, non-wrapping at 360px baseline.
+- **NeedMCP Governance:** NeedMCP is supplemental tooling, NOT canonical authority. Repository canonical documents win absolutely over any external style tool suggestions. Status: **NEEDMCP: NOT YET INSTALLED / NOT YET ACTIVATED**.

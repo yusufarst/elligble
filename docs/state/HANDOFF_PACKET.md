@@ -1,6 +1,6 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.437
-**Supersedes:** 0.1.436
+**Version:** 0.1.438
+**Supersedes:** 0.1.437
 0.1.122 was never a canonical committed repository version; 0.1.123 contained premature BU-019 lifecycle promotion; 0.1.124 forward-corrects current navigation without rewriting history. 0.1.125 and 0.1.126 belonged to BU-019 lifecycle/final-navigation work. 0.1.127 and 0.1.128 advanced BU-020. 0.1.220 closed BU-035 lifecycle; 0.1.221 forward-corrects BU-035 stage-4 verification gate. 0.1.225 closes BU-036 lifecycle. 0.1.226 records BU-036 Stage 5 final physical verification pass. 0.1.227 records BU-037 implementation and test pass. 0.1.228 records BU-037 targeted forward remediation. 0.1.229 records BU-037 targeted process-control truth correction. 0.1.230 records BU-037 second targeted process and control-metadata correction. 0.1.231 closes BU-037 lifecycle. 0.1.232-0.1.234 handled BU-038 setup and execution. 0.1.235-0.1.236 handled BU-038 targeted verifier remediation.
 **Canonical:** DYNAMIC NAVIGATION SNAPSHOT
 **Phase:** BUILD
@@ -91,11 +91,11 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+**CURRENT RESPONSIBILITY:** NEEDMCP INSTALLATION READINESS & BU-082 ROUND-5 IMPLEMENTATION PREPARATION
 
-**NEXT SAFE ACTION:** MAIN PROJECT CONTROL 010 - BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+**NEXT SAFE ACTION:** controlled NeedMCP installation / elevenlabs style activation readiness before BU-082 Round-5 implementation
 
-**NEXT STAGE:** BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+**NEXT STAGE:** BU-082 STAGE-3 ROUND-5 IMPLEMENTATION PREPARATION
 
 **BU-081:** TERMINAL / DO NOT REOPEN
 
@@ -124,7 +124,11 @@ OWNER FINDING B: IMPLEMENTED / RENDERED RE-REVIEW PENDING
 ROUND-4 OWNER VISUAL REVIEW: NO-GO (further identity-level recomposition required)
 ROUND-4 SOURCE WORK PRESERVATION: MANDATORY (do NOT discard uncommitted Round-4 working tree files)
 DEC-039: LOCKED (Owner-approved presentation supersession)
-EXAM FOCUS WORKSPACE DESIGN CONTRACT: LOCKED v1.0.0 (`docs/design/SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md`)
+DEC-040: LOCKED (Warm Monochrome Institutional Visual Foundation v1.0.0)
+PLATFORM VISUAL FOUNDATION: LOCKED v1.0.0 (`docs/design/ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md`)
+FRONTEND DESIGN SYSTEM: LOCKED v1.1.0 (`docs/design/FRONTEND_DESIGN_SYSTEM.md`)
+EXAM FOCUS WORKSPACE DESIGN CONTRACT: LOCKED v1.1.0 (`docs/design/SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md`)
+NEEDMCP STATUS: NOT YET INSTALLED / NOT YET ACTIVATED (Supplemental tooling only)
 PRIMARY CONTEXT RESOLUTION: SUBJECT -> ROOM -> OMIT (exactly ONE primary label; omit rather than fabricate if data absent)
 EXAM TITLE MANDATORY IN ACTIVE CHROME: NO (explicitly superseded by DEC-039)
 GENERIC "RUANG UJIAN AMAN" FINAL HEADING: NO (placeholder heading replaced)
@@ -133,15 +137,15 @@ CURRENT DATA CONTRACT TRUTH: Current assessment API/runtime does NOT expose Subj
 BU-082 API / RUNTIME MUTATION: STRICTLY PROHIBITED / ZERO BACKEND MUTATION
 FUTURE CAPABILITY DEPENDENCIES: Persisted Ragu-ragu / Tandai and reliable connection/recovery states require future successor integration
 STAGE-4: NOT AUTHORIZED / PROHIBITED
-CURRENT STATUS: ROUND-4 NO-GO / DEC-039 LOCKED / AWAITING STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
+CURRENT STATUS: ROUND-4 NO-GO / DEC-040 LOCKED / AWAITING CONTROLLED NEEDMCP INSTALLATION & STAGE-3 ROUND-5 IMPLEMENTATION
 DONE: NO
 STAGE-3: PENDING
-LAST COMPLETED BUILD UNIT: BU-081
+LAST COMPLETED BUILD UNIT: BU-081 (TERMINAL / DO NOT REOPEN)
 ACTIVE BUILD UNIT: BU-082
 NEXT BUILD UNIT: NOT YET REGISTERED
-CURRENT RESPONSIBILITY: BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
-NEXT SAFE ACTION: MAIN PROJECT CONTROL 010 - BU-082 STAGE-3 ROUND-5 EXAM FOCUS WORKSPACE VISUAL RECOMPOSITION
-CANONICAL SKILL STACK DOC: docs/design/FRONTEND_AGENT_SKILL_STACK.md (LOCKED v1.0.0 / DEC-038)
+CURRENT RESPONSIBILITY: NEEDMCP INSTALLATION READINESS & BU-082 ROUND-5 IMPLEMENTATION PREPARATION
+NEXT SAFE ACTION: controlled NeedMCP installation / elevenlabs style activation readiness before BU-082 Round-5 implementation
+CANONICAL SKILL STACK DOC: docs/design/FRONTEND_AGENT_SKILL_STACK.md (LOCKED v1.0.1 / DEC-038)
 FRONTEND AGENT SKILL STACK (ALL FOUR ROLES INSTALLED & VERIFIED):
 - Engineering Foundation: react-typescript-vite v1.0.0
 - Supplemental Design/UX Craft: frontend-design v2.0
