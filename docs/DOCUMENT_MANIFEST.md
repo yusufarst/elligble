@@ -1,6 +1,6 @@
 **Status:** ACTIVE
-**Version:** 1.0.415
-**Supersedes:** 1.0.414
+**Version:** 1.0.416
+**Supersedes:** 1.0.415
 **Canonical:** YES
 **Last Reviewed:** 2026-09-14
 # ELLIGBLE Document Manifest
@@ -31,7 +31,7 @@ NEVER_DEFAULT
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
 | `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-082 / ACTIVE NONE / NEXT NOT YET REGISTERED / Stage-5 final physical verify. Version 1.5.333. (84B3214D4345B8C4F3C03B19317E5E3287E277E425B0EE843A3D9012A042DD54) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. BU-082 Stage-5 pending / ACTIVE NONE / NEXT NOT YET REGISTERED. Version 0.1.442. (83D7C21D4A68BAC3611C54ADC39D5728FDFACFC251F4EC05675BA1631CDA6B7D) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. BU-082 Stage-5 pending / ACTIVE NONE / NEXT NOT YET REGISTERED. Version 0.1.443. (84BFB4EC3B246CA90115386C693709A6E7331869CE1CD520E0F7A8FAABA1D118) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
