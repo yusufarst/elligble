@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.385
-**Supersedes:** 0.1.384
+**Version:** 0.1.386
+**Supersedes:** 0.1.385
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -492,7 +492,7 @@
 ### BU-082
 - **BUILD UNIT:** BU-082
 - **TITLE:** Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap
-- **VERSION:** 1.0.2
+- **VERSION:** 1.0.4
 - **STAGE-1:** PASS / FROZEN BY MAIN PROJECT CONTROL 010
 - **STAGE-2 IMPLEMENTATION:** COMPLETE
 - **STAGE-2 ENGINEERING VERIFICATION:** PASS
