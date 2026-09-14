@@ -1,6 +1,7 @@
-**Status:** ACTIVE
-**Version:** 1.0.418
-**Supersedes:** 1.0.417
+**Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
+**Version:** 1.0.419
+**Canonical:** CANONICAL DOCUMENT INDEX
+**Supersedes:** 1.0.418
 **Canonical:** YES
 **Last Reviewed:** 2026-09-14
 # ELLIGBLE Document Manifest
@@ -30,8 +31,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Current State. LAST COMPLETED BU-082 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-082 terminal / Stage-5 final physical verification PASS / final physical verification PASS / next Build Unit selection authorized. Version 1.5.335. (88F048A42E1B58DD881D31B4B129E708657055F7F13E35B73C5E32C381ED05CF) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. Dynamic navigation snapshot for agent context recovery. LAST COMPLETED BU-082 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-082 terminal / Stage-5 final physical verification PASS / final physical verification PASS / next Build Unit selection authorized. Version 0.1.445. (20F6A44997CF967C20F7D127D998C89E695F407BD6AC7E1433F33CAD6C799315) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.337. | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.447. | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -41,8 +42,8 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (5CA58622FABBB07C09AB2BC399321F2DC6F1EA8589A8A32C2BA5DE16FD893829) | Canonical / LOCKED v1.1.0 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Index. Dynamic build phase control, BU status tracking, LAST COMPLETED BU-082 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-082 terminal / Stage-5 final physical verification PASS / final physical verification PASS / next Build Unit selection authorized. Version 0.1.386. (B4BA16BCE308EAF2851E40CC09E04BBE69BB5C61CE4C8DA711DCECFBA1CF13AE) | DYNAMIC BUILD CONTROL | PHASE: Build |
-| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, BU-081 core workstation implemented, BU-082 mobile-first UX hardening implemented. Version 1.0.5. (56DEE237BB82E90264560A5FF3C1F7FCAEB0296B882BE49D9242F7156F0863F4) | DYNAMIC ROADMAP | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control. Tracks current execution program, completed features, and explicit active constraints (e.g. PB04/PB06 gaps). Version 0.1.388. | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, BU-081 core workstation implemented, BU-082 mobile-first UX hardening implemented, BU-083 context projection integrated. Version 1.0.7. | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
 | `docs/00-recovery/00.02_TENANT_IDENTITY_AND_ACCESS.md` | Identity/Tenant Recovery | Frozen | DOMAIN |
@@ -316,5 +317,7 @@ NEVER_DEFAULT
 | `frontend/web/src/components/QuestionNavigatorSheet.tsx` | BU-082 frontend component — Accessible mobile-first question navigator sheet with focus containment, Escape dismissal, responsive touch targets, and submission access. (7C2F86E56A2FABA8D192924E2E7C8DB2159365C7E3C98544727E2A2BF955DCC5) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/components/StudentExamWorkstation.tsx` | BU-082 frontend workstation — Student Exam Workstation hardened with compact mobile sticky header, mobile bottom navigation action bar (Sebelum/Daftar/Berikut/Selesai), persistent save status, and responsive layout coordination. (16D1C0C6DDEF97ED188E531367C904C03FDD6AB830ED242AAC80E5DA426170D8) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/styles/workstation.css` | BU-082 frontend styling — Mobile-first workstation CSS with 100dvh dynamic viewport hardening, safe-area-inset padding, bottom sheet styling, 1-row symmetric 4-action mobile bottom bar, and persistent save status badge. (B0CA1004732CA133E53D73C441BDFEDA0D62589F38D069B617AA6033BA8EE91F) | FRONTEND STYLING | PHASE: Build |
-| `frontend/web/src/__tests__/workstation.test.tsx` | BU-082 frontend tests — Workstation unit test suite covering mobile navigator sheet, focus management, question navigation, submission flow, four mobile action bar buttons, persistent save states, and BU-081 regression proofs / 41/41 TESTS PASS. (F8A975E96964A5CFD90838DF4A68452617D3913DEA920F8342E4AAB797CCD7F0) | TEST HARNESS | PHASE: Build |
+| `frontend/web/src/__tests__/workstation.test.tsx` | BU-082/BU-083 frontend tests — Workstation unit test suite covering mobile navigator sheet, focus management, question navigation, submission flow, four mobile action bar buttons, persistent save states, BU-081 regression proofs, and BU-083 context projection integration tests / 44/44 TESTS PASS. (54C584ACAFA273A4378DDEB9698056B2E626CC517ADE3A744C52707B2492A5A2) | TEST HARNESS | PHASE: Build |
 | `frontend/web/index.html` | BU-082 frontend entry — HTML shell configured with viewport-fit=cover meta viewport for mobile safe-area support. (E817B2F14A68D6D7709139536EFA0C21EEF1E5ECF6D0D07CAA3023679F2459E1) | FRONTEND ENTRY | PHASE: Build |
+| `runtime/secure-assessment/test/resume.test.ts` | BU-083 backend tests for context projection behavior. 18/18 TESTS PASS. (52BC287C1A85E3B688F0C99874C1B245E4E6022C681231CF0770998DA57B103C) | TEST HARNESS | PHASE: Build |
+| `database/verification/verify_bu083_secure_assessment_context_projection.js` | BU-083 PostgreSQL-backed context projection verifier. REAL POSTGRESQL VERIFICATION PASS / TENANT ISOLATION PASS / ZERO-WRITE PASS. (20A9582C76CFF09A71884CF38703EB09D82ADD19E9BCD9F46FBA21ADD8E36A3B) | VERIFICATION HARNESS | PHASE: Build |

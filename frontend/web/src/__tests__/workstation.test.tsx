@@ -1755,4 +1755,57 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     expect(await screen.findByText('Gagal menyimpan')).toBeTruthy();
     expect(statusBadge.classList.contains('failed')).toBe(true);
   });
+
+  it('41. STATE A — SUBJECT: renders subjectLabel as primary context when present', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume({
+          context: { subjectLabel: 'Matematika Dasar', roomLabel: 'Ruang 01' }
+        })), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(JSON.stringify({ attemptId: VALID_ATTEMPT_ID, questions: sampleQuestions }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Matematika Dasar')).toBeTruthy();
+    expect(screen.queryByText('Ruang 01')).toBeNull();
+  });
+
+  it('42. STATE B — ROOM FALLBACK: renders roomLabel when subjectLabel is null', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume({
+          context: { subjectLabel: null, roomLabel: 'Ruang 01' }
+        })), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(JSON.stringify({ attemptId: VALID_ATTEMPT_ID, questions: sampleQuestions }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Ruang 01')).toBeTruthy();
+  });
+
+  it('43. STATE C — OMIT: renders no context element when both are null', async () => {
+    window.history.pushState({}, '', `?attemptId=${VALID_ATTEMPT_ID}`);
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (url.includes('/api/v1/assessment/resume')) {
+        return new Response(JSON.stringify(createMockResume({
+          context: { subjectLabel: null, roomLabel: null }
+        })), { status: 200 });
+      }
+      if (url.includes('/api/v1/assessment/questions')) {
+        return new Response(JSON.stringify({ attemptId: VALID_ATTEMPT_ID, questions: sampleQuestions }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+    });
+    const { container } = render(<StudentExamWorkstation />);
+    await screen.findByRole('heading', { name: 'Soal 1 dari 2' });
+    expect(container.querySelector('.exam-context-subtitle')).toBeNull();
+  });
 });

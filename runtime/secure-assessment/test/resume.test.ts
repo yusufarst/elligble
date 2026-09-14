@@ -353,4 +353,104 @@ test('resume tests', async (t) => {
         
         assert.equal(res.statusCode, 500);
     });
+
+    await t.test('15. Context projection: Subject + Room present -> both returned, tenant isolation preserved', async () => {
+        reset();
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+        
+        let projectionParams: any[] = [];
+        const originalQuery = deps.pool.connect;
+        deps.pool.connect = async () => ({
+            query: async (queryText: string, params: any[]) => {
+                if (queryText.includes('s.display_label as "subjectLabel"')) {
+                    projectionParams = params;
+                    return { rows: [{ subjectLabel: 'Fisika', roomLabel: 'Lab 1' }] };
+                }
+                return mockClient.query(queryText, params);
+            },
+            release: () => {}
+        } as any);
+
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+        deps.pool.connect = originalQuery;
+
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.deepEqual(data.context, { subjectLabel: 'Fisika', roomLabel: 'Lab 1' });
+        assert.deepEqual(projectionParams, [validAttemptId, tenantId]);
+    });
+
+    await t.test('16. Context projection: Subject present, Room absent -> Subject returned', async () => {
+        reset();
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+        const originalQuery = deps.pool.connect;
+        deps.pool.connect = async () => ({
+            query: async (queryText: string, params: any[]) => {
+                if (queryText.includes('s.display_label as "subjectLabel"')) {
+                    return { rows: [{ subjectLabel: 'Biologi', roomLabel: null }] };
+                }
+                return mockClient.query(queryText, params);
+            },
+            release: () => {}
+        } as any);
+
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+        deps.pool.connect = originalQuery;
+
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.deepEqual(data.context, { subjectLabel: 'Biologi', roomLabel: null });
+    });
+
+    await t.test('17. Context projection: Subject absent, Room present -> Room returned', async () => {
+        reset();
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+        const originalQuery = deps.pool.connect;
+        deps.pool.connect = async () => ({
+            query: async (queryText: string, params: any[]) => {
+                if (queryText.includes('s.display_label as "subjectLabel"')) {
+                    return { rows: [{ subjectLabel: null, roomLabel: 'Aula Utama' }] };
+                }
+                return mockClient.query(queryText, params);
+            },
+            release: () => {}
+        } as any);
+
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+        deps.pool.connect = originalQuery;
+
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.deepEqual(data.context, { subjectLabel: null, roomLabel: 'Aula Utama' });
+    });
+
+    await t.test('18. Context projection: Neither present -> nulls returned', async () => {
+        reset();
+        timers.push({ tenant_id: tenantId, exam_attempt_id: validAttemptId, started_at: null });
+        const originalQuery = deps.pool.connect;
+        deps.pool.connect = async () => ({
+            query: async (queryText: string, params: any[]) => {
+                if (queryText.includes('s.display_label as "subjectLabel"')) {
+                    return { rows: [{ subjectLabel: null, roomLabel: null }] };
+                }
+                return mockClient.query(queryText, params);
+            },
+            release: () => {}
+        } as any);
+
+        const req = getReq(validAttemptId);
+        const res = new MockRes();
+        await handleResumeGet(req as any, res as any, deps);
+        deps.pool.connect = originalQuery;
+
+        assert.equal(res.statusCode, 200);
+        const data = JSON.parse(res.body);
+        assert.deepEqual(data.context, { subjectLabel: null, roomLabel: null });
+    });
 });

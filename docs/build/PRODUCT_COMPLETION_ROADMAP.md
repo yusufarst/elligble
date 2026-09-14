@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.6
+**Version:** 1.0.7
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.5
+**Supersedes:** 1.0.6
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -137,7 +137,8 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **API LAYER STATUS:** PARTIAL / PRODUCT COMPOSITION INCOMPLETE. Remaining work is NOT "create an HTTP server foundation". Remaining work must focus on dependency-valid product-facing composition such as missing browser-facing entry, question/readiness, teacher/proctor operational boundaries, and other required vertical routes, subject to future Controller scope freeze. (Do NOT preselect exact next API endpoint; do NOT select WebSocket/polling; do NOT invent authentication/token mechanics).
     - **AUTHENTICATION / TRUSTED CONTEXT:** Existing runtime uses an injected trusted authorization seam and remains fail-closed where real authentication integration is absent. Do NOT treat `X-Tenant-ID` or `Bearer <attempt-id>` request-header extraction as canonical.
   - **Student Exam Client Core Workstation:** IMPLEMENTED via BU-081. Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
-  - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082 / Stage-3 pending after Stage-2. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
+  - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
+  - **Student Exam Context Projection Integration:** IMPLEMENTED in BU-083 / pending Controller Stage-3 physical audit. Projection of read-only authoritative Subject and Exam Room context into the active exam workspace header without new tenant-authorization boundaries.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
     - Browser-facing assigned-exam entry.
