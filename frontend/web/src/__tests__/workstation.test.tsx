@@ -117,10 +117,13 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     render(<StudentExamWorkstation />);
 
-    // Renders header and progress
-    expect(await screen.findByText('Ruang Ujian Aman')).toBeTruthy();
+    // Canonical header and progress rendering: generic fallback is omitted, question progress heading renders
+    expect(await screen.findByRole('heading', { name: 'Soal 1 dari 2' })).toBeTruthy();
+    expect(screen.queryByText('Ruang Ujian Aman')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Daftar Soal' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Daftar Soal' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Soal Berikutnya' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Selesaikan Ujian' })).toBeTruthy();
 
     // Renders first question prompt and all 5 options
     expect(screen.getByText('Manakah unsur kimia dengan simbol O?')).toBeTruthy();

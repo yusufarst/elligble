@@ -29,16 +29,19 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef<boolean>(false);
 
   // Focus management: save activeElement on open, focus close button, restore focus on close
   useEffect(() => {
     if (isOpen) {
+      wasOpenRef.current = true;
       previousActiveElementRef.current = document.activeElement as HTMLElement | null;
       const timer = setTimeout(() => {
         closeButtonRef.current?.focus();
       }, 50);
       return () => clearTimeout(timer);
-    } else {
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false;
       if (triggerRef?.current) {
         triggerRef.current.focus();
       } else if (previousActiveElementRef.current) {
@@ -113,81 +116,118 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
         aria-labelledby="navigator-sheet-title"
         onClick={e => e.stopPropagation()}
       >
-        <div className="sheet-header">
-          <h2 id="navigator-sheet-title" className="sheet-title">
-            Daftar Soal
-          </h2>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            className="sheet-close-btn"
-            onClick={onClose}
-            aria-label="Tutup daftar soal"
-          >
-            Tutup
-          </button>
-        </div>
-
-        <div className="sheet-summary-box">
-          <div className="sheet-summary-item">
-            <span className="summary-label">Total Soal:</span>
-            <strong className="summary-val">{totalQuestions}</strong>
-          </div>
-          <div className="sheet-summary-item">
-            <span className="summary-label">Sudah Dijawab:</span>
-            <strong className="summary-val answered-accent">{answeredCount}</strong>
-          </div>
-          <div className="sheet-summary-item">
-            <span className="summary-label">Belum Dijawab:</span>
-            <strong className="summary-val">{unansweredCount}</strong>
-          </div>
-        </div>
-
-        <div className="sheet-legend" aria-hidden="true">
-          <span className="legend-chip"><span className="chip-indicator active-dot">•</span> Aktif</span>
-          <span className="legend-chip"><span className="chip-indicator answered-dot">✓</span> Terjawab</span>
-          <span className="legend-chip"><span className="chip-indicator unanswered-dot">○</span> Kosong</span>
-          <span className="legend-chip"><span className="chip-indicator unresolved-dot">!</span> Proses</span>
-        </div>
-
-        <div className="sheet-grid" role="group" aria-label="Pilihan Nomor Soal">
-          {questions.map((q, idx) => {
-            const isAnswered = !!selectedOptions[q.snapshotId];
-            const isCurrent = idx === currentIndex;
-            const qState = saveStates[q.snapshotId];
-            const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
-
-            let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
-            if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
-
-            return (
-              <button
-                key={q.snapshotId}
-                type="button"
-                className={`sheet-nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''}`}
-                onClick={() => handleSelect(idx)}
-                aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
-                aria-current={isCurrent ? 'true' : undefined}
+        <div className="sheet-top-region">
+          <div className="sheet-drag-handle" aria-hidden="true" />
+          <div className="sheet-header">
+            <div className="sheet-header-title-group">
+              <h2 id="navigator-sheet-title" className="sheet-title">
+                Daftar Soal
+              </h2>
+            </div>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              className="sheet-close-btn"
+              onClick={onClose}
+              aria-label="Tutup daftar soal"
+            >
+              <svg
+                className="sheet-close-svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <span className="sheet-btn-num">{idx + 1}</span>
-                {isCurrent && <span className="sheet-btn-marker current-marker" aria-hidden="true">•</span>}
-                {isAnswered && !isUnresolved && <span className="sheet-btn-marker answered-marker" aria-hidden="true">✓</span>}
-                {isUnresolved && <span className="sheet-btn-marker unresolved-marker" aria-hidden="true">!</span>}
-              </button>
-            );
-          })}
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div className="sheet-footer-action">
-          <button
-            type="button"
-            className="btn btn-primary sheet-submit-btn"
-            onClick={handleOpenSubmit}
-            disabled={hasUnresolvedSaves}
-            aria-haspopup="dialog"
-          >
-            Selesaikan Ujian
-          </button>
+        <div className="sheet-middle-region">
+          <div className="sheet-legend" aria-hidden="true">
+            <span className="legend-chip"><span className="chip-indicator active-dot" /> Aktif</span>
+            <span className="legend-chip"><span className="chip-indicator answered-dot" /> Terjawab</span>
+            <span className="legend-chip"><span className="chip-indicator unanswered-dot" /> Kosong</span>
+          </div>
+
+          <div className="sheet-grid" role="group" aria-label="Pilihan Nomor Soal">
+            {questions.map((q, idx) => {
+              const isAnswered = !!selectedOptions[q.snapshotId];
+              const isCurrent = idx === currentIndex;
+              const qState = saveStates[q.snapshotId];
+              const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
+
+              let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
+              if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
+
+              return (
+                <button
+                  key={q.snapshotId}
+                  type="button"
+                  className={`sheet-nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''}`}
+                  onClick={() => handleSelect(idx)}
+                  aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
+                  aria-current={isCurrent ? 'true' : undefined}
+                >
+                  <span className="sheet-btn-num">{idx + 1}</span>
+                  {isCurrent && <span className="sheet-btn-marker current-marker" aria-hidden="true">•</span>}
+                  {isAnswered && !isUnresolved && <span className="sheet-btn-marker answered-marker" aria-hidden="true">✓</span>}
+                  {isUnresolved && <span className="sheet-btn-marker unresolved-marker" aria-hidden="true">!</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="sheet-bottom-region">
+          <div className="sheet-summary-box">
+            <div className="sheet-summary-item">
+              <span className="summary-label">Total Soal:</span>
+              <strong className="summary-val">{totalQuestions}</strong>
+            </div>
+            <div className="sheet-summary-item">
+              <span className="summary-label">Sudah Dijawab:</span>
+              <strong className="summary-val answered-accent">{answeredCount}</strong>
+            </div>
+            <div className="sheet-summary-item">
+              <span className="summary-label">Belum Dijawab:</span>
+              <strong className="summary-val">{unansweredCount}</strong>
+            </div>
+          </div>
+
+          <div className="sheet-footer-action">
+            <button
+              type="button"
+              className="btn btn-primary sheet-submit-btn"
+              onClick={handleOpenSubmit}
+              disabled={hasUnresolvedSaves}
+              aria-haspopup="dialog"
+              aria-label="Selesaikan Ujian"
+            >
+              <svg
+                className="dock-icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Selesaikan Ujian</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

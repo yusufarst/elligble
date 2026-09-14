@@ -333,9 +333,15 @@ export const StudentExamWorkstation: React.FC = () => {
 
   const getSaveStatusPresentation = () => {
     if (!currentSaveState || currentSaveState.status === 'pristine') {
+      const isAnswered = currentQuestion ? !!selectedOptions[currentQuestion.snapshotId] : false;
+      if (isAnswered) {
+        return {
+          statusClass: 'saved',
+          text: 'Tersimpan',
+        };
+      }
       return {
         statusClass: 'unanswered',
-        icon: '○',
         text: 'Belum dijawab',
       };
     }
@@ -343,31 +349,26 @@ export const StudentExamWorkstation: React.FC = () => {
       case 'saving':
         return {
           statusClass: 'saving',
-          icon: '…',
           text: 'Menyimpan...',
         };
       case 'saved':
         return {
           statusClass: 'saved',
-          icon: '✓',
           text: 'Tersimpan',
         };
       case 'failed':
         return {
           statusClass: 'failed',
-          icon: '!',
           text: 'Gagal menyimpan',
         };
       case 'unsupported_payload':
         return {
           statusClass: 'unsupported',
-          icon: '✕',
           text: 'Format jawaban tidak didukung',
         };
       default:
         return {
           statusClass: 'unanswered',
-          icon: '○',
           text: 'Belum dijawab',
         };
     }
@@ -377,30 +378,71 @@ export const StudentExamWorkstation: React.FC = () => {
 
   return (
     <div className="workstation-container">
-      {/* Persistent Top Navigation Bar */}
+      {/* Compact Assessment Focus Header: Content-First, Zero Generic Branding */}
       <header className="workstation-header">
-        <div className="workstation-header-brand">
-          <h1 className="workstation-header-title">Ruang Ujian Aman</h1>
-          <span className="question-progress-indicator">
-            Soal {currentIndex + 1} dari {totalQuestions}
-          </span>
-        </div>
-        <div className="workstation-header-meta">
-          <div
-            className={`timer-badge ${isUrgent ? 'urgent' : isWarning ? 'warning' : ''}`}
-            aria-live="polite"
-            aria-label={`Sisa waktu pengerjaan ujian: ${formattedTime}`}
-          >
-            <span>Sisa Waktu: {formattedTime}</span>
+        <div className="workstation-header-inner">
+          <div className="header-rail-region" aria-hidden="true" />
+          <div className="header-workspace-region">
+            <div className="header-primary-group">
+              <h1 className="question-progress-heading question-progress-indicator">
+                Soal {currentIndex + 1} dari {totalQuestions}
+              </h1>
+            </div>
+
+            <div className="header-status-group">
+              {/* Server-authoritative tabular-nums countdown timer */}
+              <div
+                className={`timer-badge timer-display ${isUrgent ? 'urgent' : isWarning ? 'warning' : ''}`}
+                aria-live="polite"
+                aria-label={`Sisa waktu pengerjaan ujian: ${formattedTime}`}
+              >
+                <svg
+                  className="timer-clock-icon"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span className="timer-label sr-only">Sisa Waktu: </span>
+                <span className="timer-value">{formattedTime}</span>
+              </div>
+
+              {/* Dynamic operational status slot */}
+              <div
+                className={`save-status-badge dynamic-status-slot ${saveStatus.statusClass}`}
+                aria-live="polite"
+                aria-label={`Status penyimpanan: ${saveStatus.text}`}
+              >
+                <span className="status-dot" aria-hidden="true" />
+                <span className="save-status-text">{saveStatus.text}</span>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Split Workstation */}
       <main className="workstation-main">
-        {/* Left Pane: Question Navigator (Desktop) */}
+        {/* Left Pane: Question Navigator (Desktop only) */}
         <nav className="navigator-card" aria-label="Daftar Soal Ujian">
-          <h2 className="navigator-title">Daftar Soal</h2>
+          <div className="navigator-header">
+            <h2 className="navigator-title">Daftar Soal</h2>
+          </div>
+
+          <div className="navigator-legend" aria-hidden="true">
+            <span className="legend-chip"><span className="chip-indicator active-dot" /> Aktif</span>
+            <span className="legend-chip"><span className="chip-indicator answered-dot" /> Terjawab</span>
+            <span className="legend-chip"><span className="chip-indicator unanswered-dot" /> Kosong</span>
+          </div>
+
           <div className="navigator-grid" role="group" aria-label="Nomor Soal">
             {questions.map((q, idx) => {
               const isAnswered = !!selectedOptions[q.snapshotId];
@@ -420,31 +462,34 @@ export const StudentExamWorkstation: React.FC = () => {
                   aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
                   aria-current={isCurrent ? 'true' : undefined}
                 >
-                  {idx + 1}
+                  <span className="nav-btn-num">{idx + 1}</span>
+                  {isAnswered && !isUnresolved && <span className="nav-btn-dot answered-dot" aria-hidden="true" />}
+                  {isCurrent && <span className="nav-btn-dot current-dot" aria-hidden="true" />}
+                  {isUnresolved && <span className="nav-btn-dot unresolved-dot" aria-hidden="true" />}
                 </button>
               );
             })}
+          </div>
+
+          <div className="navigator-summary-box">
+            <div className="navigator-summary-row">
+              <span className="navigator-summary-label">Total Soal</span>
+              <strong className="navigator-summary-val">{totalQuestions}</strong>
+            </div>
+            <div className="navigator-summary-row">
+              <span className="navigator-summary-label">Sudah Dijawab</span>
+              <strong className="navigator-summary-val answered-accent">{answeredCount}</strong>
+            </div>
+            <div className="navigator-summary-row">
+              <span className="navigator-summary-label">Belum Dijawab</span>
+              <strong className="navigator-summary-val">{unansweredCount}</strong>
+            </div>
           </div>
         </nav>
 
         {/* Right Pane: Question Stimulus & Options */}
         {currentQuestion && (
           <section className="question-card" aria-label={`Soal nomor ${currentIndex + 1}`}>
-            <div className="question-card-header">
-              <h2 className="question-number-heading">Soal Nomor {currentIndex + 1}</h2>
-              {/* Persistent Save Status Badge */}
-              <div
-                className={`save-status-badge ${saveStatus.statusClass}`}
-                aria-live="polite"
-                aria-label={`Status penyimpanan: ${saveStatus.text}`}
-              >
-                <span className="save-status-icon" aria-hidden="true">
-                  {saveStatus.icon}
-                </span>
-                <span className="save-status-text">{saveStatus.text}</span>
-              </div>
-            </div>
-
             <fieldset className="question-fieldset">
               <legend className="question-prompt">{currentQuestion.prompt}</legend>
 
@@ -468,16 +513,36 @@ export const StudentExamWorkstation: React.FC = () => {
                         onChange={() => selectOption(currentQuestion.snapshotId, opt.id)}
                         className="option-radio-input"
                       />
-                      <span className="option-text">
-                        <strong>{optionLabel}.</strong> {opt.content}
+                      <span className="option-marker" aria-hidden="true">
+                        {optionLabel}
                       </span>
+                      <span className="option-text">
+                        {opt.content}
+                      </span>
+                      {isSelected && (
+                        <span className="option-check-badge" aria-hidden="true">
+                          <svg
+                            className="check-svg"
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </span>
+                      )}
                     </label>
                   );
                 })}
               </div>
             </fieldset>
 
-            {/* Workstation Actions Footer / Mobile Bottom Action Area */}
+            {/* Workstation Actions: Persistent Bottom Bar on Mobile, Grid-aligned on Desktop */}
             <footer className="workstation-actions">
               <div className="action-buttons-group">
                 <button
@@ -487,8 +552,22 @@ export const StudentExamWorkstation: React.FC = () => {
                   disabled={currentIndex === 0}
                   aria-label="Soal Sebelumnya"
                 >
+                  <svg
+                    className="dock-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
                   <span className="btn-label-mobile">Sebelum</span>
-                  <span className="btn-label-desktop">Soal Sebelumnya</span>
+                  <span className="btn-label-desktop">Sebelum</span>
                 </button>
                 <button
                   ref={navSheetTriggerRef}
@@ -499,6 +578,23 @@ export const StudentExamWorkstation: React.FC = () => {
                   aria-expanded={isNavSheetOpen}
                   aria-label="Daftar Soal"
                 >
+                  <svg
+                    className="dock-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                  </svg>
                   <span className="btn-label-mobile">Daftar</span>
                   <span className="btn-label-desktop">Daftar Soal</span>
                 </button>
@@ -511,6 +607,20 @@ export const StudentExamWorkstation: React.FC = () => {
                 >
                   <span className="btn-label-mobile">Berikut</span>
                   <span className="btn-label-desktop">Soal Berikutnya</span>
+                  <svg
+                    className="dock-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -520,6 +630,20 @@ export const StudentExamWorkstation: React.FC = () => {
                   aria-haspopup="dialog"
                   aria-label="Selesaikan Ujian"
                 >
+                  <svg
+                    className="dock-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
                   <span className="btn-label-mobile">Selesai</span>
                   <span className="btn-label-desktop">Selesaikan Ujian</span>
                 </button>
