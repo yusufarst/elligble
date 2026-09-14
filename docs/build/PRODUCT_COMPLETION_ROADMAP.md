@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.5
+**Version:** 1.0.6
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.4
+**Supersedes:** 1.0.5
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit

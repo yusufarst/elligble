@@ -58,7 +58,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        let attemptRes, sessionRes, answersRes, timerRes, submissionRes;
+        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes;
         try {
             await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
@@ -121,6 +121,28 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 [context.tenantId, attemptId]
             );
 
+            contextProjectionRes = await client.query(`
+                SELECT 
+                    s.display_label as "subjectLabel",
+                    r.display_label as "roomLabel"
+                FROM secure_assessment_exam_attempts a
+                JOIN secure_assessment_exam_participants p 
+                  ON p.id = a.exam_participant_id AND p.tenant_id = a.tenant_id
+                JOIN secure_assessment_exam_instances i
+                  ON i.id = p.exam_instance_id AND i.tenant_id = a.tenant_id
+                LEFT JOIN academic_core_teaching_assignments ta
+                  ON ta.id = i.teaching_assignment_id AND ta.tenant_id = a.tenant_id
+                LEFT JOIN academic_core_subject_offerings so
+                  ON so.id = ta.subject_offering_id AND so.tenant_id = a.tenant_id
+                LEFT JOIN academic_core_subjects s
+                  ON s.id = so.subject_id AND s.tenant_id = a.tenant_id
+                LEFT JOIN secure_assessment_exam_participant_room_assignments pra
+                  ON pra.exam_participant_id = p.id AND pra.exam_instance_id = i.id AND pra.tenant_id = a.tenant_id
+                LEFT JOIN secure_assessment_exam_rooms r
+                  ON r.id = pra.exam_room_id AND r.tenant_id = a.tenant_id
+                WHERE a.id = $1 AND a.tenant_id = $2
+            `, [attemptId, context.tenantId]);
+
             await client.query('COMMIT');
         } catch (dbErr) {
             try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
@@ -179,13 +201,20 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 };
             }
 
+            const projection = contextProjectionRes.rows[0];
+            const contextData = {
+                subjectLabel: projection?.subjectLabel || null,
+                roomLabel: projection?.roomLabel || null
+            };
+
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 attemptId,
                 session: sessionResponse,
                 answers,
                 timer: timerResponse,
-                submission: submissionResponse
+                submission: submissionResponse,
+                context: contextData
             }));
         } catch (appErr) {
             res.writeHead(500, { 'Content-Type': 'application/json' });

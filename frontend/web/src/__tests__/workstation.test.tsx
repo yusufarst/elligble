@@ -57,6 +57,10 @@ function createMockResume(overrides?: Partial<ResumeResponse>): ResumeResponse {
     submission: {
       status: 'not_submitted',
     },
+    context: {
+      subjectLabel: 'Matematika Dasar',
+      roomLabel: 'Ruang 01',
+    },
     ...overrides,
   };
 }

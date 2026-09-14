@@ -48,12 +48,18 @@ export type ResumeSubmission =
       submittedAt: string;
     };
 
+export interface ResumeContext {
+  subjectLabel: string | null;
+  roomLabel: string | null;
+}
+
 export interface ResumeResponse {
   attemptId: string;
   session: ResumeSession;
   answers: ResumeAnswer[];
   timer: ResumeTimer;
   submission: ResumeSubmission;
+  context: ResumeContext;
 }
 
 export interface TimerResponse {

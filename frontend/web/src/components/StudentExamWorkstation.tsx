@@ -24,6 +24,7 @@ export const StudentExamWorkstation: React.FC = () => {
   const [phase, setPhase] = useState<WorkstationPhase>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [examContext, setExamContext] = useState<{subjectLabel: string | null, roomLabel: string | null} | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
   const [questions, setQuestions] = useState<StudentSafeQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -101,6 +102,7 @@ export const StudentExamWorkstation: React.FC = () => {
         }
 
         setInitialAnswers(resume.answers);
+        setExamContext(resume.context);
 
         // Load questions
         const qRes = await getQuestions(attemptId!);
@@ -387,6 +389,11 @@ export const StudentExamWorkstation: React.FC = () => {
               <h1 className="question-progress-heading question-progress-indicator">
                 Soal {currentIndex + 1} dari {totalQuestions}
               </h1>
+              {examContext && (examContext.subjectLabel || examContext.roomLabel) && (
+                <span className="exam-context-subtitle">
+                  {examContext.subjectLabel || examContext.roomLabel}
+                </span>
+              )}
             </div>
 
             <div className="header-status-group">
