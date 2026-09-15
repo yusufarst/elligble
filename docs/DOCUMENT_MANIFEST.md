@@ -1,9 +1,9 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.419
+**Version:** 1.0.420
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.418
+**Supersedes:** 1.0.419
 **Canonical:** YES
-**Last Reviewed:** 2026-09-14
+**Last Reviewed:** 2026-09-15
 # ELLIGBLE Document Manifest
 
 > **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history.
@@ -31,8 +31,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.337. | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.447. | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.338. (50E8434989B85B27FC3286C4A4F0E6FE521C88641AFFAA4E8F6710C48FA78CE2) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.448. (0F441B23C10B695237775181A2E66612878BDD8F22A34188209FD59BF53C0008) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
