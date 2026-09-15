@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.351
+**Version:** 1.5.352
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.350
+**Supersedes:** CURRENT_STATE v1.5.351
+CURRENT_STATE v1.5.352 records BU-085 Stage-1 targeted forward correction #2.
 CURRENT_STATE v1.5.351 records BU-085 Stage-1 targeted forward correction (FAIL / INCOMPLETE / STAGE-2 NOT AUTHORIZED).
 CURRENT_STATE v1.5.350 records the BU-084 terminal-sync manage_task/background taskification deviation as a NON-MATERIAL execution-control defect; Stage-5 and terminal result remain valid.
 CURRENT_STATE v1.5.349 records BU-084 Stage-5 Controller PASS, terminal navigation state, and authorizes next Build Unit selection.
@@ -13,6 +14,12 @@ CURRENT_STATE v1.5.342 corrects BU-083 terminal state-record specification-versi
 CURRENT_STATE v1.5.341 records BU-083 Stage-5 Controller PASS, terminal navigation state, and authorizes next Build Unit selection.
 CURRENT_STATE v1.5.340 removes stale BU-083/next-BU navigation contamination from the BU-082 historical block discovered during BU-083 Stage-5 final physical verification.
 CURRENT_STATE v1.5.339 records BU-083 Stage-4 minimal lifecycle close after Controller Stage-3 physical PASS, with Stage-5 final physical verification pending.
+CURRENT_STATE v1.5.337 contained a canonical-integrity truncation/state-sync defect. v1.5.338 forward-corrects it without rewriting Git history.
+CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
+**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
+**Used By:** Every agent execution
+**Last Reviewed:** 2026-09-16
+
 # ELLIGBLE — Current State
 
 ## Current Phase
@@ -40,10 +47,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **ACTIVE UNIT:** BU-085
 **ACTIVE BUILD UNIT:** BU-085
 **NEXT UNIT:** BU-085
-**NEXT BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Browser UI Integration Bootstrap
+**NEXT BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** STAGE-1 SCOPE FREEZE CORRECTION
-**NEXT SAFE ACTION:** Await Controller physical re-audit
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
+**NEXT SAFE ACTION:** Controller BU-085 Stage-1 physical re-audit
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
@@ -70,10 +77,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085
-- **TITLE:** Secure Assessment Student Assigned Exam Discovery Browser UI Integration Bootstrap
-- **VERSION:** 1.0.0
-- **STAGE-1:** FAIL / INCOMPLETE
-- **STAGE-2 IMPLEMENTATION:** NOT AUTHORIZED
+- **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
+- **VERSION:** 1.0.2
+- **STAGE-1:** PASS / FROZEN CANDIDATE / PENDING CONTROLLER PHYSICAL RE-AUDIT
+- **STAGE-2:** NOT AUTHORIZED / NOT STARTED
 
 ### BU-084 CURRENT STATUS
 - **BUILD UNIT:** BU-084

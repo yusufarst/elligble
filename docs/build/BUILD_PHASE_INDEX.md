@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.399
-**Supersedes:** 0.1.398
+**Version:** 0.1.400
+**Supersedes:** 0.1.399
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -25,10 +25,10 @@
 
 ## Active Build Unit Register
 ### BU-085
-- **TITLE:** Secure Assessment Student Assigned Exam Discovery Browser UI Integration Bootstrap
-- **STATUS:** ACTIVE / STAGE-1 FAIL / STAGE-2 NOT AUTHORIZED
+- **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
+- **STATUS:** ACTIVE / STAGE-1 PASS / PENDING CONTROLLER PHYSICAL RE-AUDIT
 - **IMPLEMENTATION:** NOT AUTHORIZED
-- **STAGE-1:** FAIL / INCOMPLETE
+- **STAGE-1:** PASS / FROZEN CANDIDATE / PENDING CONTROLLER PHYSICAL RE-AUDIT
 
 ### BU-084
 - **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
@@ -480,9 +480,9 @@
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** STAGE-1 SCOPE FREEZE CORRECTION
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
 
-**NEXT SAFE ACTION:** Await Controller physical re-audit
+**NEXT SAFE ACTION:** Controller BU-085 Stage-1 physical re-audit
 
 **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** COMPLETE
 
