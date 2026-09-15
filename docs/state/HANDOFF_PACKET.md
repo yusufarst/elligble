@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.459
-**Supersedes:** 0.1.458
+**Version:** 0.1.460
+**Supersedes:** 0.1.459
+0.1.460 records BU-085 Stage-1 targeted forward correction (FAIL / INCOMPLETE / STAGE-2 NOT AUTHORIZED).
 0.1.459 records the BU-084 terminal-sync manage_task/background taskification deviation as a NON-MATERIAL execution-control defect; terminal state remains valid.
 0.1.458 records BU-084 Stage-5 Controller PASS and terminal navigation state.
 0.1.457 corrects BU-084 Stage-4 canonical specification-version integrity to BU-084 v1.0.3.
@@ -89,15 +90,15 @@ MASTER BLUEPRINT
 
 **LAST COMPLETED BUILD UNIT:** BU-084
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-085
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** BU-085
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** STAGE-1 SCOPE FREEZE CORRECTION
 
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**NEXT SAFE ACTION:** Await Controller physical re-audit
 
 **NEXT BUILD UNIT SELECTION:** AUTHORIZED
 
@@ -122,6 +123,14 @@ MASTER BLUEPRINT
 **BU-079:** TERMINAL / DO NOT REOPEN
 
 **BU-077:** TERMINAL / DO NOT REOPEN
+
+
+BU-085 CURRENT STATUS:
+BUILD UNIT: BU-085
+TITLE: Secure Assessment Student Assigned Exam Discovery Browser UI Integration Bootstrap
+VERSION: 1.0.0
+STAGE-1: FAIL / INCOMPLETE
+STAGE-2 IMPLEMENTATION: NOT AUTHORIZED
 
 
 BU-084 CURRENT STATUS:

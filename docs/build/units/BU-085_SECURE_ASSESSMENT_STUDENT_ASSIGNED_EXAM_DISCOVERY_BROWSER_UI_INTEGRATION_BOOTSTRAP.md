@@ -1,5 +1,5 @@
-**Status:** PROVISIONAL / STAGE-1 FROZEN
-**Version:** 1.0.0
+**Status:** PROVISIONAL / STAGE-1 INCOMPLETE
+**Version:** 1.0.1
 **Canonical:** CANONICAL BUILD UNIT RECORD
 **Phase:** BUILD
 **Build Unit:** BU-085
@@ -23,5 +23,5 @@ This Build Unit introduces the frontend product capability for "Full browser-fac
 - **TBD during Stage-2 Execution.**
 
 ## 4. Execution State
-- **STAGE-1:** PASS / FROZEN
-- **STAGE-2 IMPLEMENTATION:** PENDING
+- **STAGE-1:** FAIL / INCOMPLETE
+- **STAGE-2 IMPLEMENTATION:** NOT AUTHORIZED
