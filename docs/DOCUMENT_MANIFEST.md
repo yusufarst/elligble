@@ -1,7 +1,7 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.430
+**Version:** 1.0.431
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.429
+**Supersedes:** 1.0.430
 **Canonical:** YES
 **Last Reviewed:** 2026-09-15
 # ELLIGBLE Document Manifest
@@ -31,8 +31,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.347. (85FFC8491BEB1C3E67424C4749214E05BCAEBC2EB1668771231C6D862F526735) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.456. (0B4E6CC9414F1B6AFE9925DFB93F7DE370B447754AC2471858CAD8E3CF0EEE50) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.348. (80ABDA795F615BCD95A3D1FC26BCC6BAB4551BA8DB74420FC6110F3AD46AB56F) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.457. (3C1F8F6BC6815670AC380DC5419A4C9BF3BAD9D6729D0602471A8927AE894BA8) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -125,7 +125,7 @@ NEVER_DEFAULT
 | `database/verification/verify_bu034_secure_assessment_explicit_proctor_assignment_core_state.sql` | BU-034 Verification SQL. (B51C019848BCC73DF8735119A104C8906075E62E0035ADDFEFBD5485573B1185) | VERIFICATION HARNESS | PHASE: Build |
 | `docs/build/evidence/BU-014_ASSESSMENT_CAPABILITY_TESTING_EVIDENCE.md` | BU-014 Integrated Real PostgreSQL Capability Verification Evidence. (028BC688185A58D4B9EFE725B30193A7638591B9892E0E840E8F36BD43844E91) | BUILD UNIT EVIDENCE | PHASE: Build |
 | `runtime/secure-assessment/verification/verify_bu014_active_exam.ts` | BU-014 Verification Harness. (2C549A7612E3F97920D483956384A35A1CECE8B6E08713C9B0E4C93B929FBDEC) | VERIFICATION HARNESS | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. LAST COMPLETED BU-083 / ACTIVE BU-084 / NEXT NOT SELECTED / BU-084 Stage-4 COMPLETE / next Build Unit selection not authorized. Version 0.1.456. (0B4E6CC9414F1B6AFE9925DFB93F7DE370B447754AC2471858CAD8E3CF0EEE50) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. LAST COMPLETED BU-083 / ACTIVE BU-084 / NEXT NOT SELECTED / BU-084 Stage-4 COMPLETE / next Build Unit selection not authorized. Version 0.1.457. (3C1F8F6BC6815670AC380DC5419A4C9BF3BAD9D6729D0602471A8927AE894BA8) | CANONICAL STATE | PHASE: Build |
 | `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. (5B5DF97432538AF7E48B85939091983CE488EBFAA702D4D84E94F88189CF693D) | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
 | `docs/02-master-blueprint/02.01_PLATFORM_SYSTEM_MAP.md` | Authoritative Platform System Map for MB-02 and subsequent Master Blueprint units. | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-01 |

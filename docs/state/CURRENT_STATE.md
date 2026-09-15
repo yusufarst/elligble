@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.347
+**Version:** 1.5.348
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.346
+**Supersedes:** CURRENT_STATE v1.5.347
+CURRENT_STATE v1.5.348 corrects BU-084 Stage-4 canonical specification-version integrity to BU-084 v1.0.3.
 CURRENT_STATE v1.5.347 records BU-084 Stage-4 minimal lifecycle close.
 CURRENT_STATE v1.5.346 records BU-084 Stage-3 Controller PASS.
 CURRENT_STATE v1.5.345 forward-corrects BU-084 Stage-3 LIVE QA evidence state.
@@ -72,7 +73,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-084 CURRENT STATUS
 - **BUILD UNIT:** BU-084
 - **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
-- **VERSION:** 1.0.2
+- **VERSION:** 1.0.3
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-2 IMPLEMENTATION:** COMPLETE
 - **ENGINEERING VERIFICATION:** PASS
