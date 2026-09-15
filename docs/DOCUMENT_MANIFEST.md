@@ -1,7 +1,7 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.425
+**Version:** 1.0.426
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.424
+**Supersedes:** 1.0.425
 **Canonical:** YES
 **Last Reviewed:** 2026-09-15
 # ELLIGBLE Document Manifest
@@ -31,8 +31,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.342. (203D2E844485E27275D75078C2760DA00DAAFA260CCA34CF7EDD5629FFA47158) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.451. (DAD8ADBF537D40167502435261D6B8581E5D72B21DAE42A8E98ABBAAE5A6B423) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.343. (9B5BFE0FBDEA7C7A77B99B50629A305B0BF34AB1BF0FD1907F22881CF957AD35) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.452. (2A41D78FB2DEE776B30653D470F33D0FCD47DEC43231C7AA53DAAF1FD2DFE240) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -125,7 +125,7 @@ NEVER_DEFAULT
 | `database/verification/verify_bu034_secure_assessment_explicit_proctor_assignment_core_state.sql` | BU-034 Verification SQL. (B51C019848BCC73DF8735119A104C8906075E62E0035ADDFEFBD5485573B1185) | VERIFICATION HARNESS | PHASE: Build |
 | `docs/build/evidence/BU-014_ASSESSMENT_CAPABILITY_TESTING_EVIDENCE.md` | BU-014 Integrated Real PostgreSQL Capability Verification Evidence. (028BC688185A58D4B9EFE725B30193A7638591B9892E0E840E8F36BD43844E91) | BUILD UNIT EVIDENCE | PHASE: Build |
 | `runtime/secure-assessment/verification/verify_bu014_active_exam.ts` | BU-014 Verification Harness. (2C549A7612E3F97920D483956384A35A1CECE8B6E08713C9B0E4C93B929FBDEC) | VERIFICATION HARNESS | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. LAST COMPLETED BU-083 / ACTIVE NONE / NEXT NOT YET REGISTERED / BU-083 terminal / Stage-5 final physical verification PASS / final physical verification PASS / next Build Unit selection authorized. Version 0.1.451. (DAD8ADBF537D40167502435261D6B8581E5D72B21DAE42A8E98ABBAAE5A6B423) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Handoff Packet. LAST COMPLETED BU-083 / ACTIVE BU-084 / NEXT NOT SELECTED / BU-083 terminal / Stage-5 final physical verification PASS / final physical verification PASS / BU-084 Stage-3 pending / next Build Unit selection not authorized. Version 0.1.452. (2A41D78FB2DEE776B30653D470F33D0FCD47DEC43231C7AA53DAAF1FD2DFE240) | CANONICAL STATE | PHASE: Build |
 | `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` | Persistent control backlog for controlled closure of the 12 carried-forward Production Blockers. (5B5DF97432538AF7E48B85939091983CE488EBFAA702D4D84E94F88189CF693D) | CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES | PHASE/Review |
 | `docs/02-master-blueprint/02.00_MASTER_BLUEPRINT_INDEX.md` | Master Blueprint phase index / unit state | Canonical/Dynamic | PHASE: Master Blueprint |
 | `docs/02-master-blueprint/02.01_PLATFORM_SYSTEM_MAP.md` | Authoritative Platform System Map for MB-02 and subsequent Master Blueprint units. | Canonical / LOCKED v1.0.0 | PHASE: Master Blueprint / MB-01 |
@@ -315,7 +315,7 @@ NEVER_DEFAULT
 | `docs/build/units/BU-081_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_CORE_WORKSTATION_BOOTSTRAP.md` | BU-081 Specification — Secure Assessment Student Exam Client Core Workstation Bootstrap. Version 1.0.0. Stage-5 final physical verification PASS / final physical verification PASS / terminal / DO NOT REOPEN / next Build Unit selection / scope freeze authorized. (16D5A25B53BF514434DAA11F6531658AC77B8F1D532725B137160ED6612A129B) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-082_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_MOBILE_FIRST_UX_HARDENING_BOOTSTRAP.md` | BU-082 Specification - Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap. Version 1.0.4. STAGE-1 PASS / STAGE-2 COMPLETE / STAGE-3 COMPLETE / FINAL OWNER RENDERED VISUAL REVIEW PASS / SUBSEQUENT TARGETED VISUAL REFINEMENT COMPLETE / DEC-039 LOCKED / DEC-040 LOCKED / WARM MONOCHROME FOUNDATION LOCKED / STAGE-4 COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES. (EFFB9BC49171AE34F35A754675B84F187F742C6B1C86282AB75ECDB8067BCD0F) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-083_SECURE_ASSESSMENT_STUDENT_EXAM_CONTEXT_PROJECTION_INTEGRATION_BOOTSTRAP.md` | BU-083 Specification - Secure Assessment Student Exam Context Projection Integration Bootstrap. Version 1.0.2. STAGE-1 PASS / STAGE-2 COMPLETE / STAGE-3 COMPLETE / STAGE-4 COMPLETE / STAGE-5 PASS / TERMINAL. (8582536ED088B65D84D2ADA5A3FBAC0CC86681301FF8AEE55CBF9C8F373DB729) | BUILD UNIT SPEC | PHASE: Build |
-| `docs/build/units/BU-084_SECURE_ASSESSMENT_STUDENT_PRE_START_ATTEMPT_LAUNCH_UI_INTEGRATION_BOOTSTRAP.md` | BU-084 Specification - Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap. Version 1.0.0. STAGE-2 COMPLETE / STAGE-3 PENDING. (EAD1584772C7BF73846AE8EAC13AED7BF5CAC6D8912562407B404870D3EE449A) | BUILD UNIT SPEC | PHASE: Build |
+| `docs/build/units/BU-084_SECURE_ASSESSMENT_STUDENT_PRE_START_ATTEMPT_LAUNCH_UI_INTEGRATION_BOOTSTRAP.md` | BU-084 Specification - Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap. Version 1.0.0. STAGE-2 TARGETED REMEDIATION COMPLETE / STAGE-3 PENDING CONTROLLER RE-AUDIT. (D78AF0B82DC193336986CA1E09D93F3CA70E7AF34D87586D58CBCEF1B22A193C) | BUILD UNIT SPEC | PHASE: Build |
 | `frontend/web/src/components/QuestionNavigatorSheet.tsx` | BU-082 frontend component — Accessible mobile-first question navigator sheet with focus containment, Escape dismissal, responsive touch targets, and submission access. (7C2F86E56A2FABA8D192924E2E7C8DB2159365C7E3C98544727E2A2BF955DCC5) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/components/StudentExamWorkstation.tsx` | BU-082 frontend workstation — Student Exam Workstation hardened with compact mobile sticky header, mobile bottom navigation action bar (Sebelum/Daftar/Berikut/Selesai), persistent save status, and responsive layout coordination. (16D1C0C6DDEF97ED188E531367C904C03FDD6AB830ED242AAC80E5DA426170D8) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/styles/workstation.css` | BU-082 frontend styling — Mobile-first workstation CSS with 100dvh dynamic viewport hardening, safe-area-inset padding, bottom sheet styling, 1-row symmetric 4-action mobile bottom bar, and persistent save status badge. (B0CA1004732CA133E53D73C441BDFEDA0D62589F38D069B617AA6033BA8EE91F) | FRONTEND STYLING | PHASE: Build |
@@ -323,3 +323,5 @@ NEVER_DEFAULT
 | `frontend/web/index.html` | BU-082 frontend entry — HTML shell configured with viewport-fit=cover meta viewport for mobile safe-area support. (E817B2F14A68D6D7709139536EFA0C21EEF1E5ECF6D0D07CAA3023679F2459E1) | FRONTEND ENTRY | PHASE: Build |
 | `runtime/secure-assessment/test/resume.test.ts` | BU-083 backend tests for context projection behavior. 18/18 TESTS PASS. (52BC287C1A85E3B688F0C99874C1B245E4E6022C681231CF0770998DA57B103C) | TEST HARNESS | PHASE: Build |
 | `database/verification/verify_bu083_secure_assessment_context_projection.js` | BU-083 PostgreSQL-backed context projection verifier. REAL POSTGRESQL VERIFICATION PASS / TENANT ISOLATION PASS / ZERO-WRITE PASS. (20A9582C76CFF09A71884CF38703EB09D82ADD19E9BCD9F46FBA21ADD8E36A3B) | VERIFICATION HARNESS | PHASE: Build |
+| `frontend/web/src/components/AttemptLaunch.tsx` | BU-084 frontend component — Student Pre-Start Attempt Launch UI logic resolving Subject/Room context. (51BA07204055CC89F97C87E7101B9F87AD99E7EAD7F5E787A4105218554FA629) | FRONTEND COMPONENT | PHASE: Build |
+| `frontend/web/src/__tests__/attemptLaunch.test.tsx` | BU-084 frontend tests — AttemptLaunch UI logic and context waterfall resolution tests. (CFC6667B5D41A20B67F201B89D53FE1C4649C6D30C6D26105CE307DCBE5B8F5C) | TEST HARNESS | PHASE: Build |

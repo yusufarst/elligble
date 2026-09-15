@@ -328,4 +328,54 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
       expect(screen.getByText('Status Ujian Tidak Valid')).toBeDefined();
     });
   });
+
+  it('15. context waterfall: Subject present + Room present -> Subject only', async () => {
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'none' },
+      timer: null,
+      context: { subjectLabel: 'Matematika', roomLabel: 'Lab 1' }
+    }));
+
+    render(<AttemptLaunch />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Siap Memulai Ujian')).toBeDefined();
+    });
+    
+    expect(screen.getByText('Matematika')).toBeDefined();
+    expect(screen.queryByText('Lab 1')).toBeNull();
+  });
+
+  it('16. context waterfall: Subject absent + Room present -> Room only', async () => {
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'none' },
+      timer: null,
+      context: { subjectLabel: null, roomLabel: 'Lab 1' } as any
+    }));
+
+    render(<AttemptLaunch />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Siap Memulai Ujian')).toBeDefined();
+    });
+    
+    expect(screen.queryByText('Matematika')).toBeNull();
+    expect(screen.getByText('Lab 1')).toBeDefined();
+  });
+
+  it('17. context waterfall: Subject absent + Room absent -> context omitted', async () => {
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'none' },
+      timer: null,
+      context: { subjectLabel: null, roomLabel: null } as any
+    }));
+
+    const { container } = render(<AttemptLaunch />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Siap Memulai Ujian')).toBeDefined();
+    });
+    
+    expect(container.querySelector('.launch-context')).toBeNull();
+  });
 });

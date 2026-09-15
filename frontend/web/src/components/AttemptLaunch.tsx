@@ -144,13 +144,25 @@ export const AttemptLaunch: React.FC = () => {
   }
 
   const renderContext = () => {
-    if (!resumeContext || (!resumeContext.subjectLabel && !resumeContext.roomLabel)) return null;
-    return (
-      <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-neutral-600)' }}>
-        {resumeContext.subjectLabel && <div style={{ fontSize: '1.125rem', fontWeight: 500 }}>{resumeContext.subjectLabel}</div>}
-        {resumeContext.roomLabel && <div>{resumeContext.roomLabel}</div>}
-      </div>
-    );
+    if (!resumeContext) return null;
+    
+    if (resumeContext.subjectLabel) {
+      return (
+        <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-neutral-600)' }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 500 }}>{resumeContext.subjectLabel}</div>
+        </div>
+      );
+    }
+    
+    if (resumeContext.roomLabel) {
+      return (
+        <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-neutral-600)' }}>
+          <div>{resumeContext.roomLabel}</div>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   if (phase === 'invalid_attempt') {
