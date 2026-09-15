@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.341
+**Version:** 1.5.342
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.340
+**Supersedes:** CURRENT_STATE v1.5.341
+CURRENT_STATE v1.5.342 corrects BU-083 terminal state-record specification-version integrity from 1.0.1 to canonical BU-083 specification version 1.0.2.
 CURRENT_STATE v1.5.341 records BU-083 Stage-5 Controller PASS, terminal navigation state, and authorizes next Build Unit selection.
 CURRENT_STATE v1.5.340 removes stale BU-083/next-BU navigation contamination from the BU-082 historical block discovered during BU-083 Stage-5 final physical verification.
 CURRENT_STATE v1.5.339 records BU-083 Stage-4 minimal lifecycle close after Controller Stage-3 physical PASS, with Stage-5 final physical verification pending.
@@ -68,7 +69,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-083 CURRENT STATUS
 - **BUILD UNIT:** BU-083
 - **TITLE:** Secure Assessment Student Exam Context Projection Integration Bootstrap
-- **VERSION:** 1.0.1
+- **VERSION:** 1.0.2
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-2 IMPLEMENTATION:** COMPLETE
 - **STAGE-2 ENGINEERING VERIFICATION:** PASS
