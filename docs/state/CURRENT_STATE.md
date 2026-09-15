@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.339
+**Version:** 1.5.340
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.338
+**Supersedes:** CURRENT_STATE v1.5.339
+CURRENT_STATE v1.5.340 removes stale BU-083/next-BU navigation contamination from the BU-082 historical block discovered during BU-083 Stage-5 final physical verification.
 CURRENT_STATE v1.5.339 records BU-083 Stage-4 minimal lifecycle close after Controller Stage-3 physical PASS, with Stage-5 final physical verification pending.
 CURRENT_STATE v1.5.337 contained a canonical-integrity truncation/state-sync defect. v1.5.338 forward-corrects it without rewriting Git history.
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
@@ -134,11 +135,6 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **DONE:** YES
 - **BU-082 REPOSITORY FINALIZED:** YES
-- **LAST COMPLETED BUILD UNIT:** BU-083 — Secure Assessment Student Exam Context Projection Integration Bootstrap
-- **ACTIVE BUILD UNIT:** NONE
-- **NEXT BUILD UNIT:** NOT YET REGISTERED (BU-084 NOT REGISTERED)
-- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-- **NEXT SAFE ACTION:** Perform repository-first next Build Unit selection / scope freeze under 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md and canonical delivery dependencies.
 - **SUPPLEMENTAL FRONTEND SKILL STACK:** DEC-038 / INSTALLED / FILESYSTEM VERIFIED
 - **FRONTEND DESIGN SKILL:** frontend-design
 - **FRONTEND RESPONSIVE SKILL:** frontend-responsive-ui

@@ -1,7 +1,7 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.421
+**Version:** 1.0.422
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.420
+**Supersedes:** 1.0.421
 **Canonical:** YES
 **Last Reviewed:** 2026-09-15
 # ELLIGBLE Document Manifest
@@ -31,7 +31,7 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.339. (944FDFC606915182FA7DB896091F455CECB1A56A839633AB68A0B2D4879954F1) | CANONICAL STATE | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.340. (F6C834F6FD308C87D03C8D8CE939A6DF14A13541237BD0943122851554F7CA48) | CANONICAL STATE | PHASE: Build |
 | `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.449. (723840580CAE50FEC884377428A53D5FC30D1A393A73E7FB15FFB72F9A88C49E) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
@@ -42,7 +42,7 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (5CA58622FABBB07C09AB2BC399321F2DC6F1EA8589A8A32C2BA5DE16FD893829) | Canonical / LOCKED v1.1.0 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control. Tracks current execution program, completed features, and explicit active constraints (e.g. PB04/PB06 gaps). Version 0.1.389. | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control. Tracks current execution program, completed features, and explicit active constraints (e.g. PB04/PB06 gaps). Version 0.1.390. | DYNAMIC BUILD CONTROL | PHASE: Build |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, BU-081 core workstation implemented, BU-082 mobile-first UX hardening implemented, BU-083 context projection integrated. Version 1.0.8. | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
@@ -143,7 +143,7 @@ NEVER_DEFAULT
 | `docs/build/units/BU-035_SECURE_ASSESSMENT_EXPLICIT_PROCTOR_ASSIGNMENT_AUTHORIZATION_RUNTIME_BOOTSTRAP.md` | BU-035 specification — Secure Assessment Explicit Proctor Assignment Authorization Runtime Bootstrap. Version: 1.0.0. Status: COMPLETE / PRIOR CONTROLLER PHYSICAL AUDIT FAIL / TARGETED RUNTIME VALIDATION + VERIFICATION + HANDOFF CONTROL REMEDIATION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT FAIL / SECOND TARGETED REAL-DB MISSING-ASSIGNMENT + HANDOFF NAVIGATION REMEDIATION COMPLETE / SECOND CONTROLLER PHYSICAL RE-AUDIT PASS / FAST-TRACK LIFECYCLE CLOSE COMPLETE / FAST-TRACK REPOSITORY FINALIZED / FINAL PHYSICAL VERIFICATION PASS. (537EDEFC30AC49B8505052DE1EB1A6869590C3ECE10371CCBC6C17BCD3645550) | BUILD UNIT SPEC | PHASE: Build |
 | `runtime/secure-assessment/src/proctor-authorization.ts` | BU-035 Proctor Authorization Runtime Primitive. (3A262AFA75AE1C4104F8109A7997FB0D3DFDDFC820ED8AD8E04F1BF28E134E75) | RUNTIME SOURCE | PHASE: Build |
 | `runtime/secure-assessment/test/proctor-authorization.test.ts` | BU-035 Proctor Authorization Unit Tests. (68A99FE1656B2BAC70D447F89F13F1ED43C291284788CF437F6B8514F4CF6A09) | TEST HARNESS | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. BU-083 Stage-4 minimal lifecycle close complete. Version 0.1.389. (EC96941BC3D1167877462FD25A7EE542C82E7EF17135BFFAD11E287BC63A2638) | BUILD PHASE CONTROL | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. BU-083 Stage-4 minimal lifecycle close complete. Version 0.1.390. (52D2949484CCBCD5A8BE32B892CF7F16DDC5A0594A118A9BA3DF2E4F30BC02F7) | BUILD PHASE CONTROL | PHASE: Build |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap — active tracking of full ELLIGBLE baseline completion, active product milestones, corrected Secure Assessment HTTP server foundation exists and partial API layer status, and post-baseline expansion. Version 1.0.8. (6CE493D0170EE6988F8D048A5842168F11C1455A3EFF672AAD4BE937E750F239) | ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL | PHASE: Build |
 | `docs/build/units/BU-036_ACADEMIC_CORE_ACADEMIC_YEAR_AND_PERIOD_CORE_STATE_PERSISTENCE_BOOTSTRAP.md` | BU-036 specification — Academic Core Academic Year and Period Core State Persistence Bootstrap. Version: 1.0.0. Status: COMPLETE / THIRD TARGETED VERIFICATION + CONTROL + PROCESS REMEDIATION COMPLETE / THIRD TARGETED REMEDIATION REPOSITORY FINALIZED / THIRD CONTROLLER PHYSICAL RE-AUDIT PASS / FAST-TRACK LIFECYCLE CLOSE COMPLETE / FAST-TRACK REPOSITORY FINALIZED / FINAL PHYSICAL VERIFICATION PASS. (F5CC72A98DF7562AFF58420412F895AA46998025366EA40AD9FF8D05A498F223) | BUILD UNIT SPEC | PHASE: Build |
 | `database/migrations/0009_bu036_academic_core_academic_year_period_core_state.sql` | Migration 0009 - BU-036 Academic Core Academic Year and Period Core State Persistence. (D518D8264ABE19461616B646C56942868FC24C6E1FAE31C0E87A343175880F08) | DATABASE MIGRATION | PHASE: Build |
