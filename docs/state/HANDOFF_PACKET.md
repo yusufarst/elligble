@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.458
-**Supersedes:** 0.1.457
+**Version:** 0.1.459
+**Supersedes:** 0.1.458
+0.1.459 records the BU-084 terminal-sync manage_task/background taskification deviation as a NON-MATERIAL execution-control defect; terminal state remains valid.
 0.1.458 records BU-084 Stage-5 Controller PASS and terminal navigation state.
 0.1.457 corrects BU-084 Stage-4 canonical specification-version integrity to BU-084 v1.0.3.
 0.1.456 records BU-084 Stage-4 minimal lifecycle close.
@@ -126,7 +127,7 @@ MASTER BLUEPRINT
 BU-084 CURRENT STATUS:
 BUILD UNIT: BU-084
 TITLE: Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
-VERSION: 1.0.4
+VERSION: 1.0.5
 STAGE-1: PASS / FROZEN
 STAGE-2 IMPLEMENTATION: COMPLETE
 ENGINEERING VERIFICATION: PASS
@@ -140,6 +141,8 @@ STAGE-5 FINAL PHYSICAL VERIFICATION: PASS
 FINAL PHYSICAL VERIFICATION: PASS
 DONE: YES
 TERMINAL: YES / DO NOT REOPEN
+TERMINAL SYNC PROCESS DEVIATION: YES / manage_task and background taskification used despite Controller prohibition
+TERMINAL SYNC PROCESS DEVIATION CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT / TERMINAL RESULT REMAINS VALID
 REPOSITORY FINALIZED: YES
 FULL ASSIGNED-EXAM DISCOVERY GAP CLOSED: NO
 REAL AUTHENTICATION GAP CLOSED: NO

@@ -1,5 +1,5 @@
 **Status:** COMPLETE / TERMINAL / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / DO NOT REOPEN
-**Version:** 1.0.4
+**Version:** 1.0.5
 **Canonical:** CANONICAL BUILD UNIT RECORD
 **Phase:** BUILD
 **Build Unit:** BU-084
@@ -41,3 +41,6 @@ This Build Unit completes the integration of the `AttemptLaunch` UI component in
 - **DONE:** YES
 - **REPOSITORY FINALIZED:** YES
 - **TERMINAL:** YES / DO NOT REOPEN
+- **TERMINAL STATE SYNC PROCESS DEVIATION:** manage_task/background taskification used despite Controller prohibition
+- **PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **APPLICATION / REPOSITORY MATERIAL DEFECT FROM DEVIATION:** NO

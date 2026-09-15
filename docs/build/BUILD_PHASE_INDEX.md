@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.397
-**Supersedes:** 0.1.396
+**Version:** 0.1.398
+**Supersedes:** 0.1.397
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -39,6 +39,8 @@
 - **DONE:** YES
 - **REPOSITORY FINALIZED:** YES
 - **TERMINAL:** YES / DO NOT REOPEN
+- **TERMINAL SYNC PROCESS DEVIATION:** YES / manage_task and background taskification used despite Controller prohibition
+- **TERMINAL SYNC PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / TERMINAL RESULT REMAINS VALID
 
 ### BU-001
 - **TITLE:** Minimum Foundation: Identity/Tenant Persistence Bootstrap
