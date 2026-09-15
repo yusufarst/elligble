@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.7
+**Version:** 1.0.8
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.6
+**Supersedes:** 1.0.7
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -138,7 +138,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **AUTHENTICATION / TRUSTED CONTEXT:** Existing runtime uses an injected trusted authorization seam and remains fail-closed where real authentication integration is absent. Do NOT treat `X-Tenant-ID` or `Bearer <attempt-id>` request-header extraction as canonical.
   - **Student Exam Client Core Workstation:** IMPLEMENTED via BU-081. Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
   - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
-  - **Student Exam Context Projection Integration:** IMPLEMENTED in BU-083 / pending Controller Stage-3 physical audit. Projection of read-only authoritative Subject and Exam Room context into the active exam workspace header without new tenant-authorization boundaries.
+  - **Student Exam Context Projection Integration:** IMPLEMENTED in BU-083 (implementation + rendered QA complete; Stage-3 Controller physical audit PASS; Stage-4 minimal lifecycle close complete; Stage-5 final physical verification pending). Projection of read-only authoritative Subject and Exam Room context into the active exam workspace header without new tenant-authorization boundaries.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
     - Browser-facing assigned-exam entry.
