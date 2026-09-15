@@ -107,3 +107,30 @@ export type SaveState =
   | { status: 'saved'; writeVersion: number; acknowledgedOptionId: string }
   | { status: 'failed'; error: string; pendingOptionId: string }
   | { status: 'unsupported_payload' };
+
+export interface SessionActivationRequest {
+  attemptId: string;
+  sessionId: string;
+  expectedActiveSessionId?: string;
+  confirmSupersede?: boolean;
+}
+
+export interface SessionActivationResponse {
+  status: 'active';
+  sessionId: string;
+  activatedAt: string;
+  supersededSessionId?: string;
+}
+
+export interface TimerStartRequest {
+  attemptId: string;
+}
+
+export interface TimerStartResponse {
+  status: 'started';
+  startedAt: string;
+  configuredDurationSeconds: number;
+  effectiveDurationSeconds: number;
+  effectiveRemainingSeconds: number;
+}
+

@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.391
-**Supersedes:** 0.1.390
+**Version:** 0.1.392
+**Supersedes:** 0.1.391
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -24,6 +24,14 @@
 - **Terminal Verification:** requirements inherit `docs/00-governance/00.05_BUILD_EXECUTION_RULES.md`.
 
 ## Active Build Unit Register
+### BU-084
+- **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
+- **STATUS:** STAGE-2 IMPLEMENTATION COMPLETE / PENDING STAGE-3 AUDIT
+- **IMPLEMENTATION:** EXECUTED
+- **ENGINEERING VERIFICATION:** PASS
+- **RENDERED QA:** PASS
+- **IMPLEMENTATION REPOSITORY FINALIZED:** YES
+- **DONE:** NO
 
 ### BU-001
 - **TITLE:** Minimum Foundation: Identity/Tenant Persistence Bootstrap
@@ -2281,3 +2289,4 @@ OPEN / NOT READY FOR CLOSURE
 
 PB07:
 OPEN
+

@@ -11,27 +11,30 @@ import type {
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  readonly data?: any;
 
-  constructor(status: number, code: string, message?: string) {
+  constructor(status: number, code: string, message?: string, data?: any) {
     super(message || code);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.data = data;
   }
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let errorCode = 'unknown_error';
+    let data;
     try {
-      const data = await res.json();
+      data = await res.json();
       if (data && typeof data.error === 'string') {
         errorCode = data.error;
       }
     } catch {
       // Body not JSON
     }
-    throw new ApiError(res.status, errorCode);
+    throw new ApiError(res.status, errorCode, undefined, data);
   }
   return res.json() as Promise<T>;
 }
@@ -94,4 +97,28 @@ export async function postExpiryFinalize(attemptId: string): Promise<ExpiryFinal
     body: JSON.stringify({ attemptId }),
   });
   return handleResponse<ExpiryFinalizeResponse>(res);
+}
+
+export async function postActivateSession(req: import('../types/assessment.ts').SessionActivationRequest): Promise<import('../types/assessment.ts').SessionActivationResponse> {
+  const url = '/api/v1/assessment/session/activate';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<import('../types/assessment.ts').SessionActivationResponse>(res);
+}
+
+export async function postStartTimer(req: import('../types/assessment.ts').TimerStartRequest): Promise<import('../types/assessment.ts').TimerStartResponse> {
+  const url = '/api/v1/assessment/timer/start';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<import('../types/assessment.ts').TimerStartResponse>(res);
 }

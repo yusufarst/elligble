@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.342
+**Version:** 1.5.343
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.341
+**Supersedes:** CURRENT_STATE v1.5.342
+CURRENT_STATE v1.5.343 records BU-084 Stage-2 implementation completion and Stage-3 pending status.
 CURRENT_STATE v1.5.342 corrects BU-083 terminal state-record specification-version integrity from 1.0.1 to canonical BU-083 specification version 1.0.2.
 CURRENT_STATE v1.5.341 records BU-083 Stage-5 Controller PASS, terminal navigation state, and authorizes next Build Unit selection.
 CURRENT_STATE v1.5.340 removes stale BU-083/next-BU navigation contamination from the BU-082 historical block discovered during BU-083 Stage-5 final physical verification.
@@ -36,13 +37,13 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **POST-BASELINE DIRECTION:** OPTIONAL THEN FUTURE
 **LAST COMPLETED UNIT:** BU-083
 **LAST COMPLETED BUILD UNIT:** BU-083 — Secure Assessment Student Exam Context Projection Integration Bootstrap
-**ACTIVE UNIT:** NONE
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE UNIT:** BU-084
+**ACTIVE BUILD UNIT:** BU-084
 **NEXT UNIT:** NOT YET REGISTERED
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-**NEXT SAFE ACTION:** Perform repository-first next Build Unit selection / scope freeze under 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md and current product-milestone dependencies.
+**NEXT SAFE ACTION:** Stage-3 Audit for BU-084 / scope freeze under 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md and current product-milestone dependencies.
 **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 **BU-083:** TERMINAL / DO NOT REOPEN
 **BU-080:** TERMINAL / DO NOT REOPEN
@@ -65,6 +66,22 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **ANTI-AI-SLOP QUALITY GATE:** ENFORCED VIA DESIGN SYSTEM
 **USER-FACING EM DASH:** PROHIBITED IN USER-FACING UI COPY
 
+
+### BU-084 CURRENT STATUS
+- **BUILD UNIT:** BU-084
+- **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
+- **VERSION:** 1.0.0
+- **STAGE-1:** PASS
+- **STAGE-2 IMPLEMENTATION:** COMPLETE
+- **ENGINEERING VERIFICATION:** PASS
+- **RENDERED QA:** PASS
+- **IMPLEMENTATION REPOSITORY FINALIZED:** YES
+- **STAGE-3:** PENDING
+- **DONE:** NO
+- **TERMINAL:** NO
+- **FULL ASSIGNED-EXAM DISCOVERY GAP CLOSED:** NO
+- **REAL AUTHENTICATION GAP CLOSED:** NO
+- **MILESTONE COMPLETE:** NO
 
 ### BU-083 CURRENT STATUS
 - **BUILD UNIT:** BU-083
@@ -2867,3 +2884,4 @@ MAIN PROJECT CONTROL 09
 MAIN PROJECT CONTROL 09 — BU-059 THIRD STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
 
 After each phase, update this file with the new active unit and prohibited premature work.
+
