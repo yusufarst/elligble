@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.461
-**Supersedes:** 0.1.460
+**Version:** 0.1.462
+**Supersedes:** 0.1.461
+0.1.462 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization.
 0.1.461 records BU-085 Stage-1 targeted forward correction #2.
 0.1.460 records BU-085 Stage-1 targeted forward correction (FAIL / INCOMPLETE / STAGE-2 NOT AUTHORIZED).
 0.1.459 records the BU-084 terminal-sync manage_task/background taskification deviation as a NON-MATERIAL execution-control defect; terminal state remains valid.
@@ -97,9 +98,9 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-2 IMPLEMENTATION
 
-**NEXT SAFE ACTION:** Controller BU-085 Stage-1 physical re-audit
+**NEXT SAFE ACTION:** Execute BU-085 Stage-2 implementation
 
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 
@@ -129,9 +130,9 @@ MASTER BLUEPRINT
 BU-085 CURRENT STATUS:
 BUILD UNIT: BU-085
 TITLE: Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-VERSION: 1.0.2
-STAGE-1: PASS / FROZEN CANDIDATE / PENDING CONTROLLER PHYSICAL RE-AUDIT
-STAGE-2: NOT AUTHORIZED / NOT STARTED
+VERSION: 1.0.3
+STAGE-1: PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
+STAGE-2: AUTHORIZED / NOT STARTED
 
 
 BU-084 CURRENT STATUS:

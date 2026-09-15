@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.352
+**Version:** 1.5.353
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.351
+**Supersedes:** CURRENT_STATE v1.5.352
+CURRENT_STATE v1.5.353 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization.
 CURRENT_STATE v1.5.352 records BU-085 Stage-1 targeted forward correction #2.
 CURRENT_STATE v1.5.351 records BU-085 Stage-1 targeted forward correction (FAIL / INCOMPLETE / STAGE-2 NOT AUTHORIZED).
 CURRENT_STATE v1.5.350 records the BU-084 terminal-sync manage_task/background taskification deviation as a NON-MATERIAL execution-control defect; Stage-5 and terminal result remain valid.
@@ -49,8 +50,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-085
 **NEXT BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
-**NEXT SAFE ACTION:** Controller BU-085 Stage-1 physical re-audit
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-2 IMPLEMENTATION
+**NEXT SAFE ACTION:** Execute BU-085 Stage-2 implementation
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
@@ -78,9 +79,9 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.2
-- **STAGE-1:** PASS / FROZEN CANDIDATE / PENDING CONTROLLER PHYSICAL RE-AUDIT
-- **STAGE-2:** NOT AUTHORIZED / NOT STARTED
+- **VERSION:** 1.0.3
+- **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
+- **STAGE-2:** AUTHORIZED / NOT STARTED
 
 ### BU-084 CURRENT STATUS
 - **BUILD UNIT:** BU-084

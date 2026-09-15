@@ -1,5 +1,5 @@
-**Status:** PASS / FROZEN CANDIDATE / PENDING CONTROLLER PHYSICAL RE-AUDIT
-**Version:** 1.0.2
+**Status:** ACTIVE / STAGE-1 PASS / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 AUTHORIZED
+**Version:** 1.0.3
 **Canonical:** CANONICAL BUILD UNIT RECORD
 **Phase:** BUILD
 **Build Unit:** BU-085
@@ -177,5 +177,6 @@ STOP and return to Controller if Stage-2 would require:
 - unsupported data/display semantics
 
 ## 11. Execution State
-- **STAGE-1:** PASS / FROZEN CANDIDATE / PENDING CONTROLLER PHYSICAL RE-AUDIT
-- **STAGE-2:** NOT AUTHORIZED / NOT STARTED
+- **STAGE-1:** PASS / FROZEN
+- **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
+- **STAGE-2:** AUTHORIZED / NOT STARTED
