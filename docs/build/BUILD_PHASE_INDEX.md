@@ -24,6 +24,12 @@
 - **Terminal Verification:** requirements inherit `docs/00-governance/00.05_BUILD_EXECUTION_RULES.md`.
 
 ## Active Build Unit Register
+### BU-085
+- **TITLE:** Secure Assessment Student Assigned Exam Discovery Browser UI Integration Bootstrap
+- **STATUS:** ACTIVE / STAGE-1 FROZEN / STAGE-2 PENDING
+- **IMPLEMENTATION:** PENDING
+- **STAGE-1:** PASS
+
 ### BU-084
 - **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
@@ -468,17 +474,17 @@
 
 **LAST COMPLETED BUILD UNIT:** BU-084
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-085
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** BU-085
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** STAGE-2 IMPLEMENTATION
 
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**NEXT SAFE ACTION:** Execute BU-085 Stage-2 Implementation
 
-**NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
+**NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** COMPLETE
 
 ### Build Direction Control
 - **FINAL TARGET:** FULL ELLIGBLE PRODUCT COMPLETION
