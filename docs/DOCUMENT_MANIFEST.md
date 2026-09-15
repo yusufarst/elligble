@@ -1,7 +1,7 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.426
+**Version:** 1.0.427
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.425
+**Supersedes:** 1.0.426
 **Canonical:** YES
 **Last Reviewed:** 2026-09-15
 # ELLIGBLE Document Manifest
