@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.12
+**Version:** 1.0.13
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.11
+**Supersedes:** 1.0.12
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -139,12 +139,13 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - **Student Exam Client Core Workstation:** IMPLEMENTED via BU-081. Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
   - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
   - **Student Exam Context Projection Integration:** IMPLEMENTED in BU-083 (implementation + rendered QA complete; Stage-3 Controller physical audit PASS; Stage-4 minimal lifecycle close complete; Stage-5 final physical verification PASS / BU-083 terminal.). Projection of read-only authoritative Subject and Exam Room context into the active exam workspace header without new tenant-authorization boundaries.
+  - **Student Pre-Start Attempt Launch UI Integration:** IMPLEMENTED via BU-084 (implementation + engineering verified + rendered QA pass + Stage-3 Controller physical re-audit PASS). Milestone gap reduced: pre-start attempt launch / activation UX within already-authorized attempt.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
-    - Browser-facing assigned-exam entry.
+    - Full browser-facing assigned-exam discovery.
     - Proctor operational UI (minimal room and active session monitoring views).
     - Teacher delivery/readiness UI (minimal scheduled exam and readiness inspection views).
-    - Full authenticated browser -> runtime -> PostgreSQL end-to-end verification.
+    - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
 
 ---
