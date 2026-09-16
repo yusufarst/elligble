@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.463
-**Supersedes:** 0.1.462
+**Version:** 0.1.464
+**Supersedes:** 0.1.463
+0.1.464 records BU-085 Stage-3 targeted remediation, process truth correction, and re-audit pending.
 0.1.463 records BU-085 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
 0.1.462 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization.
 0.1.461 records BU-085 Stage-1 targeted forward correction #2.
@@ -99,9 +100,9 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
 
-**NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical audit
+**NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical re-audit
 
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 
@@ -131,18 +132,24 @@ MASTER BLUEPRINT
 BU-085 CURRENT STATUS:
 BUILD UNIT: BU-085
 TITLE: Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-VERSION: 1.0.4
-STAGE-1: PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
+VERSION: 1.0.5
+STAGE-1: PASS / FROZEN
 STAGE-2: COMPLETE
-ENGINEERING VERIFICATION: PASS
-REAL POSTGRESQL VERIFICATION: PASS
-FRONTEND TYPECHECK: PASS
-FRONTEND TEST: PASS
-FRONTEND BUILD: PASS
-RENDERED QA: PASS
+INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT: FAIL
+STAGE-3 AUDIT FINDINGS: - unsupported empty-state schedule/active/class semantics - invalid rendered-QA state-evidence collision - prior schedule/background taskification disclosure mismatch
+TARGETED FRONTEND REMEDIATION: COMPLETE
+CORRECTED FRONTEND TYPECHECK: PASS
+CORRECTED FRONTEND TEST: PASS
+CORRECTED FRONTEND BUILD: PASS
+CORRECTED RENDERED QA: PASS
 BU-084 HANDOFF: PASS
-IMPLEMENTATION REPOSITORY FINALIZED: YES
-STAGE-3: PENDING / AWAITING CONTROLLER PHYSICAL AUDIT
+STAGE-2 PROCESS DEVIATION: YES
+STAGE-2 PROCESS DEVIATION CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT
+PROCESS TRUTH: schedule/background taskification occurred during prior Stage-2 execution; three visible background processes were subsequently cancelled before remediation; repository remained clean.
+STAGE-3 RE-AUDIT: PENDING
+CURRENT RESPONSIBILITY: BU-085 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+NEXT SAFE ACTION: Controller BU-085 Stage-3 physical re-audit
+STAGE-4: NOT AUTHORIZED
 DONE: NO
 TERMINAL: NO
 FULL BU REPOSITORY FINALIZED: NO
@@ -151,7 +158,7 @@ PB05: OPEN
 PB06: OPEN
 PB07: OPEN
 MILESTONE COMPLETE: NO
-FULL ASSIGNED-EXAM DISCOVERY GAP: implementation delivered by BU-085; awaiting Controller Stage-3 physical audit before final canonical closure
+FULL ASSIGNED-EXAM DISCOVERY GAP: implementation delivered by BU-085; awaiting Controller Stage-3 physical re-audit before final canonical closure
 
 
 BU-084 CURRENT STATUS:

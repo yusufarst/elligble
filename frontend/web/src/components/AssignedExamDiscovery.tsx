@@ -117,9 +117,9 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
           <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
         </header>
         <div className="discovery-state-card">
-          <h2 className="discovery-state-title">Belum Ada Ujian Terjadwal</h2>
+          <h2 className="discovery-state-title">Belum Ada Ujian yang Ditugaskan</h2>
           <p className="discovery-state-body">
-            Saat ini belum ada jadwal ujian yang aktif untuk kelas Anda.
+            Belum ada ujian yang ditugaskan kepada Anda saat ini.
           </p>
         </div>
       </div>
@@ -169,13 +169,9 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                         data-testid={`attempt-row-${attempt.attemptId}`}
                       >
                         <div className="discovery-attempt-info">
-                          {isSubmitted ? (
+                          {isSubmitted && (
                             <span className="discovery-status-badge submitted">
                               Sudah dikumpulkan
-                            </span>
-                          ) : (
-                            <span className="discovery-status-badge available">
-                              Siap Dikerjakan
                             </span>
                           )}
                         </div>

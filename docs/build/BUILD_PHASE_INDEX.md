@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.402
-**Supersedes:** 0.1.401
+**Version:** 0.1.403
+**Supersedes:** 0.1.402
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -26,20 +26,23 @@
 ## Active Build Unit Register
 ### BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-- **STATUS:** ACTIVE / STAGE-2 COMPLETE / AWAITING CONTROLLER PHYSICAL AUDIT
+- **STATUS:** ACTIVE / STAGE-2 COMPLETE / AWAITING CONTROLLER PHYSICAL RE-AUDIT
 - **IMPLEMENTATION:** COMPLETE
 - **STAGE-1:** PASS / FROZEN
-- **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
 - **STAGE-2:** COMPLETE
-- **ENGINEERING VERIFICATION:** PASS
-- **REAL POSTGRESQL VERIFICATION:** PASS
-- **FRONTEND TYPECHECK:** PASS
-- **FRONTEND TEST:** PASS
-- **FRONTEND BUILD:** PASS
-- **RENDERED QA:** PASS
+- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL
+- **STAGE-3 AUDIT FINDINGS:** - unsupported empty-state schedule/active/class semantics - invalid rendered-QA state-evidence collision - prior schedule/background taskification disclosure mismatch
+- **TARGETED FRONTEND REMEDIATION:** COMPLETE
+- **CORRECTED FRONTEND TYPECHECK:** PASS
+- **CORRECTED FRONTEND TEST:** PASS
+- **CORRECTED FRONTEND BUILD:** PASS
+- **CORRECTED RENDERED QA:** PASS
 - **BU-084 HANDOFF:** PASS
-- **IMPLEMENTATION REPOSITORY FINALIZED:** YES
-- **STAGE-3:** PENDING / AWAITING CONTROLLER PHYSICAL AUDIT
+- **STAGE-2 PROCESS DEVIATION:** YES
+- **STAGE-2 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **PROCESS TRUTH:** schedule/background taskification occurred during prior Stage-2 execution; three visible background processes were subsequently cancelled before remediation; repository remained clean.
+- **STAGE-3 RE-AUDIT:** PENDING
+- **STAGE-4:** NOT AUTHORIZED
 - **DONE:** NO
 - **TERMINAL:** NO
 - **FULL BU REPOSITORY FINALIZED:** NO

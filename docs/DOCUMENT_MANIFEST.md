@@ -1,12 +1,12 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.438
+**Version:** 1.0.439
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.437
+**Supersedes:** 1.0.438
 **Canonical:** YES
 **Last Reviewed:** 2026-09-16
 # ELLIGBLE Document Manifest
 
-> **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history. v1.0.435 records BU-085 Stage-1 targeted forward correction #2. v1.0.436 forward-corrects BU-085 Stage-1 manifest hash/navigation integrity. v1.0.437 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 authorization. v1.0.438 records BU-085 Stage-2 implementation completion and verification.
+> **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history. v1.0.435 records BU-085 Stage-1 targeted forward correction #2. v1.0.436 forward-corrects BU-085 Stage-1 manifest hash/navigation integrity. v1.0.437 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 authorization. v1.0.438 records BU-085 Stage-2 implementation completion and verification. v1.0.439 records BU-085 Stage-3 targeted remediation and re-audit pending.
 
 ## Agent Read Policy
 
@@ -31,8 +31,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.354. (5DE53CD091C4EB9DC4B9741BE4074EC888F4E4E71095F6452F576EBF1B785306) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.463. (F71188263BCBC558E62AE5F690F14D23CC44542EA3E6006DC9D78A4365DFFF1D) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.355. (6C05717579A58C4BDF1CEC383CB871266EDF2F05) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.464. (4AC7EBDC5B222538891A240A90B0B79C1A731865) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -42,8 +42,8 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (5CA58622FABBB07C09AB2BC399321F2DC6F1EA8589A8A32C2BA5DE16FD893829) | Canonical / LOCKED v1.1.0 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control. Tracks current execution program, completed features, and explicit active constraints (e.g. PB04/PB06 gaps). Version 0.1.402. (084D806FE917760072F0EE4E923EC9A98F458C9F7E2F8BAE66F60173286B893A) | DYNAMIC BUILD CONTROL | PHASE: Build |
-| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, BU-081 core workstation implemented, BU-082 mobile-first UX hardening implemented, BU-083 context projection integrated, BU-084 student pre-start attempt launch UI integration implemented, BU-085 assigned exam discovery implemented. Version 1.0.16. (FE884FAEF34B7FBD0B5D7377A01DB7F2FA33AF012FCB0B1C57D6A7D8B1384893) | DYNAMIC ROADMAP | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control. Tracks current execution program, completed features, and explicit active constraints (e.g. PB04/PB06 gaps). Version 0.1.403. (D0905FACFE37DA941E94125DEDA9A6AC8FA45BD7) | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. Milestone tracking, baseline completion control, BU-081 core workstation implemented, BU-082 mobile-first UX hardening implemented, BU-083 context projection integrated, BU-084 student pre-start attempt launch UI integration implemented, BU-085 assigned exam discovery implemented. Version 1.0.17. (0DF35AB44860ED0EC3E55B10A988A31826F70810) | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
 | `docs/00-recovery/00.02_TENANT_IDENTITY_AND_ACCESS.md` | Identity/Tenant Recovery | Frozen | DOMAIN |
@@ -316,7 +316,7 @@ NEVER_DEFAULT
 | `docs/build/units/BU-082_SECURE_ASSESSMENT_STUDENT_EXAM_CLIENT_MOBILE_FIRST_UX_HARDENING_BOOTSTRAP.md` | BU-082 Specification - Secure Assessment Student Exam Client Mobile-First UX Hardening Bootstrap. Version 1.0.4. STAGE-1 PASS / STAGE-2 COMPLETE / STAGE-3 COMPLETE / FINAL OWNER RENDERED VISUAL REVIEW PASS / SUBSEQUENT TARGETED VISUAL REFINEMENT COMPLETE / DEC-039 LOCKED / DEC-040 LOCKED / WARM MONOCHROME FOUNDATION LOCKED / STAGE-4 COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES. (EFFB9BC49171AE34F35A754675B84F187F742C6B1C86282AB75ECDB8067BCD0F) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-083_SECURE_ASSESSMENT_STUDENT_EXAM_CONTEXT_PROJECTION_INTEGRATION_BOOTSTRAP.md` | BU-083 Specification - Secure Assessment Student Exam Context Projection Integration Bootstrap. Version 1.0.2. STAGE-1 PASS / STAGE-2 COMPLETE / STAGE-3 COMPLETE / STAGE-4 COMPLETE / STAGE-5 PASS / TERMINAL. (8582536ED088B65D84D2ADA5A3FBAC0CC86681301FF8AEE55CBF9C8F373DB729) | BUILD UNIT SPEC | PHASE: Build |
 | `docs/build/units/BU-084_SECURE_ASSESSMENT_STUDENT_PRE_START_ATTEMPT_LAUNCH_UI_INTEGRATION_BOOTSTRAP.md` | BU-084 Specification - Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap. Version 1.0.5. TERMINAL. (D82A8CFAE0768D084B2FB521B2682E579BD381F3B8F2322B7AAD090CB9F34D41) | BUILD UNIT SPEC | PHASE: Build |
-| `docs/build/units/BU-085_SECURE_ASSESSMENT_STUDENT_ASSIGNED_EXAM_DISCOVERY_BROWSER_UI_INTEGRATION_BOOTSTRAP.md` | BU-085 Specification - Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap. Version 1.0.4. (75AF6AAAEB8590BAC427E163DB2FF942951A753D2965C580B0C2BA0BFE207185) | BUILD UNIT SPEC | PHASE: Build |
+| `docs/build/units/BU-085_SECURE_ASSESSMENT_STUDENT_ASSIGNED_EXAM_DISCOVERY_BROWSER_UI_INTEGRATION_BOOTSTRAP.md` | BU-085 Specification - Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap. Version 1.0.5. (C54E28D71907829C072EF719A0B845790E16301F) | BUILD UNIT SPEC | PHASE: Build |
 | `frontend/web/src/components/QuestionNavigatorSheet.tsx` | BU-082 frontend component — Accessible mobile-first question navigator sheet with focus containment, Escape dismissal, responsive touch targets, and submission access. (7C2F86E56A2FABA8D192924E2E7C8DB2159365C7E3C98544727E2A2BF955DCC5) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/components/StudentExamWorkstation.tsx` | BU-082 frontend workstation — Student Exam Workstation hardened with compact mobile sticky header, mobile bottom navigation action bar (Sebelum/Daftar/Berikut/Selesai), persistent save status, and responsive layout coordination. (16D1C0C6DDEF97ED188E531367C904C03FDD6AB830ED242AAC80E5DA426170D8) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/styles/workstation.css` | BU-082 frontend styling — Mobile-first workstation CSS with 100dvh dynamic viewport hardening, safe-area-inset padding, bottom sheet styling, 1-row symmetric 4-action mobile bottom bar, and persistent save status badge. (B0CA1004732CA133E53D73C441BDFEDA0D62589F38D069B617AA6033BA8EE91F) | FRONTEND STYLING | PHASE: Build |
@@ -332,6 +332,6 @@ NEVER_DEFAULT
 | `frontend/web/src/types/assessment.ts` | BU-085 frontend types — Assigned-exam discovery response and item types. (B1F512B0D8BA180902B5263225FDD42E200F9AA9A79E378D3BF49FE90C418CBE) | FRONTEND SOURCE | PHASE: Build |
 | `frontend/web/src/api/assessment-client.ts` | BU-085 frontend client — Assessment API client with getAssignedExams() integration. (7ADAA18F8A19419E73E00FC683F5F7BEDF97D16CB1F6A2CE2B4700F4951206AD) | FRONTEND SOURCE | PHASE: Build |
 | `frontend/web/src/styles/assigned-exam-discovery.css` | BU-085 frontend styling — Mobile-first assigned exam discovery layout and state styles. (FA108223AA02BD703B76300DB9977F777629D08C6DAB09E27C59693F4934F062) | FRONTEND STYLING | PHASE: Build |
-| `frontend/web/src/components/AssignedExamDiscovery.tsx` | BU-085 frontend component — Assigned Exam Discovery UI with full state handling. (5E209EB7BE2E79A343A6337DFB3241E07E09E5D1F78241B03E609354B1BF317C) | FRONTEND COMPONENT | PHASE: Build |
+| `frontend/web/src/components/AssignedExamDiscovery.tsx` | BU-085 frontend component — Assigned Exam Discovery UI with full state handling. (8C301DC92580774A0C11E4442C0D0C25F8524266) | FRONTEND COMPONENT | PHASE: Build |
 | `frontend/web/src/App.tsx` | BU-085 frontend app — App navigation entry and handoff between AssignedExamDiscovery and AttemptLaunch. (981EBD7BBC67C149BA5ECCBFD224388E7FE7EAB7725FA705533CB42C864F05AB) | FRONTEND ENTRY | PHASE: Build |
-| `frontend/web/src/__tests__/assignedExamDiscovery.test.tsx` | BU-085 frontend tests — AssignedExamDiscovery component and App handoff tests / 12/12 TESTS PASS. (CAF6C78C071BA334040233FDDF4FFD0A61A1E3458747B357FF985109A1C4E273) | TEST HARNESS | PHASE: Build |
+| `frontend/web/src/__tests__/assignedExamDiscovery.test.tsx` | BU-085 frontend tests — AssignedExamDiscovery component and App handoff tests / 12/12 TESTS PASS. (27A321823BB12D80F86C6E8A28D62038BEAB8EC6) | TEST HARNESS | PHASE: Build |

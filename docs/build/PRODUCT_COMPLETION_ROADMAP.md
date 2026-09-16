@@ -1,7 +1,7 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.16
+**Version:** 1.0.17
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.15
+**Supersedes:** 1.0.16
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -140,10 +140,19 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
   - **Student Exam Context Projection Integration:** IMPLEMENTED in BU-083 (implementation + rendered QA complete; Stage-3 Controller physical audit PASS; Stage-4 minimal lifecycle close complete; Stage-5 final physical verification PASS / BU-083 terminal.). Projection of read-only authoritative Subject and Exam Room context into the active exam workspace header without new tenant-authorization boundaries.
   - **Student Pre-Start Attempt Launch UI Integration:** IMPLEMENTED / ENGINEERING VERIFIED / RENDERED QA PASS / STAGE-3 PASS / STAGE-4 COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL
+  - **Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap:** 
+    - **ACTIVE BLOCKER: BU-085 (SECURE ASSESSMENT STUDENT ASSIGNED EXAM DISCOVERY)**
+    - BU-085 IS THE ACTIVE PRODUCTION BLOCKER AND NEXT REQUIRED BUILD UNIT.
+    - **BU-085 STATUS:** STAGE-2 COMPLETE / AWAITING CONTROLLER PHYSICAL RE-AUDIT
+    - **INITIAL STAGE-3 AUDIT:** FAIL (Targeted Remediation Complete)
+    - **EXPECTED OUTCOME:** Complete Student Assigned Exam Discovery and API Integration
+    - **IMPACT:** Resolves PB04, PB05, PB06, PB07 (Pending Stage-3 closure)
+    - **OWNERSHIP:** BACKEND + FRONTEND
+    - **NEXT PHASE TRIGGER:** Milestone completion upon canonical closure
   - **Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-085 (implementation + real PostgreSQL + rendered QA complete; Stage-3 Controller physical audit pending). Authoritative read API (`GET /api/v1/assessment/assigned-exams`) and mobile-first student discovery component with handoff to existing BU-084 AttemptLaunch flow.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
-    - Full browser-facing assigned-exam discovery (implementation delivered by BU-085; awaiting Controller Stage-3 physical audit before final canonical closure).
+    - Full browser-facing assigned-exam discovery (implementation delivered by BU-085; awaiting Controller Stage-3 physical re-audit before final canonical closure).
     - Proctor operational UI (minimal room and active session monitoring views).
     - Teacher delivery/readiness UI (minimal scheduled exam and readiness inspection views).
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.

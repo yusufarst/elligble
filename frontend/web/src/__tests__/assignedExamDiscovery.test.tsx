@@ -42,9 +42,12 @@ describe('BU-085 AssignedExamDiscovery and App Navigation Test Suite', () => {
     render(<AssignedExamDiscovery />);
 
     await waitFor(() => {
-      expect(screen.getByText('Belum Ada Ujian Terjadwal')).toBeDefined();
+      expect(screen.getByText('Belum Ada Ujian yang Ditugaskan')).toBeDefined();
     });
-    expect(screen.getByText('Saat ini belum ada jadwal ujian yang aktif untuk kelas Anda.')).toBeDefined();
+    expect(screen.getByText('Belum ada ujian yang ditugaskan kepada Anda saat ini.')).toBeDefined();
+    expect(screen.queryByText(/terjadwal/i)).toBeNull();
+    expect(screen.queryByText(/jadwal ujian/i)).toBeNull();
+    expect(screen.queryByText(/aktif untuk kelas/i)).toBeNull();
   });
 
   it('3. assignment with zero attempts is visible without launch button', async () => {
@@ -92,7 +95,7 @@ describe('BU-085 AssignedExamDiscovery and App Navigation Test Suite', () => {
     await waitFor(() => {
       expect(screen.getByText('Matematika')).toBeDefined();
     });
-    expect(screen.getByText('Siap Dikerjakan')).toBeDefined();
+    expect(screen.queryByText('Siap Dikerjakan')).toBeNull();
     const button = screen.getByRole('button', { name: 'Mulai Pengerjaan' });
     expect(button).toBeDefined();
 
@@ -195,7 +198,7 @@ describe('BU-085 AssignedExamDiscovery and App Navigation Test Suite', () => {
     fireEvent.click(retryBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Belum Ada Ujian Terjadwal')).toBeDefined();
+      expect(screen.getByText('Belum Ada Ujian yang Ditugaskan')).toBeDefined();
     });
   });
 
