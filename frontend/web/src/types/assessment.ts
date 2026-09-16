@@ -167,3 +167,28 @@ export interface ProctorMonitoringResponse {
   assignments: ProctorMonitoringExamProjection[];
 }
 
+export type TeacherReadinessBaselineResult =
+  | { type: 'baseline_readiness_checks_pass'; examInstanceId: string; tenantId: string }
+  | { type: 'not_ready'; category: string; blocker: string; [key: string]: any }
+  | { type: 'invalid_state' }
+  | { type: 'denied' }
+  | { type: 'unavailable' };
+
+export type TeacherReadinessRoomProctorResult =
+  | { type: 'room_proctor_readiness_not_applicable'; roomBasedOperationsEnabled: false; proctorPerRoomRequired: false }
+  | { type: 'room_proctor_readiness_ready'; roomBasedOperationsEnabled: true; proctorPerRoomRequired: boolean; [key: string]: any }
+  | { type: 'not_ready'; blocker: string; [key: string]: any }
+  | { type: 'invalid_state' }
+  | { type: 'denied' }
+  | { type: 'unavailable' };
+
+export interface TeacherExamReadinessProjection {
+  examInstanceId: string;
+  subjectLabel: string | null;
+  baseline: TeacherReadinessBaselineResult;
+  roomProctor: TeacherReadinessRoomProctorResult;
+}
+
+export interface TeacherReadinessResponse {
+  exams: TeacherExamReadinessProjection[];
+}

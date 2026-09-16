@@ -4,6 +4,7 @@ import './styles/workstation.css';
 import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
 import { ProctorMonitoringView } from './components/ProctorMonitoringView.tsx';
+import { TeacherReadinessView } from './components/TeacherReadinessView.tsx';
 
 export const App: React.FC = () => {
   const [currentAttemptId, setCurrentAttemptId] = useState<string | null>(() => {
@@ -52,6 +53,10 @@ export const App: React.FC = () => {
 
   if (currentView === 'proctor') {
     return <ProctorMonitoringView />;
+  }
+
+  if (currentView === 'teacher') {
+    return <TeacherReadinessView />;
   }
 
   return <AssignedExamDiscovery onSelectAttempt={handleSelectAttempt} />;

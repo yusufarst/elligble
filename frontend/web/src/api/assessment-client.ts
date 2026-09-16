@@ -8,6 +8,7 @@ import type {
   ExpiryFinalizeResponse,
   AssignedExamsResponse,
   ProctorMonitoringResponse,
+  TeacherReadinessResponse,
 } from '../types/assessment.ts';
 
 export class ApiError extends Error {
@@ -139,4 +140,12 @@ export async function getProctorMonitoring(): Promise<ProctorMonitoringResponse>
     method: 'GET',
   });
   return handleResponse<ProctorMonitoringResponse>(res);
+}
+
+export async function getTeacherReadiness(): Promise<TeacherReadinessResponse> {
+  const url = '/api/v1/assessment/teacher-readiness';
+  const res = await fetch(url, {
+    method: 'GET',
+  });
+  return handleResponse<TeacherReadinessResponse>(res);
 }

@@ -8,12 +8,14 @@ import { handleSessionActivate } from './session.ts';
 import { handleQuestionDelivery } from './question-delivery.ts';
 import { handleAssignedExamsGet, type AssignedExamDiscoveryContext } from './assigned-exams.ts';
 import { handleProctorMonitoringGet } from './proctor-monitoring.ts';
+import { handleTeacherReadinessGet, type TeacherReadinessContext } from './teacher-readiness.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
     pool: pg.Pool;
     getAuthorizedContext: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
     getAssignedExamDiscoveryContext?: (req: http.IncomingMessage) => AssignedExamDiscoveryContext | null;
+    getTeacherReadinessContext?: (req: http.IncomingMessage) => TeacherReadinessContext | null;
 }
 
 export function createServer(deps: ServerDependencies): http.Server {
@@ -129,6 +131,17 @@ export function createServer(deps: ServerDependencies): http.Server {
                 handleProctorMonitoringGet(req, res, {
                     pool: deps.pool,
                     getProctorMonitoringContext: deps.getAssignedExamDiscoveryContext ?? (() => null),
+                });
+                return;
+            }
+        }
+
+        if (req.url && req.url.startsWith('/api/v1/assessment/teacher-readiness')) {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            if (parsedUrl.pathname === '/api/v1/assessment/teacher-readiness') {
+                handleTeacherReadinessGet(req, res, {
+                    pool: deps.pool,
+                    getTeacherReadinessContext: deps.getTeacherReadinessContext,
                 });
                 return;
             }
