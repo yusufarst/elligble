@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.414
-**Supersedes:** 0.1.413
+**Version:** 0.1.415
+**Supersedes:** 0.1.414
+0.1.415 records BU-086 Stage-5 final physical verification PASS, terminal state synchronization, and successor selection authorization.
 0.1.414 forward-corrects BU-086 Stage-4 BUILD_PHASE_INDEX lower/global navigation drift discovered during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
 0.1.413 records BU-086 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 0.1.412 records BU-086 initial Stage-3 Controller physical audit FAIL, rendered-QA Controller physical inspection PASS, remediation-time process deviation/cleanup truth, and Stage-3 physical re-audit pending.
@@ -33,8 +34,8 @@
 ## Active Build Unit Register
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
-- **VERSION:** 1.0.5
+- **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
+- **VERSION:** 1.0.6
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 INITIAL CONTROLLER PHYSICAL AUDIT:** FAIL
 - **STAGE-1 INITIAL AUDIT FINDING:** DOCUMENT_MANIFEST duplicate descriptive navigation rows stale.
@@ -65,16 +66,19 @@
 - **STAGE-3:** PASS
 - **STAGE-4:** COMPLETE
 - **DONE:** YES
-- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+- **TERMINAL:** YES / DO NOT REOPEN
 - **REPOSITORY FINALIZED:** YES
-- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING / NOT YET PERFORMED
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
+- **FINAL PHYSICAL VERIFICATION:** PASS
+- **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
+- **NEXT BUILD UNIT:** NOT YET REGISTERED
 - **PB04:** OPEN
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **OWNER DECISION REQUIRED:** NO
-- **CURRENT RESPONSIBILITY:** BU-086 STAGE-5 FINAL PHYSICAL VERIFICATION
-- **NEXT SAFE ACTION:** Controller BU-086 Stage-5 final physical verification
+- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+- **NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
 ### BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
@@ -580,19 +584,19 @@
 - **FULL BU-020 REPOSITORY FINALIZED:** YES
 - **FINAL PHYSICAL VERIFICATION:** PASS
 
-**LAST COMPLETED BUILD UNIT:** BU-085
+**LAST COMPLETED BUILD UNIT:** BU-086
 
-**ACTIVE BUILD UNIT:** BU-086
+**ACTIVE BUILD UNIT:** NONE
 
-**NEXT BUILD UNIT:** BU-086 — Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
+**NEXT BUILD UNIT:** NOT YET REGISTERED
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-086 STAGE-5 FINAL PHYSICAL VERIFICATION
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** Controller BU-086 Stage-5 final physical verification
+**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
 
-**NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** COMPLETE
+**NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 
 ### Build Direction Control
 - **FINAL TARGET:** FULL ELLIGBLE PRODUCT COMPLETION
