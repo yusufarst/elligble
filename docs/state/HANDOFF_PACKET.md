@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.469
-**Supersedes:** 0.1.468
+**Version:** 0.1.470
+**Supersedes:** 0.1.469
+0.1.470 records BU-086 initial Stage-1 Controller physical audit FAIL, targeted manifest/control-integrity forward correction, and controlled-push process truth; Stage-2 remains NOT AUTHORIZED pending Controller physical re-audit.
 0.1.469 records BU-086 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
 0.1.468 records BU-085 Stage-5 Controller PASS, terminal navigation state, and successor selection authorization.
 0.1.467 records BU-085 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
@@ -105,9 +106,9 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
+**CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
 
-**NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical audit before Stage-2 authorization
+**NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical re-audit before Stage-2 authorization
 
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 
@@ -119,7 +120,7 @@ MASTER BLUEPRINT
 
 **TERMINAL:** YES / DO NOT REOPEN
 
-**BU-086:** STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+**BU-086:** STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL RE-AUDIT
 **BU-085:** FULLY TERMINAL / DO NOT REOPEN
 **BU-084:** FULLY TERMINAL / DO NOT REOPEN
 
@@ -139,10 +140,15 @@ MASTER BLUEPRINT
 BU-086 CURRENT STATUS:
 BUILD UNIT: BU-086
 TITLE: Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-VERSION: 1.0.0
-STATUS: ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+VERSION: 1.0.1
+STATUS: ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL RE-AUDIT
 STAGE-1: PASS / FROZEN
-STAGE-2: NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+STAGE-1 INITIAL CONTROLLER PHYSICAL AUDIT: FAIL
+STAGE-1 INITIAL AUDIT FINDING: DOCUMENT_MANIFEST duplicate Handoff and Build descriptive rows retained stale pre-BU-086 navigation semantics.
+STAGE-1 TARGETED FORWARD CORRECTION: COMPLETE / PENDING CONTROLLER PHYSICAL RE-AUDIT
+CONTROLLED PUSH PROCESS DEVIATION: YES / root-string equality gate rejected equivalent path formatting but interactive execution continued to normal push.
+CONTROLLED PUSH PROCESS DEVIATION CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT.
+STAGE-2: NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL RE-AUDIT
 EXACT READ API: GET /api/v1/assessment/proctor-monitoring
 READ/MUTATION BOUNDARY: READ ONLY
 PB04: OPEN
@@ -153,8 +159,8 @@ MILESTONE COMPLETE: NO
 OWNER DECISION REQUIRED: NO
 STAGE-1 REGISTRATION PROCESS DEVIATION: YES / Antigravity displayed one background process after completion claim despite foreground-only instruction.
 STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT / local unpushed candidate only; no implementation mutation.
-CURRENT RESPONSIBILITY: BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
-NEXT SAFE ACTION: Controller BU-086 Stage-1 physical audit before Stage-2 authorization
+CURRENT RESPONSIBILITY: BU-086 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
+NEXT SAFE ACTION: Controller BU-086 Stage-1 physical re-audit before Stage-2 authorization
 
 BU-085 CURRENT STATUS:
 BUILD UNIT: BU-085

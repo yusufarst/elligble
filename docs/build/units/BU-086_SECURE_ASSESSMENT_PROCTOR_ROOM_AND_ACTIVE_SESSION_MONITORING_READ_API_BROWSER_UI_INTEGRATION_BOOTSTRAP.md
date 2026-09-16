@@ -1,8 +1,8 @@
 # BU-086 Specification
 
 **Title:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.0
-**Status:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+**Version:** 1.0.1
+**Status:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL RE-AUDIT
 
 ## PURPOSE:
 Reduce the explicit Milestone-1 gap:
@@ -183,4 +183,13 @@ STOP AND RETURN TO CONTROLLER IF FUTURE STAGE-2 REQUIRES:
 - **DETAIL:** Antigravity displayed one background process after the Stage-1 completion claim despite foreground-only instruction.
 - **CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT.
 - **REPOSITORY EFFECT:** candidate remained local and unpushed; exact six-path registration scope preserved; no product/runtime/frontend/database implementation mutation occurred.
-- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT.
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL RE-AUDIT.
+
+## STAGE-1 CONTROLLER PHYSICAL AUDIT / TARGETED FORWARD CORRECTION
+- **INITIAL CONTROLLER PHYSICAL AUDIT:** FAIL.
+- **MATERIAL FINDING:** `DOCUMENT_MANIFEST.md` duplicate descriptive rows for Handoff and Build retained stale pre-BU-086 navigation semantics even though their versions and SHA256 values were updated.
+- **FROZEN SCOPE MATERIAL AUDIT:** PASS.
+- **TARGETED FORWARD CORRECTION:** COMPLETE / PENDING CONTROLLER PHYSICAL RE-AUDIT.
+- **CONTROLLED PUSH PROCESS DEVIATION:** YES. The pre-push root-string equality check rejected equivalent slash formatting; interactive execution nevertheless continued through the normal non-force push.
+- **PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT; physical repository identity, exact six-path candidate, non-force push, `HEAD == origin/main`, divergence `0/0`, and clean final tree were preserved.
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL RE-AUDIT.
