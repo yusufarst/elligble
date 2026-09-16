@@ -1,8 +1,8 @@
 # BU-087 Specification
 
 **Title:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.7
-**Status:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / STAGE-5 RE-AUDIT #1 FAIL / STAGE-5 RE-AUDIT #2 FAIL / THIRD TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3
+**Version:** 1.0.8
+**Status:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
 
 ## PURPOSE:
 Reduce the active Milestone-1 gap:
@@ -263,7 +263,7 @@ STOP before scope expansion if implementation would require:
 - **STAGE-3:** PASS.
 - **STAGE-4:** COMPLETE.
 - **DONE:** YES.
-- **REPOSITORY FINALIZED:** YES / TARGETED STAGE-5 FORWARD CORRECTION INCLUDED.
+- **REPOSITORY FINALIZED:** YES.
 - **STAGE-5 INITIAL FINAL PHYSICAL VERIFICATION:** FAIL.
 - **STAGE-5 INITIAL FINDINGS:** `DOCUMENT_MANIFEST` v1.0.457 retained stale SHA256 values for five Stage-4 lifecycle files; this specification retained contradictory Stage-3/Stage-4/DONE truth; `BUILD_PHASE_INDEX` retained stale lower/global BU-087 navigation; `PRODUCT_COMPLETION_ROADMAP` retained a proven-asset range ending at BU-086; Stage-4 foreground-only execution control was violated by six Antigravity background processes; initial Stage-4 external evidence was incomplete.
 - **STAGE-4 EXECUTION-CONTROL DEVIATION:** YES / six Antigravity background processes remained visible after Stage-4 completion claim.
@@ -276,5 +276,9 @@ STOP before scope expansion if implementation would require:
 - **STAGE-5 FINAL PHYSICAL RE-AUDIT #2:** FAIL.
 - **STAGE-5 RE-AUDIT #2 FINDING:** `BUILD_PHASE_INDEX` v0.1.422 retained stale lower/global active navigation pointing to BU-087 Stage-3 Controller physical re-audit.
 - **STAGE-5 THIRD TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE.
-- **STAGE-5 FINAL PHYSICAL RE-AUDIT #3:** PENDING / NOT YET PERFORMED.
-- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3.
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #3:** PASS.
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS.
+- **FINAL PHYSICAL VERIFICATION:** PASS.
+- **TERMINAL:** YES / DO NOT REOPEN.
+- **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED.
+- **NEXT BUILD UNIT:** NOT YET REGISTERED.

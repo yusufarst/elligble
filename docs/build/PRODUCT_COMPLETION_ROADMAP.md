@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.33
+**Version:** 1.0.34
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.32
+**Supersedes:** 1.0.33
+1.0.34 records BU-087 Stage-5 final physical re-audit #3 PASS, terminal lifecycle state, and successor selection authorization.
 1.0.33 records BU-087 Stage-5 final physical re-audit #2 FAIL due stale BUILD_PHASE_INDEX lower/global active navigation remaining at Stage-3, third targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #3 pending.
 1.0.32 records BU-087 Stage-5 final physical re-audit #1 FAIL due one residual malformed stale duplicate BU-087 specification manifest descriptor, second targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #2 pending.
 1.0.31 records BU-087 initial Stage-5 Controller physical verification FAIL, targeted canonical-integrity forward correction, and Stage-5 final physical re-audit pending.
@@ -166,7 +167,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-086 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/proctor-monitoring`) and mobile-first Proctor room/active-session monitoring view delivered; terminally verified.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
-    - Teacher delivery/readiness UI gap: IMPLEMENTED via BU-087 / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / STAGE-5 RE-AUDIT #1 FAIL / STAGE-5 RE-AUDIT #2 FAIL / THIRD TARGETED STAGE-5 CORRECTION COMPLETE / REPOSITORY FINALIZED YES / STAGE-5 FINAL PHYSICAL RE-AUDIT #3 PENDING.
+    - Teacher delivery/readiness UI gap: IMPLEMENTED via BU-087 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN.
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
 
