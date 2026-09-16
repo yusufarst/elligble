@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.357
+**Version:** 1.5.358
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.356
+**Supersedes:** CURRENT_STATE v1.5.357
+CURRENT_STATE v1.5.358 records BU-085 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 CURRENT_STATE v1.5.357 forward-corrects BU-085 Stage-3 control-integrity correction #1 manifest-hash failure, escaped-newline contamination, and process truth; Stage-3 re-audit remains pending.
 CURRENT_STATE v1.5.356 forward-corrects BU-085 Stage-3 remediation process truth, records fresh rendered QA, and awaits Stage-3 re-audit.
 CURRENT_STATE v1.5.355 records BU-085 Stage-3 targeted remediation, process truth correction, and re-audit pending.
@@ -83,7 +84,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.7
+- **VERSION:** 1.0.8
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
 - **STAGE-2:** COMPLETE
@@ -123,20 +124,24 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 DEFECTS:** DOCUMENT_MANIFEST v1.0.440 retained stale 40-character Git-object hashes and stale versions; literal escaped newline sequences contaminated canonical document boundaries.
 - **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION:** YES / two Antigravity background processes remained visible after completion claim despite foreground-only instruction.
 - **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / commit path scope remained exactly five authorized canonical docs.
-- **STAGE-3 CONTROL-INTEGRITY FORWARD CORRECTION #2:** COMPLETE / PENDING CONTROLLER PHYSICAL RE-AUDIT
-- **STAGE-3 RE-AUDIT:** PENDING
-- **STAGE-4:** NOT AUTHORIZED
-- **DONE:** NO
-- **TERMINAL:** NO
-- **FULL BU REPOSITORY FINALIZED:** NO
+- **STAGE-3 CONTROL-INTEGRITY FORWARD CORRECTION #2:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS
+- **STAGE-3 RE-AUDIT:** PASS
+- **STAGE-3 CONTROLLER PHYSICAL RE-AUDIT:** PASS
+- **STAGE-3:** PASS
+- **STAGE-4:** COMPLETE
+- **DONE:** YES
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+- **REPOSITORY FINALIZED:** YES
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING / NOT YET PERFORMED
 - **PB04:** OPEN
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **MILESTONE COMPLETE:** NO
-- **CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
-- **NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical re-audit
-- **FULL ASSIGNED-EXAM DISCOVERY GAP:** implementation delivered by BU-085; awaiting Controller Stage-3 physical re-audit before final canonical closure
+- **CURRENT RESPONSIBILITY:** BU-085 STAGE-5 FINAL PHYSICAL VERIFICATION
+- **NEXT SAFE ACTION:** Controller BU-085 Stage-5 final physical verification
+- **FULL ASSIGNED-EXAM DISCOVERY GAP CLOSED:** YES / BU-085
+- **REAL AUTHENTICATION GAP CLOSED:** NO
 
 ### BU-084 CURRENT STATUS
 - **BUILD UNIT:** BU-084
