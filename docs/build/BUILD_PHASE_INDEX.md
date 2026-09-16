@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.411
-**Supersedes:** 0.1.410
+**Version:** 0.1.412
+**Supersedes:** 0.1.411
+0.1.412 records BU-086 initial Stage-3 Controller physical audit FAIL, rendered-QA Controller physical inspection PASS, remediation-time process deviation/cleanup truth, and Stage-3 physical re-audit pending.
 0.1.411 records BU-086 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
 0.1.410 records BU-086 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization.
 0.1.409 records BU-086 initial Stage-1 Controller physical audit FAIL, targeted canonical-integrity correction, and controlled-push process truth.
@@ -30,8 +31,8 @@
 ## Active Build Unit Register
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL AUDIT / STAGE-3 PENDING
-- **VERSION:** 1.0.3
+- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / PROCESS-TRUTH FORWARD CORRECTION COMPLETE / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **VERSION:** 1.0.4
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 INITIAL CONTROLLER PHYSICAL AUDIT:** FAIL
 - **STAGE-1 INITIAL AUDIT FINDING:** DOCUMENT_MANIFEST duplicate descriptive navigation rows stale.
@@ -50,13 +51,20 @@
 - **STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
 - **STAGE-2 PROCESS DEVIATION:** YES — manage_task was used during initial Stage-2 execution despite foreground-only Controller instruction.
 - **STAGE-2 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL
+- **INITIAL STAGE-3 FINDINGS:** remediation-time schedule/background taskification plus three residual background processes after completion claim; canonical process truth incomplete.
+- **RENDERED-QA CONTROLLER PHYSICAL INSPECTION:** PASS
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION:** YES
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **BACKGROUND PROCESS CLEANUP:** PASS / Owner confirmed zero remain
+- **STAGE-3 PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
 - **PB04:** OPEN
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **OWNER DECISION REQUIRED:** NO
-- **CURRENT RESPONSIBILITY:** BU-086 STAGE-3 CONTROLLER PHYSICAL AUDIT
-- **NEXT SAFE ACTION:** Controller physical audit of Stage-2 implementation
+- **CURRENT RESPONSIBILITY:** BU-086 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller physical re-audit of BU-086 Stage-3 process/evidence correction before Stage-4 authorization
 ### BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN

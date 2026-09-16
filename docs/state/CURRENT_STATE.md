@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.364
+**Version:** 1.5.365
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.363
+**Supersedes:** CURRENT_STATE v1.5.364
+CURRENT_STATE v1.5.365 records BU-086 initial Stage-3 Controller physical audit FAIL, Controller rendered-QA physical inspection PASS, remediation-time schedule/background process deviation and Owner cleanup truth, and Stage-3 physical re-audit pending.
 CURRENT_STATE v1.5.364 records BU-086 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
 CURRENT_STATE v1.5.363 records BU-086 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization; Stage-2 is AUTHORIZED / NOT STARTED.
 CURRENT_STATE v1.5.362 records BU-086 initial Stage-1 Controller physical audit FAIL due stale duplicate DOCUMENT_MANIFEST navigation descriptors, targeted forward correction, and controlled-push process truth; Stage-2 remains NOT AUTHORIZED pending Controller physical re-audit.
@@ -61,10 +62,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-086
 **NEXT BUILD UNIT:** BU-086 — Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-086 STAGE-3 CONTROLLER PHYSICAL AUDIT
-**NEXT SAFE ACTION:** Controller physical audit of Stage-2 implementation
+**CURRENT RESPONSIBILITY:** BU-086 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+**NEXT SAFE ACTION:** Controller physical re-audit of BU-086 Stage-3 process/evidence correction before Stage-4 authorization
 **NEXT BUILD UNIT SELECTION:** COMPLETE
-**BU-086:** STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL AUDIT / STAGE-3 PENDING
+**BU-086:** STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / PROCESS-TRUTH FORWARD CORRECTION COMPLETE / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
 **BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
@@ -92,8 +93,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-086 CURRENT STATUS
 - **BUILD UNIT:** BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.3
-- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL AUDIT / STAGE-3 PENDING
+- **VERSION:** 1.0.4
+- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / PROCESS-TRUTH FORWARD CORRECTION COMPLETE / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 INITIAL CONTROLLER PHYSICAL AUDIT:** FAIL
 - **STAGE-1 INITIAL AUDIT FINDING:** DOCUMENT_MANIFEST duplicate Handoff and Build descriptive rows retained stale pre-BU-086 navigation semantics.
@@ -121,8 +122,17 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-2 PROCESS DEVIATION:** YES — manage_task was used during initial Stage-2 execution despite foreground-only Controller instruction.
 - **STAGE-2 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
 - **STAGE-2 PROCESS DEVIATION PHYSICAL EFFECT:** NO repository spill; NO forbidden path; NO package/lock/migration/schema mutation; NO premature commit/push; canonical remote remained authorization baseline until controlled finalization.
-- **CURRENT RESPONSIBILITY:** BU-086 STAGE-3 CONTROLLER PHYSICAL AUDIT
-- **NEXT SAFE ACTION:** Controller physical audit of Stage-2 implementation
+- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL
+- **INITIAL STAGE-3 FINDINGS:** Stage-2 targeted remediation used schedule/background taskification despite foreground-only Controller instruction; three background processes remained visible after the completion claim; remediation-time process truth was not recorded in canonical state.
+- **RENDERED-QA CONTROLLER PHYSICAL INSPECTION:** PASS
+- **RENDERED-QA PHYSICAL INSPECTION RESULT:** desktop and mobile populated/multiple-room layouts responsive with no material clipping or overlap; no-assignment, zero-room, zero-active-session, forbidden, and API-failure states physically distinguishable and acceptable.
+- **RENDERED-QA DUPLICATE-EVIDENCE HASH ASSESSMENT:** ACCEPTED / the populated scene also contains multiple rooms, therefore the same physical render validly satisfies both populated and multiple-room coverage labels.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION:** YES / schedule/background taskification used despite foreground-only instruction.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION PHYSICAL EFFECT:** NO repository spill; exact authorized Stage-2 implementation commit remained intact; no package/lock/migration/schema mutation; three residual background processes were manually stopped by Owner; Owner confirmed zero background processes remain.
+- **STAGE-3 PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **CURRENT RESPONSIBILITY:** BU-086 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller physical re-audit of BU-086 Stage-3 process/evidence correction before Stage-4 authorization
 
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085

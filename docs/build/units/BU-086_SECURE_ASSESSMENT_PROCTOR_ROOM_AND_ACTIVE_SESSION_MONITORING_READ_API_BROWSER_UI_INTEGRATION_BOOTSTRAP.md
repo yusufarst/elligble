@@ -1,8 +1,8 @@
 # BU-086 Specification
 
 **Title:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.3
-**Status:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / AWAITING CONTROLLER PHYSICAL AUDIT
+**Version:** 1.0.4
+**Status:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / FRONTEND VERIFICATION PASS / RENDERED QA PASS / IMPLEMENTATION REPOSITORY FINALIZED / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / PROCESS-TRUTH FORWARD CORRECTION COMPLETE / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
 
 ## PURPOSE:
 Reduce the explicit Milestone-1 gap:
@@ -206,3 +206,16 @@ STOP AND RETURN TO CONTROLLER IF FUTURE STAGE-2 REQUIRES:
 - **PHYSICAL EFFECT:** NO repository spill; NO forbidden path; NO package/lock/migration/schema mutation; NO premature commit/push; canonical remote remained authorization baseline until controlled finalization.
 - **PB04 / PB05 / PB06 / PB07:** OPEN
 - **STAGE-3:** PENDING CONTROLLER PHYSICAL AUDIT.
+## STAGE-3 CONTROLLER PHYSICAL AUDIT / PROCESS-TRUTH FORWARD CORRECTION
+- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL.
+- **ENGINEERING SOURCE MATERIAL:** PRESERVED / no material source defect established.
+- **RENDERED-QA CONTROLLER PHYSICAL INSPECTION:** PASS.
+- **PHYSICAL QA RESULT:** desktop/mobile populated and multiple-room layouts acceptable; no-assignment, zero-room, zero-active-session, forbidden, and API-failure states physically distinguishable; no material clipping/overlap.
+- **DUPLICATE POPULATED/MULTIPLE-ROOM EVIDENCE HASHES:** ACCEPTED / same rendered populated scene contains multiple rooms and validly satisfies both coverage labels.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION:** YES / schedule/background taskification used despite foreground-only Controller instruction.
+- **PROCESS DEVIATION DETAIL:** three background processes remained visible after completion claim.
+- **PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT.
+- **PHYSICAL EFFECT:** no repository spill, no forbidden source path, no package/lock/migration/schema mutation; Stage-2 implementation commit remained intact.
+- **BACKGROUND PROCESS CLEANUP:** PASS / Owner manually stopped residual processes and confirmed zero remain.
+- **PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING.
+- **STAGE-4:** NOT AUTHORIZED.
