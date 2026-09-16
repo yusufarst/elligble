@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.416
-**Supersedes:** 0.1.415
+**Version:** 0.1.417
+**Supersedes:** 0.1.416
+0.1.417 records BU-087 initial Stage-1 Controller physical audit FAIL, non-material execution-control deviation, cleanup/post-commit evidence, and targeted process-truth correction; Stage-2 remains NOT AUTHORIZED pending Controller physical re-audit.
 0.1.416 records BU-087 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
 0.1.415 records BU-086 Stage-5 final physical verification PASS, terminal state synchronization, and successor selection authorization.
 0.1.414 forward-corrects BU-086 Stage-4 BUILD_PHASE_INDEX lower/global navigation drift discovered during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
@@ -35,17 +36,27 @@
 ## Active Build Unit Register
 ### BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-- **STATUS:** ACTIVE / SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL AUDIT
-- **VERSION:** 1.0.0
-- **STAGE-1:** PASS / FROZEN
-- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+- **STATUS:** ACTIVE / SELECTED / SCOPE FROZEN / INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT
+- **VERSION:** 1.0.1
+- **STAGE-1:** REGISTRATION CANDIDATE / SCOPE FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL RE-AUDIT
 - **PB04:** OPEN
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **OWNER DECISION REQUIRED:** NO
-- **CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL AUDIT
-- **NEXT SAFE ACTION:** Controller physical audit of BU-087 Stage-1 registration candidate
+- **INITIAL STAGE-1 EXECUTION INTERRUPTION:** ANTIGRAVITY HIGH-TRAFFIC SERVICE ERROR / NO COMMIT / NO PUSH / VALID PARTIAL WORK PRESERVED
+- **INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT:** FAIL
+- **ADDITIONAL STAGE-1 CANONICAL-INTEGRITY FINDING:** DOCUMENT_MANIFEST v1.0.453 omitted the BU-087 specification row during the initial registration commit.
+- **STAGE-1 REGISTRATION PROCESS DEVIATION:** YES
+- **STAGE-1 REGISTRATION PROCESS DEVIATION DETAILS:** manage_task used despite foreground-only prohibition; one background process remained visible after completion claim.
+- **STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-1 REGISTRATION PROCESS DEVIATION PHYSICAL EFFECT:** NO repository spill / exact six registration paths / clean post-commit worktree / no staged or untracked files / no residual scratch.
+- **BACKGROUND PROCESS CLEANUP:** PASS / OWNER CONFIRMED ZERO REMAIN
+- **POST-COMMIT LOCAL AUDIT:** PASS
+- **TARGETED PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller physical re-audit of BU-087 Stage-1 process-truth correction
 
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
@@ -607,13 +618,13 @@
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL AUDIT
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL RE-AUDIT
 
-**NEXT SAFE ACTION:** Controller physical audit of BU-087 Stage-1 registration candidate
+**NEXT SAFE ACTION:** Controller physical re-audit of BU-087 Stage-1 process-truth correction
 
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 
-**BU-087:** SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL AUDIT
+**BU-087:** SELECTED / SCOPE FROZEN / INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL RE-AUDIT
 
 ### Build Direction Control
 - **FINAL TARGET:** FULL ELLIGBLE PRODUCT COMPLETION

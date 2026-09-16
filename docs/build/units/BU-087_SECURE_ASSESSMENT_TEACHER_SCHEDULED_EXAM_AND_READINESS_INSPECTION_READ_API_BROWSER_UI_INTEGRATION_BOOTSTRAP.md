@@ -1,8 +1,8 @@
 # BU-087 Specification
 
 **Title:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.0
-**Status:** ACTIVE / SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+**Version:** 1.0.1
+**Status:** ACTIVE / SELECTED / SCOPE FROZEN / INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-2 NOT AUTHORIZED
 
 ## PURPOSE:
 Reduce the active Milestone-1 gap:
@@ -223,5 +223,15 @@ STOP before scope expansion if implementation would require:
 - Owner-level security/privacy decision
 
 ## STAGE-1 REGISTRATION PROCESS TRUTH:
-- **PROCESS DEVIATION:** NO
-- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT.
+- **INITIAL EXECUTION INTERRUPTION:** ANTIGRAVITY HIGH-TRAFFIC SERVICE ERROR / NO COMMIT / NO PUSH / VALID PARTIAL WORK PRESERVED.
+- **INITIAL CONTROLLER PHYSICAL AUDIT:** FAIL.
+- **ADDITIONAL CANONICAL-INTEGRITY FINDING:** DOCUMENT_MANIFEST v1.0.453 omitted the BU-087 specification row during the initial registration commit.
+- **AUDIT FINDINGS:** resumed Stage-1 execution used manage_task despite foreground-only prohibition; one background process remained visible after completion claim; external report prematurely claimed Stage-1 PASS and omitted required process/evidence truth.
+- **PROCESS DEVIATION:** YES.
+- **PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT.
+- **PHYSICAL EFFECT:** NO repository spill; registration commit contains exactly six authorized documentation paths; post-commit working tree clean; staged 0; untracked 0; old_handoff.md and temp_current.md absent.
+- **BACKGROUND PROCESS CLEANUP:** PASS / OWNER CONFIRMED ZERO REMAIN.
+- **POST-COMMIT LOCAL AUDIT:** PASS.
+- **TARGETED PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING.
+- **STAGE-1:** NOT YET CONTROLLER-PASSED / PHYSICAL RE-AUDIT PENDING.
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL RE-AUDIT.
