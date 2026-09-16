@@ -1,12 +1,13 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.442
+**Version:** 1.0.443
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.441
+**Supersedes:** 1.0.442
 **Canonical:** YES
 **Last Reviewed:** 2026-09-16
 # ELLIGBLE Document Manifest
 
-> **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history. v1.0.435 records BU-085 Stage-1 targeted forward correction #2. v1.0.436 forward-corrects BU-085 Stage-1 manifest hash/navigation integrity. v1.0.437 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 authorization. v1.0.438 records BU-085 Stage-2 implementation completion and verification. v1.0.442 records BU-085 Stage-3 Controller PASS, Stage-4 minimal lifecycle close, roadmap Production Blocker wording correction, and Stage-5-pending navigation.
+> **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history. v1.0.435 records BU-085 Stage-1 targeted forward correction #2. v1.0.436 forward-corrects BU-085 Stage-1 manifest hash/navigation integrity. v1.0.437 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 authorization. v1.0.438 records BU-085 Stage-2 implementation completion and verification. v1.0.443 forward-corrects BU-085 Stage-4 CURRENT_STATE primary-navigation drift discovered during initial Stage-5 Controller physical verification.
+v1.0.442 records BU-085 Stage-3 Controller PASS, Stage-4 minimal lifecycle close, roadmap Production Blocker wording correction, and Stage-5-pending navigation.
 v1.0.441 forward-corrects the failed v1.0.440 SHA256 row repair, stale manifest versions, escaped-newline canonical contamination, and BU-085 Stage-3 control-integrity correction #1 process truth.
 v1.0.440 forward-corrects v1.0.439 invalid 40-character Git-object-hash integrity defect, preserves BU-085 lifecycle cross-document process truth, and records fresh Rendered-QA Controller physical PASS.
 v1.0.439 records BU-085 Stage-3 targeted remediation and re-audit pending.
@@ -34,7 +35,7 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.358. (22E88D09BDE406DE3889EAD395BC3C1CFBAAA7FC5D30F070055151A42B4B3CF8) | CANONICAL STATE | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. Current phase truth, stage truth, and strict Controller bounds for new sessions. Version 1.5.359. (582396FB7C1716EA09F1B84EB6F858D8B9629C38E04864DEA1E133A110E088AC) | CANONICAL STATE | PHASE: Build |
 | `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. Version 0.1.467. (83E0724A668FEEB9845B67208A57C050D59DAAA55CD90202879E73AAD3F2B344) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |

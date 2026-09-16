@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.358
+**Version:** 1.5.359
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.357
+**Supersedes:** CURRENT_STATE v1.5.358
+CURRENT_STATE v1.5.359 forward-corrects BU-085 Stage-4 lifecycle-close primary-navigation drift found during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
 CURRENT_STATE v1.5.358 records BU-085 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 CURRENT_STATE v1.5.357 forward-corrects BU-085 Stage-3 control-integrity correction #1 manifest-hash failure, escaped-newline contamination, and process truth; Stage-3 re-audit remains pending.
 CURRENT_STATE v1.5.356 forward-corrects BU-085 Stage-3 remediation process truth, records fresh rendered QA, and awaits Stage-3 re-audit.
@@ -55,8 +56,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-085
 **NEXT BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
-**NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical re-audit
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-5 FINAL PHYSICAL VERIFICATION
+**NEXT SAFE ACTION:** Controller BU-085 Stage-5 final physical verification
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
