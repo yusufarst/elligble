@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.30
+**Version:** 1.0.31
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.29
+**Supersedes:** 1.0.30
+1.0.31 records BU-087 initial Stage-5 Controller physical verification FAIL, targeted canonical-integrity forward correction, and Stage-5 final physical re-audit pending.
 1.0.30 records BU-087 Stage-3 Controller physical re-audit PASS and Fast-Track Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 1.0.29 forward-corrects the premature BU-087 DONE claim in v1.0.28; BU-087 targeted Stage-3 remediation and rendered-QA Controller physical inspection are complete, but Stage-3 Controller physical re-audit remains pending and BU-087 is NOT DONE.
 1.0.28 records BU-087 Stage-2 implementation PASS, marking BU-087 as DONE.
@@ -112,7 +113,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 |---|---|---|---|---|
 | **Identity / Tenant / Access** | `IN — CORE / IN — MANDATORY BASELINE` | BU-001, BU-034, BU-035 (Tenant isolation, user persistence, proctor authorization) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
 | **Academic Core** | `IN — CORE` | BU-036–BU-042, BU-046 (Academic year, period, subjects, offerings, classes, enrollments) | Curriculum mapping UI, bulk CSV imports, administrative management views | Partially Built |
-| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077, BU-080–BU-086 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights, student attempt launch, proctor monitoring) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), browser/server operational synchronization | Foundation Built / Vertical Product Integration Pending |
+| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077, BU-080–BU-087 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights, student attempt launch, proctor monitoring, teacher readiness inspection) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), browser/server operational synchronization | Foundation Built / Vertical Product Integration Pending |
 | **Track** | `IN — MANDATORY BASELINE` | Baseline schemas & domain events planned | Longitudinal academic development and progress tracking (applicable concepts: Academic Progress, Early Warning, Targets / Follow-Up, Portfolio Workbench; Track != Care; Track does NOT own Official School Grade truth; attendance/timetable out of current baseline) | Not Started |
 | **Care** | `IN — MANDATORY BASELINE` | Security & counseling privacy boundaries established in MB-06 | Confidential notes CRUD, counseling case tracking, access authorization | Not Started |
 | **Passport** | `IN — CORE` | Provenance architecture in MB-05 | Student achievement records, verified transcript export, granular visibility controls | Not Started |
@@ -163,7 +164,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-086 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/proctor-monitoring`) and mobile-first Proctor room/active-session monitoring view delivered; terminally verified.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
-    - Teacher delivery/readiness UI gap: IMPLEMENTED via BU-087 / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / REPOSITORY FINALIZED YES / STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
+    - Teacher delivery/readiness UI gap: IMPLEMENTED via BU-087 / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / TARGETED STAGE-5 CANONICAL-INTEGRITY FORWARD CORRECTION COMPLETE / REPOSITORY FINALIZED YES / STAGE-5 FINAL PHYSICAL RE-AUDIT PENDING.
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
 

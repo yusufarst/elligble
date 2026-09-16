@@ -1,8 +1,8 @@
 # BU-087 Specification
 
 **Title:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.4
-**Status:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+**Version:** 1.0.5
+**Status:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / TARGETED STAGE-5 CANONICAL-INTEGRITY FORWARD CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT
 
 ## PURPOSE:
 Reduce the active Milestone-1 gap:
@@ -259,7 +259,16 @@ STOP before scope expansion if implementation would require:
 - **BACKGROUND PROCESS CLEANUP:** PASS / Owner confirmed zero remain.
 - **RENDERED-QA RECOVERY:** final deterministic direct installed-Edge/CDP execution used no dependency installation, caused no repository source mutation, and left zero residual QA processes.
 - **IMPLEMENTATION REPOSITORY FINALIZED:** YES.
-- **STAGE-3:** NOT YET PASS / CONTROLLER PHYSICAL RE-AUDIT PENDING.
-- **STAGE-4:** NOT AUTHORIZED.
-- **DONE:** NO.
-- **TERMINAL:** NO.
+- **STAGE-3 CONTROLLER PHYSICAL RE-AUDIT:** PASS.
+- **STAGE-3:** PASS.
+- **STAGE-4:** COMPLETE.
+- **DONE:** YES.
+- **REPOSITORY FINALIZED:** YES / TARGETED STAGE-5 FORWARD CORRECTION INCLUDED.
+- **STAGE-5 INITIAL FINAL PHYSICAL VERIFICATION:** FAIL.
+- **STAGE-5 INITIAL FINDINGS:** `DOCUMENT_MANIFEST` v1.0.457 retained stale SHA256 values for five Stage-4 lifecycle files; this specification retained contradictory Stage-3/Stage-4/DONE truth; `BUILD_PHASE_INDEX` retained stale lower/global BU-087 navigation; `PRODUCT_COMPLETION_ROADMAP` retained a proven-asset range ending at BU-086; Stage-4 foreground-only execution control was violated by six Antigravity background processes; initial Stage-4 external evidence was incomplete.
+- **STAGE-4 EXECUTION-CONTROL DEVIATION:** YES / six Antigravity background processes remained visible after Stage-4 completion claim.
+- **STAGE-4 EXECUTION-CONTROL DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT.
+- **STAGE-4 BACKGROUND PROCESS CONTAINMENT:** PASS / OWNER CONFIRMED ALL BACKGROUND PROCESSES STOPPED BEFORE TARGETED CORRECTION.
+- **STAGE-5 TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE.
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT:** PENDING / NOT YET PERFORMED.
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT.
