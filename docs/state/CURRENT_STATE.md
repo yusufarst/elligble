@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.371
+**Version:** 1.5.372
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.370
+**Supersedes:** CURRENT_STATE v1.5.371
+CURRENT_STATE v1.5.372 records BU-087 Stage-3 Controller physical re-audit PASS and Fast-Track Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 CURRENT_STATE v1.5.371 records BU-087 targeted Stage-3 remediation completion, engineering/real-PostgreSQL/frontend verification PASS, rendered-QA Controller physical inspection PASS, remediation-time process-deviation containment, implementation repository finalization, and Stage-3 Controller physical re-audit pending.
 CURRENT_STATE v1.5.370 records BU-087 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization; Stage-2 is AUTHORIZED / NOT STARTED.
 CURRENT_STATE v1.5.369 records BU-087 initial Stage-1 Controller physical audit FAIL, non-material execution-control deviation, background cleanup, clean post-commit verification, and targeted process-truth forward correction; Stage-2 remains NOT AUTHORIZED pending Controller physical re-audit.
@@ -68,10 +69,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-087
 **NEXT BUILD UNIT:** BU-087 — Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-087 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
-**NEXT SAFE ACTION:** Controller physical re-audit of BU-087 targeted Stage-3 remediation and finalization evidence
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL VERIFICATION
+**NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical verification
 **NEXT BUILD UNIT SELECTION:** COMPLETE
-**BU-087:** STAGE-1 PASS / FROZEN / STAGE-2 IMPLEMENTATION COMPLETE / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED STAGE-3 REMEDIATION COMPLETE / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-4 NOT AUTHORIZED / DONE NO
+**BU-087:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
 **BU-086:** TERMINAL / DO NOT REOPEN
 **BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
@@ -100,8 +101,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-087 CURRENT STATUS
 - **BUILD UNIT:** BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.3
-- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 IMPLEMENTATION COMPLETE / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED STAGE-3 REMEDIATION COMPLETE / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-4 NOT AUTHORIZED / DONE NO
+- **VERSION:** 1.0.4
+- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
 - **STAGE-2:** IMPLEMENTATION COMPLETE
 - **ENGINEERING VERIFICATION:** PASS
@@ -133,12 +134,16 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION PHYSICAL EFFECT:** NO repository spill; Owner stopped residual processes; subsequent audits proved zero residual process, zero untracked repository artifact, and unchanged valid remediation.
 - **RENDERED-QA RECOVERY:** initial browser tooling/environment and TEMP harness failures contained; deterministic direct installed-Edge/CDP retry PASS with no source mutation, no dependency install, and zero residual QA processes.
 - **IMPLEMENTATION REPOSITORY FINALIZED:** YES
-- **STAGE-3:** NOT YET PASS / CONTROLLER PHYSICAL RE-AUDIT PENDING
-- **STAGE-4:** NOT AUTHORIZED
-- **DONE:** NO
-- **TERMINAL:** NO
-- **CURRENT RESPONSIBILITY:** BU-087 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
-- **NEXT SAFE ACTION:** Controller physical re-audit of BU-087 targeted Stage-3 remediation and finalization evidence
+- **STAGE-3 RE-AUDIT:** PASS
+- **STAGE-3 CONTROLLER PHYSICAL RE-AUDIT:** PASS
+- **STAGE-3:** PASS
+- **STAGE-4:** COMPLETE
+- **DONE:** YES
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING / NOT YET PERFORMED
+- **REAL AUTHENTICATION GAP CLOSED:** NO
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL VERIFICATION
+- **NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical verification
 
 ### BU-086 CURRENT STATUS
 - **BUILD UNIT:** BU-086

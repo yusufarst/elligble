@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.419
-**Supersedes:** 0.1.418
+**Version:** 0.1.420
+**Supersedes:** 0.1.419
+0.1.420 records BU-087 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 0.1.419 records BU-087 targeted Stage-3 remediation completion, verification PASS, rendered-QA Controller physical inspection PASS, process-deviation containment, repository finalization, and Stage-3 Controller physical re-audit pending.
 0.1.418 records BU-087 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization; Stage-2 is AUTHORIZED / NOT STARTED.
 0.1.417 records BU-087 initial Stage-1 Controller physical audit FAIL, non-material execution-control deviation, cleanup/post-commit evidence, and targeted process-truth correction; Stage-2 remains NOT AUTHORIZED pending Controller physical re-audit.
@@ -38,8 +39,8 @@
 ## Active Build Unit Register
 ### BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 IMPLEMENTATION COMPLETE / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED STAGE-3 REMEDIATION COMPLETE / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-4 NOT AUTHORIZED / DONE NO
-- **VERSION:** 1.0.3
+- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+- **VERSION:** 1.0.4
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
 - **STAGE-2:** IMPLEMENTATION COMPLETE
 - **ENGINEERING VERIFICATION:** PASS
@@ -65,12 +66,15 @@
 - **RENDERED-QA REPORT SHA256:** E2A783CB0DCDF0BA06BB6ABDB35241DC3B097DC3BAE5A4F8E761A51048179763
 - **RENDERED-QA ORIGINAL CONTACT-SHEET SHA256:** 3ED492153E4F30086BACD60E36F5A984C3E9A16FD7B1BF0798E1E5510D855181
 - **IMPLEMENTATION REPOSITORY FINALIZED:** YES
-- **STAGE-3:** NOT YET PASS / CONTROLLER PHYSICAL RE-AUDIT PENDING
-- **STAGE-4:** NOT AUTHORIZED
-- **DONE:** NO
-- **TERMINAL:** NO
-- **CURRENT RESPONSIBILITY:** BU-087 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
-- **NEXT SAFE ACTION:** Controller physical re-audit of BU-087 targeted Stage-3 remediation and finalization evidence
+- **STAGE-3 RE-AUDIT:** PASS
+- **STAGE-3 CONTROLLER PHYSICAL RE-AUDIT:** PASS
+- **STAGE-3:** PASS
+- **STAGE-4:** COMPLETE
+- **DONE:** YES
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING / NOT YET PERFORMED
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL VERIFICATION
+- **NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical verification
 
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
