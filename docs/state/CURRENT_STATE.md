@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.373
+**Version:** 1.5.374
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.372
+**Supersedes:** CURRENT_STATE v1.5.373
+CURRENT_STATE v1.5.374 records BU-087 Stage-5 final physical re-audit #1 FAIL due one residual malformed stale duplicate BU-087 specification descriptor in DOCUMENT_MANIFEST v1.0.458, second targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #2 pending.
 CURRENT_STATE v1.5.373 records BU-087 initial Stage-5 Controller physical verification FAIL, targeted canonical-integrity forward correction, Owner-confirmed Stage-4 background-process containment, and Stage-5 final physical re-audit pending.
 CURRENT_STATE v1.5.372 records BU-087 Stage-3 Controller physical re-audit PASS and Fast-Track Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 CURRENT_STATE v1.5.371 records BU-087 targeted Stage-3 remediation completion, engineering/real-PostgreSQL/frontend verification PASS, rendered-QA Controller physical inspection PASS, remediation-time process-deviation containment, implementation repository finalization, and Stage-3 Controller physical re-audit pending.
@@ -70,10 +71,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-087
 **NEXT BUILD UNIT:** BU-087 — Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT
-**NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT #2
+**NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit #2
 **NEXT BUILD UNIT SELECTION:** COMPLETE
-**BU-087:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / TARGETED STAGE-5 CANONICAL-INTEGRITY FORWARD CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT
+**BU-087:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / FIRST TARGETED STAGE-5 CORRECTION COMPLETE / STAGE-5 RE-AUDIT #1 FAIL / SECOND TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
 **BU-086:** TERMINAL / DO NOT REOPEN
 **BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
@@ -102,8 +103,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-087 CURRENT STATUS
 - **BUILD UNIT:** BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.5
-- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / TARGETED STAGE-5 CANONICAL-INTEGRITY FORWARD CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT
+- **VERSION:** 1.0.6
+- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / FIRST TARGETED STAGE-5 CORRECTION COMPLETE / STAGE-5 RE-AUDIT #1 FAIL / SECOND TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
 - **STAGE-2:** IMPLEMENTATION COMPLETE
 - **ENGINEERING VERIFICATION:** PASS
@@ -140,16 +141,19 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-3:** PASS
 - **STAGE-4:** COMPLETE
 - **DONE:** YES
-- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
 - **STAGE-5 INITIAL FINAL PHYSICAL VERIFICATION:** FAIL
 - **STAGE-5 INITIAL FINDINGS:** stale DOCUMENT_MANIFEST v1.0.457 SHA256 values for five Stage-4 lifecycle files; contradictory BU-087 specification Stage-3/Stage-4/DONE truth; stale BUILD_PHASE_INDEX lower/global BU-087 navigation; stale PRODUCT_COMPLETION_ROADMAP proven-asset range ending at BU-086; Stage-4 foreground-only execution-control violation; incomplete initial Stage-4 external evidence.
 - **STAGE-4 EXECUTION-CONTROL DEVIATION:** YES / six Antigravity background processes remained visible after the Stage-4 completion claim.
 - **STAGE-4 EXECUTION-CONTROL DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / Owner confirmed all background processes stopped before targeted correction.
 - **STAGE-5 TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE
-- **STAGE-5 FINAL PHYSICAL RE-AUDIT:** PENDING / NOT YET PERFORMED
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #1:** FAIL
+- **STAGE-5 RE-AUDIT #1 FINDING:** DOCUMENT_MANIFEST v1.0.458 retained one malformed unquoted stale duplicate BU-087 specification descriptor carrying Stage-1 candidate / Version 1.0.0 truth in addition to the corrected canonical descriptor.
+- **STAGE-5 SECOND TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #2:** PENDING / NOT YET PERFORMED
 - **REAL AUTHENTICATION GAP CLOSED:** NO
-- **CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT
-- **NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT #2
+- **NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit #2
 
 ### BU-086 CURRENT STATUS
 - **BUILD UNIT:** BU-086
