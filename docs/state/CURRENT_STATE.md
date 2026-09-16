@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.353
+**Version:** 1.5.354
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.352
+**Supersedes:** CURRENT_STATE v1.5.353
+CURRENT_STATE v1.5.354 records BU-085 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
 CURRENT_STATE v1.5.353 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization.
 CURRENT_STATE v1.5.352 records BU-085 Stage-1 targeted forward correction #2.
 CURRENT_STATE v1.5.351 records BU-085 Stage-1 targeted forward correction (FAIL / INCOMPLETE / STAGE-2 NOT AUTHORIZED).
@@ -50,8 +51,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-085
 **NEXT BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-2 IMPLEMENTATION
-**NEXT SAFE ACTION:** Execute BU-085 Stage-2 implementation
+**CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL AUDIT
+**NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical audit
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
@@ -79,9 +80,27 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.3
+- **VERSION:** 1.0.4
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
-- **STAGE-2:** AUTHORIZED / NOT STARTED
+- **STAGE-2:** COMPLETE
+- **ENGINEERING VERIFICATION:** PASS
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **FRONTEND TYPECHECK:** PASS
+- **FRONTEND TEST:** PASS
+- **FRONTEND BUILD:** PASS
+- **RENDERED QA:** PASS
+- **BU-084 HANDOFF:** PASS
+- **IMPLEMENTATION REPOSITORY FINALIZED:** YES
+- **STAGE-3:** PENDING / AWAITING CONTROLLER PHYSICAL AUDIT
+- **DONE:** NO
+- **TERMINAL:** NO
+- **FULL BU REPOSITORY FINALIZED:** NO
+- **PB04:** OPEN
+- **PB05:** OPEN
+- **PB06:** OPEN
+- **PB07:** OPEN
+- **MILESTONE COMPLETE:** NO
+- **FULL ASSIGNED-EXAM DISCOVERY GAP:** implementation delivered by BU-085; awaiting Controller Stage-3 physical audit before final canonical closure
 
 ### BU-084 CURRENT STATUS
 - **BUILD UNIT:** BU-084

@@ -132,6 +132,20 @@ test('server tests', async (t) => {
         authContextThrows = false;
     });
 
+    await t.test('GET /api/v1/assessment/assigned-exams -> reaches bounded assigned-exams handler (403 missing context by default)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/assigned-exams`);
+        assert.equal(res.status, 403);
+        const data = await res.json();
+        assert.deepEqual(data, { error: 'forbidden' });
+    });
+
+    await t.test('POST /api/v1/assessment/assigned-exams -> unsupported method on exact route is bounded (405 method_not_allowed)', async () => {
+        const res = await fetch(`${baseUrl}/api/v1/assessment/assigned-exams`, { method: 'POST' });
+        assert.equal(res.status, 405);
+        const data = await res.json();
+        assert.deepEqual(data, { error: 'method_not_allowed' });
+    });
+
     await t.test('unsupported method -> bounded not-found behavior', async () => {
         const res = await fetch(`${baseUrl}/healthz`, { method: 'POST' });
         assert.equal(res.status, 404);

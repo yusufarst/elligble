@@ -6,11 +6,13 @@ import { handleSubmit, handleSubmissionGet, handleExpiryFinalize } from './submi
 import { handleResumeGet } from './resume.ts';
 import { handleSessionActivate } from './session.ts';
 import { handleQuestionDelivery } from './question-delivery.ts';
+import { handleAssignedExamsGet, type AssignedExamDiscoveryContext } from './assigned-exams.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
     pool: pg.Pool;
     getAuthorizedContext: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
+    getAssignedExamDiscoveryContext?: (req: http.IncomingMessage) => AssignedExamDiscoveryContext | null;
 }
 
 export function createServer(deps: ServerDependencies): http.Server {
@@ -105,6 +107,17 @@ export function createServer(deps: ServerDependencies): http.Server {
             const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
             if (parsedUrl.pathname === '/api/v1/assessment/questions') {
                 handleQuestionDelivery(req, res, deps);
+                return;
+            }
+        }
+
+        if (req.url && req.url.startsWith('/api/v1/assessment/assigned-exams')) {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            if (parsedUrl.pathname === '/api/v1/assessment/assigned-exams') {
+                handleAssignedExamsGet(req, res, {
+                    pool: deps.pool,
+                    getAssignedExamDiscoveryContext: deps.getAssignedExamDiscoveryContext ?? (() => null),
+                });
                 return;
             }
         }

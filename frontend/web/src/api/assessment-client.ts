@@ -6,6 +6,7 @@ import type {
   SaveAnswerResponse,
   SubmitResponse,
   ExpiryFinalizeResponse,
+  AssignedExamsResponse,
 } from '../types/assessment.ts';
 
 export class ApiError extends Error {
@@ -121,4 +122,12 @@ export async function postStartTimer(req: import('../types/assessment.ts').Timer
     body: JSON.stringify(req),
   });
   return handleResponse<import('../types/assessment.ts').TimerStartResponse>(res);
+}
+
+export async function getAssignedExams(): Promise<AssignedExamsResponse> {
+  const url = '/api/v1/assessment/assigned-exams';
+  const res = await fetch(url, {
+    method: 'GET',
+  });
+  return handleResponse<AssignedExamsResponse>(res);
 }

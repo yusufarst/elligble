@@ -134,3 +134,19 @@ export interface TimerStartResponse {
   effectiveRemainingSeconds: number;
 }
 
+export interface AssignedExamAttempt {
+  attemptId: string;
+  submittedAt: string | null;
+}
+
+export interface AssignedExamItem {
+  examInstanceId: string;
+  subjectLabel: string | null;
+  roomLabel: string | null;
+  attempts: AssignedExamAttempt[];
+}
+
+export interface AssignedExamsResponse {
+  assignments: AssignedExamItem[];
+}
+
