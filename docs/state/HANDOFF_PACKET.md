@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.468
-**Supersedes:** 0.1.467
+**Version:** 0.1.469
+**Supersedes:** 0.1.468
+0.1.469 records BU-086 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
 0.1.468 records BU-085 Stage-5 Controller PASS, terminal navigation state, and successor selection authorization.
 0.1.467 records BU-085 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 0.1.466 forward-corrects BU-085 Stage-3 control-integrity correction #1 manifest-hash failure, escaped-newline contamination, and process truth; Stage-3 re-audit remains pending.
@@ -98,17 +99,17 @@ MASTER BLUEPRINT
 
 **LAST COMPLETED BUILD UNIT:** BU-085
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-086
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** BU-086 — Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
 
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical audit before Stage-2 authorization
 
-**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**NEXT BUILD UNIT SELECTION:** COMPLETE
 
 **BU-084 STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 
@@ -118,6 +119,7 @@ MASTER BLUEPRINT
 
 **TERMINAL:** YES / DO NOT REOPEN
 
+**BU-086:** STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
 **BU-085:** FULLY TERMINAL / DO NOT REOPEN
 **BU-084:** FULLY TERMINAL / DO NOT REOPEN
 
@@ -133,6 +135,26 @@ MASTER BLUEPRINT
 
 **BU-077:** TERMINAL / DO NOT REOPEN
 
+
+BU-086 CURRENT STATUS:
+BUILD UNIT: BU-086
+TITLE: Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
+VERSION: 1.0.0
+STATUS: ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+STAGE-1: PASS / FROZEN
+STAGE-2: NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+EXACT READ API: GET /api/v1/assessment/proctor-monitoring
+READ/MUTATION BOUNDARY: READ ONLY
+PB04: OPEN
+PB05: OPEN
+PB06: OPEN
+PB07: OPEN
+MILESTONE COMPLETE: NO
+OWNER DECISION REQUIRED: NO
+STAGE-1 REGISTRATION PROCESS DEVIATION: YES / Antigravity displayed one background process after completion claim despite foreground-only instruction.
+STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION: NON-MATERIAL EXECUTION-CONTROL DEFECT / local unpushed candidate only; no implementation mutation.
+CURRENT RESPONSIBILITY: BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
+NEXT SAFE ACTION: Controller BU-086 Stage-1 physical audit before Stage-2 authorization
 
 BU-085 CURRENT STATUS:
 BUILD UNIT: BU-085

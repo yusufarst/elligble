@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.407
-**Supersedes:** 0.1.406
+**Version:** 0.1.408
+**Supersedes:** 0.1.407
+0.1.408 records Next Build Unit selection and Stage-1 scope freeze for BU-086.
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -24,6 +25,21 @@
 - **Terminal Verification:** requirements inherit `docs/00-governance/00.05_BUILD_EXECUTION_RULES.md`.
 
 ## Active Build Unit Register
+### BU-086
+- **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
+- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+- **VERSION:** 1.0.0
+- **STAGE-1:** PASS / FROZEN
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+- **STAGE-1 REGISTRATION PROCESS DEVIATION:** YES / Antigravity displayed one background process after completion claim.
+- **STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **PB04:** OPEN
+- **PB05:** OPEN
+- **PB06:** OPEN
+- **PB07:** OPEN
+- **OWNER DECISION REQUIRED:** NO
+- **CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
+- **NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical audit before Stage-2 authorization
 ### BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
@@ -531,15 +547,15 @@
 
 **LAST COMPLETED BUILD UNIT:** BU-085
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-086
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** BU-086 — Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-2 IMPLEMENTATION
+**CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
 
-**NEXT SAFE ACTION:** Execute BU-085 Stage-2 implementation
+**NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical audit before Stage-2 authorization
 
 **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** COMPLETE
 

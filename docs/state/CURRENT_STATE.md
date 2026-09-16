@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.360
+**Version:** 1.5.361
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.359
+**Supersedes:** CURRENT_STATE v1.5.360
+CURRENT_STATE v1.5.361 records BU-086 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
 CURRENT_STATE v1.5.360 records BU-085 Stage-5 Controller PASS, terminal state, and authorizes repository-first successor selection / scope freeze.
 CURRENT_STATE v1.5.359 forward-corrects BU-085 Stage-4 lifecycle-close primary-navigation drift found during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
 CURRENT_STATE v1.5.358 records BU-085 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
@@ -52,14 +53,15 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **POST-BASELINE DIRECTION:** OPTIONAL THEN FUTURE
 **LAST COMPLETED UNIT:** BU-085
 **LAST COMPLETED BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-**ACTIVE UNIT:** NONE
-**ACTIVE BUILD UNIT:** NONE
-**NEXT UNIT:** NOT YET SELECTED
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**ACTIVE UNIT:** BU-086
+**ACTIVE BUILD UNIT:** BU-086
+**NEXT UNIT:** BU-086
+**NEXT BUILD UNIT:** BU-086 — Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
-**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
+**NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical audit before Stage-2 authorization
+**NEXT BUILD UNIT SELECTION:** COMPLETE
+**BU-086:** STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
 **BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
@@ -83,6 +85,26 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **ANTI-AI-SLOP QUALITY GATE:** ENFORCED VIA DESIGN SYSTEM
 **USER-FACING EM DASH:** PROHIBITED IN USER-FACING UI COPY
 
+
+### BU-086 CURRENT STATUS
+- **BUILD UNIT:** BU-086
+- **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
+- **VERSION:** 1.0.0
+- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT
+- **STAGE-1:** PASS / FROZEN
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+- **EXACT READ API:** GET /api/v1/assessment/proctor-monitoring
+- **READ/MUTATION BOUNDARY:** READ ONLY
+- **PB04:** OPEN
+- **PB05:** OPEN
+- **PB06:** OPEN
+- **PB07:** OPEN
+- **MILESTONE COMPLETE:** NO
+- **OWNER DECISION REQUIRED:** NO
+- **STAGE-1 REGISTRATION PROCESS DEVIATION:** YES / Antigravity displayed one background process after completion claim despite foreground-only instruction.
+- **STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / local unpushed candidate only; no implementation mutation.
+- **CURRENT RESPONSIBILITY:** BU-086 STAGE-1 CONTROLLER PHYSICAL AUDIT
+- **NEXT SAFE ACTION:** Controller BU-086 Stage-1 physical audit before Stage-2 authorization
 
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085

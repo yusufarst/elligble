@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.19
+**Version:** 1.0.20
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.18
+**Supersedes:** 1.0.19
+1.0.20 records Next Build Unit selection and Stage-1 scope freeze for BU-086.
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -150,10 +151,11 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **OWNERSHIP:** BACKEND + FRONTEND
     - **NEXT PHASE TRIGGER:** Repository-first milestone-driven successor Build Unit selection / scope freeze.
   - **Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-085 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/assigned-exams`) and mobile-first student discovery component hand off to the existing BU-084 AttemptLaunch flow.
+  - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** BU-086 SELECTED / STAGE-1 PASS / FROZEN / STAGE-2 NOT AUTHORIZED PENDING CONTROLLER PHYSICAL AUDIT. Targets the remaining Proctor operational UI gap.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
 
-    - Proctor operational UI (minimal room and active session monitoring views).
+    - Proctor operational UI (minimal room and active session monitoring views). Targeted by BU-086; Stage-2 NOT AUTHORIZED pending Controller Stage-1 physical audit.
     - Teacher delivery/readiness UI (minimal scheduled exam and readiness inspection views).
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
