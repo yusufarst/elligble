@@ -1,8 +1,8 @@
 # BU-087 Specification
 
 **Title:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.6
-**Status:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / FIRST TARGETED STAGE-5 CORRECTION COMPLETE / STAGE-5 RE-AUDIT #1 FAIL / SECOND TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
+**Version:** 1.0.7
+**Status:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / STAGE-5 RE-AUDIT #1 FAIL / STAGE-5 RE-AUDIT #2 FAIL / THIRD TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3
 
 ## PURPOSE:
 Reduce the active Milestone-1 gap:
@@ -273,5 +273,8 @@ STOP before scope expansion if implementation would require:
 - **STAGE-5 FINAL PHYSICAL RE-AUDIT #1:** FAIL.
 - **STAGE-5 RE-AUDIT #1 FINDING:** `DOCUMENT_MANIFEST` v1.0.458 retained one malformed unquoted stale duplicate BU-087 specification descriptor carrying Stage-1 candidate / Version 1.0.0 truth in addition to the corrected canonical descriptor.
 - **STAGE-5 SECOND TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE.
-- **STAGE-5 FINAL PHYSICAL RE-AUDIT #2:** PENDING / NOT YET PERFORMED.
-- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2.
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #2:** FAIL.
+- **STAGE-5 RE-AUDIT #2 FINDING:** `BUILD_PHASE_INDEX` v0.1.422 retained stale lower/global active navigation pointing to BU-087 Stage-3 Controller physical re-audit.
+- **STAGE-5 THIRD TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE.
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #3:** PENDING / NOT YET PERFORMED.
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3.

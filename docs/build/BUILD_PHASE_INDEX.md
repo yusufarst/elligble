@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.422
-**Supersedes:** 0.1.421
+**Version:** 0.1.423
+**Supersedes:** 0.1.422
+0.1.423 records BU-087 Stage-5 final physical re-audit #2 FAIL due stale lower/global active navigation remaining at Stage-3, third targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #3 pending.
 0.1.422 records BU-087 Stage-5 final physical re-audit #1 FAIL due one residual malformed stale duplicate BU-087 specification descriptor in DOCUMENT_MANIFEST v1.0.458, second targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #2 pending.
 0.1.421 records BU-087 initial Stage-5 Controller physical verification FAIL, targeted canonical-integrity forward correction, Owner-confirmed Stage-4 background-process containment, lower/global navigation correction, and Stage-5 final physical re-audit pending.
 0.1.420 records BU-087 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
@@ -41,8 +42,8 @@
 ## Active Build Unit Register
 ### BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / FIRST TARGETED STAGE-5 CORRECTION COMPLETE / STAGE-5 RE-AUDIT #1 FAIL / SECOND TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
-- **VERSION:** 1.0.6
+- **STATUS:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / STAGE-5 RE-AUDIT #1 FAIL / STAGE-5 RE-AUDIT #2 FAIL / THIRD TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3
+- **VERSION:** 1.0.7
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
 - **STAGE-2:** IMPLEMENTATION COMPLETE
 - **ENGINEERING VERIFICATION:** PASS
@@ -73,7 +74,7 @@
 - **STAGE-3:** PASS
 - **STAGE-4:** COMPLETE
 - **DONE:** YES
-- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
+- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3
 - **STAGE-5 INITIAL FINAL PHYSICAL VERIFICATION:** FAIL
 - **STAGE-5 INITIAL FINDINGS:** stale DOCUMENT_MANIFEST lifecycle SHA256 values; contradictory BU-087 specification lifecycle truth; stale lower/global BU-087 navigation in this index; stale Roadmap BU-087 proven-asset range; Stage-4 foreground-only execution-control violation; incomplete initial Stage-4 external evidence.
 - **STAGE-4 EXECUTION-CONTROL DEVIATION:** YES / six Antigravity background processes remained visible after Stage-4 completion claim.
@@ -82,9 +83,12 @@
 - **STAGE-5 FINAL PHYSICAL RE-AUDIT #1:** FAIL
 - **STAGE-5 RE-AUDIT #1 FINDING:** DOCUMENT_MANIFEST v1.0.458 retained one malformed unquoted stale duplicate BU-087 specification descriptor carrying Stage-1 candidate / Version 1.0.0 truth.
 - **STAGE-5 SECOND TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE
-- **STAGE-5 FINAL PHYSICAL RE-AUDIT #2:** PENDING / NOT YET PERFORMED
-- **CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT #2
-- **NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit #2
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #2:** FAIL
+- **STAGE-5 RE-AUDIT #2 FINDING:** this BUILD_PHASE_INDEX v0.1.422 retained stale lower/global CURRENT RESPONSIBILITY and NEXT SAFE ACTION pointing to Stage-3.
+- **STAGE-5 THIRD TARGETED CANONICAL-INTEGRITY FORWARD CORRECTION:** COMPLETE
+- **STAGE-5 FINAL PHYSICAL RE-AUDIT #3:** PENDING / NOT YET PERFORMED
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT #3
+- **NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit #3
 
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
@@ -646,13 +650,13 @@
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-087 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-5 FINAL PHYSICAL RE-AUDIT #3
 
-**NEXT SAFE ACTION:** Controller physical re-audit of BU-087 targeted Stage-3 remediation and finalization evidence
+**NEXT SAFE ACTION:** Controller BU-087 Stage-5 final physical re-audit #3
 
 **NEXT BUILD UNIT SELECTION:** COMPLETE
 
-**BU-087:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / FIRST TARGETED STAGE-5 CORRECTION COMPLETE / STAGE-5 RE-AUDIT #1 FAIL / SECOND TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #2
+**BU-087:** COMPLETE / STAGE-3 PASS / STAGE-4 COMPLETE / DONE YES / STAGE-5 RE-AUDIT #1 FAIL / STAGE-5 RE-AUDIT #2 FAIL / THIRD TARGETED STAGE-5 CORRECTION COMPLETE / AWAITING STAGE-5 FINAL PHYSICAL RE-AUDIT #3
 
 ### Build Direction Control
 - **FINAL TARGET:** FULL ELLIGBLE PRODUCT COMPLETION
