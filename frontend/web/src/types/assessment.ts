@@ -150,3 +150,20 @@ export interface AssignedExamsResponse {
   assignments: AssignedExamItem[];
 }
 
+export interface ProctorMonitoringRoomProjection {
+  roomId: string;
+  roomLabel: string | null;
+  participantCount: number;
+  activeSessionCount: number;
+}
+
+export interface ProctorMonitoringExamProjection {
+  examInstanceId: string;
+  subjectLabel: string | null;
+  rooms: ProctorMonitoringRoomProjection[];
+}
+
+export interface ProctorMonitoringResponse {
+  assignments: ProctorMonitoringExamProjection[];
+}
+

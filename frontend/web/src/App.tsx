@@ -3,6 +3,7 @@ import './styles/design-tokens.css';
 import './styles/workstation.css';
 import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
+import { ProctorMonitoringView } from './components/ProctorMonitoringView.tsx';
 
 export const App: React.FC = () => {
   const [currentAttemptId, setCurrentAttemptId] = useState<string | null>(() => {
@@ -10,10 +11,16 @@ export const App: React.FC = () => {
     return params.get('attemptId');
   });
 
+  const [currentView, setCurrentView] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view');
+  });
+
   useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       setCurrentAttemptId(params.get('attemptId'));
+      setCurrentView(params.get('view'));
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -41,6 +48,10 @@ export const App: React.FC = () => {
 
   if (currentAttemptId) {
     return <AttemptLaunch />;
+  }
+
+  if (currentView === 'proctor') {
+    return <ProctorMonitoringView />;
   }
 
   return <AssignedExamDiscovery onSelectAttempt={handleSelectAttempt} />;

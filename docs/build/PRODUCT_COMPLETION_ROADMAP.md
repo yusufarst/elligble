@@ -1,9 +1,9 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.21
+**Version:** 1.0.22
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.20
+**Supersedes:** 1.0.21
+1.0.22 records BU-086 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
 1.0.21 records BU-086 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization.
-1.0.20 records Next Build Unit selection and Stage-1 scope freeze for BU-086.
 **Phase:** BUILD
 **Depends On:** 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 02.10_BASELINE_FUTURE_AND_EXCLUSIONS.md, CURRENT_STATE.md
 **Used By:** Controller Build Unit selection, milestone tracking, product completion audit
@@ -104,7 +104,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 |---|---|---|---|---|
 | **Identity / Tenant / Access** | `IN — CORE / IN — MANDATORY BASELINE` | BU-001, BU-034, BU-035 (Tenant isolation, user persistence, proctor authorization) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
 | **Academic Core** | `IN — CORE` | BU-036–BU-042, BU-046 (Academic year, period, subjects, offerings, classes, enrollments) | Curriculum mapping UI, bulk CSV imports, administrative management views | Partially Built |
-| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), browser/server operational synchronization | Foundation Built / Vertical Product Integration Pending |
+| **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077, BU-080–BU-086 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights, student attempt launch, proctor monitoring) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), browser/server operational synchronization | Foundation Built / Vertical Product Integration Pending |
 | **Track** | `IN — MANDATORY BASELINE` | Baseline schemas & domain events planned | Longitudinal academic development and progress tracking (applicable concepts: Academic Progress, Early Warning, Targets / Follow-Up, Portfolio Workbench; Track != Care; Track does NOT own Official School Grade truth; attendance/timetable out of current baseline) | Not Started |
 | **Care** | `IN — MANDATORY BASELINE` | Security & counseling privacy boundaries established in MB-06 | Confidential notes CRUD, counseling case tracking, access authorization | Not Started |
 | **Passport** | `IN — CORE` | Provenance architecture in MB-05 | Student achievement records, verified transcript export, granular visibility controls | Not Started |
@@ -152,11 +152,11 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **OWNERSHIP:** BACKEND + FRONTEND
     - **NEXT PHASE TRIGGER:** Repository-first milestone-driven successor Build Unit selection / scope freeze.
   - **Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-085 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/assigned-exams`) and mobile-first student discovery component hand off to the existing BU-084 AttemptLaunch flow.
-  - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** BU-086 SELECTED / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 AUTHORIZED / IMPLEMENTATION NOT STARTED. Targets the remaining Proctor operational UI gap.
+  - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** BU-086 SELECTED / STAGE-1 PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / RENDERED QA PASS / STAGE-3 PENDING. Targets the remaining Proctor operational UI gap.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
 
-    - Proctor operational UI (minimal room and active session monitoring views). Targeted by BU-086; Stage-1 Controller physical re-audit PASS; Stage-2 AUTHORIZED / implementation not started.
+    - Proctor operational UI (minimal room and active session monitoring views). Targeted by BU-086; Stage-1 Controller physical re-audit PASS; Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / RENDERED QA PASS; Stage-3 PENDING.
     - Teacher delivery/readiness UI (minimal scheduled exam and readiness inspection views).
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.

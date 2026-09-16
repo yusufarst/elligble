@@ -7,6 +7,7 @@ import type {
   SubmitResponse,
   ExpiryFinalizeResponse,
   AssignedExamsResponse,
+  ProctorMonitoringResponse,
 } from '../types/assessment.ts';
 
 export class ApiError extends Error {
@@ -130,4 +131,12 @@ export async function getAssignedExams(): Promise<AssignedExamsResponse> {
     method: 'GET',
   });
   return handleResponse<AssignedExamsResponse>(res);
+}
+
+export async function getProctorMonitoring(): Promise<ProctorMonitoringResponse> {
+  const url = '/api/v1/assessment/proctor-monitoring';
+  const res = await fetch(url, {
+    method: 'GET',
+  });
+  return handleResponse<ProctorMonitoringResponse>(res);
 }

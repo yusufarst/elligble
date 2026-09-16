@@ -7,6 +7,7 @@ import { handleResumeGet } from './resume.ts';
 import { handleSessionActivate } from './session.ts';
 import { handleQuestionDelivery } from './question-delivery.ts';
 import { handleAssignedExamsGet, type AssignedExamDiscoveryContext } from './assigned-exams.ts';
+import { handleProctorMonitoringGet } from './proctor-monitoring.ts';
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
@@ -117,6 +118,17 @@ export function createServer(deps: ServerDependencies): http.Server {
                 handleAssignedExamsGet(req, res, {
                     pool: deps.pool,
                     getAssignedExamDiscoveryContext: deps.getAssignedExamDiscoveryContext ?? (() => null),
+                });
+                return;
+            }
+        }
+
+        if (req.url && req.url.startsWith('/api/v1/assessment/proctor-monitoring')) {
+            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+            if (parsedUrl.pathname === '/api/v1/assessment/proctor-monitoring') {
+                handleProctorMonitoringGet(req, res, {
+                    pool: deps.pool,
+                    getProctorMonitoringContext: deps.getAssignedExamDiscoveryContext ?? (() => null),
                 });
                 return;
             }
