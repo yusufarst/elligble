@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.359
+**Version:** 1.5.360
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.358
+**Supersedes:** CURRENT_STATE v1.5.359
+CURRENT_STATE v1.5.360 records BU-085 Stage-5 Controller PASS, terminal state, and authorizes repository-first successor selection / scope freeze.
 CURRENT_STATE v1.5.359 forward-corrects BU-085 Stage-4 lifecycle-close primary-navigation drift found during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
 CURRENT_STATE v1.5.358 records BU-085 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 CURRENT_STATE v1.5.357 forward-corrects BU-085 Stage-3 control-integrity correction #1 manifest-hash failure, escaped-newline contamination, and process truth; Stage-3 re-audit remains pending.
@@ -49,16 +50,17 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **CURRENT PRODUCT MILESTONE:** SECURE ASSESSMENT — MINIMUM BROWSER-USABLE END-TO-END VERTICAL PRODUCT
 **CURRENT MILESTONE IS FINAL PROJECT COMPLETION:** NO
 **POST-BASELINE DIRECTION:** OPTIONAL THEN FUTURE
-**LAST COMPLETED UNIT:** BU-084
-**LAST COMPLETED BUILD UNIT:** BU-084 — Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
-**ACTIVE UNIT:** BU-085
-**ACTIVE BUILD UNIT:** BU-085
-**NEXT UNIT:** BU-085
-**NEXT BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
+**LAST COMPLETED UNIT:** BU-085
+**LAST COMPLETED BUILD UNIT:** BU-085 — Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
+**ACTIVE UNIT:** NONE
+**ACTIVE BUILD UNIT:** NONE
+**NEXT UNIT:** NOT YET SELECTED
+**NEXT BUILD UNIT:** NOT YET REGISTERED
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-085 STAGE-5 FINAL PHYSICAL VERIFICATION
-**NEXT SAFE ACTION:** Controller BU-085 Stage-5 final physical verification
-**NEXT BUILD UNIT SELECTION:** COMPLETE
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
 **BU-083:** TERMINAL / DO NOT REOPEN
 **BU-080:** TERMINAL / DO NOT REOPEN
@@ -85,7 +87,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.8
+- **VERSION:** 1.0.9
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
 - **STAGE-2:** COMPLETE
@@ -131,16 +133,19 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-3:** PASS
 - **STAGE-4:** COMPLETE
 - **DONE:** YES
-- **TERMINAL:** NO / AWAITING STAGE-5 FINAL PHYSICAL VERIFICATION
+- **TERMINAL:** YES / DO NOT REOPEN
 - **REPOSITORY FINALIZED:** YES
-- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PENDING / NOT YET PERFORMED
+- **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
+- **FINAL PHYSICAL VERIFICATION:** PASS
 - **PB04:** OPEN
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **MILESTONE COMPLETE:** NO
-- **CURRENT RESPONSIBILITY:** BU-085 STAGE-5 FINAL PHYSICAL VERIFICATION
-- **NEXT SAFE ACTION:** Controller BU-085 Stage-5 final physical verification
+- **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
+- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+- **NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
 - **FULL ASSIGNED-EXAM DISCOVERY GAP CLOSED:** YES / BU-085
 - **REAL AUTHENTICATION GAP CLOSED:** NO
 
