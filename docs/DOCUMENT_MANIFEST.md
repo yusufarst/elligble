@@ -1,12 +1,13 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.439
+**Version:** 1.0.440
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.438
+**Supersedes:** 1.0.439
 **Canonical:** YES
 **Last Reviewed:** 2026-09-16
 # ELLIGBLE Document Manifest
 
-> **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history. v1.0.435 records BU-085 Stage-1 targeted forward correction #2. v1.0.436 forward-corrects BU-085 Stage-1 manifest hash/navigation integrity. v1.0.437 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 authorization. v1.0.438 records BU-085 Stage-2 implementation completion and verification. v1.0.439 records BU-085 Stage-3 targeted remediation and re-audit pending.
+> **Administrative Note:** v1.0.112 was not a canonical committed repository version; v1.0.113 contained a supersedes-chain metadata drift; v1.0.114 forward-corrects the chain without rewriting history. v1.0.435 records BU-085 Stage-1 targeted forward correction #2. v1.0.436 forward-corrects BU-085 Stage-1 manifest hash/navigation integrity. v1.0.437 records BU-085 Stage-1 Controller physical re-audit PASS and Stage-2 authorization. v1.0.438 records BU-085 Stage-2 implementation completion and verification. v1.0.440 forward-corrects v1.0.439 invalid 40-character Git-object-hash integrity defect, preserves BU-085 lifecycle cross-document process truth, and records fresh Rendered-QA Controller physical PASS.
+v1.0.439 records BU-085 Stage-3 targeted remediation and re-audit pending.
 
 ## Agent Read Policy
 
