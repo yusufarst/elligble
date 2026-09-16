@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.415
-**Supersedes:** 0.1.414
+**Version:** 0.1.416
+**Supersedes:** 0.1.415
+0.1.416 records BU-087 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
 0.1.415 records BU-086 Stage-5 final physical verification PASS, terminal state synchronization, and successor selection authorization.
 0.1.414 forward-corrects BU-086 Stage-4 BUILD_PHASE_INDEX lower/global navigation drift discovered during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
 0.1.413 records BU-086 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
@@ -32,6 +33,20 @@
 - **Terminal Verification:** requirements inherit `docs/00-governance/00.05_BUILD_EXECUTION_RULES.md`.
 
 ## Active Build Unit Register
+### BU-087
+- **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
+- **STATUS:** ACTIVE / SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL AUDIT
+- **VERSION:** 1.0.0
+- **STAGE-1:** PASS / FROZEN
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+- **PB04:** OPEN
+- **PB05:** OPEN
+- **PB06:** OPEN
+- **PB07:** OPEN
+- **OWNER DECISION REQUIRED:** NO
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL AUDIT
+- **NEXT SAFE ACTION:** Controller physical audit of BU-087 Stage-1 registration candidate
+
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
@@ -586,17 +601,19 @@
 
 **LAST COMPLETED BUILD UNIT:** BU-086
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-087
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** BU-087 — Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL AUDIT
 
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**NEXT SAFE ACTION:** Controller physical audit of BU-087 Stage-1 registration candidate
 
-**NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
+**NEXT BUILD UNIT SELECTION:** COMPLETE
+
+**BU-087:** SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL AUDIT
 
 ### Build Direction Control
 - **FINAL TARGET:** FULL ELLIGBLE PRODUCT COMPLETION

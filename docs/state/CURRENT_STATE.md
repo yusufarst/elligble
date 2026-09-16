@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.367
+**Version:** 1.5.368
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.366
+**Supersedes:** CURRENT_STATE v1.5.367
+CURRENT_STATE v1.5.368 records BU-087 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
 CURRENT_STATE v1.5.367 records BU-086 Stage-5 final physical verification PASS, terminal state synchronization, and successor selection authorization.
 CURRENT_STATE v1.5.366 records BU-086 Stage-3 Controller physical re-audit PASS and Fast-Track Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 CURRENT_STATE v1.5.365 records BU-086 initial Stage-3 Controller physical audit FAIL, Controller rendered-QA physical inspection PASS, remediation-time schedule/background process deviation and Owner cleanup truth, and Stage-3 physical re-audit pending.
@@ -59,14 +60,15 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **POST-BASELINE DIRECTION:** OPTIONAL THEN FUTURE
 **LAST COMPLETED UNIT:** BU-086
 **LAST COMPLETED BUILD UNIT:** BU-086 — Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
-**ACTIVE UNIT:** NONE
-**ACTIVE BUILD UNIT:** NONE
-**NEXT UNIT:** NOT YET REGISTERED
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**ACTIVE UNIT:** BU-087
+**ACTIVE BUILD UNIT:** BU-087
+**NEXT UNIT:** BU-087
+**NEXT BUILD UNIT:** BU-087 — Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
-**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL AUDIT
+**NEXT SAFE ACTION:** Controller physical audit of BU-087 Stage-1 registration candidate
+**NEXT BUILD UNIT SELECTION:** COMPLETE
+**BU-087:** SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL AUDIT
 **BU-086:** TERMINAL / DO NOT REOPEN
 **BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
@@ -91,6 +93,25 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **ANTI-AI-SLOP QUALITY GATE:** ENFORCED VIA DESIGN SYSTEM
 **USER-FACING EM DASH:** PROHIBITED IN USER-FACING UI COPY
 
+
+### BU-087 CURRENT STATUS
+- **BUILD UNIT:** BU-087
+- **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
+- **VERSION:** 1.0.0
+- **STATUS:** ACTIVE / SELECTED / STAGE-1 REGISTRATION CANDIDATE / SCOPE FROZEN / STAGE-2 NOT AUTHORIZED / AWAITING CONTROLLER PHYSICAL AUDIT
+- **STAGE-1:** PASS / FROZEN
+- **STAGE-2:** NOT AUTHORIZED / PENDING CONTROLLER PHYSICAL AUDIT
+- **EXACT READ API:** GET /api/v1/assessment/teacher-readiness
+- **READ/MUTATION BOUNDARY:** READ ONLY
+- **PB04:** OPEN
+- **PB05:** OPEN
+- **PB06:** OPEN
+- **PB07:** OPEN
+- **MILESTONE COMPLETE:** NO
+- **OWNER DECISION REQUIRED:** NO
+- **STAGE-1 REGISTRATION PROCESS DEVIATION:** NO
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-1 CONTROLLER PHYSICAL AUDIT
+- **NEXT SAFE ACTION:** Controller physical audit of BU-087 Stage-1 registration candidate
 
 ### BU-086 CURRENT STATUS
 - **BUILD UNIT:** BU-086
