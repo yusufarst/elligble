@@ -1,5 +1,5 @@
 **Status:** ACTIVE / STAGE-2 COMPLETE / AWAITING CONTROLLER PHYSICAL RE-AUDIT
-**Version:** 1.0.6
+**Version:** 1.0.7
 **Canonical:** CANONICAL BUILD UNIT RECORD
 **Phase:** BUILD
 **Build Unit:** BU-085
@@ -177,7 +177,7 @@ STOP and return to Controller if Stage-2 would require:
 - unsupported data/display semantics
 
 ## 11. Execution State
-- **VERSION:** 1.0.6
+- **VERSION:** 1.0.7
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
 - **STAGE-2:** COMPLETE
@@ -213,6 +213,11 @@ STOP and return to Controller if Stage-2 would require:
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION:** YES
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION DETAILS:** During fresh QA reconstruction Antigravity taskified/backgrounded QA/browser work despite Controller foreground-only instruction. schedule tool: NO according to returned evidence. manage_task: NO according to returned evidence. repository mutation: NO. commit: NONE. push: NONE. final repository: CLEAN.
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1:** FAIL / FORWARD CORRECTION REQUIRED
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 DEFECTS:** manifest true-SHA256 repair failed and literal escaped-newline contamination was committed.
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION:** YES / two background processes remained visible after completion claim despite foreground-only instruction.
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 CONTROL-INTEGRITY FORWARD CORRECTION #2:** COMPLETE / PENDING CONTROLLER PHYSICAL RE-AUDIT
 - **STAGE-3 RE-AUDIT:** PENDING
 - **STAGE-4:** NOT AUTHORIZED
 - **DONE:** NO
@@ -221,4 +226,4 @@ STOP and return to Controller if Stage-2 would require:
 - **PB04:** OPEN
 - **PB05:** OPEN
 - **PB06:** OPEN
-- **PB07:** OPEN\n
+- **PB07:** OPEN

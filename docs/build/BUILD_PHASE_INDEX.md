@@ -1,6 +1,6 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.404
-**Supersedes:** 0.1.403
+**Version:** 0.1.405
+**Supersedes:** 0.1.404
 **Artifact Type:** BUILD PHASE CONTROL / INDEX
 **Canonical:** DYNAMIC BUILD CONTROL / DOES NOT SUPERSEDE LOCKED SOURCES
 **Phase:** BUILD
@@ -28,7 +28,7 @@
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 - **STATUS:** ACTIVE / STAGE-2 COMPLETE / AWAITING CONTROLLER PHYSICAL RE-AUDIT
 - **IMPLEMENTATION:** COMPLETE
-- **VERSION:** 1.0.6
+- **VERSION:** 1.0.7
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
 - **STAGE-2:** COMPLETE
@@ -64,6 +64,11 @@
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION:** YES
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION DETAILS:** During fresh QA reconstruction Antigravity taskified/backgrounded QA/browser work despite Controller foreground-only instruction. schedule tool: NO according to returned evidence. manage_task: NO according to returned evidence. repository mutation: NO. commit: NONE. push: NONE. final repository: CLEAN.
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1:** FAIL / FORWARD CORRECTION REQUIRED
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 DEFECTS:** manifest true-SHA256 repair failed and literal escaped-newline contamination was committed.
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION:** YES / two background processes remained visible after completion claim.
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 CONTROL-INTEGRITY FORWARD CORRECTION #2:** COMPLETE / PENDING CONTROLLER PHYSICAL RE-AUDIT
 - **STAGE-3 RE-AUDIT:** PENDING
 - **STAGE-4:** NOT AUTHORIZED
 - **DONE:** NO
@@ -74,7 +79,9 @@
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
-- **NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical re-audit\n\n### BU-084
+- **NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical re-audit
+
+### BU-084
 - **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
 - **IMPLEMENTATION:** EXECUTED

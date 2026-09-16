@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.356
+**Version:** 1.5.357
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.355
+**Supersedes:** CURRENT_STATE v1.5.356
+CURRENT_STATE v1.5.357 forward-corrects BU-085 Stage-3 control-integrity correction #1 manifest-hash failure, escaped-newline contamination, and process truth; Stage-3 re-audit remains pending.
 CURRENT_STATE v1.5.356 forward-corrects BU-085 Stage-3 remediation process truth, records fresh rendered QA, and awaits Stage-3 re-audit.
 CURRENT_STATE v1.5.355 records BU-085 Stage-3 targeted remediation, process truth correction, and re-audit pending.
 CURRENT_STATE v1.5.354 records BU-085 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
@@ -82,7 +83,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-085 CURRENT STATUS
 - **BUILD UNIT:** BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.6
+- **VERSION:** 1.0.7
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
 - **STAGE-2:** COMPLETE
@@ -118,6 +119,11 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION:** YES
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION DETAILS:** During fresh QA reconstruction Antigravity taskified/backgrounded QA/browser work despite Controller foreground-only instruction. schedule tool: NO according to returned evidence. manage_task: NO according to returned evidence. repository mutation: NO. commit: NONE. push: NONE. final repository: CLEAN.
 - **FRESH QA RECONSTRUCTION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1:** FAIL / FORWARD CORRECTION REQUIRED
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 DEFECTS:** DOCUMENT_MANIFEST v1.0.440 retained stale 40-character Git-object hashes and stale versions; literal escaped newline sequences contaminated canonical document boundaries.
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION:** YES / two Antigravity background processes remained visible after completion claim despite foreground-only instruction.
+- **STAGE-3 CONTROL-INTEGRITY CORRECTION #1 PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / commit path scope remained exactly five authorized canonical docs.
+- **STAGE-3 CONTROL-INTEGRITY FORWARD CORRECTION #2:** COMPLETE / PENDING CONTROLLER PHYSICAL RE-AUDIT
 - **STAGE-3 RE-AUDIT:** PENDING
 - **STAGE-4:** NOT AUTHORIZED
 - **DONE:** NO
@@ -130,7 +136,9 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **MILESTONE COMPLETE:** NO
 - **CURRENT RESPONSIBILITY:** BU-085 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
 - **NEXT SAFE ACTION:** Controller BU-085 Stage-3 physical re-audit
-- **FULL ASSIGNED-EXAM DISCOVERY GAP:** implementation delivered by BU-085; awaiting Controller Stage-3 physical re-audit before final canonical closure\n\n### BU-084 CURRENT STATUS
+- **FULL ASSIGNED-EXAM DISCOVERY GAP:** implementation delivered by BU-085; awaiting Controller Stage-3 physical re-audit before final canonical closure
+
+### BU-084 CURRENT STATUS
 - **BUILD UNIT:** BU-084
 - **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
 - **VERSION:** 1.0.5
