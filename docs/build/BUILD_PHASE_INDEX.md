@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.413
-**Supersedes:** 0.1.412
+**Version:** 0.1.414
+**Supersedes:** 0.1.413
+0.1.414 forward-corrects BU-086 Stage-4 BUILD_PHASE_INDEX lower/global navigation drift discovered during initial Stage-5 Controller physical verification; Stage-5 physical re-audit remains pending.
 0.1.413 records BU-086 Stage-3 Controller physical re-audit PASS and Stage-4 minimal lifecycle close; Stage-5 final physical verification remains pending.
 0.1.412 records BU-086 initial Stage-3 Controller physical audit FAIL, rendered-QA Controller physical inspection PASS, remediation-time process deviation/cleanup truth, and Stage-3 physical re-audit pending.
 0.1.411 records BU-086 Stage-2 implementation completion, engineering verification PASS, Real PostgreSQL verification PASS, frontend verification PASS, rendered QA PASS, and Stage-3 pending.
@@ -587,9 +588,9 @@
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-086 STAGE-2 IMPLEMENTATION
+**CURRENT RESPONSIBILITY:** BU-086 STAGE-5 FINAL PHYSICAL VERIFICATION
 
-**NEXT SAFE ACTION:** Execute BU-086 Stage-2 single main implementation under the frozen scope
+**NEXT SAFE ACTION:** Controller BU-086 Stage-5 final physical verification
 
 **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** COMPLETE
 
