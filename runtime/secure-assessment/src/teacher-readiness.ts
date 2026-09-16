@@ -1,12 +1,10 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import {
-    checkExamInstanceBaselineReadinessChecksCompositionPreflight,
-    BaselineReadinessChecksCompositionResult
+    checkExamInstanceBaselineReadinessChecksCompositionPreflight
 } from './exam-instance-baseline-readiness-checks-composition-preflight.ts';
 import {
-    checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight,
-    ConditionalRoomProctorReadinessCompositionResult
+    checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight
 } from './exam-instance-conditional-room-proctor-readiness-composition-preflight.ts';
 
 export interface TeacherReadinessContext {
@@ -19,11 +17,22 @@ export interface TeacherReadinessDependencies {
     getTeacherReadinessContext?: (req: http.IncomingMessage) => TeacherReadinessContext | null;
 }
 
+export interface TeacherExamBaselineProjection {
+    status: 'baseline_readiness_checks_pass' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable';
+    category?: string;
+    blocker?: string;
+}
+
+export interface TeacherExamRoomProctorProjection {
+    status: 'room_proctor_readiness_ready' | 'room_proctor_readiness_not_applicable' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable';
+    blocker?: string;
+}
+
 export interface TeacherExamReadinessProjection {
     examInstanceId: string;
     subjectLabel: string | null;
-    baseline: BaselineReadinessChecksCompositionResult;
-    roomProctor: ConditionalRoomProctorReadinessCompositionResult;
+    baseline: TeacherExamBaselineProjection;
+    roomProctor: TeacherExamRoomProctorProjection;
 }
 
 export interface TeacherReadinessResponse {
@@ -78,6 +87,30 @@ export async function handleTeacherReadinessGet(
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
+        // Verify valid active teaching authority first
+        const authorityQuery = `
+            SELECT 1
+            FROM tenant_memberships tm
+            JOIN tenant_teacher_assignments tta
+                ON tta.membership_id = tm.id
+               AND tta.tenant_id = tm.tenant_id
+               AND tta.revoked_at IS NULL
+            JOIN academic_core_teaching_assignments ata
+                ON ata.teacher_assignment_id = tta.id
+               AND ata.tenant_id = tta.tenant_id
+               AND ata.revoked_at IS NULL
+            WHERE tm.tenant_id = $1
+              AND tm.person_id = $2
+            LIMIT 1
+        `;
+        const authorityResult = await client.query(authorityQuery, [context.tenantId, context.personId]);
+        if (authorityResult.rows.length === 0) {
+            await client.query('COMMIT');
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'forbidden' }));
+            return;
+        }
+
         const query = `
             SELECT
                 i.id AS exam_instance_id,
@@ -111,19 +144,39 @@ export async function handleTeacherReadinessGet(
         for (const row of queryResult.rows) {
             const examInstanceId = row.exam_instance_id;
 
-            const baseline = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
+            const baselineRaw = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
                 client,
                 context.tenantId,
                 examInstanceId,
                 async () => 'granted' as const
             );
 
-            const roomProctor = await checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight(
+            const roomProctorRaw = await checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight(
                 client,
                 context.tenantId,
                 examInstanceId,
                 async () => 'granted' as const
             );
+
+            let baseline: TeacherExamBaselineProjection;
+            if (baselineRaw.type === 'baseline_readiness_checks_pass') {
+                baseline = { status: 'baseline_readiness_checks_pass' };
+            } else if (baselineRaw.type === 'not_ready') {
+                baseline = { status: 'not_ready', category: baselineRaw.category, blocker: baselineRaw.blocker };
+            } else {
+                baseline = { status: baselineRaw.type };
+            }
+
+            let roomProctor: TeacherExamRoomProctorProjection;
+            if (roomProctorRaw.type === 'room_proctor_readiness_ready') {
+                roomProctor = { status: 'room_proctor_readiness_ready' };
+            } else if (roomProctorRaw.type === 'room_proctor_readiness_not_applicable') {
+                roomProctor = { status: 'room_proctor_readiness_not_applicable' };
+            } else if (roomProctorRaw.type === 'not_ready') {
+                roomProctor = { status: 'not_ready', blocker: roomProctorRaw.blocker };
+            } else {
+                roomProctor = { status: roomProctorRaw.type };
+            }
 
             exams.push({
                 examInstanceId,

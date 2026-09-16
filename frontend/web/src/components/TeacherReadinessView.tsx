@@ -4,6 +4,33 @@ import type { TeacherReadinessResponse, TeacherExamReadinessProjection } from '.
 import '../styles/teacher-readiness.css';
 import '../styles/design-tokens.css';
 
+const mapBaselineBlocker = (blocker?: string): string => {
+  switch (blocker) {
+    case 'question_snapshot_empty': return 'Soal ujian belum ditambahkan';
+    case 'question_snapshot_content_invalid': return 'Konten soal ujian tidak valid';
+    case 'participant_schedule_conflict': return 'Terdapat konflik jadwal peserta';
+    case 'proctor_schedule_conflict': return 'Terdapat konflik jadwal pengawas';
+    case 'duration_window_policy_compatibility': return 'Durasi ujian tidak sesuai dengan rentang waktu';
+    case 'timing_configuration_presence': return 'Konfigurasi waktu belum diatur';
+    case 'participant_presence': return 'Peserta ujian belum ditentukan';
+    case 'question_snapshot_presence': return 'Status soal ujian belum ditetapkan';
+    case 'assessment_type': return 'Tipe asesmen belum dikonfigurasi';
+    default: return 'Persyaratan dasar belum lengkap';
+  }
+};
+
+const mapRoomProctorBlocker = (blocker?: string): string => {
+  switch (blocker) {
+    case 'room_proctor_requirement_policy_unconfigured': return 'Kebijakan ruangan dan pengawas belum diatur';
+    case 'participant_empty': return 'Belum ada peserta yang terdaftar';
+    case 'exam_room_empty': return 'Belum ada ruangan yang ditetapkan';
+    case 'participant_room_assignment_incomplete': return 'Penugasan peserta ke ruangan belum lengkap';
+    case 'active_proctor_assignment_empty': return 'Belum ada pengawas yang ditugaskan';
+    case 'active_proctor_room_coverage_incomplete': return 'Cakupan pengawas untuk ruangan belum lengkap';
+    default: return 'Persyaratan ruangan dan pengawas belum lengkap';
+  }
+};
+
 export const TeacherReadinessView: React.FC = () => {
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -108,42 +135,67 @@ export const TeacherReadinessView: React.FC = () => {
 
       <div className="teacher-exams-list">
         {exams.map((exam: TeacherExamReadinessProjection) => {
-          const isBaselineReady = exam.baseline.type === 'baseline_readiness_checks_pass';
-          const isRoomProctorReady = exam.roomProctor.type === 'room_proctor_readiness_not_applicable' || exam.roomProctor.type === 'room_proctor_readiness_ready';
-          const isFullyReady = isBaselineReady && isRoomProctorReady;
+
+          let baselineMessage = '';
+          switch (exam.baseline.status) {
+            case 'baseline_readiness_checks_pass':
+              baselineMessage = 'Kesiapan dasar terpenuhi';
+              break;
+            case 'not_ready':
+              baselineMessage = mapBaselineBlocker(exam.baseline.blocker);
+              break;
+            case 'denied':
+              baselineMessage = 'Status kesiapan dasar tidak dapat diakses';
+              break;
+            case 'unavailable':
+              baselineMessage = 'Data kesiapan dasar sementara tidak tersedia';
+              break;
+            case 'invalid_state':
+              baselineMessage = 'Status ujian tidak mendukung pemeriksaan kesiapan dasar';
+              break;
+          }
+
+          let roomProctorMessage = '';
+          switch (exam.roomProctor.status) {
+            case 'room_proctor_readiness_ready':
+              roomProctorMessage = 'Kesiapan ruangan dan pengawas terpenuhi';
+              break;
+            case 'room_proctor_readiness_not_applicable':
+              roomProctorMessage = 'Pemeriksaan ruangan dan pengawas tidak berlaku untuk ujian ini';
+              break;
+            case 'not_ready':
+              roomProctorMessage = mapRoomProctorBlocker(exam.roomProctor.blocker);
+              break;
+            case 'denied':
+              roomProctorMessage = 'Status ruangan dan pengawas tidak dapat diakses';
+              break;
+            case 'unavailable':
+              roomProctorMessage = 'Data ruangan dan pengawas sementara tidak tersedia';
+              break;
+            case 'invalid_state':
+              roomProctorMessage = 'Status ujian tidak mendukung pemeriksaan ruangan dan pengawas';
+              break;
+          }
 
           return (
             <div key={exam.examInstanceId} className="teacher-exam-card">
               <div className="teacher-exam-card-header">
-                <h2 className="teacher-exam-subject">{exam.subjectLabel || 'Mata Pelajaran Tidak Diketahui'}</h2>
-                <div className={`teacher-status-badge ${isFullyReady ? 'status-ready' : 'status-not-ready'}`}>
-                  {isFullyReady ? 'SIAP' : 'BELUM SIAP'}
-                </div>
+                <h2 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h2>
               </div>
 
               <div className="teacher-readiness-details">
                 <div className="readiness-section">
-                  <h3 className="readiness-section-title">Kesiapan Dasar (Baseline)</h3>
-                  {isBaselineReady ? (
-                    <p className="readiness-pass">Semua pengecekan dasar terpenuhi.</p>
-                  ) : (
-                    <div className="readiness-fail">
-                      <p>Pengecekan dasar gagal:</p>
-                      <code>{exam.baseline.type === 'not_ready' ? exam.baseline.blocker : exam.baseline.type}</code>
-                    </div>
-                  )}
+                  <h3 className="readiness-section-title">Kesiapan Dasar</h3>
+                  <div className={`readiness-status ${exam.baseline.status === 'baseline_readiness_checks_pass' ? 'readiness-pass' : 'readiness-fail'}`}>
+                    <p>{baselineMessage}</p>
+                  </div>
                 </div>
 
                 <div className="readiness-section">
                   <h3 className="readiness-section-title">Kesiapan Ruangan &amp; Pengawas</h3>
-                  {isRoomProctorReady ? (
-                    <p className="readiness-pass">Pengecekan ruangan/pengawas terpenuhi (atau tidak wajib).</p>
-                  ) : (
-                    <div className="readiness-fail">
-                      <p>Pengecekan ruangan/pengawas gagal:</p>
-                      <code>{exam.roomProctor.type === 'not_ready' ? exam.roomProctor.blocker : exam.roomProctor.type}</code>
-                    </div>
-                  )}
+                  <div className={`readiness-status ${(exam.roomProctor.status === 'room_proctor_readiness_ready' || exam.roomProctor.status === 'room_proctor_readiness_not_applicable') ? 'readiness-pass' : 'readiness-fail'}`}>
+                    <p>{roomProctorMessage}</p>
+                  </div>
                 </div>
               </div>
             </div>

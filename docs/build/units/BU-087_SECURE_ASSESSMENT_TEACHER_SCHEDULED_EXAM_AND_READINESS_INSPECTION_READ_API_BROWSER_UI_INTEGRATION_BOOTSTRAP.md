@@ -1,8 +1,8 @@
 # BU-087 Specification
 
 **Title:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-**Version:** 1.0.2
-**Status:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 AUTHORIZED / NOT STARTED
+**Version:** 1.0.3
+**Status:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 IMPLEMENTATION COMPLETE / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED STAGE-3 REMEDIATION COMPLETE / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-4 NOT AUTHORIZED / DONE NO
 
 ## PURPOSE:
 Reduce the active Milestone-1 gap:
@@ -235,4 +235,31 @@ STOP before scope expansion if implementation would require:
 - **TARGETED PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS.
 - **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS.
 - **STAGE-1:** PASS / FROZEN.
-- **STAGE-2:** AUTHORIZED / NOT STARTED.
+- **STAGE-2 AUTHORIZATION STATE AT STAGE-1 CLOSE:** AUTHORIZED / NOT STARTED.
+
+## STAGE-2 IMPLEMENTATION / STAGE-3 REMEDIATION TRUTH:
+- **STAGE-2 IMPLEMENTATION COMMIT:** `b301d6d8583b96ee3bc82262bdac03c2bae2c0da` / PRESERVED / NO HISTORY REWRITE.
+- **STAGE-2 IMPLEMENTATION COMMIT SUBJECT DEVIATION:** YES / actual subject differed from the exact Controller-authorized subject; history preserved.
+- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL.
+- **INITIAL STAGE-3 FINDINGS:** unauthorized three-document scope expansion; invented aggregate readiness semantics; no-authority versus valid-zero-exam ambiguity; over-broad raw readiness response projection; incomplete canonical lifecycle synchronization; premature Roadmap DONE claim; missing rendered QA; incomplete verification evidence; misplaced/inadequate initial evidence; implementation subject deviation.
+- **TARGETED STAGE-3 REMEDIATION:** COMPLETE.
+- **AUTHORITY CORRECTION:** PASS / no valid active Teacher/Teaching authority fails closed; valid active Teacher with zero SCHEDULED exams remains successful empty state.
+- **BOUNDED RESPONSE PROJECTION:** PASS / internal tenancy/conflict/count/snapshot metadata excluded from the Teacher-facing readiness projection.
+- **AGGREGATE READY/NOT READY INVENTION REMOVED:** YES / Baseline and Room/Proctor readiness remain independent authoritative projections.
+- **UNAUTHORIZED DOCUMENTS:** exact three unauthorized documents forward-deleted without history rewrite.
+- **ENGINEERING RE-VERIFICATION:** PASS.
+- **REAL POSTGRESQL RE-VERIFICATION:** PASS.
+- **FRONTEND VERIFICATION:** PASS.
+- **RENDERED QA EXECUTION:** PASS / 20 states / desktop 1440x900 / mobile 390x844.
+- **RENDERED-QA CONTROLLER PHYSICAL INSPECTION:** PASS.
+- **RENDERED-QA REPORT SHA256:** `E2A783CB0DCDF0BA06BB6ABDB35241DC3B097DC3BAE5A4F8E761A51048179763`.
+- **RENDERED-QA ORIGINAL CONTACT-SHEET SHA256:** `3ED492153E4F30086BACD60E36F5A984C3E9A16FD7B1BF0798E1E5510D855181`.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION:** YES / invalid Antigravity QA attempt used two background processes and installed temporary `puppeteer-core` outside the repository contrary to foreground/no-install control.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT.
+- **BACKGROUND PROCESS CLEANUP:** PASS / Owner confirmed zero remain.
+- **RENDERED-QA RECOVERY:** final deterministic direct installed-Edge/CDP execution used no dependency installation, caused no repository source mutation, and left zero residual QA processes.
+- **IMPLEMENTATION REPOSITORY FINALIZED:** YES.
+- **STAGE-3:** NOT YET PASS / CONTROLLER PHYSICAL RE-AUDIT PENDING.
+- **STAGE-4:** NOT AUTHORIZED.
+- **DONE:** NO.
+- **TERMINAL:** NO.

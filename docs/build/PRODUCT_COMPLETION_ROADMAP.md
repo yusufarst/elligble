@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.28
+**Version:** 1.0.29
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.27
+**Supersedes:** 1.0.28
+1.0.29 forward-corrects the premature BU-087 DONE claim in v1.0.28; BU-087 targeted Stage-3 remediation and rendered-QA Controller physical inspection are complete, but Stage-3 Controller physical re-audit remains pending and BU-087 is NOT DONE.
 1.0.28 records BU-087 Stage-2 implementation PASS, marking BU-087 as DONE.
 1.0.27 records BU-087 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization; implementation remains NOT STARTED.
 1.0.26 records BU-087 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
@@ -161,7 +162,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-086 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/proctor-monitoring`) and mobile-first Proctor room/active-session monitoring view delivered; terminally verified.
   - **Remaining Milestone 1 Gaps:**
     - Real authentication / trusted context integration (PB04 remains OPEN).
-    - Teacher delivery/readiness UI gap: TARGETED BY BU-087 / STAGE-2 IMPLEMENTATION PASS / DONE.
+    - Teacher delivery/readiness UI gap: IMPLEMENTED BY BU-087 / TARGETED STAGE-3 REMEDIATION COMPLETE / CONTROLLER RENDERED-QA PHYSICAL INSPECTION PASS / AWAITING STAGE-3 CONTROLLER PHYSICAL RE-AUDIT / NOT DONE.
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
 

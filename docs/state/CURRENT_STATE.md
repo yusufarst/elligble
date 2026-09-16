@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.370
+**Version:** 1.5.371
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.369
+**Supersedes:** CURRENT_STATE v1.5.370
+CURRENT_STATE v1.5.371 records BU-087 targeted Stage-3 remediation completion, engineering/real-PostgreSQL/frontend verification PASS, rendered-QA Controller physical inspection PASS, remediation-time process-deviation containment, implementation repository finalization, and Stage-3 Controller physical re-audit pending.
 CURRENT_STATE v1.5.370 records BU-087 Stage-1 Controller physical re-audit PASS and Stage-2 implementation authorization; Stage-2 is AUTHORIZED / NOT STARTED.
 CURRENT_STATE v1.5.369 records BU-087 initial Stage-1 Controller physical audit FAIL, non-material execution-control deviation, background cleanup, clean post-commit verification, and targeted process-truth forward correction; Stage-2 remains NOT AUTHORIZED pending Controller physical re-audit.
 CURRENT_STATE v1.5.368 records BU-087 Next Build Unit selection and Stage-1 scope freeze; Stage-2 remains NOT AUTHORIZED pending Controller physical audit.
@@ -67,10 +68,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** BU-087
 **NEXT BUILD UNIT:** BU-087 — Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-087 STAGE-2 IMPLEMENTATION
-**NEXT SAFE ACTION:** Execute BU-087 Stage-2 single main implementation under the frozen scope
+**CURRENT RESPONSIBILITY:** BU-087 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+**NEXT SAFE ACTION:** Controller physical re-audit of BU-087 targeted Stage-3 remediation and finalization evidence
 **NEXT BUILD UNIT SELECTION:** COMPLETE
-**BU-087:** STAGE-1 PASS / FROZEN / INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 AUTHORIZED / NOT STARTED
+**BU-087:** STAGE-1 PASS / FROZEN / STAGE-2 IMPLEMENTATION COMPLETE / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED STAGE-3 REMEDIATION COMPLETE / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-4 NOT AUTHORIZED / DONE NO
 **BU-086:** TERMINAL / DO NOT REOPEN
 **BU-085:** TERMINAL / DO NOT REOPEN
 **BU-084:** TERMINAL / DO NOT REOPEN
@@ -99,10 +100,20 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-087 CURRENT STATUS
 - **BUILD UNIT:** BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-- **VERSION:** 1.0.2
-- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS / STAGE-2 AUTHORIZED / NOT STARTED
-- **STAGE-1:** PASS / FROZEN / INITIAL CONTROLLER PHYSICAL AUDIT FAIL / TARGETED PROCESS-TRUTH FORWARD CORRECTION COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS
-- **STAGE-2:** AUTHORIZED / NOT STARTED
+- **VERSION:** 1.0.3
+- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 IMPLEMENTATION COMPLETE / INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT FAIL / TARGETED STAGE-3 REMEDIATION COMPLETE / RENDERED-QA CONTROLLER PHYSICAL INSPECTION PASS / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING / STAGE-4 NOT AUTHORIZED / DONE NO
+- **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL RE-AUDIT PASS
+- **STAGE-2:** IMPLEMENTATION COMPLETE
+- **ENGINEERING VERIFICATION:** PASS
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **FRONTEND TYPECHECK:** PASS
+- **FRONTEND TEST:** PASS
+- **FRONTEND BUILD:** PASS
+- **RENDERED QA EXECUTION:** PASS / 20 STATES
+- **RENDERED-QA CONTROLLER PHYSICAL INSPECTION:** PASS
+- **RENDERED-QA PHYSICAL INSPECTION RESULT:** desktop and 390x844 mobile layouts show no material clipping, overlap, or horizontal overflow; Baseline and Room/Proctor remain independent; loading, empty, forbidden, API-failure, blocker, unavailable, invalid-state, null-subject, and manual-refresh states are physically distinguishable; no aggregate SIAP/BELUM SIAP verdict is rendered.
+- **RENDERED-QA REPORT SHA256:** E2A783CB0DCDF0BA06BB6ABDB35241DC3B097DC3BAE5A4F8E761A51048179763
+- **RENDERED-QA ORIGINAL CONTACT-SHEET SHA256:** 3ED492153E4F30086BACD60E36F5A984C3E9A16FD7B1BF0798E1E5510D855181
 - **EXACT READ API:** GET /api/v1/assessment/teacher-readiness
 - **READ/MUTATION BOUNDARY:** READ ONLY
 - **PB04:** OPEN
@@ -111,20 +122,23 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **PB07:** OPEN
 - **MILESTONE COMPLETE:** NO
 - **OWNER DECISION REQUIRED:** NO
-- **INITIAL STAGE-1 EXECUTION INTERRUPTION:** ANTIGRAVITY HIGH-TRAFFIC SERVICE ERROR / NO COMMIT / NO PUSH / VALID PARTIAL WORK PRESERVED
-- **INITIAL STAGE-1 CONTROLLER PHYSICAL AUDIT:** FAIL
-- **ADDITIONAL STAGE-1 CANONICAL-INTEGRITY FINDING:** DOCUMENT_MANIFEST v1.0.453 omitted the BU-087 specification row during the initial registration commit.
-- **INITIAL STAGE-1 AUDIT FINDINGS:** resume execution used manage_task despite foreground-only prohibition; one background process remained visible after completion claim; external report prematurely claimed Stage-1 PASS and omitted full process/evidence truth.
-- **STAGE-1 REGISTRATION PROCESS DEVIATION:** YES
-- **STAGE-1 REGISTRATION PROCESS DEVIATION DETAILS:** manage_task used during resumed Stage-1 registration execution and one residual background process remained after completion claim.
-- **STAGE-1 REGISTRATION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
-- **STAGE-1 REGISTRATION PROCESS DEVIATION PHYSICAL EFFECT:** NO repository spill; registration commit contains exactly six authorized documentation paths; post-commit working tree clean; staged 0; untracked 0; old_handoff.md and temp_current.md absent.
-- **BACKGROUND PROCESS CLEANUP:** PASS / OWNER CONFIRMED ZERO REMAIN
-- **POST-COMMIT LOCAL AUDIT:** PASS / CLEAN / EXACT SIX-PATH COMMIT
-- **TARGETED PROCESS-TRUTH FORWARD CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PASS
-- **STAGE-1 CONTROLLER PHYSICAL RE-AUDIT:** PASS
-- **CURRENT RESPONSIBILITY:** BU-087 STAGE-2 IMPLEMENTATION
-- **NEXT SAFE ACTION:** Execute BU-087 Stage-2 single main implementation under the frozen scope
+- **STAGE-2 IMPLEMENTATION COMMIT:** b301d6d8583b96ee3bc82262bdac03c2bae2c0da / PRESERVED / NO HISTORY REWRITE
+- **STAGE-2 IMPLEMENTATION COMMIT SUBJECT DEVIATION:** YES / actual subject differs from the Controller-authorized exact subject; preserved as historical truth.
+- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL
+- **INITIAL STAGE-3 FINDINGS:** unauthorized three-document scope expansion; invented aggregate READY/NOT READY semantics; no-authority versus valid-zero-exam ambiguity; over-broad raw readiness projection; incomplete lifecycle synchronization; premature Roadmap DONE claim; missing rendered QA; incomplete focused/runtime evidence; inadequate/misplaced initial evidence; implementation commit subject deviation.
+- **TARGETED STAGE-3 REMEDIATION:** COMPLETE
+- **UNAUTHORIZED DOCS FORWARD-DELETED:** YES / exact three unauthorized documents removed without history rewrite.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION:** YES / Antigravity system-browser attempt used two background processes and installed temporary puppeteer-core outside the repository despite foreground/no-install control.
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-3 REMEDIATION-TIME PROCESS DEVIATION PHYSICAL EFFECT:** NO repository spill; Owner stopped residual processes; subsequent audits proved zero residual process, zero untracked repository artifact, and unchanged valid remediation.
+- **RENDERED-QA RECOVERY:** initial browser tooling/environment and TEMP harness failures contained; deterministic direct installed-Edge/CDP retry PASS with no source mutation, no dependency install, and zero residual QA processes.
+- **IMPLEMENTATION REPOSITORY FINALIZED:** YES
+- **STAGE-3:** NOT YET PASS / CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **STAGE-4:** NOT AUTHORIZED
+- **DONE:** NO
+- **TERMINAL:** NO
+- **CURRENT RESPONSIBILITY:** BU-087 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller physical re-audit of BU-087 targeted Stage-3 remediation and finalization evidence
 
 ### BU-086 CURRENT STATUS
 - **BUILD UNIT:** BU-086

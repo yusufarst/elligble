@@ -134,7 +134,7 @@ async function runVerification() {
 
     const subjectMath = (await testClient.query(`INSERT INTO public.academic_core_subjects (tenant_id, display_label) VALUES ($1, 'Matematika') RETURNING id`, [tenantA])).rows[0].id;
     const offeringMath = (await testClient.query(`INSERT INTO public.academic_core_subject_offerings (tenant_id, subject_id, academic_period_id, grade_level_id) VALUES ($1, $2, $3, $4) RETURNING id`, [tenantA, subjectMath, academicPeriodA, gradeLevelA])).rows[0].id;
-    
+
     // Teacher A setup
     const teacherMemberA = (await testClient.query(`INSERT INTO public.tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2) RETURNING id`, [tenantA, personTeacherA])).rows[0].id;
     const teacherAssignmentA = (await testClient.query(`INSERT INTO public.tenant_teacher_assignments (tenant_id, membership_id) VALUES ($1, $2) RETURNING id`, [tenantA, teacherMemberA])).rows[0].id;
@@ -253,7 +253,7 @@ async function runVerification() {
     const personTeacherB = (await testClient.query(`INSERT INTO public.identity_persons (id) VALUES (gen_random_uuid()) RETURNING id`)).rows[0].id;
     const teacherMemberB = (await testClient.query(`INSERT INTO public.tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2) RETURNING id`, [tenantB, personTeacherB])).rows[0].id;
     const teacherAssignmentB = (await testClient.query(`INSERT INTO public.tenant_teacher_assignments (tenant_id, membership_id) VALUES ($1, $2) RETURNING id`, [tenantB, teacherMemberB])).rows[0].id;
-    
+
     // Academic structural minimal for B
     const academicYearB = (await testClient.query(`INSERT INTO public.academic_core_academic_years (tenant_id, display_label, start_date, end_date) VALUES ($1, '2026/2027', DATE '2026-07-01', DATE '2027-06-30') RETURNING id`, [tenantB])).rows[0].id;
     const academicPeriodB = (await testClient.query(`INSERT INTO public.academic_core_academic_periods (tenant_id, academic_year_id, display_label, period_type, start_date, end_date) VALUES ($1, $2, 'Semester Ganjil', 'SEMESTER', DATE '2026-07-01', DATE '2026-12-31') RETURNING id`, [tenantB, academicYearB])).rows[0].id;
@@ -330,6 +330,37 @@ async function runVerification() {
     if (exams.length !== 3) throw new Error(`Expected 3 scheduled exams, got ${exams.length}`);
     console.log('AUTHORIZED SAME-TENANT TEACHER (MULTIPLE EXAMS): PASS');
 
+    // 1b. EXPLICIT BOUNDED SHAPE CHECKS
+    const shapeExam = exams[0] as any;
+    const forbiddenFields = [
+      'tenantId', 'conflictingExamInstanceId', 'conflictingParticipantCount', 'conflictingProctorCount',
+      'participantCount', 'assignedParticipantCount', 'unassignedParticipantCount',
+      'examRoomCount', 'coveredExamRoomCount', 'uncoveredExamRoomCount', 'snapshotId',
+      'roomBasedOperationsEnabled', 'proctorPerRoomRequired'
+    ];
+    for (const field of forbiddenFields) {
+      if (field in shapeExam) throw new Error(`Bounded shape violation: leaked field ${field}`);
+    }
+
+    if (!('examInstanceId' in shapeExam)) throw new Error('Bounded shape violation: missing examInstanceId');
+    if (!('subjectLabel' in shapeExam)) throw new Error('Bounded shape violation: missing subjectLabel');
+    if (typeof shapeExam.subjectLabel !== 'string' && shapeExam.subjectLabel !== null) throw new Error('Bounded shape violation: subjectLabel must be string or null');
+
+    if (!('baseline' in shapeExam)) throw new Error('Bounded shape violation: missing baseline');
+    const baselineKeys = Object.keys(shapeExam.baseline);
+    const allowedBaselineKeys = ['status', 'category', 'blocker'];
+    for (const k of baselineKeys) {
+      if (!allowedBaselineKeys.includes(k)) throw new Error(`Bounded shape violation: leaked baseline field ${k}`);
+    }
+
+    if (!('roomProctor' in shapeExam)) throw new Error('Bounded shape violation: missing roomProctor');
+    const roomProctorKeys = Object.keys(shapeExam.roomProctor);
+    const allowedRoomProctorKeys = ['status', 'blocker'];
+    for (const k of roomProctorKeys) {
+      if (!allowedRoomProctorKeys.includes(k)) throw new Error(`Bounded shape violation: leaked roomProctor field ${k}`);
+    }
+    console.log('BOUNDED SHAPE CHECK: PASS');
+
     // 2. NON-SCHEDULED EXCLUSION
     const draftInstance = exams.find(e => e.examInstanceId === instanceDraft);
     if (draftInstance) throw new Error('DRAFT instance leaked into scheduled projection');
@@ -338,20 +369,20 @@ async function runVerification() {
     // 3. BASELINE READINESS PASS & ROOM/PROCTOR NOT APPLICABLE PROJECTION
     const eReady = exams.find(e => e.examInstanceId === instanceReady);
     if (!eReady) throw new Error('Ready instance missing');
-    if (eReady.baseline.type !== 'baseline_readiness_checks_pass') throw new Error(`Expected baseline pass, got ${eReady.baseline.type}`);
-    if (eReady.roomProctor.type !== 'room_proctor_readiness_not_applicable') throw new Error(`Expected room/proctor not applicable, got ${eReady.roomProctor.type}`);
+    if (eReady.baseline.status !== 'baseline_readiness_checks_pass') throw new Error(`Expected baseline pass, got ${eReady.baseline.status}`);
+    if (eReady.roomProctor.status !== 'room_proctor_readiness_not_applicable') throw new Error(`Expected room/proctor not applicable, got ${eReady.roomProctor.status}`);
     console.log('BASELINE READINESS PASS & ROOM/PROCTOR NOT APPLICABLE PROJECTION: PASS');
 
     // 4. BASELINE READINESS BLOCKER PROJECTION
     const eBaselineBlocker = exams.find(e => e.examInstanceId === instanceBaselineBlocker);
     if (!eBaselineBlocker) throw new Error('Baseline blocker instance missing');
-    if (eBaselineBlocker.baseline.type !== 'not_ready') throw new Error(`Expected baseline not_ready, got ${eBaselineBlocker.baseline.type}`);
+    if (eBaselineBlocker.baseline.status !== 'not_ready') throw new Error(`Expected baseline not_ready, got ${eBaselineBlocker.baseline.status}`);
     console.log('BASELINE READINESS BLOCKER PROJECTION: PASS');
 
     // 5. ROOM/PROCTOR BLOCKER PROJECTION
     const eRoomBlocker = exams.find(e => e.examInstanceId === instanceRoomBlocker);
     if (!eRoomBlocker) throw new Error('Room blocker instance missing');
-    if (eRoomBlocker.roomProctor.type !== 'not_ready') throw new Error(`Expected roomProctor not_ready, got ${eRoomBlocker.roomProctor.type}`);
+    if (eRoomBlocker.roomProctor.status !== 'not_ready') throw new Error(`Expected roomProctor not_ready, got ${eRoomBlocker.roomProctor.status}`);
     if (eRoomBlocker.roomProctor.blocker !== 'participant_empty') throw new Error(`Expected participant_empty blocker, got ${eRoomBlocker.roomProctor.blocker}`);
     console.log('ROOM/PROCTOR BLOCKER PROJECTION: PASS');
 
@@ -361,36 +392,31 @@ async function runVerification() {
     if (pZeroRes.body.exams.length !== 0) throw new Error(`Expected 0 exams, got ${pZeroRes.body.exams.length}`);
     console.log('VALID TEACHER WITH ZERO SCHEDULED EXAMS: PASS');
 
-    // 7. WRONG SAME-TENANT TEACHER / NO LEAK
+    // 7. NO-AUTHORITY CALLER / FORBIDDEN
     const pWrongRes = await executeApi({ tenantId: tenantA, personId: personWrongTeacher });
-    if (pWrongRes.status !== 200) throw new Error(`Expected 200, got ${pWrongRes.status}`);
-    if (pWrongRes.body.exams.length !== 0) throw new Error(`Expected 0 exams for unassigned person`);
-    console.log('WRONG SAME-TENANT TEACHER: PASS / NO LEAK');
+    if (pWrongRes.status !== 403) throw new Error(`Expected 403, got ${pWrongRes.status}`);
+    console.log('NO-AUTHORITY CALLER: PASS / FORBIDDEN');
 
-    // 8. REVOKED TEACHER ASSIGNMENT / NO ACCESS
+    // 8. REVOKED TEACHER ASSIGNMENT / FORBIDDEN
     const pRevTARes = await executeApi({ tenantId: tenantA, personId: personTeacherRevokedTA });
-    if (pRevTARes.status !== 200) throw new Error(`Expected 200, got ${pRevTARes.status}`);
-    if (pRevTARes.body.exams.length !== 0) throw new Error('Revoked TA must not see assignments');
-    console.log('REVOKED TEACHER ASSIGNMENT: PASS / NO ACCESS');
+    if (pRevTARes.status !== 403) throw new Error(`Expected 403, got ${pRevTARes.status}`);
+    console.log('REVOKED TEACHER ASSIGNMENT: PASS / FORBIDDEN');
 
-    // 9. REVOKED TEACHING ASSIGNMENT / NO ACCESS
+    // 9. REVOKED TEACHING ASSIGNMENT / FORBIDDEN
     const pRevTeachingRes = await executeApi({ tenantId: tenantA, personId: personTeacherRevokedTeaching });
-    if (pRevTeachingRes.status !== 200) throw new Error(`Expected 200, got ${pRevTeachingRes.status}`);
-    if (pRevTeachingRes.body.exams.length !== 0) throw new Error('Revoked Teaching Assignment must not see assignments');
-    console.log('REVOKED TEACHING ASSIGNMENT: PASS / NO ACCESS');
+    if (pRevTeachingRes.status !== 403) throw new Error(`Expected 403, got ${pRevTeachingRes.status}`);
+    console.log('REVOKED TEACHING ASSIGNMENT: PASS / FORBIDDEN');
 
-    // 10. CROSS-TENANT ISOLATION
+    // 10. CROSS-TENANT ISOLATION (NO AUTHORITY IN TARGET TENANT)
     const pCrossA = await executeApi({ tenantId: tenantB, personId: personTeacherA });
-    if (pCrossA.status !== 200) throw new Error(`Expected 200, got ${pCrossA.status}`);
-    if (pCrossA.body.exams.length !== 0) throw new Error('Cross-tenant leak: Tenant B saw Tenant A teacher assignments');
+    if (pCrossA.status !== 403) throw new Error(`Expected 403, got ${pCrossA.status}`);
 
     const pCrossB = await executeApi({ tenantId: tenantA, personId: personTeacherB });
-    if (pCrossB.status !== 200) throw new Error(`Expected 200, got ${pCrossB.status}`);
-    if (pCrossB.body.exams.length !== 0) throw new Error('Cross-tenant leak: Tenant A saw Tenant B teacher assignments');
-    
+    if (pCrossB.status !== 403) throw new Error(`Expected 403, got ${pCrossB.status}`);
+
     const pValidB = await executeApi({ tenantId: tenantB, personId: personTeacherB });
     if (pValidB.body.exams.length !== 1) throw new Error('Tenant B teacher did not see their own exam');
-    console.log('CROSS-TENANT ISOLATION: PASS / NO LEAK');
+    console.log('CROSS-TENANT ISOLATION: PASS / FORBIDDEN NO LEAK');
 
     // 11. MISSING TRUSTED CONTEXT: FAIL CLOSED
     const pMissNull = await executeApi(null);

@@ -25,6 +25,7 @@ function createMockPool(options?: {
     connectThrows?: boolean;
     queryThrows?: boolean;
     rows?: any[];
+    authorityRows?: any[];
 }) {
     const mockClient: MockClient = {
         queries: [],
@@ -36,6 +37,10 @@ function createMockPool(options?: {
             this.queries.push({ text, values });
             if (options?.queryThrows && text.includes('SELECT')) {
                 throw new Error('DB query execution failed');
+            }
+            if (text.includes('SELECT') && text.includes('LIMIT 1')) {
+                // authority check query
+                return { rows: options?.authorityRows ?? [{ '?column?': 1 }] };
             }
             if (text.includes('SELECT') && text.includes('tenant_teacher_assignments')) {
                 return { rows: options?.rows ?? [] };
@@ -214,7 +219,7 @@ test('BU-087 teacher-readiness focused runtime/API tests', async (t) => {
         assert.equal(mockClient.released, true);
     });
 
-    await t.test('8. one scheduled exam successfully projected without PII', async () => {
+    await t.test('8. one scheduled exam successfully projected without PII and without internal fields', async () => {
         const { pool } = createMockPool({
             rows: [
                 {
@@ -235,13 +240,15 @@ test('BU-087 teacher-readiness focused runtime/API tests', async (t) => {
         assert.equal(res.statusCode, 200);
         const body: TeacherReadinessResponse = JSON.parse(res.body);
         assert.equal(body.exams.length, 1);
-        assert.equal(body.exams[0].examInstanceId, VALID_EXAM_ID_1);
-        assert.equal(body.exams[0].subjectLabel, 'Matematika Dasar');
+
+        const examObj = body.exams[0] as any;
+        assert.equal(examObj.examInstanceId, VALID_EXAM_ID_1);
+        assert.equal(examObj.subjectLabel, 'Matematika Dasar');
 
         // Due to mocked subsequent queries returning empty, we expect 'denied' from preflights
         // This confirms the preflight composition is called and its result stored
-        assert.equal(body.exams[0].baseline.type, 'denied');
-        assert.equal(body.exams[0].roomProctor.type, 'denied');
+        assert.equal(examObj.baseline.status, 'denied');
+        assert.equal(examObj.roomProctor.status, 'denied');
 
         const rawJson = res.body;
         const forbiddenPiiTerms = [
@@ -250,6 +257,18 @@ test('BU-087 teacher-readiness focused runtime/API tests', async (t) => {
         ];
         for (const term of forbiddenPiiTerms) {
             assert.equal(rawJson.toLowerCase().includes(`"${term}"`), false, `Must not contain PII property ${term}`);
+        }
+
+        const forbiddenInternalFields = [
+            'tenantId', 'conflictingExamInstanceId', 'conflictingParticipantCount',
+            'conflictingProctorCount', 'participantCount', 'assignedParticipantCount',
+            'unassignedParticipantCount', 'examRoomCount', 'coveredExamRoomCount',
+            'uncoveredExamRoomCount', 'snapshotId', 'roomBasedOperationsEnabled',
+            'proctorPerRoomRequired'
+        ];
+        for (const field of forbiddenInternalFields) {
+            assert.equal(field in examObj, false, `Must not contain internal field ${field}`);
+            assert.equal(rawJson.includes(`"${field}"`), false, `Raw JSON must not contain internal field ${field}`);
         }
     });
 
@@ -313,5 +332,20 @@ test('BU-087 teacher-readiness focused runtime/API tests', async (t) => {
         } finally {
             await new Promise<void>((resolve) => server.close(() => resolve()));
         }
+    });
+
+    await t.test('10. valid trusted context but authorityRows = [] -> HTTP 403', async () => {
+        const { pool } = createMockPool({ authorityRows: [] });
+        const req = new MockIncomingMessage('GET', '/api/v1/assessment/teacher-readiness');
+        const res = new MockServerResponse(req);
+
+        await handleTeacherReadinessGet(req, res, {
+            pool,
+            getTeacherReadinessContext: () => ({ tenantId: VALID_TENANT_ID, personId: VALID_PERSON_ID })
+        });
+
+        assert.equal(res.statusCode, 403);
+        const body = JSON.parse(res.body);
+        assert.deepEqual(body, { error: 'forbidden' });
     });
 });
