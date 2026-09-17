@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.487
-**Supersedes:** 0.1.486
+**Version:** 0.1.488
+**Supersedes:** 0.1.487
+0.1.488 records PB04 closure final physical re-audit PASS / baseline db10d3574396b23aa10cf5de42197e4b81550a77 / manifest-hash integrity PASS / background containment complete / premature BU-088 never canonicalized / next responsibility restored to repository-first successor selection.
 0.1.487 records PB04 closure itself remains valid/CLOSED; initial PB04 closure final physical verification = FAIL; failure causes: DOCUMENT_MANIFEST canonical-integrity/SHA256 defect, stale BUILD_PHASE_INDEX lower/global navigation, and earlier failed local-history containment; premature BU-088 candidate was never canonicalized to main; targeted forward correction is in progress; final physical re-audit remains pending.
 0.1.486 records PB04 Controller physical re-audit #2 PASS; PB04 CLOSED; closure evidence = Discovery 02 v1.0.1 D02.5-59 / DEC-041; closure review baseline = 96ca4e67d77bfaf5d60b54b2685c4fd70f6cc14a; authentication implementation NOT AUTHORIZED; active Build Unit NONE; Next Build Unit NOT YET REGISTERED; next responsibility returns to repository-first Next Build Unit selection / scope freeze; Milestone 1 NOT COMPLETE.
 0.1.485 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, successor selection remains AUTHORIZED, successor execution DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
@@ -123,15 +124,19 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. Do not select/register a successor before Controller PASS.
+**NEXT SAFE ACTION:** Repository-first milestone-driven Next Build Unit selection / scope freeze. Do not inherit the noncanonical premature BU-088 scope.
 
-**NEXT BUILD UNIT SELECTION:** DEFERRED PENDING PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+**NEXT BUILD UNIT SELECTION:** AUTHORIZED
 
-**SUCCESSOR EXECUTION:** DEFERRED / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
+**SUCCESSOR EXECUTION:** NOT YET APPLICABLE / NEXT BUILD UNIT NOT YET REGISTERED
 
-**AUTHENTICATION IMPLEMENTATION:** NOT AUTHORIZED
+**AUTHENTICATION IMPLEMENTATION:** NOT AUTHORIZED UNTIL VALID SUCCESSOR SELECTION / SCOPE FREEZE / APPLICABLE IMPLEMENTATION GATE PASS
+
+**PB04:** CLOSED
+
+**PB04 CLOSURE FINAL PHYSICAL RE-AUDIT:** PASS
 
 **BU-084 STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 

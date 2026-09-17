@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.381
+**Version:** 1.5.382
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.380
+**Supersedes:** CURRENT_STATE v1.5.381
+CURRENT_STATE v1.5.382 records PB04 closure final physical re-audit PASS; verified repository baseline: db10d3574396b23aa10cf5de42197e4b81550a77; exact correction commit scope verified; manifest committed-blob SHA256 integrity PASS; UTF-8 no-BOM / mojibake absence PASS; working tree clean; background processes = 0 / Owner confirmed; premature BU-088 never canonicalized to main; PB04 recovery/canonical-integrity path COMPLETE; repository returns to Next Build Unit Selection / Scope Freeze.
 CURRENT_STATE v1.5.381 records PB04 closure itself remains valid/CLOSED; initial PB04 closure final physical verification = FAIL; failure causes: DOCUMENT_MANIFEST canonical-integrity/SHA256 defect, stale BUILD_PHASE_INDEX lower/global navigation, and earlier failed local-history containment; premature BU-088 candidate was never canonicalized to main; targeted forward correction is in progress; final physical re-audit remains pending.
 CURRENT_STATE v1.5.380 records PB04 Authentication-Security Policy Controller physical re-audit #2 PASS and controlled Production Blocker closure authorization/state-sync; PB04 is CLOSED based on Owner-approved Discovery 02 v1.0.1 D02.5-59 / DEC-041 and Controller physical closure review PASS at repository baseline 96ca4e67d77bfaf5d60b54b2685c4fd70f6cc14a. Authentication implementation remains NOT AUTHORIZED; Milestone 1 remains NOT COMPLETE; active Build Unit remains NONE; Next Build Unit remains NOT YET REGISTERED; repository-first successor selection / scope freeze becomes the next control responsibility.
 CURRENT_STATE v1.5.379 records PB04 canonicalization targeted canonical-integrity physical re-audit FAIL due residual stale MASTER_CONTEXT v1.2.1 Last Reviewed metadata, second targeted forward correction to MASTER_CONTEXT v1.2.2 / Last Reviewed 2026-09-18, and PB04 canonicalization physical re-audit #2 pending.
@@ -78,11 +79,13 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** NOT YET REGISTERED
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
-**NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze. Do not register or implement a successor before Controller PASS.
-**NEXT BUILD UNIT SELECTION:** DEFERRED PENDING PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
-**SUCCESSOR EXECUTION:** DEFERRED / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
-**AUTHENTICATION IMPLEMENTATION:** NOT AUTHORIZED
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**NEXT SAFE ACTION:** Perform repository-first milestone-driven Next Build Unit selection / scope freeze under 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md and 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md. Do not assume BU-088 or any successor identifier/scope from the noncanonical recovery branch.
+**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**SUCCESSOR EXECUTION:** NOT YET APPLICABLE / NEXT BUILD UNIT NOT YET REGISTERED
+**AUTHENTICATION IMPLEMENTATION:** NOT AUTHORIZED UNTIL A SUCCESSOR BUILD UNIT IS VALIDLY SELECTED, SCOPE-FROZEN, AND ITS APPLICABLE IMPLEMENTATION GATE PASSES
+**PB04:** CLOSED / AUTHENTICATION-SECURITY POLICY BLOCKER RESOLVED
+**PB04 CLOSURE FINAL PHYSICAL RE-AUDIT:** PASS
 **BU-087:** TERMINAL / DO NOT REOPEN
 **BU-086:** TERMINAL / DO NOT REOPEN
 **BU-085:** TERMINAL / DO NOT REOPEN

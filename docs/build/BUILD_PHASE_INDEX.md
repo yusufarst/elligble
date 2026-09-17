@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.427
-**Supersedes:** 0.1.426
+**Version:** 0.1.428
+**Supersedes:** 0.1.427
+0.1.428 records PB04 closure final physical re-audit PASS; correction commit db10d357... physically verified; manifest/blob-hash integrity PASS; background-process containment complete; premature BU-088 never canonicalized; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; repository-first Next Build Unit Selection / Scope Freeze authorized.
 0.1.427 records initial PB04 closure final physical verification FAIL; manifest canonical-integrity/SHA256 defect; stale lower/global navigation; targeted forward correction; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; final physical re-audit pending.
 0.1.426 records PB04 Controller physical closure review PASS; PB04 policy blocker CLOSED; authentication implementation remains NOT AUTHORIZED; active Build Unit NONE; Next Build Unit NOT YET REGISTERED; repository-first successor selection / scope freeze is next.
 0.1.425 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, successor selection remains AUTHORIZED, successor execution DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
@@ -660,13 +661,19 @@
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze.
+**NEXT SAFE ACTION:** Perform repository-first milestone-driven Next Build Unit selection / scope freeze.
 
-**NEXT BUILD UNIT SELECTION:** DEFERRED PENDING PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+**NEXT BUILD UNIT SELECTION:** AUTHORIZED
 
-**SUCCESSOR EXECUTION:** DEFERRED / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
+**SUCCESSOR EXECUTION:** NOT YET APPLICABLE / NEXT BUILD UNIT NOT YET REGISTERED
+
+**AUTHENTICATION IMPLEMENTATION:** NOT AUTHORIZED UNTIL VALID SUCCESSOR SELECTION / SCOPE FREEZE / APPLICABLE IMPLEMENTATION GATE PASS
+
+**PB04:** CLOSED / AUTHENTICATION-SECURITY POLICY BLOCKER RESOLVED
+
+**PB04 CLOSURE FINAL PHYSICAL RE-AUDIT:** PASS
 
 **BU-087:** TERMINAL / DO NOT REOPEN
 
