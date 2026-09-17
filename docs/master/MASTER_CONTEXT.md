@@ -1,10 +1,10 @@
 **Status:** LOCKED  
-**Version:** 1.2.1
+**Version:** 1.2.2
 **Canonical:** YES  
-**Supersedes:** 1.2.0
+**Supersedes:** 1.2.1
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.1, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
-**Last Reviewed:** 2026-09-12
+**Last Reviewed:** 2026-09-18
 
 # ELLIGBLE — Master Context
 

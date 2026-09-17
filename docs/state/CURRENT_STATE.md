@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.378
+**Version:** 1.5.379
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.377
+**Supersedes:** CURRENT_STATE v1.5.378
+CURRENT_STATE v1.5.379 records PB04 canonicalization targeted canonical-integrity physical re-audit FAIL due residual stale MASTER_CONTEXT v1.2.1 Last Reviewed metadata, second targeted forward correction to MASTER_CONTEXT v1.2.2 / Last Reviewed 2026-09-18, and PB04 canonicalization physical re-audit #2 pending.
 CURRENT_STATE v1.5.378 records the initial PB04 policy-canonicalization Controller physical audit FAIL due stale Discovery 02 v1.0.0 dependency metadata in CURRENT_STATE v1.5.377 and canonical MASTER_CONTEXT v1.2.0, the targeted canonical-integrity forward correction to Discovery 02 v1.0.1, and PB04 policy-canonicalization physical re-audit pending.
 CURRENT_STATE v1.5.377 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation remains NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, canonical successor selection remains AUTHORIZED, successor execution remains DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
 CURRENT_STATE v1.5.376 records BU-087 Stage-5 final physical re-audit #3 PASS, terminal state synchronization, and successor selection authorization.
@@ -75,8 +76,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** NOT YET REGISTERED
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL RE-AUDIT / CLOSURE REVIEW
-**NEXT SAFE ACTION:** Controller physical re-audit of the targeted PB04 canonical-integrity correction. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
+**CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL RE-AUDIT #2 / CLOSURE REVIEW
+**NEXT SAFE ACTION:** Controller physical re-audit #2 of the targeted PB04 canonical-integrity correction. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
 **NEXT BUILD UNIT SELECTION:** AUTHORIZED
 **SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
 **BU-087:** TERMINAL / DO NOT REOPEN
@@ -165,8 +166,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **NEXT BUILD UNIT:** NOT YET REGISTERED
 - **REAL AUTHENTICATION GAP CLOSED:** NO (AUTHENTICATION IMPLEMENTATION NOT AUTHORIZED)
-- **CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL RE-AUDIT / CLOSURE REVIEW
-- **NEXT SAFE ACTION:** Controller physical re-audit of the targeted PB04 canonical-integrity correction. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
+- **CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL RE-AUDIT #2 / CLOSURE REVIEW
+- **NEXT SAFE ACTION:** Controller physical re-audit #2 of the targeted PB04 canonical-integrity correction. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
 - **SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
 
 ### BU-086 CURRENT STATUS
