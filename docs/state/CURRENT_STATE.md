@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.376
+**Version:** 1.5.377
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.375
+**Supersedes:** CURRENT_STATE v1.5.376
+CURRENT_STATE v1.5.377 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation remains NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, canonical successor selection remains AUTHORIZED, successor execution remains DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
 CURRENT_STATE v1.5.376 records BU-087 Stage-5 final physical re-audit #3 PASS, terminal state synchronization, and successor selection authorization.
 CURRENT_STATE v1.5.375 records BU-087 Stage-5 final physical re-audit #2 FAIL due stale BUILD_PHASE_INDEX lower/global active navigation remaining at Stage-3, third targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #3 pending.
 CURRENT_STATE v1.5.374 records BU-087 Stage-5 final physical re-audit #1 FAIL due one residual malformed stale duplicate BU-087 specification descriptor in DOCUMENT_MANIFEST v1.0.458, second targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #2 pending.
@@ -42,7 +43,7 @@ CURRENT_STATE v1.5.337 contained a canonical-integrity truncation/state-sync def
 CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.22 contained premature BU-019 lifecycle promotion; v1.5.23 forward-corrects current control state without rewriting history.
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1
 **Used By:** Every agent execution
-**Last Reviewed:** 2026-09-16
+**Last Reviewed:** 2026-09-18
 
 # ELLIGBLE — Current State
 
@@ -51,7 +52,7 @@ CURRENT_STATE v1.5.21 was never a canonical committed repository version; v1.5.2
 ```text
 RECOVERY              → COMPLETE / FROZEN v1.0.0
 DISCOVERY 01          → COMPLETE / LOCKED v1.0.0
-DISCOVERY 02          → COMPLETE / LOCKED v1.0.0
+DISCOVERY 02          → COMPLETE / LOCKED v1.0.1
 DISCOVERY 03          → COMPLETE / LOCKED v1.0.0
 DISCOVERY 04          → COMPLETE / LOCKED v1.0.1
 MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
@@ -73,9 +74,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **NEXT UNIT:** NOT YET REGISTERED
 **NEXT BUILD UNIT:** NOT YET REGISTERED
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL AUDIT / CLOSURE REVIEW
+**NEXT SAFE ACTION:** Controller physical audit of the PB04 policy canonicalization commit. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
 **NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
 **BU-087:** TERMINAL / DO NOT REOPEN
 **BU-086:** TERMINAL / DO NOT REOPEN
 **BU-085:** TERMINAL / DO NOT REOPEN
@@ -121,7 +123,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **RENDERED-QA ORIGINAL CONTACT-SHEET SHA256:** 3ED492153E4F30086BACD60E36F5A984C3E9A16FD7B1BF0798E1E5510D855181
 - **EXACT READ API:** GET /api/v1/assessment/teacher-readiness
 - **READ/MUTATION BOUNDARY:** READ ONLY
-- **PB04:** OPEN
+- **PB04:** OPEN / CLOSURE REVIEW PENDING
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
@@ -161,9 +163,10 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **NEXT BUILD UNIT:** NOT YET REGISTERED
-- **REAL AUTHENTICATION GAP CLOSED:** NO
-- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-- **NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+- **REAL AUTHENTICATION GAP CLOSED:** NO (AUTHENTICATION IMPLEMENTATION NOT AUTHORIZED)
+- **CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL AUDIT / CLOSURE REVIEW
+- **NEXT SAFE ACTION:** Controller physical audit of the PB04 policy canonicalization commit. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
+- **SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
 
 ### BU-086 CURRENT STATUS
 - **BUILD UNIT:** BU-086

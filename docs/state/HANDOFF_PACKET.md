@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.484
-**Supersedes:** 0.1.483
+**Version:** 0.1.485
+**Supersedes:** 0.1.484
+0.1.485 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, successor selection remains AUTHORIZED, successor execution DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
 0.1.484 records BU-087 Stage-5 final physical re-audit #3 PASS, terminal state synchronization, and successor selection authorization.
 0.1.483 records BU-087 Stage-5 final physical re-audit #2 FAIL due stale BUILD_PHASE_INDEX lower/global active navigation remaining at Stage-3, third targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #3 pending.
 0.1.482 records BU-087 Stage-5 final physical re-audit #1 FAIL due one residual malformed stale duplicate BU-087 specification descriptor in DOCUMENT_MANIFEST v1.0.458, second targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #2 pending.
@@ -35,7 +36,7 @@
 **Phase:** BUILD
 **Depends On:** CURRENT_STATE, Decision Hierarchy, canonical LOCKED/FROZEN project documents
 **Used By:** New Chat / New Agent Context Reconstruction
-**Last Reviewed:** 2026-08-24
+**Last Reviewed:** 2026-09-18
 
 # ELLIGBLE Handoff Packet
 
@@ -85,7 +86,7 @@ DISCOVERY 01
 → COMPLETE / LOCKED v1.0.0
 
 DISCOVERY 02
-→ COMPLETE / LOCKED v1.0.0
+→ COMPLETE / LOCKED v1.0.1
 
 DISCOVERY 03
 → COMPLETE / LOCKED v1.0.0
@@ -120,11 +121,13 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL AUDIT / CLOSURE REVIEW
 
-**NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+**NEXT SAFE ACTION:** Controller physical audit of the PB04 policy canonicalization commit. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
 
 **NEXT BUILD UNIT SELECTION:** AUTHORIZED
+
+**SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
 
 **BU-084 STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 
@@ -170,7 +173,7 @@ RENDERED-QA REPORT SHA256: E2A783CB0DCDF0BA06BB6ABDB35241DC3B097DC3BAE5A4F8E761A
 RENDERED-QA ORIGINAL CONTACT-SHEET SHA256: 3ED492153E4F30086BACD60E36F5A984C3E9A16FD7B1BF0798E1E5510D855181
 EXACT READ API: GET /api/v1/assessment/teacher-readiness
 READ/MUTATION BOUNDARY: READ ONLY
-PB04: OPEN
+PB04: OPEN / CLOSURE REVIEW PENDING
 PB05: OPEN
 PB06: OPEN
 PB07: OPEN

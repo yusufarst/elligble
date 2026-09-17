@@ -1,9 +1,9 @@
 **Status:** ACTIVE  
-**Version:** 1.0.8
+**Version:** 1.0.9
 **Canonical:** YES  
-**Supersedes:** 1.0.7
+**Supersedes:** 1.0.8
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-09-13
+**Last Reviewed:** 2026-09-18
 
 # ELLIGBLE — Decision Log
 
@@ -51,6 +51,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-038 | Frontend Agent Skill Stack | Supplemental Frontend Design/Responsive/Rendered-QA Skill Stack | LOCKED | Owner / DEC-038 |
 | DEC-039 | Assessment UI Context | Secure Assessment Exam Focus Workspace Context Presentation | LOCKED | Owner / SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md |
 | DEC-040 | Platform Visual Foundation | ELLIGBLE Warm Monochrome Institutional Visual Foundation | LOCKED | Owner / DEC-040 / ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md |
+| DEC-041 | PB04 Authentication-Security Policy | Owner-approved final residual Authentication-Security Policy Matrix | LOCKED | Owner / Discovery 02 D02.5-59 |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -283,3 +284,69 @@ Owner explicitly approved the platform-wide visual foundation supersession:
 - **Content-First Active Exam:** Suppresses large headers; question prompt, stimulus media, and answer options dominate viewport. Compact upper information area (`[Subject/Room] [Time] / [Progress] [Save State]`). Zero duplicate timers or redundant labels. No fake battery, signal, or OS clock.
 - **Mobile Command Dock:** Single-row symmetric 4-button dock at viewport bottom (`Sebelumnya`, `Daftar Soal`, `Berikutnya`, `Selesai`). Minimum 44px (recommended 48px) touch targets, non-wrapping at 360px baseline.
 - **NeedMCP Governance:** NeedMCP is supplemental tooling, NOT canonical authority. Repository canonical documents win absolutely over any external style tool suggestions. Status: **NEEDMCP: NOT YET INSTALLED / NOT YET ACTIVATED**.
+
+### DEC-041 — PB04 Final Authentication-Security Policy Matrix (2026-09-18)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** `docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md` (D02.5-59), `docs/state/PRODUCTION_BLOCKERS_BACKLOG.md` (PB04)
+
+Owner explicitly approved the final residual Authentication-Security Policy Matrix:
+
+- **Session Timeout Values:**
+  - Ordinary authenticated web session: 12 hours absolute session / reauthentication timeout; 60 minutes inactivity timeout.
+  - Privileged or security-sensitive context: 8 hours absolute session / reauthentication timeout; 30 minutes inactivity timeout.
+  - Secure Assessment Exam Session remains separate from ordinary authenticated web sessions; authentication timeout must not cause loss or corruption of active exam state/answers.
+- **MFA Methods:**
+  - TOTP is baseline MFA method for privileged contexts.
+  - MFA is NOT mandatory for every baseline student account.
+  - TOTP combines with existing password authentication factor.
+  - Single-use recovery codes permitted as controlled backup/recovery.
+  - SMS OTP and email OTP are NOT required baseline MFA methods.
+  - WebAuthn/passkeys may be added later and are not baseline-required.
+  - No authentication/MFA provider or vendor is selected by this policy.
+- **Rate-Limit Thresholds:**
+  - Maximum 5 failed interactive authentication attempts per account within a rolling 5-minute window; further attempts throttled/rejected until permitted by policy.
+  - Additional infrastructure-level abuse/rate controls may be applied without altering this product-policy baseline.
+- **Lockout Thresholds:**
+  - 10 consecutive failed authentication attempts trigger a temporary 15-minute authentication lockout.
+  - No permanent automatic lockout from ordinary failed-login attempts.
+  - Successful authentication resets the consecutive-failure counter.
+  - Authorized account recovery remains available during temporary lockout.
+  - Repeated/suspicious failures remain auditable and may trigger additional security controls.
+- **Step-Up Freshness Window:**
+  - Successful step-up authentication is fresh for 15 minutes.
+  - After 15 minutes another step-up is required before a new high-risk action requiring recent authentication.
+  - Security-sensitive events may require immediate reauthentication before the 15-minute window expires.
+- **Recovery Code Format:**
+  - For accounts using MFA: 10 recovery codes issued per generated set; 12 random Base32-style characters each (avoiding visually ambiguous characters where practical).
+  - Single-use only; generating a new set invalidates all remaining old codes.
+  - Plaintext recovery codes must not remain stored or logged in reusable form after issuance; exact cryptographic/storage implementation remains implementation-level.
+- **Password Max Length:**
+  - Maximum supported password length = at least 64 characters.
+  - Canonical minimum password length = 8 characters (DEC-022) remains unchanged.
+  - Arbitrary composition requirements solely for uppercase, lowercase, number, or symbol mixtures are not added.
+- **Breached-Password Provider (Explicit Implementation Deferment):**
+  - Policy requires rejection of commonly used, trivially guessable, or known-compromised passwords via an appropriate blocklist.
+  - No specific external provider/vendor is mandated.
+  - Implementation may use a securely maintained local blocklist or an approved external/provider-backed mechanism, provided passwords are not exposed and canonical security/privacy boundaries are preserved.
+- **Device Trust Duration (Explicit Implementation Deferment for Baseline):**
+  - Remembered/trusted-device functionality is OPTIONAL and not required for initial baseline production.
+  - If implemented later: maximum trust duration 30 days; trust must be revocable; credential/recovery/security changes invalidate trust; cannot bypass required high-risk step-up; never becomes permanent authentication authority.
+
+**EXPLICIT SUPERSESSION SCOPE:**
+
+DEC-041 / Discovery 02 D02.5-59 supersedes:
+- D02.5-57 deferment ONLY for the nine approved residual fields;
+- the older Recovery carry-forward status "Full Authentication Policy -> PROVISIONAL" for CURRENT PB04 decision maturity;
+- historical Blueprint/Architecture statements that the final Authentication-Security Policy had not yet been approved, only as current maturity/status statements.
+
+DO NOT rewrite those historical LOCKED/FROZEN artifacts.
+
+DEC-041 DOES NOT supersede:
+- implementation-neutral architecture;
+- identity/tenant isolation;
+- existing locked authentication guardrails;
+- PB04 closure requirements;
+- Permission Matrix;
+- Build gating.

@@ -2,12 +2,12 @@
 
 ## 1. CONTROL METADATA
 - **Status:** ACTIVE
-- **Version:** 0.1.2
+- **Version:** 0.1.3
 - **Authority:** CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES
 - **Owner Carry-Forward:** APPROVED
 - **Production Blocker Count:** 12
 - **Resolved / Closed:** 0
-- **Last Reviewed:** 2026-08-17
+- **Last Reviewed:** 2026-09-18
 
 ## 2. PURPOSE
 Track controlled closure of all 12 Production Blockers accepted for carry-forward at the Master Blueprint Exit Gate.
@@ -17,9 +17,9 @@ A blocker may be marked CLOSED only after its required closure evidence exists, 
 
 ## 3. SUMMARY DASHBOARD
 - **TOTAL BLOCKERS:** 12
-- **OPEN / CARRIED FORWARD:** 12
+- **OPEN / CARRIED FORWARD:** 11
 - **IN PROGRESS:** 0
-- **READY FOR CLOSURE REVIEW:** 0
+- **READY FOR CLOSURE REVIEW:** 1
 - **RESOLVED / CLOSED:** 0
 - **SYSTEM-WIDE:** 10
 - **CONDITIONAL:** 2
@@ -85,16 +85,16 @@ A blocker may be marked CLOSED only after its required closure evidence exists, 
 
 ### PB-04
 - **NAME:** Full Authentication Policy / Authentication-Security Policy
-- **DECISION MATURITY:** PROVISIONAL
-- **ARTIFACT STATUS:** DISCOVERY
+- **DECISION MATURITY:** LOCKED / FINAL POLICY APPROVED
+- **ARTIFACT STATUS:** CANONICAL POLICY RECORDED / CLOSURE REVIEW PENDING
 - **READINESS STATUS:** PRODUCTION BLOCKER
 - **SCOPE:** System-wide
-- **TRACKING STATUS:** OPEN / CARRIED FORWARD
+- **TRACKING STATUS:** OPEN / CLOSURE REVIEW PENDING
 - **TARGET RESOLUTION WINDOW:** TO BE SCHEDULED — MUST CLOSE BEFORE APPLICABLE PRODUCTION GATE
 - **DEPENDENCIES / PREREQUISITES:** NONE EXPLICIT
 - **REQUIRED CLOSURE EVIDENCE:** approved final Authentication-Security Policy
-- **REQUIRED REVIEW / APPROVAL:** TO BE DETERMINED FROM APPLICABLE GOVERNANCE
-- **SOURCE AUTHORITY:** 02.12_MASTER_BLUEPRINT_EXIT_GATE.md, 00.12_OPEN_PROVISIONAL_FUTURE_REGISTER.md
+- **REQUIRED REVIEW / APPROVAL:** OWNER POLICY APPROVED / CONTROLLER PHYSICAL CLOSURE REVIEW REQUIRED
+- **SOURCE AUTHORITY:** Discovery 02 v1.0.1 D02.5-59 / DEC-041 / 02.12_MASTER_BLUEPRINT_EXIT_GATE.md
 - **FINAL CLOSURE REFERENCE:** NONE
 
 ### PB-05
