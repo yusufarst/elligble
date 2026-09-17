@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.431
-**Supersedes:** 0.1.430
+**Version:** 0.1.432
+**Supersedes:** 0.1.431
+0.1.432 records BU-088 Stage-1 Controller physical audit PASS and Stage-2 implementation authorization; Stage-2 is AUTHORIZED / NOT STARTED; registration commit 870dc0a5599e8d34d2ddea308b04e4e3ca355405 physically verified with exact six-file scope, clean local state, divergence 0/0, manifest integrity evidence, and recovery isolation PASS.
 0.1.431 records fresh BU-088 Stage-1 registration and scope freeze for Identity Authentication and Session Identity Runtime Foundation Bootstrap; initial task-39 background taskification was Owner-contained to zero processes; local encoding/historical-overreplacement repair PASS; semantic re-audit PASS; false-positive milestone-claim disambiguation PASS; first Stage-1 finalization attempt controlled-stopped on a newline-anchor harness defect before BUILD_PHASE_INDEX/DOCUMENT_MANIFEST mutation, staging, commit, or push; continuation completed from preserved partial state; PB04 CLOSED; PB05 OPEN; Milestone 1 NOT COMPLETE; Stage-2 NOT AUTHORIZED.
 0.1.430 records targeted forward correction of local-only process-truth commit 070e1b3f5e9cf0cee474a871294465fcafde2090: material PB04 closure / current navigation remains valid; manage_task was reused during that correction despite foreground-only control; physical audit proved exact four-file local scope, clean worktree, no remote mutation, and identified conflicting duplicate manifest SHA256 rows for HANDOFF_PACKET and BUILD_PHASE_INDEX. Classification: NON-MATERIAL EXECUTION-CONTROL DEFECT. Manifest integrity is forward-corrected; final local-chain audit pending.
 0.1.429 records PB04 final pass state-sync process deviation; manage_task + schedule/background taskification contrary to control; eight background processes observed; Owner containment PASS / zero remain; post-containment read-only audit PASS; classification NON-MATERIAL EXECUTION-CONTROL DEFECT; material state-sync remains valid; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; successor selection remains AUTHORIZED.
@@ -50,11 +51,11 @@
 ## Active Build Unit Register
 ### BU-088
 - **TITLE:** Identity Authentication and Session Identity Runtime Foundation Bootstrap
-- **STATUS:** ACTIVE / STAGE-1 SCOPE FROZEN / AWAITING CONTROLLER PHYSICAL AUDIT
-- **VERSION:** 1.0.0
-- **STAGE-1:** SCOPE FROZEN / REGISTRATION FINALIZED / CONTROLLER PHYSICAL AUDIT PENDING
-- **STAGE-2:** NOT AUTHORIZED
-- **AUTHENTICATION IMPLEMENTATION:** NOT STARTED
+- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 AUTHORIZED / NOT STARTED
+- **VERSION:** 1.0.1
+- **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL AUDIT PASS
+- **STAGE-2:** AUTHORIZED / NOT STARTED
+- **AUTHENTICATION IMPLEMENTATION:** AUTHORIZED / NOT STARTED
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **PB06:** OPEN
@@ -68,10 +69,11 @@
 - **TARGETED PARTIAL-WORK FORWARD REPAIR:** COMPLETE
 - **TARGETED SEMANTIC RE-AUDIT:** PASS
 - **FALSE-POSITIVE MILESTONE-CLAIM DISAMBIGUATION:** PASS
+- **STAGE-1 CONTROLLER PHYSICAL AUDIT:** PASS / canonical registration commit 870dc0a5599e8d34d2ddea308b04e4e3ca355405 physically verified
 - **STAGE-1 FINALIZATION ATTEMPT #1:** CONTROLLED STOP / newline-anchor harness defect / no BPI or manifest mutation / no staging / no commit / no push
 - **IMPLEMENTATION FILES MODIFIED:** NONE
-- **CURRENT RESPONSIBILITY:** BU-088 STAGE-1 CONTROLLER PHYSICAL AUDIT
-- **NEXT SAFE ACTION:** Controller physical audit of BU-088 Stage-1 registration and scope freeze. Do not begin Stage-2 before Controller PASS.
+- **CURRENT RESPONSIBILITY:** BU-088 STAGE-2 IMPLEMENTATION
+- **NEXT SAFE ACTION:** Execute exactly one BU-088 Stage-2 implementation under the frozen scope; verify before progression.
 
 ### BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
