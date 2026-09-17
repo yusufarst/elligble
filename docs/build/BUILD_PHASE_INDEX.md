@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.426
-**Supersedes:** 0.1.425
+**Version:** 0.1.427
+**Supersedes:** 0.1.426
+0.1.427 records initial PB04 closure final physical verification FAIL; manifest canonical-integrity/SHA256 defect; stale lower/global navigation; targeted forward correction; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; final physical re-audit pending.
 0.1.426 records PB04 Controller physical closure review PASS; PB04 policy blocker CLOSED; authentication implementation remains NOT AUTHORIZED; active Build Unit NONE; Next Build Unit NOT YET REGISTERED; repository-first successor selection / scope freeze is next.
 0.1.425 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, successor selection remains AUTHORIZED, successor execution DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
 0.1.424 records BU-087 Stage-5 final physical re-audit #3 PASS, terminal state synchronization, and successor selection authorization.
@@ -95,9 +96,9 @@
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **NEXT BUILD UNIT:** NOT YET REGISTERED
-- **SUCCESSOR EXECUTION:** NOT YET APPLICABLE / NEXT BUILD UNIT NOT YET REGISTERED
-- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-- **NEXT SAFE ACTION:** Perform repository-first milestone-driven Next Build Unit selection / scope freeze.
+- **SUCCESSOR EXECUTION:** DEFERRED / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
+- **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze.
 
 ### BU-086
 - **TITLE:** Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap
@@ -144,8 +145,8 @@
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **OWNER DECISION REQUIRED:** NO
-- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-- **NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+- **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze.
 ### BU-085
 - **TITLE:** Secure Assessment Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap
 - **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
@@ -206,8 +207,8 @@
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
-- **CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
-- **NEXT SAFE ACTION:** Controller repository-first Next Build Unit Selection / Scope Freeze
+- **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze.
 
 ### BU-084
 - **TITLE:** Secure Assessment Student Pre-Start Attempt Launch UI Integration Bootstrap
@@ -659,13 +660,13 @@
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL AUDIT / CLOSURE REVIEW
+**CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
 
-**NEXT SAFE ACTION:** Controller physical audit of the PB04 policy canonicalization commit. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
+**NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze.
 
-**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**NEXT BUILD UNIT SELECTION:** DEFERRED PENDING PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
 
-**SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
+**SUCCESSOR EXECUTION:** DEFERRED / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
 
 **BU-087:** TERMINAL / DO NOT REOPEN
 
