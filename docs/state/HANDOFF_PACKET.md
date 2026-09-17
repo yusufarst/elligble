@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.489
-**Supersedes:** 0.1.488
+**Version:** 0.1.490
+**Supersedes:** 0.1.489
+0.1.490 records targeted forward correction of local-only process-truth commit 070e1b3f5e9cf0cee474a871294465fcafde2090: material navigation remains valid; its correction execution used manage_task contrary to foreground-only control; physical audit found no repository spill or remote mutation but identified stale duplicate DOCUMENT_MANIFEST SHA256 rows for HANDOFF_PACKET and BUILD_PHASE_INDEX. Classification: NON-MATERIAL EXECUTION-CONTROL DEFECT. Duplicate manifest hashes are forward-corrected; final local-chain audit pending.
 0.1.489 records PB04 final pass state-sync process deviation: commit 042567b... materially valid; manage_task used; schedule/background taskification used; eight background processes observed; Owner confirmed zero remain; post-containment read-only audit PASS; classification NON-MATERIAL EXECUTION-CONTROL DEFECT; premature BU-088 remains noncanonical/local-only; PB04 remains CLOSED; successor selection remains AUTHORIZED.
 0.1.488 records PB04 closure final physical re-audit PASS / baseline db10d3574396b23aa10cf5de42197e4b81550a77 / manifest-hash integrity PASS / background containment complete / premature BU-088 never canonicalized / next responsibility restored to repository-first successor selection.
 0.1.487 records PB04 closure itself remains valid/CLOSED; initial PB04 closure final physical verification = FAIL; failure causes: DOCUMENT_MANIFEST canonical-integrity/SHA256 defect, stale BUILD_PHASE_INDEX lower/global navigation, and earlier failed local-history containment; premature BU-088 candidate was never canonicalized to main; targeted forward correction is in progress; final physical re-audit remains pending.
