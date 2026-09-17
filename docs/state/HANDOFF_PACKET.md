@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.485
-**Supersedes:** 0.1.484
+**Version:** 0.1.486
+**Supersedes:** 0.1.485
+0.1.486 records PB04 Controller physical re-audit #2 PASS; PB04 CLOSED; closure evidence = Discovery 02 v1.0.1 D02.5-59 / DEC-041; closure review baseline = 96ca4e67d77bfaf5d60b54b2685c4fd70f6cc14a; authentication implementation NOT AUTHORIZED; active Build Unit NONE; Next Build Unit NOT YET REGISTERED; next responsibility returns to repository-first Next Build Unit selection / scope freeze; Milestone 1 NOT COMPLETE.
 0.1.485 records Owner-approved PB04 residual matrix canonicalization as Discovery 02 v1.0.1 and DEC-041, PB04 remains OPEN with closure review pending, authentication implementation NOT AUTHORIZED, active Build Unit remains NONE, Next Build Unit remains NOT YET REGISTERED, successor selection remains AUTHORIZED, successor execution DEFERRED while PB04 closure path is active, BU-087 remains TERMINAL / DO NOT REOPEN, and Milestone 1 remains NOT COMPLETE.
 0.1.484 records BU-087 Stage-5 final physical re-audit #3 PASS, terminal state synchronization, and successor selection authorization.
 0.1.483 records BU-087 Stage-5 final physical re-audit #2 FAIL due stale BUILD_PHASE_INDEX lower/global active navigation remaining at Stage-3, third targeted canonical-integrity forward correction, and Stage-5 final physical re-audit #3 pending.
@@ -121,13 +122,13 @@ MASTER BLUEPRINT
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** PB04 AUTHENTICATION-SECURITY POLICY CANONICALIZATION PHYSICAL AUDIT / CLOSURE REVIEW
+**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
 
-**NEXT SAFE ACTION:** Controller physical audit of the PB04 policy canonicalization commit. If PASS, determine the exact PB04 closure gate action. Do not start authentication implementation before closure/authorization.
+**NEXT SAFE ACTION:** Repository-first milestone-driven successor selection / scope freeze.
 
 **NEXT BUILD UNIT SELECTION:** AUTHORIZED
 
-**SUCCESSOR EXECUTION:** DEFERRED WHILE OWNER-DIRECTED PB04 CONTROL PATH IS ACTIVE
+**SUCCESSOR EXECUTION:** NOT YET APPLICABLE / NEXT BUILD UNIT NOT YET REGISTERED
 
 **BU-084 STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 
@@ -173,7 +174,7 @@ RENDERED-QA REPORT SHA256: E2A783CB0DCDF0BA06BB6ABDB35241DC3B097DC3BAE5A4F8E761A
 RENDERED-QA ORIGINAL CONTACT-SHEET SHA256: 3ED492153E4F30086BACD60E36F5A984C3E9A16FD7B1BF0798E1E5510D855181
 EXACT READ API: GET /api/v1/assessment/teacher-readiness
 READ/MUTATION BOUNDARY: READ ONLY
-PB04: OPEN / CLOSURE REVIEW PENDING
+PB04: CLOSED / AUTHENTICATION-SECURITY POLICY BLOCKER RESOLVED
 PB05: OPEN
 PB06: OPEN
 PB07: OPEN
