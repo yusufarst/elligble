@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.428
-**Supersedes:** 0.1.427
+**Version:** 0.1.429
+**Supersedes:** 0.1.428
+0.1.429 records PB04 final pass state-sync process deviation; manage_task + schedule/background taskification contrary to control; eight background processes observed; Owner containment PASS / zero remain; post-containment read-only audit PASS; classification NON-MATERIAL EXECUTION-CONTROL DEFECT; material state-sync remains valid; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; successor selection remains AUTHORIZED.
 0.1.428 records PB04 closure final physical re-audit PASS; correction commit db10d357... physically verified; manifest/blob-hash integrity PASS; background-process containment complete; premature BU-088 never canonicalized; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; repository-first Next Build Unit Selection / Scope Freeze authorized.
 0.1.427 records initial PB04 closure final physical verification FAIL; manifest canonical-integrity/SHA256 defect; stale lower/global navigation; targeted forward correction; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; final physical re-audit pending.
 0.1.426 records PB04 Controller physical closure review PASS; PB04 policy blocker CLOSED; authentication implementation remains NOT AUTHORIZED; active Build Unit NONE; Next Build Unit NOT YET REGISTERED; repository-first successor selection / scope freeze is next.
@@ -674,6 +675,10 @@
 **PB04:** CLOSED / AUTHENTICATION-SECURITY POLICY BLOCKER RESOLVED
 
 **PB04 CLOSURE FINAL PHYSICAL RE-AUDIT:** PASS
+
+**PB04 FINAL PASS STATE-SYNC PROCESS DEVIATION:** YES
+**PB04 FINAL PASS STATE-SYNC PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / MATERIAL RESULT REMAINS VALID
+**PB04 FINAL PASS STATE-SYNC BACKGROUND CONTAINMENT:** PASS / ZERO REMAIN / POST-CONTAINMENT AUDIT PASS
 
 **BU-087:** TERMINAL / DO NOT REOPEN
 

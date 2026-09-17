@@ -1,12 +1,13 @@
 **Status:** ACTIVE / LOCKED FOR CANONICAL INTEGRITY
-**Version:** 1.0.467
+**Version:** 1.0.468
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.0.466
+**Supersedes:** 1.0.467
 **Canonical:** YES
 **Last Reviewed:** 2026-09-18
 # ELLIGBLE Document Manifest
 
-> **Administrative Note:** v1.0.467 records PB04 closure final physical re-audit PASS; baseline db10d3574396b23aa10cf5de42197e4b81550a77; canonical-integrity correction verified; committed-blob SHA256 verification PASS; background containment complete; premature BU-088 never canonicalized; PB04 CLOSED; ACTIVE BUILD UNIT NONE; NEXT BUILD UNIT NOT YET REGISTERED; NEXT BUILD UNIT SELECTION / SCOPE FREEZE authorized; authentication implementation remains NOT AUTHORIZED.
+> **Administrative Note:** v1.0.468 records PB04 final pass state-sync process-control deviation; material commit 042567b... preserved; manage_task + schedule/background taskification used contrary to foreground-only control; eight background processes observed and Owner-contained to zero; post-containment read-only audit PASS; classification NON-MATERIAL EXECUTION-CONTROL DEFECT; PB04 remains CLOSED; ACTIVE BUILD UNIT NONE; NEXT BUILD UNIT NOT YET REGISTERED; successor selection remains AUTHORIZED; premature BU-088 remains noncanonical/local-only.
+> v1.0.467 records PB04 closure final physical re-audit PASS; baseline db10d3574396b23aa10cf5de42197e4b81550a77; canonical-integrity correction verified; committed-blob SHA256 verification PASS; background containment complete; premature BU-088 never canonicalized; PB04 CLOSED; ACTIVE BUILD UNIT NONE; NEXT BUILD UNIT NOT YET REGISTERED; NEXT BUILD UNIT SELECTION / SCOPE FREEZE authorized; authentication implementation remains NOT AUTHORIZED.
 > **Administrative Note:** v1.0.466 records initial PB04 closure final physical verification FAIL; manifest canonical-integrity/SHA256 defect; stale lower/global navigation; targeted forward correction; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; final physical re-audit pending.
 > v1.0.465 records PB04 Controller physical re-audit #2 PASS and controlled Production Blocker closure authorization/state-sync; PB04 CLOSED based on Discovery 02 v1.0.1 D02.5-59 / DEC-041; closure review baseline = 96ca4e67d77bfaf5d60b54b2685c4fd70f6cc14a. Authentication implementation remains NOT AUTHORIZED; Next Build Unit remains NOT YET REGISTERED; repository-first successor selection / scope freeze becomes the next control responsibility.
 > v1.0.464 records:
@@ -48,8 +49,8 @@ NEVER_DEFAULT
 |---|---|---|---|
 | `READ_ME_FIRST.md` | Repository entry path | Canonical | ALWAYS |
 | `AGENTS.md` | Agent behavior rules | Canonical | ALWAYS |
-| `docs/state/CURRENT_STATE.md` | Primary State Document. PB04 closure final physical re-audit PASS; verified repository baseline: db10d3574396b23aa10cf5de42197e4b81550a77; exact correction commit scope verified; manifest committed-blob SHA256 integrity PASS; UTF-8 no-BOM / mojibake absence PASS; working tree clean; background processes = 0 / Owner confirmed; premature BU-088 never canonicalized to main; PB04 recovery/canonical-integrity path COMPLETE; repository returns to Next Build Unit Selection / Scope Freeze. Version 1.5.382. (CDF78858AE80D4F09A397BBEB34B9F0620EC1BB5B3C221714F9849505B27FB73) | CANONICAL STATE | PHASE: Build |
-| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. PB04 closure final physical re-audit PASS / baseline db10d3574396b23aa10cf5de42197e4b81550a77 / manifest-hash integrity PASS / background containment complete / premature BU-088 never canonicalized / next responsibility restored to repository-first successor selection. Version 0.1.488. (7B010A97EF651B4D674E99080A75B474556F2B768E25916F51C2BDFF511E11A1) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
+| `docs/state/CURRENT_STATE.md` | Primary State Document. PB04 final pass state-sync process deviation: manage_task/schedule used contrary to control; Owner contained zero remain; post-containment read-only audit PASS; NON-MATERIAL EXECUTION-CONTROL DEFECT; material commit 042567b... valid; PB04 remains CLOSED; successor selection AUTHORIZED. Version 1.5.383. (273044B335934D7EEB6129BD657B9FEFC94206282C517183CDE596D6EA55153B) | CANONICAL STATE | PHASE: Build |
+| `docs/state/HANDOFF_PACKET.md` | Compact Agent Navigation Snapshot. PB04 final pass state-sync process deviation: NON-MATERIAL EXECUTION-CONTROL DEFECT; material commit 042567b... valid; PB04 remains CLOSED; successor selection AUTHORIZED. Version 0.1.489. (4867D2F68D2EF2B76EB81B3FEC6FFDF471D73A5BF802BF5EED0C4E88E34F657C) | DYNAMIC NAVIGATION SNAPSHOT | PHASE: Build |
 | `docs/00-governance/00.02_DECISION_HIERARCHY.md` | Authority/status rules | Canonical | ALWAYS |
 | `docs/00-governance/00.03_CANONICAL_TERMINOLOGY.md` | Naming vocabulary | Canonical | ALWAYS |
 | `docs/00-governance/00.01_DISCOVERY_PROCESS.md` | Discovery execution process | DRAFT — FOR REVIEW v0.3.0 | PHASE: Discovery |
@@ -59,7 +60,7 @@ NEVER_DEFAULT
 | `docs/00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md` | Domain ownership/contracts | Canonical | DOMAIN/Architecture |
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 for BU-011+. (C95962F438AAC76A7EE77F71B9A57C91BE1022E894763B09DCCED53CB39833CB) | Canonical / LOCKED v1.1.1 | PHASE: Build |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control — baseline-first completion priority, formal Baseline Completion Gate, completed BU reuse, Track semantics and attendance/timetable baseline exclusion, and post-baseline expansion control. Version 1.0.2. (E1808F66D006520C76068DF889C0D126DBBB54E617FDD886CAF5EC00AB9D0892) | Canonical / LOCKED v1.0.2 | PHASE: Build |
-| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. PB04 closure final physical re-audit PASS; correction commit db10d357... physically verified; manifest/blob-hash integrity PASS; background-process containment complete; premature BU-088 never canonicalized; PB04 remains CLOSED; active BU NONE; Next BU NOT YET REGISTERED; repository-first Next Build Unit Selection / Scope Freeze authorized. Version 0.1.428. (DD731C8AFE6E1D1A4B556CE567F806352D3F64C2163276DE17E948E817F55674) | DYNAMIC BUILD CONTROL | PHASE: Build |
+| `docs/build/BUILD_PHASE_INDEX.md` | Build Phase Control Index. PB04 final pass state-sync process deviation: manage_task/schedule used; Owner contained zero remain; post-containment read-only audit PASS; NON-MATERIAL EXECUTION-CONTROL DEFECT; material result valid; PB04 remains CLOSED; active BU NONE; Next BU NOT REGISTERED. Version 0.1.429. (0516CAEBE98F0CCCB291D65303610547758041445E897D90CE22CE0DA0959ED9) | DYNAMIC BUILD CONTROL | PHASE: Build |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product Completion Roadmap. BU-087 terminally verified; Teacher readiness inspection implemented; Milestone 1 NOT COMPLETE. Version 1.0.34. (A2BF81725DE54F98CF8F127A19F07EBFB48D2C99D1A75F5DAFCB3F277710EB69) | DYNAMIC ROADMAP | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
 | `docs/00-recovery/00.01_PRODUCT_IDENTITY_AND_PURPOSE.md` | Product Recovery | Frozen | DOMAIN |
