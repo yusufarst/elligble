@@ -1,8 +1,8 @@
 **Status:** LOCKED  
-**Version:** 1.2.0
+**Version:** 1.2.1
 **Canonical:** YES  
-**Supersedes:** 1.1.0
-**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.0, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
+**Supersedes:** 1.2.0
+**Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.1, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
 **Last Reviewed:** 2026-09-12
 
