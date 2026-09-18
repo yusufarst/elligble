@@ -13,14 +13,13 @@ BEGIN
 
     -- 1. Authentication Credentials
     -- Ownership: Identity
-    -- Enforces: ELLIGBLE ID / username uniqueness, failed attempts, lockouts
+    -- Enforces: ELLIGBLE ID / username uniqueness, failed attempts timeline, lockouts
     CREATE TABLE IF NOT EXISTS identity_account_credentials (
         user_account_id UUID PRIMARY KEY,
         username VARCHAR(255) NOT NULL UNIQUE,
         password_verifier VARCHAR(255) NOT NULL,
         is_valid BOOLEAN NOT NULL DEFAULT TRUE,
-        failed_attempts_count INT NOT NULL DEFAULT 0,
-        first_failed_attempt_at TIMESTAMP WITH TIME ZONE,
+        failed_attempts_timeline JSONB NOT NULL DEFAULT '[]'::jsonb,
         consecutive_failures_count INT NOT NULL DEFAULT 0,
         locked_until TIMESTAMP WITH TIME ZONE,
         last_successful_login_at TIMESTAMP WITH TIME ZONE,
@@ -28,6 +27,8 @@ BEGIN
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_identity_account_credentials_account FOREIGN KEY (user_account_id) REFERENCES identity_user_accounts (id) ON DELETE RESTRICT
     );
+
+    CREATE INDEX IF NOT EXISTS idx_identity_account_credentials_username ON identity_account_credentials (username);
 
     -- 2. Session Identity
     -- Ownership: Identity

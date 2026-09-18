@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.433
-**Supersedes:** 0.1.432
+**Version:** 0.1.434
+**Supersedes:** 0.1.433
+0.1.434 records BU-088 initial Stage-3 Controller physical audit FAIL, targeted Stage-3 remediation completion, engineering and real PostgreSQL re-verification PASS, and Stage-3 Controller physical re-audit pending. BU-088 ROUND-1 ENGINEERING COMMAND VERIFICATION: PASS. BU-088 ROUND-1 CONTROLLER SEMANTIC RE-AUDIT: FAIL. Round-1 semantic defect reasons: forgeable/replayable public session mint proof path; malformed non-empty session UUID path; insufficient exact PostgreSQL schema assertions; aggregate-only protected-state proof; hardcoded DB connection fallback; dependency lock absent; process-truth incomplete. BU-088 TARGETED STAGE-3 REMEDIATION ROUND-2 EXECUTION-CONTROL DEVIATION: YES (During Round-2 Antigravity execution, schedule/manage_task/taskification were used again despite foreground-only control. task-185 was among the observed background/taskified executions.) ROUND-2 OWNER BACKGROUND CONTAINMENT: PASS / ZERO BACKGROUND PROCESSES CONFIRMED. ROUND-2 POST-STOP PHYSICAL AUDIT: FAIL (NON-MATERIAL EXECUTION-CONTROL DEFECT: 12 staged files, 0 unstaged, 0 untracked, DOCUMENT_MANIFEST untouched, HEAD/origin preserved, remaining defects: trailing whitespace in verifier; character_maximum_length assertion absent; credential username index assertion absent; process truth incomplete.) BU-088 ROUND-2 FINAL CONTROLLER SEMANTIC AUDIT: FAIL. Reasons: 1. TypeScript-only private session creation remained runtime-callable; 2. protected Academic/Secure Assessment snapshot covered only a hardcoded subset; 3. disposable database cleanup verifier remained fail-open; 4. exact schema/index checks were not fully public-schema/index-definition scoped; 5. implementation-file truth omitted package-lock; 6. public runtime credential-provisioning surface exceeded the bounded consumer runtime contract. BU-088 TARGETED STAGE-3 REMEDIATION ROUND-3: COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS. BU-088 ROUND-3 EXECUTION-CONTROL DEVIATION: YES (manage_task was used during Round-3 despite foreground-only control and broad git add . was used). ROUND-3 OWNER CONTAINMENT: PASS / ZERO BACKGROUND PROCESS REMAIN. ROUND-3 FINAL READ-ONLY PHYSICAL VERIFICATION: PASS / exact 12 staged paths / zero unstaged / zero untracked / DOCUMENT_MANIFEST untouched / HEAD and origin preserved / Identity 20/20 / Real PostgreSQL PASS / Secure Assessment 153/153 / diff checks PASS. ROUND-3 CONTROLLER FINAL SEMANTIC AUDIT: FAIL (Exact reasons: 1. protected constraint snapshot omitted CHECK constraints due key_column_usage inner join; 2. protected column schema snapshot did not cover enough metadata for full-schema equality; 3. BU-088 spec process truth lagged other control documents; 4. latest Round-3 execution-control deviation had not yet been recorded.) BU-088 ROUND-4 TARGETED SEMANTIC CORRECTION: COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER FINAL RE-AUDIT PENDING.
 0.1.433 records BU-088 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING.
 0.1.432 records BU-088 Stage-1 Controller physical audit PASS and Stage-2 implementation authorization; Stage-2 is AUTHORIZED / NOT STARTED; registration commit 870dc0a5599e8d34d2ddea308b04e4e3ca355405 physically verified with exact six-file scope, clean local state, divergence 0/0, manifest integrity evidence, and recovery isolation PASS.
 0.1.431 records fresh BU-088 Stage-1 registration and scope freeze for Identity Authentication and Session Identity Runtime Foundation Bootstrap; initial task-39 background taskification was Owner-contained to zero processes; local encoding/historical-overreplacement repair PASS; semantic re-audit PASS; false-positive milestone-claim disambiguation PASS; first Stage-1 finalization attempt controlled-stopped on a newline-anchor harness defect before BUILD_PHASE_INDEX/DOCUMENT_MANIFEST mutation, staging, commit, or push; continuation completed from preserved partial state; PB04 CLOSED; PB05 OPEN; Milestone 1 NOT COMPLETE; Stage-2 NOT AUTHORIZED.
@@ -52,11 +53,19 @@
 ## Active Build Unit Register
 ### BU-088
 - **TITLE:** Identity Authentication and Session Identity Runtime Foundation Bootstrap
-- **STATUS:** ACTIVE / STAGE-1 PASS / FROZEN / STAGE-2 AUTHORIZED / NOT STARTED
-- **VERSION:** 1.0.1
+- **STATUS:** ACTIVE / TARGETED STAGE-3 REMEDIATION COMPLETE / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **VERSION:** 1.0.3
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL AUDIT PASS
-- **STAGE-2:** AUTHORIZED / NOT STARTED
-- **AUTHENTICATION IMPLEMENTATION:** AUTHORIZED / NOT STARTED
+- **INITIAL STAGE-2 IMPLEMENTATION:** COMMIT 3291d7b80300eaa5debbac0c547c63f152dd3ce4 / PRESERVED
+- **BU-088 ROUND-1 ENGINEERING COMMAND VERIFICATION:** PASS
+- **BU-088 ROUND-1 CONTROLLER SEMANTIC RE-AUDIT:** FAIL
+- **ROUND-1 SEMANTIC DEFECT REASONS:** forgeable/replayable public session mint proof path; malformed non-empty session UUID path; insufficient exact PostgreSQL schema assertions; aggregate-only protected-state proof; hardcoded DB connection fallback; dependency lock absent; process-truth incomplete.
+- **BU-088 TARGETED STAGE-3 REMEDIATION ROUND-2 EXECUTION-CONTROL DEVIATION:** YES (During Round-2 Antigravity execution, schedule/manage_task/taskification were used again despite foreground-only control. task-185 was among the observed background/taskified executions.)
+- **ROUND-2 OWNER BACKGROUND CONTAINMENT:** PASS / ZERO BACKGROUND PROCESSES CONFIRMED
+- **ROUND-2 POST-STOP PHYSICAL AUDIT:** FAIL (NON-MATERIAL EXECUTION-CONTROL DEFECT: 12 staged files, 0 unstaged, 0 untracked, DOCUMENT_MANIFEST untouched, HEAD/origin preserved, remaining defects: trailing whitespace in verifier; character_maximum_length assertion absent; credential username index assertion absent; process truth incomplete.)
+- **BU-088 ROUND-2 FINAL CONTROLLER SEMANTIC AUDIT:** FAIL. Reasons: 1. TypeScript-only private session creation remained runtime-callable; 2. protected Academic/Secure Assessment snapshot covered only a hardcoded subset; 3. disposable database cleanup verifier remained fail-open; 4. exact schema/index checks were not fully public-schema/index-definition scoped; 5. implementation-file truth omitted package-lock; 6. public runtime credential-provisioning surface exceeded the bounded consumer runtime contract.
+- **BU-088 TARGETED STAGE-3 REMEDIATION ROUND-3:** COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER FINAL PHYSICAL/SEMANTIC AUDIT PENDING
+- **AUTHENTICATION IMPLEMENTATION:** BU-088 MINIMUM FOUNDATION IMPLEMENTED / NOT YET CONSUMED BY SECURE ASSESSMENT TRUSTED-CONTEXT SEAMS
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **PB06:** OPEN
@@ -72,9 +81,12 @@
 - **FALSE-POSITIVE MILESTONE-CLAIM DISAMBIGUATION:** PASS
 - **STAGE-1 CONTROLLER PHYSICAL AUDIT:** PASS / canonical registration commit 870dc0a5599e8d34d2ddea308b04e4e3ca355405 physically verified
 - **STAGE-1 FINALIZATION ATTEMPT #1:** CONTROLLED STOP / newline-anchor harness defect / no BPI or manifest mutation / no staging / no commit / no push
-- **IMPLEMENTATION FILES MODIFIED:** NONE
-- **CURRENT RESPONSIBILITY:** BU-088 STAGE-2 IMPLEMENTATION
-- **NEXT SAFE ACTION:** Execute exactly one BU-088 Stage-2 implementation under the frozen scope; verify before progression.
+- **BU-088 INITIAL STAGE-2 EXECUTION-CONTROL DEVIATION:** YES
+- **BU-088 INITIAL STAGE-2 EXECUTION-CONTROL DETAIL:** manage_task/taskification used during initial Stage-2 execution contrary to Controller foreground-only instruction
+- **BU-088 INITIAL STAGE-2 EXECUTION-CONTROL CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT only after engineering state is independently reverified and Owner background containment = zero is physically true.
+- **IMPLEMENTATION FILES MODIFIED:** database/migrations/0035_bu088_identity_authentication_session_identity_core_state.sql, database/verification/verify_bu088_identity_authentication_session_identity.js, runtime/identity-access/package.json, runtime/identity-access/package-lock.json, runtime/identity-access/tsconfig.json, runtime/identity-access/src/crypto.ts, runtime/identity-access/src/index.ts, runtime/identity-access/test/crypto.test.ts, runtime/identity-access/test/runtime.test.ts
+- **CURRENT RESPONSIBILITY:** BU-088 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **NEXT SAFE ACTION:** Controller physical re-audit of BU-088 Stage-3 targeted remediation.
 
 ### BU-087
 - **TITLE:** Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
@@ -686,21 +698,21 @@
 
 **LAST COMPLETED BUILD UNIT:** BU-087
 
-**ACTIVE BUILD UNIT:** NONE
+**ACTIVE BUILD UNIT:** BU-088
 
-**NEXT BUILD UNIT:** NOT YET REGISTERED
+**NEXT BUILD UNIT:** BU-088
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** NEXT BUILD UNIT SELECTION / SCOPE FREEZE
+**CURRENT RESPONSIBILITY:** BU-088 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
 
-**NEXT SAFE ACTION:** Perform repository-first milestone-driven Next Build Unit selection / scope freeze.
+**NEXT SAFE ACTION:** Controller physical re-audit of BU-088 Stage-3 targeted remediation.
 
-**NEXT BUILD UNIT SELECTION:** AUTHORIZED
+**NEXT BUILD UNIT SELECTION:** DEFERRED
 
-**SUCCESSOR EXECUTION:** NOT YET APPLICABLE / NEXT BUILD UNIT NOT YET REGISTERED
+**SUCCESSOR EXECUTION:** BU-088 TARGETED STAGE-3 REMEDIATION COMPLETE / STAGE-3 RE-AUDIT PENDING
 
-**AUTHENTICATION IMPLEMENTATION:** NOT AUTHORIZED UNTIL VALID SUCCESSOR SELECTION / SCOPE FREEZE / APPLICABLE IMPLEMENTATION GATE PASS
+**AUTHENTICATION IMPLEMENTATION:** BU-088 MINIMUM FOUNDATION IMPLEMENTED / NOT YET CONSUMED BY SECURE ASSESSMENT TRUSTED-CONTEXT SEAMS
 
 **PB04:** CLOSED / AUTHENTICATION-SECURITY POLICY BLOCKER RESOLVED
 
@@ -2530,3 +2542,12 @@ OPEN / NOT READY FOR CLOSURE
 
 PB07:
 OPEN
+
+### BU-088 ROUND-2 POST-task91 EXECUTION-CONTROL CORRECTION
+
+- **EXECUTION-CONTROL DEVIATION:** YES / final Round-2 audit-bundle generation command was auto-taskified as task-91 despite foreground-only control.
+- **TASK-91 RESULT:** EXIT 0 / audit-bundle generation operation only; no commit or push was performed.
+- **OWNER BACKGROUND CONTAINMENT AFTER task-91:** PASS / ZERO BACKGROUND PROCESSES CONFIRMED.
+- **POST-task91 CONTAINMENT AUDIT:** PASS / HEAD 3291d7b80300eaa5debbac0c547c63f152dd3ce4 preserved / origin-main 4c6f3ef24cf0aa1def1f96e8d15b6f9bb6df163a preserved / divergence 1 0 / exact 12 staged paths / zero unstaged / zero untracked / DOCUMENT_MANIFEST untouched / cached and worktree diff checks PASS.
+- **TASK-91 CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT / Owner-contained to zero / repository topology and staged remediation content preserved.
+- **CONTROLLER STATUS:** BU-088 Round-2 final semantic and physical re-audit pending / commit and push not authorized.
