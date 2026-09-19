@@ -50,11 +50,20 @@ Establishes the read-only Organization/Tenant context resolution runtime (`runti
 
 ## 8. Status
 - **Phase:** BUILD
-- **Version:** 1.0.3
-- **Supersedes:** 1.0.2
+- **Version:** 1.0.4
+- **Supersedes:** 1.0.3
 - **Status:**
-  ACTIVE /
-  STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+  COMPLETE /
+  FAST-TRACK LIFECYCLE CLOSE COMPLETE /
+  STAGE-5 FINAL PHYSICAL VERIFICATION PENDING
+- **Stage-3 Controller Physical Re-Audit:** PASS
+- **Stage-3 Canonical Commit:** `356f92280e4bea5a1efa55c2b433de65f6f47c2e`
+- **Stage-4 Lifecycle Close:** COMPLETE
+- **Stage-4 Commit:** `1470cc1241075216421dec90f17ac30c0b320d0b`
+- **Done:** YES
+- **Full BU-089 Repository Finalized:** YES
+- **Stage-5 Final Physical Verification:** PENDING
+- **Stage-4 Process Truth:** execution used `manage_task` and `git restore` contrary to foreground-only / no-restore control; no runtime engineering was changed; Controller classified the remaining defect as canonical-state synchronization only.
 - **Implementation Commit:** `d36fa3f1afdd3622e502f353fd7aa9658d28b9e3` preserved
 - **Record:**
   - Stage-2 implementation commit: `d36fa3f1afdd3622e502f353fd7aa9658d28b9e3`
