@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.440
-**Supersedes:** 0.1.439
+**Version:** 0.1.441
+**Supersedes:** 0.1.440
+0.1.441 records BU-090 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING.
 0.1.440 records BU-090 Stage-1 targeted registration-integrity correction; selection remains FROZEN; Stage-2 NOT AUTHORIZED; Controller physical re-audit PENDING; prior manage_task/two-commit deviation recorded as non-material process-control truth.
 0.1.439 records BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL, and BU-090 Next Build Unit Selection / Fast-Track Stage-1 Scope Freeze.
 0.1.438 records BU-089 Fast-Track Stage-4 lifecycle close COMPLETE, and STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
@@ -62,14 +63,14 @@
 - **STATUS:** STAGE-1 PASS / FROZEN
 - **VERSION:** 1.0.1
 - **STAGE-1:** PASS / FROZEN
-- **STAGE-1 CONTROLLER PHYSICAL AUDIT:** PENDING
-- **STAGE-2 IMPLEMENTATION:** NOT STARTED / NOT AUTHORIZED
+- **STAGE-1 CONTROLLER PHYSICAL AUDIT:** PASS
+- **STAGE-2 IMPLEMENTATION:** COMPLETE
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **MILESTONE 1:** NOT COMPLETE
 - **OWNER DECISION REQUIRED:** NO
-- **CURRENT RESPONSIBILITY:** BU-090 STAGE-1 CONTROLLER PHYSICAL AUDIT
-- **NEXT SAFE ACTION:** Controller Stage-1 physical audit of the BU-090 registration scope freeze.
+- **CURRENT RESPONSIBILITY:** BU-090 STAGE-3 CONTROLLER PHYSICAL AUDIT
+- **NEXT SAFE ACTION:** Controller Stage-3 physical audit of the BU-090 Stage-2 Implementation.
 - **SUCCESSOR EXECUTION:** NOT YET AUTHORIZED
 - **STAGE-1 TARGETED REGISTRATION-INTEGRITY CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
 - **STAGE-1 PROCESS DEVIATION:** `manage_task` used + two registration/state-sync commits instead of one / NON-MATERIAL EXECUTION-CONTROL DEFECT

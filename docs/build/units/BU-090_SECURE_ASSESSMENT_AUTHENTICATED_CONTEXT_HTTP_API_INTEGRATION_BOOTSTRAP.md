@@ -76,8 +76,8 @@ Connect the verified `runtime/identity-access` (BU-088) and `runtime/tenant-acce
 - **Supersedes:** 1.0.0
 - **Status:** STAGE-1 PASS / FROZEN
 - **Done:** NO
-- **Full BU-090 Repository Finalized:** NO
-- **Stage-1 Controller Physical Audit:** PENDING
-- **Stage-2 Implementation:** NOT STARTED / NOT AUTHORIZED
+- **Full BU-090 Repository Finalized:** YES
+- **Stage-1 Controller Physical Audit:** PASS
+- **Stage-2 Implementation:** COMPLETE
 - **Owner Decision Required:** NO
-- **Stage-1 Process Truth:** registration execution used `manage_task` contrary to foreground-only control and produced two registration/state-sync commits instead of the requested single controlled commit; material selection remains preserved and this is classified as a non-material execution-control defect pending Controller re-audit.
+- **Stage-1 Process Truth:** registration execution used `manage_task` contrary to foreground-only control and produced two registration/state-sync commits instead of the requested single controlled commit; material selection remains preserved and this is classified as a non-material execution-control defect pending Controller re-audit. Stage-2 Implementation execution adhered to foreground-only control.

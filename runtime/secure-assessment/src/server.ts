@@ -117,10 +117,38 @@ export function createServer(deps: ServerDependencies): http.Server {
         if (req.url && req.url.startsWith('/api/v1/assessment/assigned-exams')) {
             const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
             if (parsedUrl.pathname === '/api/v1/assessment/assigned-exams') {
-                handleAssignedExamsGet(req, res, {
-                    pool: deps.pool,
-                    getAssignedExamDiscoveryContext: deps.getAssignedExamDiscoveryContext ?? (() => null),
-                });
+                if (req.method !== 'GET') {
+                    res.writeHead(405, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'method_not_allowed' }));
+                    return;
+                }
+                (async () => {
+                    let authContext: AssignedExamDiscoveryContext | null = null;
+                    try {
+                        const { buildAuthenticatedContext } = await import('./http/authenticated-context.ts');
+                        const membership = await buildAuthenticatedContext(req, deps.pool);
+                        if (membership) {
+                            authContext = {
+                                tenantId: membership.tenantId,
+                                personId: membership.personId,
+                            };
+                        }
+                    } catch (err: any) {
+                        if (err && err.statusCode) {
+                            res.writeHead(err.statusCode, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: err.message }));
+                            return;
+                        }
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'internal_error' }));
+                        return;
+                    }
+
+                    handleAssignedExamsGet(req, res, {
+                        pool: deps.pool,
+                        getAssignedExamDiscoveryContext: () => authContext,
+                    });
+                })();
                 return;
             }
         }

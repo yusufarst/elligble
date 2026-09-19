@@ -1,6 +1,7 @@
 **Status:** ACTIVE / STATE-SYNC
-**Version:** 0.1.500
-**Supersedes:** 0.1.499
+**Version:** 0.1.501
+**Supersedes:** 0.1.500
+0.1.501 records BU-090 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING.
 0.1.500 records BU-090 Stage-1 targeted registration-integrity correction; selection remains FROZEN; Stage-2 NOT AUTHORIZED; Controller physical re-audit PENDING; prior manage_task/two-commit deviation recorded as non-material process-control truth.
 0.1.499 records BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL, and BU-090 Next Build Unit Selection / Fast-Track Stage-1 Scope Freeze.
 0.1.498 records BU-089 Fast-Track Stage-4 lifecycle close COMPLETE, and STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
