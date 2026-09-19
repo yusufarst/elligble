@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.390
+**Version:** 1.5.391
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.389
+**Supersedes:** CURRENT_STATE v1.5.390
+CURRENT_STATE v1.5.391 records BU-089 Stage-3 targeted correction complete, process truth updated, verifier corrected, and Controller physical re-audit pending.
 CURRENT_STATE v1.5.390 records BU-089 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING.
 CURRENT_STATE v1.5.389 records BU-088 Stage-3 Controller physical re-audit PASS. Physical audit baseline: 37493bc1e2ab614dcfc4bbb01771b48c6294004c; implementation/remediation repository state verified on GitHub; DOCUMENT_MANIFEST v1.0.473 canonical-integrity correction verified; Identity final verification = 20/20 PASS; Real PostgreSQL verification = PASS; Secure Assessment regression = 153/153 PASS; prior execution-control deviations remain preserved historically and Owner-contained; Fast-Track Stage-4 lifecycle close is COMPLETE; BU-088 DONE = YES; FULL BU-088 REPOSITORY FINALIZED = YES; Stage-5 final physical verification = PENDING; successor selection remains NOT AUTHORIZED until Stage-5 PASS; PB04 CLOSED; PB05 OPEN; Milestone 1 NOT COMPLETE.
 CURRENT_STATE v1.5.388 records BU-088 initial Stage-3 Controller physical audit FAIL, targeted Stage-3 remediation completion, engineering and real PostgreSQL re-verification PASS, and Stage-3 Controller physical re-audit pending. BU-088 ROUND-1 ENGINEERING COMMAND VERIFICATION: PASS. BU-088 ROUND-1 CONTROLLER SEMANTIC RE-AUDIT: FAIL. Round-1 semantic defect reasons: forgeable/replayable public session mint proof path; malformed non-empty session UUID path; insufficient exact PostgreSQL schema assertions; aggregate-only protected-state proof; hardcoded DB connection fallback; dependency lock absent; process-truth incomplete. BU-088 TARGETED STAGE-3 REMEDIATION ROUND-2 EXECUTION-CONTROL DEVIATION: YES (During Round-2 Antigravity execution, schedule/manage_task/taskification were used again despite foreground-only control. task-185 was among the observed background/taskified executions.) ROUND-2 OWNER BACKGROUND CONTAINMENT: PASS / ZERO BACKGROUND PROCESSES CONFIRMED. ROUND-2 POST-STOP PHYSICAL AUDIT: FAIL (NON-MATERIAL EXECUTION-CONTROL DEFECT: 12 staged files, 0 unstaged, 0 untracked, DOCUMENT_MANIFEST untouched, HEAD/origin preserved, remaining defects: trailing whitespace in verifier; character_maximum_length assertion absent; credential username index assertion absent; process truth incomplete.) BU-088 ROUND-2 FINAL CONTROLLER SEMANTIC AUDIT: FAIL. Reasons: 1. TypeScript-only private session creation remained runtime-callable; 2. protected Academic/Secure Assessment snapshot covered only a hardcoded subset; 3. disposable database cleanup verifier remained fail-open; 4. exact schema/index checks were not fully public-schema/index-definition scoped; 5. implementation-file truth omitted package-lock; 6. public runtime credential-provisioning surface exceeded the bounded consumer runtime contract. BU-088 TARGETED STAGE-3 REMEDIATION ROUND-3: COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS. BU-088 ROUND-3 EXECUTION-CONTROL DEVIATION: YES (manage_task was used during Round-3 despite foreground-only control and broad git add . was used). ROUND-3 OWNER CONTAINMENT: PASS / ZERO BACKGROUND PROCESS REMAIN. ROUND-3 FINAL READ-ONLY PHYSICAL VERIFICATION: PASS / exact 12 staged paths / zero unstaged / zero untracked / DOCUMENT_MANIFEST untouched / HEAD and origin preserved / Identity 20/20 / Real PostgreSQL PASS / Secure Assessment 153/153 / diff checks PASS. ROUND-3 CONTROLLER FINAL SEMANTIC AUDIT: FAIL (Exact reasons: 1. protected constraint snapshot omitted CHECK constraints due key_column_usage inner join; 2. protected column schema snapshot did not cover enough metadata for full-schema equality; 3. BU-088 spec process truth lagged other control documents; 4. latest Round-3 execution-control deviation had not yet been recorded.) BU-088 ROUND-4 TARGETED SEMANTIC CORRECTION: COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER FINAL RE-AUDIT PENDING.
@@ -79,15 +80,15 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 **CURRENT PRODUCT MILESTONE:** SECURE ASSESSMENT — MINIMUM BROWSER-USABLE END-TO-END VERTICAL PRODUCT
 **CURRENT MILESTONE IS FINAL PROJECT COMPLETION:** NO
 **POST-BASELINE DIRECTION:** OPTIONAL THEN FUTURE
-**LAST COMPLETED UNIT:** BU-087
-**LAST COMPLETED BUILD UNIT:** BU-087 — Secure Assessment Teacher Scheduled Exam and Readiness Inspection Read API and Browser UI Integration Bootstrap
-**ACTIVE UNIT:** BU-088
-**ACTIVE BUILD UNIT:** BU-088
-**NEXT UNIT:** BU-088
-**NEXT BUILD UNIT:** BU-088
+**LAST COMPLETED UNIT:** BU-088
+**LAST COMPLETED BUILD UNIT:** BU-088 — TERMINAL / DO NOT REOPEN
+**ACTIVE UNIT:** BU-089
+**ACTIVE BUILD UNIT:** BU-089
+**NEXT UNIT:** BU-089
+**NEXT BUILD UNIT:** BU-089
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
-**CURRENT RESPONSIBILITY:** BU-088 ROUND-4 CONTROLLER FINAL RE-AUDIT PENDING
-**NEXT SAFE ACTION:** Controller physical re-audit of BU-088 Stage-3 targeted remediation.
+**CURRENT RESPONSIBILITY:** BU-089 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+**NEXT SAFE ACTION:** Controller physical re-audit of BU-089 Stage-3 forward correction.
 **NEXT BUILD UNIT SELECTION:** DEFERRED
 **SUCCESSOR EXECUTION:** DEFERRED
 **AUTHENTICATION IMPLEMENTATION:** BU-088 MINIMUM FOUNDATION IMPLEMENTED / NOT YET CONSUMED BY SECURE ASSESSMENT TRUSTED-CONTEXT SEAMS
@@ -136,8 +137,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-089 CURRENT STATUS
 - **BUILD UNIT:** BU-089
 - **TITLE:** Organization/Tenant Authenticated Membership Context Runtime Foundation Bootstrap
-- **VERSION:** 1.0.1
-- **STATUS:** ACTIVE / STAGE-2 IMPLEMENTATION COMPLETE / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING
+- **VERSION:** 1.0.2
+- **STATUS:** ACTIVE / STAGE-2 IMPLEMENTATION COMPLETE / TARGETED STAGE-3 FORWARD CORRECTION COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER STAGE-3 PHYSICAL RE-AUDIT PENDING
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-2 IMPLEMENTATION:** COMPLETE
 - **ENGINEERING VERIFICATION:** PASS
@@ -145,8 +146,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **MILESTONE COMPLETE:** NO
-- **CURRENT RESPONSIBILITY:** BU-089 STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING
-- **NEXT SAFE ACTION:** Controller physical audit of BU-089.
+- **CURRENT RESPONSIBILITY:** BU-089 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **NEXT SAFE ACTION:** Controller physical audit of BU-089 Stage-3 forward correction.
 - **STAGE-3 CORRECTION PROCESS DEVIATION:** YES / manage_task/taskification was used contrary to foreground-only control
 - **STAGE-3 CORRECTION BACKGROUND VISIBILITY:** five background processes were visibly present
 - **STAGE-3 CORRECTION BACKGROUND CONTAINMENT:** Owner subsequently confirmed: BACKGROUND PROCESSES = 0
@@ -154,15 +155,28 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-3 CORRECTION PROCESS DEVIATION CLASSIFICATION:** NON-MATERIAL EXECUTION-CONTROL DEFECT AFTER OWNER CONTAINMENT
 - **STAGE-3 CORRECTION MATERIAL EFFECT:** material verifier correctness still required re-verification before push
 
+
+### BU-089 Stage-3 Local Recovery Process Truth
+
+- Prior BU-089 correction executions used `manage_task` / taskification contrary to foreground-only control.
+- A prohibited `--force-with-lease` push was used while producing the earlier `3c6451cc93b7bd2e000e964c56de9e7752038021` state.
+- Owner subsequently confirmed background processes returned to zero.
+- Premature local BU-089 Stage-4/Stage-5 and BU-090 work was detected before canonicalization.
+- That premature local chain is preserved on `recovery/bu089-premature-stage4-bu090-6ce0718` at `6ce0718163a759d1d093424db30fae7ddd50b485`.
+- Local `main` was isolated back to the BU-089 Stage-3 correction candidate.
+- BU-090 was NOT canonicalized.
+- Canonical remote `origin/main` remained `3c6451cc93b7bd2e000e964c56de9e7752038021`.
+- Classification: NON-MATERIAL EXECUTION-CONTROL DEVIATIONS / canonical remote preserved / BU-089 Stage-3 Controller physical re-audit remains required.
 ### BU-088 CURRENT STATUS
 - **BUILD UNIT:** BU-088
 - **TITLE:** Identity Authentication and Session Identity Runtime Foundation Bootstrap
-- **VERSION:** 1.0.3
-- **STATUS:** ACTIVE / TARGETED STAGE-3 REMEDIATION COMPLETE / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **VERSION:** 1.0.5
+- **STATUS:** COMPLETE / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DO NOT REOPEN
+- **DONE:** YES
+- **FULL REPOSITORY FINALIZED:** YES
+- **DO NOT REOPEN:** YES
 - **STAGE-1:** PASS / FROZEN / CONTROLLER PHYSICAL AUDIT PASS
 - **INITIAL STAGE-2 IMPLEMENTATION:** COMMIT 3291d7b80300eaa5debbac0c547c63f152dd3ce4 / PRESERVED
-- **INITIAL STAGE-3 CONTROLLER PHYSICAL AUDIT:** FAIL
-- **TARGETED STAGE-3 REMEDIATION:** IMPLEMENTATION COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER PHYSICAL RE-AUDIT PENDING
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **MILESTONE COMPLETE:** NO
@@ -233,7 +247,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 - **REAL AUTHENTICATION GAP CLOSED:** NO (AUTHENTICATION IMPLEMENTATION NOT AUTHORIZED)
 - **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
 - **NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze. Do not register or implement a successor before Controller PASS.
@@ -261,7 +275,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **RENDERED QA:** PASS
 - **EXACT READ API:** GET /api/v1/assessment/proctor-monitoring
 - **READ/MUTATION BOUNDARY:** READ ONLY
-- **PB04:** OPEN
+- **PB04:** CLOSED
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
@@ -291,7 +305,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 - **PROCTOR OPERATIONAL UI GAP CLOSED:** YES / BU-086
 - **REAL AUTHENTICATION GAP CLOSED:** NO
 - **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
@@ -350,13 +364,13 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **REPOSITORY FINALIZED:** YES
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
-- **PB04:** OPEN
+- **PB04:** CLOSED
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
 - **MILESTONE COMPLETE:** NO
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 - **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
 - **NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze. Do not register or implement a successor before Controller PASS.
 - **FULL ASSIGNED-EXAM DISCOVERY GAP CLOSED:** YES / BU-085
@@ -409,8 +423,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **TERMINAL:** YES / DO NOT REOPEN
 - **NEXT BUILD UNIT SELECTION:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
-- **PB04:** OPEN
+- **NEXT BUILD UNIT:** BU-089
+- **PB04:** CLOSED
 - **PB05:** OPEN
 - **PB06:** OPEN
 - **PB07:** OPEN
@@ -489,7 +503,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **FRONTEND TYPECHECK:** PASS
 - **FRONTEND TEST:** PASS / 41 TESTS
 - **FRONTEND BUILD:** PASS
-- **PB04:** Full Authentication Policy / Authentication-Security Policy (OPEN / CARRIED FORWARD)
+- **PB04:** Full Authentication Policy / Authentication-Security Policy (CLOSED / RESOLVED)
 - **PB05:** Permission Matrix (OPEN / CARRIED FORWARD)
 - **PB06:** Assessment Capability Testing (OPEN / NOT CLOSED)
 - **PB07:** Zero-Lost-Answer Verification (OPEN / NOT CLOSED)
@@ -519,8 +533,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **LAST COMPLETED EXECUTABLE BUILD UNIT:** BU-081
 - **LAST COMPLETED BUILD UNIT:** BU-081
-- **ACTIVE BUILD UNIT:** NONE
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **ACTIVE BUILD UNIT:** BU-089
+- **NEXT BUILD UNIT:** BU-089
 - **FRONTEND ENTRY GATE:** PASS
 - **FRONTEND PACKAGE:** frontend/web (@elligble/web)
 - **FRONTEND STACK:** React + TypeScript + Vite
@@ -546,7 +560,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **BACKEND TYPECHECK:** PASS
 - **BACKEND REGRESSION:** PASS / 147 TESTS
 - **BU-080 REAL POSTGRESQL PREDECESSOR:** PASS
-- **PB04:** OPEN
+- **PB04:** CLOSED
 - **PB05:** OPEN / CARRIED FORWARD
 - **PB06:** OPEN / NOT CLOSED
 - **PB07:** OPEN / NOT CLOSED
@@ -573,8 +587,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **TERMINAL:** YES / DO NOT REOPEN
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **LAST COMPLETED BUILD UNIT:** BU-080
-- **ACTIVE BUILD UNIT:** NONE
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **ACTIVE BUILD UNIT:** BU-089
+- **NEXT BUILD UNIT:** BU-089
 - **FRONTEND ENTRY GATE:** PASS
 - **PACKAGE TYPECHECK:** PASS
 - **FOCUSED TEST:** PASS / 21 TESTS
@@ -628,8 +642,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **TERMINAL:** YES / DO NOT REOPEN
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
 - **LAST COMPLETED EXECUTABLE BUILD UNIT:** BU-079
-- **ACTIVE BUILD UNIT:** NONE
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **ACTIVE BUILD UNIT:** BU-089
+- **NEXT BUILD UNIT:** BU-089
 - **PB05:** OPEN / CARRIED FORWARD
 - **PB06:** OPEN / NOT CLOSED
 - **FRONTEND ENTRY GATE:** DEFERRED / NOT YET TRIGGERED
@@ -651,7 +665,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **CANDIDATE CODE ACCEPTED:** NO
 - **CANDIDATE AUTH MODEL ACCEPTED:** NO
 - **IDENTIFIER STATUS:** RETIRED AS INCIDENT/RECOVERY RECORD / DO NOT REUSE
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 
 ### BU-077 CURRENT STATUS
 - **BUILD UNIT:** BU-077
@@ -1121,7 +1135,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 - **SUCCESSOR:** NOT SELECTED / NOT REGISTERED
 - **PB05:** OPEN / CARRIED FORWARD
 - **OWNER DECISION REQUIRED:** NO
@@ -1150,7 +1164,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 - **SUCCESSOR:** NOT SELECTED / NOT REGISTERED
 - **PB05:** OPEN / CARRIED FORWARD
 - **OWNER DECISION REQUIRED:** NO
@@ -1184,7 +1198,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** NOT YET REGISTERED
+- **NEXT BUILD UNIT:** BU-089
 - **SUCCESSOR:** NOT SELECTED / NOT REGISTERED
 - **PB05:** OPEN / CARRIED FORWARD
 - **OWNER DECISION REQUIRED:** NO

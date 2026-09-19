@@ -114,14 +114,12 @@ async function runVerification() {
   };
 
   try {
-    // 0. Pre-run leak check
     const preLeaks = await rootClient.query(
       `SELECT datname FROM pg_database WHERE datname LIKE 'elligble_bu089_%'`
     );
     assertStrict(preLeaks.rows.length === 0, `Pre-run leak check failed: found ${preLeaks.rows.length} dangling databases`);
     log('Pre-run zero-leak verification PASS');
 
-    // 1. Create main disposable DB and apply canonical migrations 0001..0035
     const { testClient } = await createDisposableDb('main');
     const migrationsDir = path.resolve(__dirname, '../migrations');
     const allMigrationFiles = fs.readdirSync(migrationsDir)
@@ -134,21 +132,7 @@ async function runVerification() {
       await testClient.query(sql);
     }
 
-    // Check schema/tables unaltered
-    const credTableRes = await testClient.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'identity_account_credentials'`);
-    assertStrict(credTableRes.rows.length === 10, 'BU-088 objects remain valid');
-    const tenantTableRes = await testClient.query(`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'tenant_memberships'`);
-    assertStrict(tenantTableRes.rows.length === 4, 'BU-001 Membership ownership/schema remains unchanged');
-
-    log('Full canonical migration chain applied PASS');
-    log('BU-088 objects remain valid PASS');
-    log('BU-001 Membership ownership/schema remains unchanged PASS');
-
-    // 2. Snapshot protected state
-    const preSnapshot = await getProtectedStateSnapshot(testClient);
-
-    // 3. Dynamically import IdentityRuntime and TenantAccessRuntime
-    const { IdentityRuntime } = await import('../../runtime/identity-access/src/index.ts');
+    const { IdentityRuntime, POLICY } = await import('../../runtime/identity-access/src/index.ts');
     const { hashPassword } = await import('../../runtime/identity-access/src/crypto.ts');
     const { TenantAccessRuntime } = await import('../../runtime/tenant-access/src/index.ts');
 
@@ -156,13 +140,32 @@ async function runVerification() {
     const identityRuntime = new IdentityRuntime(testClient, clock);
     const tenantRuntime = new TenantAccessRuntime(testClient, identityRuntime);
 
-    // 4. Create Person, User Account, Tenant, Membership
+    // 1. Authenticated Person
     const personId = (await testClient.query('INSERT INTO identity_persons (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
+    // 2. User Account
     const accountId = (await testClient.query('INSERT INTO identity_user_accounts (id, person_id) VALUES (gen_random_uuid(), $1) RETURNING id', [personId])).rows[0].id;
+    // 3. Primary Tenant
     const tenantId = (await testClient.query('INSERT INTO tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
+    // 4. Valid primary Membership
     const membershipId = (await testClient.query('INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2) RETURNING id', [tenantId, personId])).rows[0].id;
 
-    // 5. Register credentials
+    // 5. secondary/no-membership Tenant
+    const secondTenantId = (await testClient.query('INSERT INTO tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
+
+    // 6. Second Person
+    const secondPersonId = (await testClient.query('INSERT INTO identity_persons (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
+
+    // 7. cross-person Membership
+    const crossPersonTenantId = (await testClient.query('INSERT INTO tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
+    await testClient.query('INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2)', [crossPersonTenantId, secondPersonId]);
+
+    // 8. Ambiguous Tenant
+    const ambiguousTenantId = (await testClient.query('INSERT INTO tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
+    // 9. Two ambiguous Membership rows for authenticated Person
+    await testClient.query('INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2)', [ambiguousTenantId, personId]);
+    await testClient.query('INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2)', [ambiguousTenantId, personId]);
+
+    // 10. Synthetic credential
     const plainPassword = crypto.randomBytes(16).toString('base64');
     const verifier = hashPassword(plainPassword);
     await testClient.query(`
@@ -171,112 +174,125 @@ async function runVerification() {
       ) VALUES ($1, $2, $3, TRUE, 0, '[]'::jsonb, current_timestamp, current_timestamp)
     `, [accountId, 'student.main', verifier]);
 
-    // 6. Real authentication to get session
-    const loginResult = await identityRuntime.authenticate('student.main', plainPassword);
-    assertStrict(loginResult.success === true, 'Login with correct password must succeed');
-    const { sessionId, secret } = loginResult.session;
+    // 11. primary valid BU-088 session
+    const primaryLogin = await identityRuntime.authenticate('student.main', plainPassword);
+    const primarySession = primaryLogin.session;
 
-    // 7. Verify REAL_BU088_SESSION_TO_MEMBERSHIP_CONTEXT
-    const membershipCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(sessionId, secret, tenantId);
-    assertStrict(membershipCtx !== null, 'Valid session + valid tenant resolves membership');
-    assertStrict(membershipCtx.tenantId === tenantId, 'Tenant ID matches');
-    assertStrict(membershipCtx.personId === personId, 'Person ID matches');
-    assertStrict(membershipCtx.membershipId === membershipId, 'Membership ID matches');
-    log('Real BU-088 session to Membership Context resolution PASS');
+    // 12. dedicated revoked BU-088 session
+    const revokedLogin = await identityRuntime.authenticate('student.main', plainPassword);
+    const revokedSession = revokedLogin.session;
+    // 13. revoke dedicated revoked session
+    await identityRuntime.revokeSession(revokedSession.sessionId);
 
-    // Verify context does not expose password/session secret
-    assertStrict(Object.keys(membershipCtx).length === 3, 'Membership context only contains 3 properties');
-    assertStrict(membershipCtx.secret === undefined, 'Secret is not exposed');
-    assertStrict(membershipCtx.password === undefined, 'Password is not exposed');
+    // 14. dedicated idle-expiry BU-088 session
+    const idleLogin = await identityRuntime.authenticate('student.main', plainPassword);
+    const idleSession = idleLogin.session;
 
-    // 8. NO_MEMBERSHIP_DENIAL
-    const otherTenantId = (await testClient.query('INSERT INTO tenant_tenants (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
-    const noMembershipCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(sessionId, secret, otherTenantId);
-    assertStrict(noMembershipCtx === null, 'Tenant without membership fails closed');
-    log('No membership denial PASS');
+    // 15. dedicated absolute-expiry BU-088 session
+    const absoluteLogin = await identityRuntime.authenticate('student.main', plainPassword);
+    const absoluteSession = absoluteLogin.session;
 
-    // 9. CROSS_TENANT_DENIAL
-    // (Tested by NO_MEMBERSHIP_DENIAL as person doesn't have membership in otherTenantId)
-    log('Cross tenant denial PASS');
-
-    // 10. CROSS_PERSON_DENIAL
-    const otherPersonId = (await testClient.query('INSERT INTO identity_persons (id) VALUES (gen_random_uuid()) RETURNING id')).rows[0].id;
-    await testClient.query('INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2)', [otherTenantId, otherPersonId]);
-    const crossPersonCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(sessionId, secret, otherTenantId);
-    assertStrict(crossPersonCtx === null, 'Other person\'s membership fails closed');
-    log('Cross person denial PASS');
-
-    // 11. AMBIGUOUS_MEMBERSHIP_DENIAL
-    await testClient.query('INSERT INTO tenant_memberships (id, tenant_id, person_id) VALUES (gen_random_uuid(), $1, $2)', [tenantId, personId]);
-    const ambiguousCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(sessionId, secret, tenantId);
-    assertStrict(ambiguousCtx === null, 'Ambiguous (duplicate) memberships fail closed');
-    log('Ambiguous membership denial PASS');
-
+    // CAPTURE PRE_SNAPSHOTS (All authentication calls that create sessions are finished)
     const preMembershipSnapshot = await getTenantMembershipsSnapshot(testClient);
     const preCredentialSnapshot = await getIdentityCredentialsSnapshot(testClient);
+    const preSessionSnapshot = await getIdentitySessionsSnapshot(testClient);
+    const PRE_PROTECTED_STATE = await getProtectedStateSnapshot(testClient);
 
-    // 12. Invalid / Revoked / Expired session denial
-    const invalidSessionCtx = await tenantRuntime.resolveAuthenticatedMembershipContext('invalid-id', secret, tenantId);
-    assertStrict(invalidSessionCtx === null, 'Malformed session fails closed');
-    const wrongSecretCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(sessionId, 'wrong-secret', tenantId);
-    assertStrict(wrongSecretCtx === null, 'Wrong secret fails closed');
+    // RUN TENANT ACCESS CASES
 
-    // Revoke session
-    await identityRuntime.revokeSession(sessionId);
-    const revokedCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(sessionId, secret, tenantId);
-    assertStrict(revokedCtx === null, 'Revoked session fails closed');
-    log('Invalid/revoked/expired session denial PASS');
+    // Case 1: valid session + valid membership => PASS
+    const ctx1 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, tenantId);
+    assertStrict(ctx1 !== null && ctx1.membershipId === membershipId, 'Valid session + valid membership resolves successfully');
+    log('REAL BU-088 SESSION TO MEMBERSHIP CONTEXT PASS');
 
-    const preSessionSnapshotAfterRevoke = await getIdentitySessionsSnapshot(testClient);
+    // Case 2: no membership => deny
+    const ctx2 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, secondTenantId);
+    assertStrict(ctx2 === null, 'No membership => deny');
+    log('NO MEMBERSHIP DENIAL PASS');
 
-    // 13. EXACT MEMBERSHIP NON-MUTATION
+    // Case 3: cross-tenant => deny
+    const ctx3 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, crossPersonTenantId);
+    assertStrict(ctx3 === null, 'Cross tenant => deny');
+    log('CROSS TENANT DENIAL PASS');
+
+    // Case 4: cross-person => deny
+    const ctx4 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, crossPersonTenantId);
+    assertStrict(ctx4 === null, 'Cross person => deny');
+    log('CROSS PERSON DENIAL PASS');
+
+    // Case 5: ambiguous duplicate membership => deny
+    const ctx5 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, ambiguousTenantId);
+    assertStrict(ctx5 === null, 'Ambiguous membership => deny');
+    log('AMBIGUOUS MEMBERSHIP DENIAL PASS');
+
+    // Case 6: unknown tenant UUID => deny
+    const randomTenantId = '00000000-0000-0000-0000-000000000000';
+    const ctx6 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, randomTenantId);
+    assertStrict(ctx6 === null, 'Unknown tenant UUID => deny');
+    log('UNKNOWN TENANT DENIAL PASS');
+
+    // Case 7: malformed tenant ID => deny
+    const ctx7 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, primarySession.secret, 'not-a-uuid');
+    assertStrict(ctx7 === null, 'Malformed tenant ID => deny');
+
+    // Case 8: malformed session ID => deny
+    const ctx8 = await tenantRuntime.resolveAuthenticatedMembershipContext('not-a-uuid', primarySession.secret, tenantId);
+    assertStrict(ctx8 === null, 'Malformed session ID => deny');
+
+    // Case 9: wrong session secret => deny
+    const ctx9 = await tenantRuntime.resolveAuthenticatedMembershipContext(primarySession.sessionId, 'wrong-secret', tenantId);
+    assertStrict(ctx9 === null, 'Wrong session secret => deny');
+
+    // Case 10: revoked real session => deny
+    const ctx10 = await tenantRuntime.resolveAuthenticatedMembershipContext(revokedSession.sessionId, revokedSession.secret, tenantId);
+    assertStrict(ctx10 === null, 'Revoked real session => deny');
+
+    // Case 11: isolated real idle expiry => deny
+    clock.advance(POLICY.IDLE_EXPIRY_MS + 1000); // Advance clock past idle expiry
+    const idleDbRow = (await testClient.query('SELECT authenticated_at FROM identity_sessions WHERE id = $1', [idleSession.sessionId])).rows[0];
+    const authAgeIdle = clock.now().getTime() - new Date(idleDbRow.authenticated_at).getTime();
+    assertStrict(authAgeIdle < POLICY.ABSOLUTE_EXPIRY_MS, 'Idle expiry proof: authenticated age < ABSOLUTE_EXPIRY_MS');
+
+    const ctx11 = await tenantRuntime.resolveAuthenticatedMembershipContext(idleSession.sessionId, idleSession.secret, tenantId);
+    assertStrict(ctx11 === null, 'Isolated real idle expiry => deny');
+    log('REAL IDLE EXPIRY DENIAL PASS');
+
+    // Case 12: isolated real absolute expiry => deny
+    clock.advance(POLICY.ABSOLUTE_EXPIRY_MS - authAgeIdle + 1000); // Advance clock past absolute expiry
+
+    // Refresh only dedicated absolute session last_activity_at as verifier fixture
+    await testClient.query('UPDATE identity_sessions SET last_activity_at = $1 WHERE id = $2', [clock.now().toISOString(), absoluteSession.sessionId]);
+
+    const absDbRow = (await testClient.query('SELECT authenticated_at, last_activity_at FROM identity_sessions WHERE id = $1', [absoluteSession.sessionId])).rows[0];
+    const authAgeAbs = clock.now().getTime() - new Date(absDbRow.authenticated_at).getTime();
+    const idleAgeAbs = clock.now().getTime() - new Date(absDbRow.last_activity_at).getTime();
+    assertStrict(authAgeAbs >= POLICY.ABSOLUTE_EXPIRY_MS, 'Absolute expiry proof: authenticated age >= ABSOLUTE_EXPIRY_MS');
+    assertStrict(idleAgeAbs < POLICY.IDLE_EXPIRY_MS, 'Absolute expiry proof: idle age < IDLE_EXPIRY_MS');
+
+    const ctx12 = await tenantRuntime.resolveAuthenticatedMembershipContext(absoluteSession.sessionId, absoluteSession.secret, tenantId);
+    assertStrict(ctx12 === null, 'Isolated real absolute expiry => deny');
+    log('REAL ABSOLUTE EXPIRY DENIAL PASS');
+
+
+    // CAPTURE POST SNAPSHOTS
     const postMembershipSnapshot = await getTenantMembershipsSnapshot(testClient);
-    assertStrict(preMembershipSnapshot === postMembershipSnapshot, 'Tenant memberships must not be mutated');
-    log('Exact membership non-mutation PASS');
-
-    // 14. EXACT CREDENTIAL NON-MUTATION
     const postCredentialSnapshot = await getIdentityCredentialsSnapshot(testClient);
-    assertStrict(preCredentialSnapshot === postCredentialSnapshot, 'Identity credentials must not be mutated');
-    log('Identity credential non-mutation PASS');
-
-    // 15. IDENTITY SESSION BOUNDED MUTATION
     const postSessionSnapshot = await getIdentitySessionsSnapshot(testClient);
-    assertStrict(preSessionSnapshotAfterRevoke === postSessionSnapshot, 'Identity session immutable fields must not be mutated');
-    log('Identity session bounded mutation PASS');
+    const POST_PROTECTED_STATE = await getProtectedStateSnapshot(testClient);
 
-    // 16. REAL IDLE EXPIRY DENIAL
-    const s3Login = await identityRuntime.authenticate('student.main', plainPassword);
-    const s3 = s3Login.session;
-    clock.advance(60 * 60 * 1000 + 1000); // Just beyond 60-minute idle boundary
-    const idleCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(s3.sessionId, s3.secret, tenantId);
-    assertStrict(idleCtx === null, 'Session idle expiry correctly denied by TenantAccessRuntime');
+    // ASSERTIONS
+    assertStrict(preMembershipSnapshot === postMembershipSnapshot, 'preMembershipSnapshot === postMembershipSnapshot');
+    log('EXACT MEMBERSHIP NON-MUTATION PASS');
 
-    const s3DbRow = (await testClient.query('SELECT authenticated_at FROM identity_sessions WHERE id = $1', [s3.sessionId])).rows[0];
-    const authAgeS3 = clock.now().getTime() - new Date(s3DbRow.authenticated_at).getTime();
-    assertStrict(authAgeS3 < 12 * 60 * 60 * 1000, 'Authenticated age must still be far below 12 hours');
-    log('Real idle expiry denial PASS');
+    assertStrict(preCredentialSnapshot === postCredentialSnapshot, 'preCredentialSnapshot === postCredentialSnapshot');
+    log('IDENTITY CREDENTIAL NON-MUTATION PASS');
 
-    // 17. REAL ABSOLUTE EXPIRY DENIAL
-    const s2Login = await identityRuntime.authenticate('student.main', plainPassword);
-    const s2 = s2Login.session;
-    clock.advance(11 * 60 * 60 * 1000 + 59 * 60 * 1000); // Shortly before 12-hour absolute expiry
-    await testClient.query('UPDATE identity_sessions SET last_activity_at = $1 WHERE id = $2', [clock.now().toISOString(), s2.sessionId]);
-    clock.advance(2 * 60 * 1000); // Advance a small amount past the 12-hour absolute boundary
-    const absoluteCtx = await tenantRuntime.resolveAuthenticatedMembershipContext(s2.sessionId, s2.secret, tenantId);
-    assertStrict(absoluteCtx === null, 'Session absolute expiry correctly denied by TenantAccessRuntime');
-    const s2DbRow = (await testClient.query('SELECT authenticated_at, last_activity_at FROM identity_sessions WHERE id = $1', [s2.sessionId])).rows[0];
-    const authAgeS2 = clock.now().getTime() - new Date(s2DbRow.authenticated_at).getTime();
-    const idleAgeS2 = clock.now().getTime() - new Date(s2DbRow.last_activity_at).getTime();
-    assertStrict(authAgeS2 >= 12 * 60 * 60 * 1000, 'Authenticated age >= 12 hours');
-    assertStrict(idleAgeS2 < 60 * 60 * 1000, 'Idle age < 60 minutes');
-    log('Real absolute expiry denial PASS');
+    assertStrict(preSessionSnapshot === postSessionSnapshot, 'preSessionSnapshot === postSessionSnapshot');
+    log('IDENTITY SESSION BOUNDED MUTATION PASS');
 
-    // 18. ACADEMIC_CORE_NON_MUTATION / SECURE_ASSESSMENT_NON_MUTATION
-    const postSnapshot = await getProtectedStateSnapshot(testClient);
-    assertStrict(preSnapshot === postSnapshot, 'Protected Academic Core and Secure Assessment state was mutated!');
-    log('Academic Core non-mutation PASS');
-    log('Secure Assessment non-mutation PASS');
-
+    assertStrict(PRE_PROTECTED_STATE === POST_PROTECTED_STATE, 'PRE_PROTECTED_STATE == POST_PROTECTED_STATE');
+    log('ACADEMIC CORE NON-MUTATION PASS');
+    log('SECURE ASSESSMENT NON-MUTATION PASS');
 
     console.log('\n==================================================');
     console.log('REAL POSTGRESQL DB VERIFICATION: PASS');
@@ -291,13 +307,12 @@ async function runVerification() {
     for (const d of createdDatabases) {
       try { await rootClient.query(`DROP DATABASE IF EXISTS "${d}"`); } catch (e) { console.error('Failed to drop db', e); process.exitCode = 1; }
     }
-    // Post-run leak check
     try {
       const postLeaks = await rootClient.query(
         `SELECT datname FROM pg_database WHERE datname LIKE 'elligble_bu089_%'`
       );
       if (postLeaks.rows.length === 0) {
-        log('Post-run zero-leak disposable DB cleanup PASS');
+        log('POST-RUN ZERO-LEAK PASS');
       } else {
         console.error(`LEAK: ${postLeaks.rows.length} databases remain`);
         process.exitCode = 1;

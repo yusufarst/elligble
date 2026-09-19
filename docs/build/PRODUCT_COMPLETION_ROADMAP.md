@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.40
+**Version:** 1.0.41
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.39
+**Supersedes:** 1.0.40
+1.0.41 records BU-089 Stage-3 targeted correction complete, process truth updated, verifier corrected, and Controller physical re-audit pending.
 1.0.40 records BU-089 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING. BU-089 Stage-3 correction process deviation: manage_task/taskification used contrary to foreground-only control; five background processes visibly present; Owner confirmed zero remain; correction commit remained local-only during containment; origin/main remained d36fa3f1afdd3622e502f353fd7aa9658d28b9e3; no canonical remote mutation occurred from the taskification; classification NON-MATERIAL EXECUTION-CONTROL DEFECT AFTER OWNER CONTAINMENT; material verifier correctness still required re-verification before push.
 1.0.39 records BU-088 Stage-3 Controller physical re-audit PASS. Physical audit baseline: 37493bc1e2ab614dcfc4bbb01771b48c6294004c; implementation/remediation repository state verified on GitHub; DOCUMENT_MANIFEST v1.0.473 canonical-integrity correction verified; Identity final verification = 20/20 PASS; Real PostgreSQL verification = PASS; Secure Assessment regression = 153/153 PASS; prior execution-control deviations remain preserved historically and Owner-contained; Fast-Track Stage-4 lifecycle close is COMPLETE; BU-088 DONE = YES; FULL BU-088 REPOSITORY FINALIZED = YES; Stage-5 final physical verification = PENDING; successor selection remains NOT AUTHORIZED until Stage-5 PASS; PB04 CLOSED; PB05 OPEN; Milestone 1 NOT COMPLETE.
 1.0.38 records BU-088 initial Stage-3 Controller physical audit FAIL, targeted Stage-3 remediation completion, engineering and real PostgreSQL re-verification PASS, and Stage-3 Controller physical re-audit pending. BU-088 ROUND-1 ENGINEERING COMMAND VERIFICATION: PASS. BU-088 ROUND-1 CONTROLLER SEMANTIC RE-AUDIT: FAIL. Round-1 semantic defect reasons: forgeable/replayable public session mint proof path; malformed non-empty session UUID path; insufficient exact PostgreSQL schema assertions; aggregate-only protected-state proof; hardcoded DB connection fallback; dependency lock absent; process-truth incomplete. BU-088 TARGETED STAGE-3 REMEDIATION ROUND-2 EXECUTION-CONTROL DEVIATION: YES (During Round-2 Antigravity execution, schedule/manage_task/taskification were used again despite foreground-only control. task-185 was among the observed background/taskified executions.) ROUND-2 OWNER BACKGROUND CONTAINMENT: PASS / ZERO BACKGROUND PROCESSES CONFIRMED. ROUND-2 POST-STOP PHYSICAL AUDIT: FAIL (NON-MATERIAL EXECUTION-CONTROL DEFECT: 12 staged files, 0 unstaged, 0 untracked, DOCUMENT_MANIFEST untouched, HEAD/origin preserved, remaining defects: trailing whitespace in verifier; character_maximum_length assertion absent; credential username index assertion absent; process truth incomplete.) BU-088 ROUND-2 FINAL CONTROLLER SEMANTIC AUDIT: FAIL. Reasons: 1. TypeScript-only private session creation remained runtime-callable; 2. protected Academic/Secure Assessment snapshot covered only a hardcoded subset; 3. disposable database cleanup verifier remained fail-open; 4. exact schema/index checks were not fully public-schema/index-definition scoped; 5. implementation-file truth omitted package-lock; 6. public runtime credential-provisioning surface exceeded the bounded consumer runtime contract. BU-088 TARGETED STAGE-3 REMEDIATION ROUND-3: COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS. BU-088 ROUND-3 EXECUTION-CONTROL DEVIATION: YES (manage_task was used during Round-3 despite foreground-only control and broad git add . was used). ROUND-3 OWNER CONTAINMENT: PASS / ZERO BACKGROUND PROCESS REMAIN. ROUND-3 FINAL READ-ONLY PHYSICAL VERIFICATION: PASS / exact 12 staged paths / zero unstaged / zero untracked / DOCUMENT_MANIFEST untouched / HEAD and origin preserved / Identity 20/20 / Real PostgreSQL PASS / Secure Assessment 153/153 / diff checks PASS. ROUND-3 CONTROLLER FINAL SEMANTIC AUDIT: FAIL (Exact reasons: 1. protected constraint snapshot omitted CHECK constraints due key_column_usage inner join; 2. protected column schema snapshot did not cover enough metadata for full-schema equality; 3. BU-088 spec process truth lagged other control documents; 4. latest Round-3 execution-control deviation had not yet been recorded.) BU-088 ROUND-4 TARGETED SEMANTIC CORRECTION: COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER FINAL RE-AUDIT PENDING. Milestone 1 remains NOT COMPLETE.
@@ -120,7 +121,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 
 | Domain | Canonical Scope | Proven Construction Assets (BU-001..BU-077) | Remaining Baseline Gaps | Completion Status |
 |---|---|---|---|---|
-| **Identity / Tenant / Access** | `IN — CORE / IN — MANDATORY BASELINE` | BU-001, BU-034, BU-035 (Tenant isolation, user persistence, proctor authorization) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
+| **Identity / Tenant / Access** | `IN — CORE / IN — MANDATORY BASELINE` | BU-001, BU-034, BU-035, BU-088 (Tenant isolation, user persistence, proctor authorization, session identity) | Session refresh endpoints, role UI login screens, PB05 resolution | Partially Built |
 | **Academic Core** | `IN — CORE` | BU-036–BU-042, BU-046 (Academic year, period, subjects, offerings, classes, enrollments) | Curriculum mapping UI, bulk CSV imports, administrative management views | Partially Built |
 | **Secure Assessment (Flagship)** | `IN — MANDATORY BASELINE` | BU-002–BU-035, BU-043–BU-077, BU-080–BU-087 (Timer, session locking, autosave, submission, questions, lifecycle, readiness composition, room/proctor preflights, student attempt launch, proctor monitoring, teacher readiness inspection) | Vertical browser UI (Student exam taking, Proctor dashboard, Teacher delivery), browser/server operational synchronization | Foundation Built / Vertical Product Integration Pending |
 | **Track** | `IN — MANDATORY BASELINE` | Baseline schemas & domain events planned | Longitudinal academic development and progress tracking (applicable concepts: Academic Progress, Early Warning, Targets / Follow-Up, Portfolio Workbench; Track != Care; Track does NOT own Official School Grade truth; attendance/timetable out of current baseline) | Not Started |
@@ -166,19 +167,31 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **BU-085 STATUS:** STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN
     - **INITIAL STAGE-3 AUDIT:** FAIL / TARGETED REMEDIATION COMPLETE / FINAL STAGE-3 RE-AUDIT PASS
     - **OUTCOME:** Student Assigned Exam Discovery and API Integration delivered and terminally verified by BU-085.
-    - **PRODUCTION BLOCKER IMPACT:** NONE CLOSED BY BU-085. PB04, PB05, PB06, PB07 remain OPEN.
+    - **PRODUCTION BLOCKER IMPACT:** NONE CLOSED BY BU-085. PB04 CLOSED, PB05, PB06, PB07 remain OPEN.
     - **OWNERSHIP:** BACKEND + FRONTEND
     - **NEXT PHASE TRIGGER:** Repository-first milestone-driven successor Build Unit selection / scope freeze.
   - **Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-085 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/assigned-exams`) and mobile-first student discovery component hand off to the existing BU-084 AttemptLaunch flow.
   - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-086 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/proctor-monitoring`) and mobile-first Proctor room/active-session monitoring view delivered; terminally verified.
   - **Remaining Milestone 1 Gaps:**
-    - Real authentication / trusted context integration (PB04 remains OPEN).
+    - Real authentication / trusted context integration (PB04 CLOSED).
     - Teacher delivery/readiness UI gap: IMPLEMENTED via BU-087 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN.
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
 
 ---
 
+
+### BU-089 Stage-3 Local Recovery Process Truth
+
+- Prior BU-089 correction executions used `manage_task` / taskification contrary to foreground-only control.
+- A prohibited `--force-with-lease` push was used while producing the earlier `3c6451cc93b7bd2e000e964c56de9e7752038021` state.
+- Owner subsequently confirmed background processes returned to zero.
+- Premature local BU-089 Stage-4/Stage-5 and BU-090 work was detected before canonicalization.
+- That premature local chain is preserved on `recovery/bu089-premature-stage4-bu090-6ce0718` at `6ce0718163a759d1d093424db30fae7ddd50b485`.
+- Local `main` was isolated back to the BU-089 Stage-3 correction candidate.
+- BU-090 was NOT canonicalized.
+- Canonical remote `origin/main` remained `3c6451cc93b7bd2e000e964c56de9e7752038021`.
+- Classification: NON-MATERIAL EXECUTION-CONTROL DEVIATIONS / canonical remote preserved / BU-089 Stage-3 Controller physical re-audit remains required.
 ## 6. Production Blockers Backlog Integration
 
 Active Production Blockers must be systematically resolved prior to the Baseline Completion Gate:
@@ -186,7 +199,7 @@ Active Production Blockers must be systematically resolved prior to the Baseline
 - **PB-01:** Controller / Processor Legal Allocation
 - **PB-02:** Final Retention Periods / Retention Matrix
 - **PB-03:** Required DPIA
-- **PB-04:** Full Authentication Policy / Security Policy
+- **PB-04:** Full Authentication Policy / Security Policy / CLOSED / RESOLVED
 - **PB-05:** Permission Matrix
 - **PB-06:** Assessment Capability Testing
 - **PB-07:** Zero-Lost-Answer Verification
@@ -197,6 +210,7 @@ Active Production Blockers must be systematically resolved prior to the Baseline
 - **PB-12:** Security / Incident-Response Readiness
 
 ---
+
 
 ## 7. Build Unit Governance & Cadence
 
