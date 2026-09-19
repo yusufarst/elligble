@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.43
+**Version:** 1.0.44
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.42
+**Supersedes:** 1.0.43
+1.0.44 records BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL, and BU-090 Next Build Unit Selection / Fast-Track Stage-1 Scope Freeze.
 1.0.43 forward-corrects residual BU-089 Stage-3 navigation after Stage-4; Stage-4 remains COMPLETE and Stage-5 final physical verification remains PENDING.
 1.0.42 records BU-089 Fast-Track Stage-4 lifecycle close COMPLETE, and STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
 1.0.41 records BU-089 Stage-3 targeted correction complete, process truth updated, verifier corrected, and Controller physical re-audit pending.
@@ -193,7 +194,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
 - Local `main` was isolated back to the BU-089 Stage-3 correction candidate.
 - BU-090 was NOT canonicalized.
 - Canonical remote `origin/main` remained `3c6451cc93b7bd2e000e964c56de9e7752038021`.
-- Classification: NON-MATERIAL EXECUTION-CONTROL DEVIATIONS / canonical remote preserved / BU-089 Stage-3 Controller physical re-audit subsequently PASS at 356f92280e4bea5a1efa55c2b433de65f6f47c2e / Stage-4 lifecycle close COMPLETE / Stage-5 final physical verification PENDING.
+- Classification: NON-MATERIAL EXECUTION-CONTROL DEVIATIONS / canonical remote preserved / BU-089 Stage-3 Controller physical re-audit subsequently PASS at 356f92280e4bea5a1efa55c2b433de65f6f47c2e / Stage-4 lifecycle close COMPLETE / Stage-5 final physical verification PASS / TERMINAL.
 ## 6. Production Blockers Backlog Integration
 
 Active Production Blockers must be systematically resolved prior to the Baseline Completion Gate:
