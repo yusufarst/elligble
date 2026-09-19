@@ -1,7 +1,8 @@
 **Status:** ACTIVE
-**Version:** 1.5.394
+**Version:** 1.5.395
 **Canonical:** YES
-**Supersedes:** CURRENT_STATE v1.5.393
+**Supersedes:** CURRENT_STATE v1.5.394
+CURRENT_STATE v1.5.395 records the targeted BU-090 Stage-1 registration-integrity correction; BU-090 selection remains FROZEN, Stage-2 remains NOT AUTHORIZED, and Controller physical re-audit is PENDING. Registration process deviation: `manage_task` used and two commits produced instead of the requested single registration commit; classified non-material after forward correction.
 CURRENT_STATE v1.5.394 records BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL, and BU-090 Next Build Unit Selection / Fast-Track Stage-1 Scope Freeze.
 CURRENT_STATE v1.5.393 forward-corrects BU-089 Stage-4 canonical navigation after Controller physical audit found residual Stage-3 navigation; Stage-4 remains COMPLETE and Stage-5 FINAL PHYSICAL VERIFICATION remains PENDING.
 CURRENT_STATE v1.5.392 records BU-089 Fast-Track Stage-4 lifecycle close COMPLETE, and STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
@@ -142,7 +143,7 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 ### BU-090 CURRENT STATUS
 - **BUILD UNIT:** BU-090
 - **TITLE:** Secure Assessment Authenticated Context HTTP API Integration Bootstrap
-- **VERSION:** 1.0.0
+- **VERSION:** 1.0.1
 - **STATUS:** STAGE-1 PASS / FROZEN
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL AUDIT:** PENDING
@@ -153,6 +154,8 @@ MASTER BLUEPRINT      → COMPLETE / LOCKED THROUGH MB-12 / REPOSITORY FINALIZED
 - **CURRENT RESPONSIBILITY:** BU-090 STAGE-1 CONTROLLER PHYSICAL AUDIT
 - **NEXT SAFE ACTION:** Controller Stage-1 physical audit of the BU-090 registration scope freeze.
 - **SUCCESSOR EXECUTION:** NOT YET AUTHORIZED
+- **STAGE-1 TARGETED REGISTRATION-INTEGRITY CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **STAGE-1 PROCESS DEVIATION:** `manage_task` used + two registration/state-sync commits instead of one / NON-MATERIAL EXECUTION-CONTROL DEFECT
 
 ### BU-089 CURRENT STATUS
 - **BUILD UNIT:** BU-089
