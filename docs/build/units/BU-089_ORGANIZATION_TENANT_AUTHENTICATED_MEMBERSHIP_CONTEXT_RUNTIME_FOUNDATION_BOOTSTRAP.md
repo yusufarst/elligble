@@ -50,8 +50,8 @@ Establishes the read-only Organization/Tenant context resolution runtime (`runti
 
 ## 8. Status
 - **Phase:** BUILD
-- **Version:** 1.0.2
-- **Supersedes:** 1.0.1
+- **Version:** 1.0.3
+- **Supersedes:** 1.0.2
 - **Status:**
   ACTIVE /
   STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING
