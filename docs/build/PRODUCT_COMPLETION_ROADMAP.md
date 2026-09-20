@@ -1,7 +1,8 @@
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
-**Version:** 1.0.44
+**Version:** 1.0.45
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
-**Supersedes:** 1.0.43
+**Supersedes:** 1.0.44
+1.0.45 records BU-090 Stage-3 Controller physical re-audit PASS and Stage-4 lifecycle close COMPLETE; Stage-5 final physical verification PENDING; Milestone 1 remains NOT COMPLETE.
 1.0.44 records BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL, and BU-090 Next Build Unit Selection / Fast-Track Stage-1 Scope Freeze.
 1.0.43 forward-corrects residual BU-089 Stage-3 navigation after Stage-4; Stage-4 remains COMPLETE and Stage-5 final physical verification remains PENDING.
 1.0.42 records BU-089 Fast-Track Stage-4 lifecycle close COMPLETE, and STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
@@ -159,7 +160,7 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
   - **API Layer & HTTP Server Foundation:**
     - **HTTP SERVER FOUNDATION:** EXISTS. The existing authoritative server (`runtime/secure-assessment/src/server.ts`) already exposes bounded HTTP routes for current Attempt/runtime functionality (`/healthz`, `/readyz`, `/api/v1/assessment/answer/save`, `/api/v1/assessment/timer/start`, `/api/v1/assessment/timer`, `/api/v1/assessment/submit`, `/api/v1/assessment/expiry-finalize`, `/api/v1/assessment/session/activate`, `/api/v1/assessment/submission`, `/api/v1/assessment/resume`).
     - **API LAYER STATUS:** PARTIAL / PRODUCT COMPOSITION INCOMPLETE. Remaining work is NOT "create an HTTP server foundation". Remaining work must focus on dependency-valid product-facing composition such as missing browser-facing entry, question/readiness, teacher/proctor operational boundaries, and other required vertical routes, subject to future Controller scope freeze. (Do NOT preselect exact next API endpoint; do NOT select WebSocket/polling; do NOT invent authentication/token mechanics).
-    - **AUTHENTICATION / TRUSTED CONTEXT:** Existing runtime uses an injected trusted authorization seam and remains fail-closed where real authentication integration is absent. Do NOT treat `X-Tenant-ID` or `Bearer <attempt-id>` request-header extraction as canonical.
+    - **AUTHENTICATION / TRUSTED CONTEXT:** BU-090 integrates real BU-088 Session Identity + BU-089 Membership Context into `GET /api/v1/assessment/assigned-exams`; `X-Tenant-ID` remains an untrusted locator. Browser credential persistence/transport integration remains outstanding.
   - **Student Exam Client Core Workstation:** IMPLEMENTED via BU-081. Minimal, elegant, distraction-free browser UI in Bahasa Indonesia with timer, question navigation, save indicator, and submit modal.
   - **Student Exam Client Mobile-First UX Hardening:** IMPLEMENTED in BU-082. Compact sticky assessment header, mobile question navigator sheet (`QuestionNavigatorSheet.tsx`), suppressed mobile permanent navigator, 100dvh dynamic viewport, safe-area adherence, touch-target hardening, and non-color-only state indicators.
   - **Student Exam Context Projection Integration:** IMPLEMENTED in BU-083 (implementation + rendered QA complete; Stage-3 Controller physical audit PASS; Stage-4 minimal lifecycle close complete; Stage-5 final physical verification PASS / BU-083 terminal.). Projection of read-only authoritative Subject and Exam Room context into the active exam workspace header without new tenant-authorization boundaries.
@@ -175,8 +176,9 @@ Classifications originate from `docs/02-master-blueprint/02.10_BASELINE_FUTURE_A
     - **NEXT PHASE TRIGGER:** Repository-first milestone-driven successor Build Unit selection / scope freeze.
   - **Student Assigned Exam Discovery Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-085 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/assigned-exams`) and mobile-first student discovery component hand off to the existing BU-084 AttemptLaunch flow.
   - **Secure Assessment Proctor Room and Active Session Monitoring Read API and Browser UI Integration Bootstrap:** IMPLEMENTED via BU-086 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN. Authoritative read API (`GET /api/v1/assessment/proctor-monitoring`) and mobile-first Proctor room/active-session monitoring view delivered; terminally verified.
+  - **Secure Assessment Authenticated Context HTTP API Integration Bootstrap:** BU-090 Stage-3 PASS / Stage-4 lifecycle close COMPLETE / Stage-5 final physical verification PENDING.
   - **Remaining Milestone 1 Gaps:**
-    - Real authentication / trusted context integration (PB04 CLOSED).
+    - Server-side assigned-exam authentication / trusted-context integration: IMPLEMENTED via BU-090 / Stage-3 PASS / Stage-4 COMPLETE / Stage-5 PENDING. Browser credential persistence/transport integration remains.
     - Teacher delivery/readiness UI gap: IMPLEMENTED via BU-087 / STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL / DONE YES / REPOSITORY FINALIZED YES / DO NOT REOPEN.
     - Full authenticated browser -> runtime -> PostgreSQL E2E verification.
   - **Milestone 1 Completion Status:** NOT COMPLETE. Milestone 1 remains active and in progress. Do NOT claim Milestone 1 complete.
