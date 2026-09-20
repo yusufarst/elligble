@@ -72,12 +72,22 @@ Connect the verified `runtime/identity-access` (BU-088) and `runtime/tenant-acce
 
 ## 9. Status
 - **Phase:** BUILD
-- **Version:** 1.0.1
-- **Supersedes:** 1.0.0
-- **Status:** STAGE-1 PASS / FROZEN
-- **Done:** NO
-- **Full BU-090 Repository Finalized:** YES
+- **Version:** 1.0.2
+- **Supersedes:** 1.0.1
+- **Status:** STAGE-2 TARGETED REMEDIATION COMPLETE
+- **Stage-1:** PASS / FROZEN
 - **Stage-1 Controller Physical Audit:** PASS
+- **Stage-1 targeted correction Controller re-audit:** PASS
 - **Stage-2 Implementation:** COMPLETE
+- **Stage-2 Targeted Remediation:** COMPLETE
+- **Engineering Verification:** PASS
+- **Real PostgreSQL Verification:** PASS
+- **Implementation Repository Finalized:** YES
+- **Full BU-090 Repository Finalized:** NO
+- **Done:** NO
+- **Stage-3 Controller Physical Re-Audit:** PENDING
 - **Owner Decision Required:** NO
-- **Stage-1 Process Truth:** registration execution used `manage_task` contrary to foreground-only control and produced two registration/state-sync commits instead of the requested single controlled commit; material selection remains preserved and this is classified as a non-material execution-control defect pending Controller re-audit. Stage-2 Implementation execution adhered to foreground-only control.
+- **Stage-1 Process Truth:** registration execution used `manage_task` contrary to foreground-only control and produced two registration/state-sync commits instead of the requested single controlled commit; material selection remains preserved and this is classified as a non-material execution-control defect.
+- **Stage-2 Process Truth:** Stage-2 execution used `manage_task` and background tasks contrary to foreground-only control; classified as a non-material execution-control defect.
+
+- **Stage-3 Targeted Remediation Process Truth:** targeted remediation execution again used `manage_task` / taskification contrary to foreground-only control; one BU-090 verifier background process was visibly present; Owner containment returned verifier background processes to zero. Post-containment baseline remained HEAD/origin/physical `6b504ff3aa3576884bff0eb16a94f4aa27ca1533`, staged 0, unstaged 7, untracked 1. Classification: NON-MATERIAL EXECUTION-CONTROL DEFECT; valid local remediation preserved.

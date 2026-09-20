@@ -21,15 +21,16 @@ export async function buildAuthenticatedContext(
         throw new AuthenticationError(401, 'unauthorized');
     }
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const token = authHeader.substring('ELLIGBLE-Session '.length).trim();
     const parts = token.split('.');
-    if (parts.length !== 2) {
+    if (parts.length !== 2 || !uuidRegex.test(parts[0])) {
         throw new AuthenticationError(401, 'unauthorized');
     }
     const [sessionId, sessionSecret] = parts;
 
     const tenantId = req.headers['x-tenant-id'];
-    if (!tenantId || typeof tenantId !== 'string') {
+    if (!tenantId || typeof tenantId !== 'string' || !uuidRegex.test(tenantId)) {
         // missing/malformed tenant locator -> 403
         throw new AuthenticationError(403, 'forbidden');
     }

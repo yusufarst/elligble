@@ -1,8 +1,8 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.441
-**Supersedes:** 0.1.440
+**Version:** 0.1.442
+**Supersedes:** 0.1.441
+0.1.442 records BU-090 Stage-2 TARGETED REMEDIATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / IMPLEMENTATION REPOSITORY FINALIZED YES / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING.
 0.1.441 records BU-090 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING.
-0.1.440 records BU-090 Stage-1 targeted registration-integrity correction; selection remains FROZEN; Stage-2 NOT AUTHORIZED; Controller physical re-audit PENDING; prior manage_task/two-commit deviation recorded as non-material process-control truth.
 0.1.439 records BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PASS / TERMINAL, and BU-090 Next Build Unit Selection / Fast-Track Stage-1 Scope Freeze.
 0.1.438 records BU-089 Fast-Track Stage-4 lifecycle close COMPLETE, and STAGE-5 FINAL PHYSICAL VERIFICATION PENDING.
 0.1.437 records BU-089 Stage-3 targeted correction complete, process truth updated, verifier corrected, and Controller physical re-audit pending.
@@ -60,20 +60,27 @@
 ## Active Build Unit Register
 ### BU-090
 - **TITLE:** Secure Assessment Authenticated Context HTTP API Integration Bootstrap
-- **STATUS:** STAGE-1 PASS / FROZEN
+- **STATUS:** STAGE-2 TARGETED REMEDIATION COMPLETE (STAGE-3 PENDING)
 - **VERSION:** 1.0.1
 - **STAGE-1:** PASS / FROZEN
 - **STAGE-1 CONTROLLER PHYSICAL AUDIT:** PASS
+- **STAGE-1 TARGETED CORRECTION CONTROLLER RE-AUDIT:** PASS
 - **STAGE-2 IMPLEMENTATION:** COMPLETE
+- **STAGE-2 TARGETED REMEDIATION:** COMPLETE
+- **ENGINEERING VERIFICATION:** PASS
+- **REAL POSTGRESQL VERIFICATION:** PASS
+- **IMPLEMENTATION REPOSITORY FINALIZED:** YES
+- **FULL BU-090 REPOSITORY FINALIZED:** NO
+- **DONE:** NO
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **MILESTONE 1:** NOT COMPLETE
 - **OWNER DECISION REQUIRED:** NO
-- **CURRENT RESPONSIBILITY:** BU-090 STAGE-3 CONTROLLER PHYSICAL AUDIT
-- **NEXT SAFE ACTION:** Controller Stage-3 physical audit of the BU-090 Stage-2 Implementation.
-- **SUCCESSOR EXECUTION:** NOT YET AUTHORIZED
-- **STAGE-1 TARGETED REGISTRATION-INTEGRITY CORRECTION:** COMPLETE / CONTROLLER PHYSICAL RE-AUDIT PENDING
+- **CURRENT RESPONSIBILITY:** BU-090 STAGE-3 CONTROLLER PHYSICAL RE-AUDIT
+- **NEXT SAFE ACTION:** Controller Stage-3 physical re-audit of the BU-090 Stage-2 implementation and targeted remediation.
+- **SUCCESSOR EXECUTION:** NOT AUTHORIZED
 - **STAGE-1 PROCESS DEVIATION:** `manage_task` used + two registration/state-sync commits instead of one / NON-MATERIAL EXECUTION-CONTROL DEFECT
+- **STAGE-2 PROCESS DEVIATION:** `manage_task` used + background execution / NON-MATERIAL EXECUTION-CONTROL DEFECT
 
 ### BU-089
 - **TITLE:** Organization/Tenant Authenticated Membership Context Runtime Foundation Bootstrap
