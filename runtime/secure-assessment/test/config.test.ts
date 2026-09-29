@@ -149,14 +149,41 @@ test('development defaults to insecure cookies for plain-http local work', () =>
 });
 
 test('unknown environment and malformed booleans or origins are rejected', () => {
-    assert.throws(() => parseConfig({ DATABASE_URL: 'x', ELLIGBLE_ENV: 'staging' }), /ELLIGBLE_ENV must be/);
-    assert.throws(() => parseConfig({ DATABASE_URL: 'x', SA_COOKIE_SECURE: 'yes' }), /SA_COOKIE_SECURE must be true or false/);
-    assert.throws(() => parseConfig({ DATABASE_URL: 'x', SA_ALLOWED_ORIGINS: 'https://a.example/path' }), /bare http\(s\) origins/);
-    assert.throws(() => parseConfig({ DATABASE_URL: 'x', SA_ALLOWED_ORIGINS: 'ftp://a.example' }), /bare http\(s\) origins/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'postgres://u@h/db', ELLIGBLE_ENV: 'staging' }), /ELLIGBLE_ENV must be/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'postgres://u@h/db', SA_COOKIE_SECURE: 'yes' }), /SA_COOKIE_SECURE must be true or false/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'postgres://u@h/db', SA_ALLOWED_ORIGINS: 'https://a.example/path' }), /bare http\(s\) origins/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'postgres://u@h/db', SA_ALLOWED_ORIGINS: 'ftp://a.example' }), /bare http\(s\) origins/);
 });
 
 test('allowed origins are parsed and frozen', () => {
-    const config = parseConfig({ DATABASE_URL: 'x', SA_ALLOWED_ORIGINS: 'https://ujian.sekolah.sch.id, https://admin.sekolah.sch.id' });
+    const config = parseConfig({ DATABASE_URL: 'postgres://u@h/db', SA_ALLOWED_ORIGINS: 'https://ujian.sekolah.sch.id, https://admin.sekolah.sch.id' });
     assert.deepEqual(config.SA_ALLOWED_ORIGINS, ['https://ujian.sekolah.sch.id', 'https://admin.sekolah.sch.id']);
     assert.ok(Object.isFrozen(config.SA_ALLOWED_ORIGINS));
+});
+
+test('DATABASE_URL must be a PostgreSQL URL and is never echoed', () => {
+    for (const value of ['mysql://root:hunter2@db/app', 'not a url with hunter2', 'http://db:5432/app']) {
+        assert.throws(
+            () => parseConfig({ DATABASE_URL: value }),
+            (err: Error) => /postgres:\/\/ or postgresql:\/\//.test(err.message) && !err.message.includes('hunter2')
+        );
+    }
+    assert.equal(parseConfig({ DATABASE_URL: 'postgresql://u@h/db' }).DATABASE_URL, 'postgresql://u@h/db');
+});
+
+test('startup migration mode defaults to check and cannot be off in production', () => {
+    const base = { DATABASE_URL: 'postgres://u@h/db' };
+    assert.equal(parseConfig(base).SA_MIGRATIONS_ON_START, 'check');
+    assert.equal(parseConfig({ ...base, SA_MIGRATIONS_ON_START: 'apply' }).SA_MIGRATIONS_ON_START, 'apply');
+    assert.equal(parseConfig({ ...base, ELLIGBLE_ENV: 'development', SA_MIGRATIONS_ON_START: 'off' }).SA_MIGRATIONS_ON_START, 'off');
+    assert.throws(() => parseConfig({ ...base, SA_MIGRATIONS_ON_START: 'off' }), /cannot be off/);
+    assert.throws(() => parseConfig({ ...base, SA_MIGRATIONS_ON_START: 'yes' }), /check, apply or off/);
+});
+
+test('startup database wait is bounded', () => {
+    const base = { DATABASE_URL: 'postgres://u@h/db' };
+    assert.equal(parseConfig(base).SA_STARTUP_DB_WAIT_SECONDS, 60);
+    assert.equal(parseConfig({ ...base, SA_STARTUP_DB_WAIT_SECONDS: '0' }).SA_STARTUP_DB_WAIT_SECONDS, 0);
+    assert.throws(() => parseConfig({ ...base, SA_STARTUP_DB_WAIT_SECONDS: '601' }), /between 0 and 600/);
+    assert.throws(() => parseConfig({ ...base, SA_STARTUP_DB_WAIT_SECONDS: '-1' }), /bounded integer/);
 });

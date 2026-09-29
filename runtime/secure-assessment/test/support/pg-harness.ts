@@ -28,7 +28,8 @@ export interface DisposableDatabase {
     close(): Promise<void>;
 }
 
-export async function createDisposableDatabase(): Promise<DisposableDatabase> {
+/** A fresh database, migrated with the production runner unless `migrate: false`. */
+export async function createDisposableDatabase(options: { migrate?: boolean } = {}): Promise<DisposableDatabase> {
     const baseUrl = integrationDatabaseUrl();
     if (!baseUrl) throw new Error('ELLIGBLE_TEST_DATABASE_URL not set');
 
@@ -41,17 +42,19 @@ export async function createDisposableDatabase(): Promise<DisposableDatabase> {
     target.pathname = `/${name}`;
     const url = target.toString();
 
-    const migrator = new pg.Client({ connectionString: url });
-    try {
-        await migrator.connect();
-        await applyMigrations(migrator);
-    } catch (err) {
-        await migrator.end().catch(() => {});
-        await dropDatabase(admin, name);
-        await admin.end();
-        throw err;
+    if (options.migrate !== false) {
+        const migrator = new pg.Client({ connectionString: url });
+        try {
+            await migrator.connect();
+            await applyMigrations(migrator);
+        } catch (err) {
+            await migrator.end().catch(() => {});
+            await dropDatabase(admin, name);
+            await admin.end();
+            throw err;
+        }
+        await migrator.end();
     }
-    await migrator.end();
 
     const pool = new pg.Pool({ connectionString: url, max: 10 });
     return {

@@ -1,4 +1,5 @@
 export type DeploymentEnvironment = 'production' | 'development' | 'test';
+export type MigrationStartupMode = 'check' | 'apply' | 'off';
 
 export interface AppConfig {
     readonly DATABASE_URL: string;
@@ -13,6 +14,10 @@ export interface AppConfig {
     readonly SA_ALLOWED_ORIGINS: readonly string[];
     /** Directory of the built web client to serve; null when the API runs alone. */
     readonly SA_STATIC_DIR: string | null;
+    /** Schema check at startup: refuse (check), apply pending (apply) or skip (off, not in production). */
+    readonly SA_MIGRATIONS_ON_START: MigrationStartupMode;
+    /** How long startup waits for the database before giving up. */
+    readonly SA_STARTUP_DB_WAIT_SECONDS: number;
 }
 
 function parseStrictInteger(value: string | undefined, min: number, max: number, name: string): number {
@@ -57,10 +62,31 @@ function parseOrigins(value: string | undefined): string[] {
     });
 }
 
+function parseMigrationMode(value: string | undefined): MigrationStartupMode {
+    const mode = value || 'check';
+    if (mode !== 'check' && mode !== 'apply' && mode !== 'off') {
+        throw new Error('Malformed configuration: SA_MIGRATIONS_ON_START must be check, apply or off.');
+    }
+    return mode;
+}
+
+function isPostgresUrl(value: string): boolean {
+    try {
+        const url = new URL(value);
+        return url.protocol === 'postgres:' || url.protocol === 'postgresql:';
+    } catch {
+        return false;
+    }
+}
+
 export function parseConfig(environment: Record<string, string | undefined>): AppConfig {
     const databaseUrl = environment['DATABASE_URL'];
     if (!databaseUrl) {
         throw new Error("Missing REQUIRED configuration: DATABASE_URL is not set.");
+    }
+    if (!isPostgresUrl(databaseUrl)) {
+        // Never echo the value: it may contain a password.
+        throw new Error('Malformed configuration: DATABASE_URL must be a postgres:// or postgresql:// URL.');
     }
 
     const host = environment['SA_HOST'] || '127.0.0.1';
@@ -74,6 +100,11 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
     if (deploymentEnv === 'production' && !cookieSecure) {
         throw new Error('Unsafe configuration: SA_COOKIE_SECURE cannot be false when ELLIGBLE_ENV is production.');
     }
+    const migrationMode = parseMigrationMode(environment['SA_MIGRATIONS_ON_START']);
+    if (deploymentEnv === 'production' && migrationMode === 'off') {
+        throw new Error('Unsafe configuration: SA_MIGRATIONS_ON_START cannot be off when ELLIGBLE_ENV is production.');
+    }
+    const dbWaitSeconds = parseStrictInteger(environment['SA_STARTUP_DB_WAIT_SECONDS'] ?? '60', 0, 600, 'SA_STARTUP_DB_WAIT_SECONDS');
 
     return Object.freeze({
         DATABASE_URL: databaseUrl,
@@ -85,5 +116,7 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
         SA_COOKIE_SECURE: cookieSecure,
         SA_ALLOWED_ORIGINS: Object.freeze(parseOrigins(environment['SA_ALLOWED_ORIGINS'])),
         SA_STATIC_DIR: environment['SA_STATIC_DIR'] || null,
+        SA_MIGRATIONS_ON_START: migrationMode,
+        SA_STARTUP_DB_WAIT_SECONDS: dbWaitSeconds,
     });
 }

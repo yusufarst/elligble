@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    name: Runtime (typecheck, unit, PostgreSQL integration)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      ELLIGBLE_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install
+        run: |
+          for pkg in identity-access tenant-access secure-assessment; do
+            (cd "runtime/$pkg" && npm ci --no-audit --no-fund) || exit 1
+          done
+      - name: Typecheck
+        run: |
+          for pkg in identity-access tenant-access secure-assessment; do
+            (cd "runtime/$pkg" && npm run typecheck) || exit 1
+          done
+      - name: Unit tests
+        run: |
+          for pkg in identity-access tenant-access secure-assessment; do
+            (cd "runtime/$pkg" && npm test) || exit 1
+          done
+      - name: Integration tests (real PostgreSQL 16, production wiring)
+        working-directory: runtime/secure-assessment
+        run: npm run test:integration
+
+  web:
+    name: Web client (typecheck, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  image:
+    name: Container image (build and smoke test)
+    runs-on: ubuntu-latest
+    needs: [runtime, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t elligble:ci .
+      - name: Smoke test against PostgreSQL 16
+        run: |
+          docker network create elligble-ci
+          docker run -d --name db --network elligble-ci -e POSTGRES_PASSWORD=postgres postgres:16
+          for i in $(seq 1 30); do docker exec db pg_isready -U postgres && break; sleep 2; done
+          docker run -d --name app --network elligble-ci -p 3000:3000 \
+            -e DATABASE_URL=postgresql://postgres@db:5432/postgres -e PGPASSWORD=postgres \
+            -e SA_MIGRATIONS_ON_START=apply elligble:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:3000/readyz && break; sleep 2; done
+          curl -fsS http://127.0.0.1:3000/readyz
+          curl -fsS http://127.0.0.1:3000/ | grep -q '<div id="root">'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+            -d '{"username":"x","password":"y"}' http://127.0.0.1:3000/api/v1/auth/login)" = "401"
+      - name: Container logs
+        if: always()
+        run: docker logs app || true

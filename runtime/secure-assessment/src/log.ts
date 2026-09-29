@@ -1,3 +1,6 @@
+// Structured JSON-lines logging. Entries never contain credentials, cookies, request
+// bodies, query strings or personal data: callers pass identifiers and outcomes only.
+
 export type LogEvent =
     | 'runtime_starting'
     | 'runtime_started'
@@ -5,9 +8,16 @@ export type LogEvent =
     | 'database_not_ready'
     | 'shutdown_requested'
     | 'shutdown_complete'
-    | 'fatal_startup_error';
+    | 'fatal_startup_error'
+    | 'preflight_waiting_for_database'
+    | 'preflight_failed'
+    | 'migration_applied'
+    | 'migrations_verified'
+    | 'static_site_loaded'
+    | 'http_request'
+    | 'request_failed';
 
-export type LogLevel = 'INFO' | 'ERROR';
+export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 
 export interface LogEntry {
     timestamp: string;
@@ -16,22 +26,24 @@ export interface LogEntry {
     metadata?: Record<string, unknown>;
 }
 
-export function logInfo(event: LogEvent, metadata?: Record<string, unknown>): void {
+export type LogWriter = (level: LogLevel, event: LogEvent, metadata?: Record<string, unknown>) => void;
+
+export const writeLog: LogWriter = (level, event, metadata) => {
     const entry: LogEntry = {
         timestamp: new Date().toISOString(),
-        level: 'INFO',
+        level,
         event,
-        ...(metadata && { metadata })
+        ...(metadata && { metadata }),
     };
-    process.stdout.write(JSON.stringify(entry) + '\n');
+    const line = JSON.stringify(entry) + '\n';
+    if (level === 'ERROR') process.stderr.write(line);
+    else process.stdout.write(line);
+};
+
+export function logInfo(event: LogEvent, metadata?: Record<string, unknown>): void {
+    writeLog('INFO', event, metadata);
 }
 
 export function logError(event: LogEvent, metadata?: Record<string, unknown>): void {
-    const entry: LogEntry = {
-        timestamp: new Date().toISOString(),
-        level: 'ERROR',
-        event,
-        ...(metadata && { metadata })
-    };
-    process.stderr.write(JSON.stringify(entry) + '\n');
+    writeLog('ERROR', event, metadata);
 }

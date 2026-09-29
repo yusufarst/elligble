@@ -7,7 +7,7 @@
 
 ## 1. Current production state
 
-**Verdict: NOT production-ready.** The Secure Assessment journey now works end to end on this branch against real PostgreSQL (§2): login, school context, teacher readiness and activation, student start, one active exam session per attempt with explicit takeover, local-first durable answers (offline, reload, browser restart), server timer with automatic submission, and idempotent submission. What still blocks a production deployment: hosting and deployment of the built client (P0-9), provisioning of schools and accounts (P0-11), question content import (P0-7), operations (logging, CI, backup and restore), and the Owner/legal Production Blockers (§8).
+**Verdict: NOT production-ready.** The Secure Assessment journey now works end to end on this branch against real PostgreSQL (§2): login, school context, teacher readiness and activation, student start, one active exam session per attempt with explicit takeover, local-first durable answers (offline, reload, browser restart), server timer with automatic submission, and idempotent submission. The release is a single container (API and built client from one origin) with startup preflight, structured logs, CI and a verified local restore procedure (§9). What still blocks a production deployment: provisioning of schools and accounts (P0-11), question content import (P0-7), a production infrastructure with TLS, backups and a restore drill (PB11), and the Owner/legal Production Blockers (§8).
 
 Audit baseline findings (`3a69883`), kept for traceability. The repository held strong, well-tested Secure Assessment building blocks (answer persistence, server-authoritative timer, idempotent submission, one-active-session, readiness preflights, rooms/proctors, identity sessions, tenant membership resolution) and browser screens for student, proctor and teacher views, but they were not wired into a usable product:
 
@@ -32,7 +32,7 @@ Status after the authentication and session work on this branch (baseline findin
 | Answers (local-first) | `useAnswerManager` on `AnswerSyncEngine` + IndexedDB | `POST /assessment/answer/save` | write needs the active exam session | **WORKS**: offline answering, reload/browser-restart recovery, retry with backoff, honest save states (real browser) |
 | Proctor monitoring | `ProctorMonitoringView` | `GET /assessment/proctor-monitoring` | session → proctor assignments | **WORKS** (read) |
 | Teacher operations | `TeacherReadinessView` ("Pelaksanaan Ujian") | `GET /assessment/teacher-readiness`, `POST /assessment/teacher-exams/transition` | session → teaching assignment of the exam | **WORKS**: readiness, "Tandai Siap", "Buka Ujian", aggregate progress (integration + browser) |
-| Deep links / refresh | query-string routes under `/` | — | session re-checked on load | works in dev; production hosting P0-9 |
+| Deep links / refresh | query-string routes under `/` | client served by the runtime with deep-link fallback | session re-checked on load | **WORKS** (production container, real browser) |
 
 ## 3. Role journeys (canonical actors, MB-03)
 
@@ -60,7 +60,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P0-6 | No SCHEDULED→READY→ACTIVE transition | only `exam-instance-draft-to-scheduled-transition.ts` | **RESOLVED** (teacher-managed mode, D04.4-26A): `POST /api/v1/assessment/teacher-exams/transition` (`mark_ready` after all readiness checks; `activate` with final re-check and window guard), attributed append-only events (migration `0037`), teacher UI with confirmation |
 | P0-7 | No way to put questions into an exam except raw SQL | no snapshot creation code | OPEN |
 | P0-8 | Answers are memory-only in the browser (data-loss path) | `useAnswerManager.ts` | **RESOLVED**: every choice is written to IndexedDB before it is sent (`src/exam/answer-store.ts`), `AnswerSyncEngine` keeps one latest intent per question, retries with backoff and jitter, rebases on the latest server version, recovers after reload or browser restart (previous-session intents are replayed only if nobody answered since), reports "Tersimpan" only after the server acknowledgement, and falls back to memory with an explicit "do not close this page" warning when storage is unavailable |
-| P0-9 | No production hosting of the web client / deep-link fallback | no static serving in `server.ts` | OPEN (dev uses the Vite `/api` proxy, same-origin) |
+| P0-9 | No production hosting of the web client / deep-link fallback | no static serving in `server.ts` | **RESOLVED**: the runtime serves the built client from memory (`SA_STATIC_DIR`; no filesystem access or traversal at request time), deep-link fallback, immutable hashed assets, gzip, ETag; `Dockerfile` builds one image for API and client |
 | P0-10 | No migration runner / verification for real deployments | migrations applied only by one-off verifiers | **RESOLVED**: `npm run migrate` / `migrate:check` (advisory lock, history check, refuses unknown migrations) |
 | P0-11 | No provisioning of tenants, persons, accounts, credentials, memberships | no runtime or CLI path | OPEN |
 
@@ -75,7 +75,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-5 | No security headers (CSP, frame, referrer, nosniff), no Origin/CSRF check | `server.ts` — **RESOLVED** (headers on every response, `no-store` API cache, HSTS when secure, Origin check on state-changing API calls) | RESOLVED |
 | P1-6 | `transitionExamInstanceDraftToScheduled` defaults to `granted` when no capability evaluator is passed (fail-open default) | `exam-instance-draft-to-scheduled-transition.ts` `defaultCapabilityEvaluator` | OPEN |
 | P1-7 | Official `npm test` ran 6 of 46 secure-assessment test files; 2 broken test files never ran | **RESOLVED**: `npm test` runs all unit tests; broken `.js` import (also in `src/client-answer-save-state.ts`) and ordering test fixed | RESOLVED |
-| P1-8 | No request/error logging, no metrics; startup logs only | `log.ts` | OPEN |
+| P1-8 | No request/error logging, no metrics; startup logs only | `log.ts`: **RESOLVED** for logging: one JSON line per request (request id, method, path without query, status, duration), 5xx at ERROR, unhandled errors by class and code only, `X-Request-ID` correlation; metrics remain open | RESOLVED |
 | P1-9 | Design tokens in code drifted from LOCKED design system v1.1.0 (navy actions/focus, slate neutrals, radii, undefined tokens) | **RESOLVED** in `design-tokens.css` + component CSS; screens still use hand-written CSS (migration to shadcn/ui components is incremental) | RESOLVED |
 | P1-10 | Assigned-exam projection had no lifecycle/window/duration | **RESOLVED**: `schedule` + `serverNow` in the projection; the list explains when and why an exam can or cannot be started (D04.2-73) | RESOLVED |
 | P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes | OPEN |
@@ -102,7 +102,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 4. **Student attempt authorization and start** (P0-3, P0-5, P1-10): DONE. Ownership check, idempotent concurrency-safe start with eligibility (ACTIVE, window, latest-start policy) using database time, policy re-applied at timer start, schedule projection and entry guidance in the list.
 5. **Teacher exam operations** (P0-4, P0-6): DONE for teacher-managed exams. SCHEDULED→READY / READY→ACTIVE with readiness re-checks, window guard, row lock (concurrent activation transitions once), attributed events; teacher UI with lifecycle badges, confirmation dialog and aggregate progress. ENDED/PAUSED await policy (§7).
 6. **Local-first answers and exam-session binding** (P0-8, P1-1, P1-2, P1-19..P1-21): DONE. IndexedDB buffer and sync engine (coalescing, backoff with jitter, version rebase, reload and browser-restart recovery), honest save states and offline banner, per-tab exam session with fingerprint-confirmed takeover and duplicated-tab detection, monotonic countdown, retried automatic submission.
-7. **Production operations** (P0-9, P0-10, P1-8): migration runner with lock and history checks, single-process production server serving the built SPA with deep-link fallback, environment validation, preflight, structured request logging, container build, CI.
+7. **Production operations** (P0-9, P0-10, P1-8): DONE. Migration runner; startup preflight (bounded wait for the database, schema `check` or `apply`, refuses a database ahead of the release); single process serving API and built client with deep-link fallback; environment validation; structured request logging; container image (non-root) with health check; CI (typecheck, unit, PostgreSQL integration, web build, image build and smoke test); operations runbook with a verified local restore drill.
 8. **Provisioning and content** (P0-11, P0-7): operator CLI for tenant/person/account/membership/academic setup and exam content import (baseline MCQ contract).
 9. **Browser E2E**: real browser → server → PostgreSQL for student, teacher and proctor journeys, including refresh, offline, duplicate submit and wrong-tenant cases.
 10. Then Milestone 2 hardening (Proctor Feed, pause/lock, time adjustments, scoring/results), followed by Academic Core administration UI and the remaining baseline domains.
@@ -131,23 +131,23 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | PB08 Care safeguarding | OPEN (conditional) | none until Care |
 | PB09 Partner moderation | OPEN (conditional) | none until Partner |
 | PB10 Data classification + consent | OPEN (Owner) | none |
-| PB11 Backup + restore verification | OPEN | backup/restore runbook + verified restore drill (after step 7) |
-| PB12 Security / incident response | OPEN | logging, headers, runbook (step 7) |
+| PB11 Backup + restore verification | OPEN | runbook procedure DONE and drilled locally (dump, restore, `migrate:check`, container start, login); the drill on the production infrastructure and retention (PB02) remain |
+| PB12 Security / incident response | OPEN | security headers, structured logs with request ids, session revocation path and incident basics in the runbook DONE; incident owner, notification duties and contacts are Owner decisions |
 
 ## 9. Production operations readiness
 
 | Area | State |
 |---|---|
-| Environment config / validation | runtime validates `DATABASE_URL`, host, port, pool, timeout only |
-| Secrets | none committed; `.env*` git-ignored |
-| Migrations | 36 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`) |
-| Build | frontend `vite build` PASS; runtime runs TypeScript directly on Node 24 (type stripping) |
-| Startup / health | `/healthz`, `/readyz` (DB `SELECT 1`), graceful SIGTERM |
-| Hosting / TLS / cookies | none |
-| Logging / monitoring / error reporting | startup JSON logs only |
-| Backup / restore / incident response / rollback | none |
-| Rate limiting | per-account login policy in runtime (DEC-041); no infrastructure limits |
-| CI | none |
+| Environment config / validation | every variable validated at startup (`.env.example`): PostgreSQL URL scheme (never echoed), environment, port, pool, cookie security (cannot be off in production), allowed origins, migration mode (cannot be `off` in production), bounded database wait |
+| Secrets | none committed; `.env*` git-ignored and excluded from the image build context |
+| Migrations | 37 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
+| Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
+| Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
+| Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
+| Logging / monitoring / error reporting | JSON-lines access and error log with request ids; no metrics or alerting yet |
+| Backup / restore / incident response / rollback | runbook procedures; local restore drill verified; production drill pending (PB11) |
+| Rate limiting | per-account login policy in runtime (DEC-041); infrastructure limits at the proxy (P1-14) |
+| CI | `.github/workflows/ci.yml`: runtime typecheck, unit and PostgreSQL 16 integration; web typecheck, tests and build; image build and smoke test |
 
 ## 10. Design and UI status
 
@@ -210,12 +210,22 @@ After local-first answers and exam-session binding (this branch):
 | frontend typecheck / vitest / `vite build` | PASS / 143/143 / PASS (sync engine incl. offline convergence, lost acknowledgement, rebase, supersession, 401 pause, restart recovery, device-transfer rule, loading race; IndexedDB store via fake-indexeddb; session binding with Web Locks; workstation offline, reload, supersession, expiry continuation, unreceived-answer notice, inline submit error) |
 | real browser (Chromium, 360 px and 1280 px, Asia/Jakarta) | offline answering shows "Gagal menyimpan" and the durable banner, submit disabled, syncs by itself when online; with saves blocked, a reload restores the unsynced choice from IndexedDB and it syncs after unblocking; a second tab needs "Ya, Pindahkan Sesi" and the first tab then shows "Sesi Dipindahkan"; a duplicated tab (copied `sessionStorage`) is refused its copied session while the active tab keeps saving; server answers match every step; no page errors |
 
+After production operations (this branch):
+
+| Check | Result |
+|---|---|
+| secure-assessment unit | all PASS incl. static hosting (deep links, immutable assets, gzip, ETag 304, unknown assets 404, unknown file types never served, traversal and encoded traversal refused, symlinks skipped, 405, HEAD, API not swallowed by the fallback), access log (no query strings, cookies or credentials; health probes not logged; 5xx at ERROR), configuration validation |
+| integration (real PostgreSQL) | preflight: unmigrated database refused with the pending list, `apply` migrates under the lock, database ahead of the release refused in both modes, unreachable database after the bounded wait; real `node src/main.ts` in production mode serves the client with HSTS and request ids, API and health, JSON logs without secrets, clean SIGTERM, refuses an unmigrated database |
+| container image | built locally (base image from a registry mirror; this environment's TLS proxy CA injected only as a build secret for the local build), runs as `node`, healthy; production mode with `apply` migrated 37 files |
+| real browser against the container (Chromium 360 px, production cookie) | login, start, offline answering, reload recovery from IndexedDB, second-tab takeover, duplicated-tab refusal; server answers match; no page errors; container logs contain no credentials |
+| restore drill (local) | `pg_dump` custom format, `pg_restore` into a new database, `migrate:check` clean, container started on the restored database, real login 200, row counts match |
+
 ## 12. Friction reducers (automation)
 
-Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`). Planned: environment validator and production preflight; browser E2E runner; route parity check (client calls vs server routes); CI workflow. The manifest SHA256 synchronization chore is retired (DEC-042).
+Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test. Planned: browser E2E runner in the repository (step 9); route parity check (client calls vs server routes). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-Critical path step 7 (production operations: serve the built client with deep-link fallback, environment validation and preflight, structured request logging, container build, CI), then steps 8 → 9.
+Critical path step 8 (provisioning CLI for schools, accounts, memberships and academic setup; exam content import with authored question order and answer payload validation, P0-11, P0-7, P1-15, P1-23), then step 9 (browser E2E in the repository).
 
-Local development: `npm run migrate` + `node test/support/seed-demo.ts` (runtime), `ELLIGBLE_ENV=development node src/main.ts`, and `npm run dev` in `frontend/web` (Vite proxies `/api` to port 3000). Demo accounts are documented in `seed-demo.ts`.
+Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

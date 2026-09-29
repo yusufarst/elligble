@@ -17,6 +17,9 @@ import { handleAttemptStart } from './attempt-start.ts';
 import { performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
+import type { StaticSite } from './http/static-site.ts';
+import { assignRequestId, classifyRequest, describeError, logRequestCompletion } from './http/request-log.ts';
+import type { LogWriter } from './log.ts';
 
 export interface ServerSecurityConfig {
     cookie: SessionCookieConfig;
@@ -44,6 +47,10 @@ export interface ServerDependencies {
     getAuthorizedContext?: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
     getAssignedExamDiscoveryContext?: (req: http.IncomingMessage) => AssignedExamDiscoveryContext | null;
     getTeacherReadinessContext?: (req: http.IncomingMessage) => TeacherReadinessContext | null;
+    /** Built web client served for every non-API path (single-origin deployment). */
+    staticSite?: StaticSite;
+    /** Access and error log; silent when absent (focused tests). */
+    log?: LogWriter;
 }
 
 type AttemptRoute = { method: 'GET' | 'POST'; source: 'query' | 'body' };
@@ -202,20 +209,21 @@ export function createServer(deps: ServerDependencies): http.Server {
         }
     }
 
-    async function route(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-        const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    async function route(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> {
         const pathname = url.pathname;
-        const isApi = pathname.startsWith('/api/');
+        const kind = classifyRequest(pathname);
+        const isApi = kind === 'api';
 
-        applySecurityHeaders(res, { hsts: security?.hsts ?? false, api: true });
+        // Static client files set their own caching; API and health responses are never cached.
+        applySecurityHeaders(res, { hsts: security?.hsts ?? false, api: kind !== 'static' || !deps.staticSite });
 
-        if (req.method === 'GET' && req.url === '/healthz') {
+        if (req.method === 'GET' && pathname === '/healthz') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ status: 'alive' }));
             return;
         }
 
-        if (req.method === 'GET' && req.url === '/readyz') {
+        if (req.method === 'GET' && pathname === '/readyz') {
             try {
                 const isReady = await deps.checkReadiness();
                 if (isReady) {
@@ -229,6 +237,11 @@ export function createServer(deps: ServerDependencies): http.Server {
                 res.writeHead(503, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'error' }));
             }
+            return;
+        }
+
+        if (kind === 'static' && deps.staticSite) {
+            deps.staticSite.handle(req, res, pathname);
             return;
         }
 
@@ -368,7 +381,18 @@ export function createServer(deps: ServerDependencies): http.Server {
     }
 
     server.on('request', (req, res) => {
-        route(req, res).catch(() => {
+        const startedAt = process.hrtime.bigint();
+        const requestId = assignRequestId(req, res);
+        // Routing never depends on the Host header; a fixed base keeps parsing total.
+        let url: URL;
+        try {
+            url = new URL(req.url || '/', 'http://localhost');
+        } catch {
+            url = new URL('http://localhost/');
+        }
+        if (deps.log) logRequestCompletion(req, res, { requestId, pathname: url.pathname, startedAt }, deps.log);
+        route(req, res, url).catch(err => {
+            deps.log?.('ERROR', 'request_failed', { requestId, ...describeError(err) });
             sendError(res, 500, 'internal_error');
         });
     });
