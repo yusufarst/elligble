@@ -39,6 +39,11 @@ export function useSession(): SessionApi {
   return ctx;
 }
 
+/** For components that also render standalone (tests, embedded views). */
+export function useOptionalSession(): SessionApi | null {
+  return useContext(SessionContext);
+}
+
 function chooseTenant(memberships: MembershipOption[]): string | null {
   const stored = getActiveTenantId();
   if (stored && memberships.some(m => m.tenantId === stored)) return stored;

@@ -16,9 +16,13 @@ export interface QuestionsResponse {
   questions: StudentSafeQuestion[];
 }
 
+/**
+ * The active exam session is never disclosed (its id is a device's write capability);
+ * the server only says whether the caller's own exam session id is the active one.
+ */
 export type ResumeSession =
   | { status: 'none' }
-  | { status: 'active'; sessionId: string; activatedAt: string };
+  | { status: 'active'; activatedAt: string; ownedByCaller: boolean };
 
 export interface ResumeAnswer {
   snapshotId: string;
@@ -101,18 +105,25 @@ export interface ExpiryFinalizeResponse {
   submittedAt: string;
 }
 
+/** Per-question save state shown to the student (Owner-locked labels, see useAnswerManager). */
 export type SaveState =
   | { status: 'pristine' }
-  | { status: 'saving'; clientWriteIdentity: string; pendingOptionId: string }
-  | { status: 'saved'; writeVersion: number; acknowledgedOptionId: string }
-  | { status: 'failed'; error: string; pendingOptionId: string }
+  | { status: 'saving' }
+  | { status: 'saved' }
+  | { status: 'failed' }
   | { status: 'unsupported_payload' };
 
 export interface SessionActivationRequest {
   attemptId: string;
   sessionId: string;
-  expectedActiveSessionId?: string;
+  /** Opaque fingerprint of the session being taken over, from the 409 active_session_exists. */
+  expectedActiveSessionFingerprint?: string;
   confirmSupersede?: boolean;
+}
+
+export interface ActiveSessionConflict {
+  error: 'active_session_exists';
+  activeSessionFingerprint: string;
 }
 
 export interface SessionActivationResponse {

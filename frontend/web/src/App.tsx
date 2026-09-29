@@ -47,7 +47,7 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
 
   // Active exam: focus workspace without global navigation (FRONTEND_DESIGN_SYSTEM §50).
   if (route.attemptId) {
-    return <AttemptLaunch />;
+    return <AttemptLaunch key={route.attemptId} onExit={() => navigate('?view=student')} />;
   }
 
   const workspaces = availableWorkspaces(me);

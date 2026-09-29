@@ -6,6 +6,8 @@ export interface SubmitConfirmModalProps {
   answeredCount: number;
   unansweredCount: number;
   isSubmitting: boolean;
+  /** Shown when the last submission request failed; the student can simply try again. */
+  errorMessage?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -16,6 +18,7 @@ export const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
   answeredCount,
   unansweredCount,
   isSubmitting,
+  errorMessage,
   onCancel,
   onConfirm,
 }) => {
@@ -115,6 +118,12 @@ export const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
             Saya menyatakan telah memeriksa seluruh jawaban dan siap mengumpulkan ujian ini.
           </span>
         </label>
+
+        {errorMessage && (
+          <p className="modal-error" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
         <div className="modal-actions">
           <button

@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { StudentSafeQuestion, ResumeResponse } from '../types/assessment.ts';
-import { getResume, getQuestions, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
+import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
+import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
 import { useAnswerManager } from '../hooks/useAnswerManager.ts';
+import { clearLocalAnswers } from '../exam/answer-store.ts';
+import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
+import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
+import { formatTime } from '../lib/format.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
 import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
 
@@ -14,13 +19,45 @@ type WorkstationPhase =
   | 'access_denied'
   | 'not_found'
   | 'session_inactive'
+  /** The exam session moved to another device or tab; this one can no longer write. */
+  | 'superseded'
   | 'timer_not_started'
   | 'active'
   | 'expired'
   | 'submitted'
   | 'error';
 
-export const StudentExamWorkstation: React.FC = () => {
+export interface StudentExamWorkstationProps {
+  /** This tab's own exam session id; defaults to the one stored for the attempt in this tab. */
+  examSessionId?: string;
+  /** Moves the exam session to this device again (explicit takeover flow). */
+  onRequestTakeover?: () => void;
+  /** Leaves the exam screen (back to the student's exam list). */
+  onExit?: () => void;
+}
+
+const FINALIZE_RETRY_INITIAL_MS = 2000;
+const FINALIZE_RETRY_MAX_MS = 30000;
+const EXPIRY_FLUSH_WAIT_MS = 3000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Waits for the next retry, or less when the connection comes back. */
+function waitForRetry(ms: number): Promise<void> {
+  return new Promise(resolve => {
+    const done = () => {
+      clearTimeout(timer);
+      window.removeEventListener('online', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    window.addEventListener('online', done);
+  });
+}
+
+export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ examSessionId, onRequestTakeover, onExit }) => {
   const [phase, setPhase] = useState<WorkstationPhase>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -29,14 +66,26 @@ export const StudentExamWorkstation: React.FC = () => {
   const [questions, setQuestions] = useState<StudentSafeQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [initialRemainingSeconds, setInitialRemainingSeconds] = useState<number>(0);
-  const [initialAnswers, setInitialAnswers] = useState<ResumeResponse['answers']>([]);
+  const [initialAnswers, setInitialAnswers] = useState<ResumeResponse['answers'] | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
+  const [unreceivedAtCompletion, setUnreceivedAtCompletion] = useState<number>(0);
+  const [submitError, setSubmitError] = useState<string>('');
+  const [isOnline, setIsOnline] = useState<boolean>(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isNavSheetOpen, setIsNavSheetOpen] = useState<boolean>(false);
   const navSheetTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const expiryFinalizedRef = useRef<boolean>(false);
+  const finalizingRef = useRef<boolean>(false);
+  const mountedRef = useRef<boolean>(true);
+  const tenantKey = getActiveTenantId() ?? '';
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Validate attemptId from search params
   useEffect(() => {
@@ -49,7 +98,84 @@ export const StudentExamWorkstation: React.FC = () => {
     }
 
     setAttemptId(id);
+    const own = examSessionId ?? readExamSessionId(id);
+    if (own) setSessionId(own);
+  }, [examSessionId]);
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine !== false);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
   }, []);
+
+  /** The attempt is final on the server: drop this device's copy of it (shared devices). */
+  const completeAttempt = useCallback(async (id: string, at: string | null) => {
+    const unreceived = await countUnreceivedLocalAnswers(tenantKey, id);
+    await clearLocalAnswers(tenantKey, id);
+    forgetExamSessionId(id);
+    if (!mountedRef.current) return;
+    setUnreceivedAtCompletion(unreceived);
+    setSubmittedAt(at);
+    setIsSubmitModalOpen(false);
+    setPhase('submitted');
+  }, [tenantKey]);
+
+  const timerControlRef = useRef<{ applyServerRemaining: (seconds: number) => void } | null>(null);
+  const answersRef = useRef<{ pendingCount: number; flush: () => void; hasUnresolvedSaves: boolean } | null>(null);
+
+  // Timer expiry: flush what can still be sent (D04.5-46), then ask the server to finalize
+  // from its accepted answers (D04.5-47), retrying until it answers (D04.5-45/49).
+  const finalizeExpiredAttempt = useCallback(async (id: string) => {
+    if (finalizingRef.current) return;
+    finalizingRef.current = true;
+    setPhase('expired');
+    try {
+      const answers = answersRef.current;
+      if (answers && answers.pendingCount > 0) {
+        answers.flush();
+        const deadline = Date.now() + EXPIRY_FLUSH_WAIT_MS;
+        while (Date.now() < deadline && (answersRef.current?.pendingCount ?? 0) > 0 && mountedRef.current) {
+          await sleep(200);
+        }
+      }
+      let delay = FINALIZE_RETRY_INITIAL_MS;
+      while (mountedRef.current) {
+        try {
+          const res = await postExpiryFinalize(id);
+          await completeAttempt(id, res.submittedAt);
+          return;
+        } catch (err) {
+          if (err instanceof ApiError && err.code === 'timer_not_expired') {
+            // The server still has time left (this device ran ahead): continue the exam.
+            try {
+              const timer = await getTimer(id);
+              if (timer.status === 'active' && timer.effectiveRemainingSeconds > 0) {
+                timerControlRef.current?.applyServerRemaining(timer.effectiveRemainingSeconds);
+                if (mountedRef.current) setPhase('active');
+                return;
+              }
+            } catch {
+              // Retry below.
+            }
+          } else if (err instanceof ApiError && (err.status === 400 || err.status === 403 || err.status === 404)) {
+            if (mountedRef.current) {
+              setErrorMessage('Pengumpulan otomatis tidak dapat diproses. Hubungi pengawas ruangan.');
+              setPhase('error');
+            }
+            return;
+          }
+        }
+        await waitForRetry(delay);
+        delay = Math.min(delay * 2, FINALIZE_RETRY_MAX_MS);
+      }
+    } finally {
+      finalizingRef.current = false;
+    }
+  }, [completeAttempt]);
 
   // Initial resume load
   useEffect(() => {
@@ -59,13 +185,12 @@ export const StudentExamWorkstation: React.FC = () => {
 
     async function loadResume() {
       try {
-        const resume = await getResume(attemptId!);
+        const resume = await getResume(attemptId!, sessionId || null);
         if (isCancelled) return;
 
         // Check if already submitted
         if (resume.submission && resume.submission.status === 'submitted') {
-          setSubmittedAt(resume.submission.submittedAt);
-          setPhase('submitted');
+          await completeAttempt(attemptId!, resume.submission.submittedAt);
           return;
         }
 
@@ -74,8 +199,11 @@ export const StudentExamWorkstation: React.FC = () => {
           setPhase('session_inactive');
           return;
         }
-
-        setSessionId(resume.session.sessionId);
+        if (!sessionId || !resume.session.ownedByCaller) {
+          // Another device or tab holds the exam session (D04.4-37, D04.5-22).
+          setPhase('superseded');
+          return;
+        }
 
         // Check timer
         if (!resume.timer || resume.timer.status === 'not_started') {
@@ -83,18 +211,11 @@ export const StudentExamWorkstation: React.FC = () => {
           return;
         }
 
+        setExamContext(resume.context);
+
         if (resume.timer.status === 'active') {
           if (resume.timer.effectiveRemainingSeconds <= 0) {
-            setPhase('expired');
-            if (!expiryFinalizedRef.current) {
-              expiryFinalizedRef.current = true;
-              postExpiryFinalize(attemptId!).then(res => {
-                setSubmittedAt(res.submittedAt);
-                setPhase('submitted');
-              }).catch(() => {
-                // Remain in expired safe state
-              });
-            }
+            void finalizeExpiredAttempt(attemptId!);
             return;
           }
 
@@ -102,7 +223,6 @@ export const StudentExamWorkstation: React.FC = () => {
         }
 
         setInitialAnswers(resume.answers);
-        setExamContext(resume.context);
 
         // Load questions
         const qRes = await getQuestions(attemptId!);
@@ -135,7 +255,7 @@ export const StudentExamWorkstation: React.FC = () => {
               return;
             }
             if (err.code === 'timer_expired') {
-              setPhase('expired');
+              void finalizeExpiredAttempt(attemptId!);
               return;
             }
           }
@@ -150,62 +270,81 @@ export const StudentExamWorkstation: React.FC = () => {
     return () => {
       isCancelled = true;
     };
+    // The session id is fixed for this mounted workstation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptId]);
 
-  // Handle timer expiration
-  const handleExpire = useCallback(async () => {
-    setPhase('expired');
-    if (attemptId && !expiryFinalizedRef.current) {
-      expiryFinalizedRef.current = true;
-      try {
-        const res = await postExpiryFinalize(attemptId);
-        setSubmittedAt(res.submittedAt);
-        setPhase('submitted');
-      } catch {
-        // Safe non-success state: student instructed not to close page
-      }
-    }
-  }, [attemptId]);
+  const handleExpire = useCallback(() => {
+    if (attemptId) void finalizeExpiredAttempt(attemptId);
+  }, [attemptId, finalizeExpiredAttempt]);
 
-  const { formattedTime, isWarning, isUrgent } = useAuthoritativeTimer({
+  const timer = useAuthoritativeTimer({
     attemptId: attemptId || '',
     initialRemainingSeconds,
     enabled: phase === 'active',
     onExpire: handleExpire,
   });
+  timerControlRef.current = timer;
+  const { formattedTime, isWarning, isUrgent } = timer;
+
+  // Re-align with the server clock after a reconnect (D04.5-28).
+  useEffect(() => {
+    if (phase !== 'active') return;
+    const onOnline = () => void timer.resync();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [phase, timer.resync]);
 
   const handleTerminalEvent = useCallback((code: string) => {
     if (code === 'timer_expired') {
       handleExpire();
     } else if (code === 'attempt_already_submitted') {
-      setPhase('submitted');
-    } else if (code === 'session_not_active') {
-      setPhase('session_inactive');
+      if (attemptId) void completeAttempt(attemptId, null);
     }
-  }, [handleExpire]);
+  }, [handleExpire, attemptId, completeAttempt]);
 
-  const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves } = useAnswerManager({
+  const handleSessionInactive = useCallback(() => {
+    setIsSubmitModalOpen(false);
+    setIsNavSheetOpen(false);
+    setPhase('superseded');
+  }, []);
+
+  const answers = useAnswerManager({
+    tenantId: tenantKey,
     attemptId: attemptId || '',
     sessionId,
     initialAnswers,
+    enabled: phase === 'active' || phase === 'expired',
+    onSessionInactive: handleSessionInactive,
     onTerminalEvent: handleTerminalEvent,
   });
+  const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
+  answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, hasUnresolvedSaves };
 
-  // Handle final submission
+  // Handle final submission (idempotent on the server, D04.5-40/44).
   const handleConfirmSubmit = useCallback(async () => {
     if (!attemptId || hasUnresolvedSaves || isSubmitting) return;
 
     setIsSubmitting(true);
+    setSubmitError('');
     try {
       const res = await postSubmit(attemptId);
-      setSubmittedAt(res.submittedAt);
-      setIsSubmitModalOpen(false);
-      setPhase('submitted');
-    } catch {
-      setIsSubmitting(false);
-      alert('Gagal mengumpulkan ujian. Pastikan seluruh jawaban telah tersimpan dan coba lagi.');
+      await completeAttempt(attemptId, res.submittedAt);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'attempt_already_submitted') {
+        await completeAttempt(attemptId, null);
+        return;
+      }
+      if (err instanceof ApiError && err.code === 'timer_expired') {
+        setIsSubmitModalOpen(false);
+        handleExpire();
+        return;
+      }
+      setSubmitError('Gagal mengumpulkan ujian. Periksa koneksi internet Anda lalu coba lagi.');
+    } finally {
+      if (mountedRef.current) setIsSubmitting(false);
     }
-  }, [attemptId, hasUnresolvedSaves, isSubmitting]);
+  }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire]);
 
   // Render Phase States
   if (phase === 'invalid_attempt') {
@@ -260,6 +399,27 @@ export const StudentExamWorkstation: React.FC = () => {
     );
   }
 
+  if (phase === 'superseded') {
+    return (
+      <main className="fullscreen-state-container">
+        <div className="state-card" role="alert">
+          <h1 className="state-card-title">Sesi Dipindahkan</h1>
+          <p className="state-card-body">
+            Sesi ujian Anda telah dibuka di perangkat lain. Sesi pada perangkat ini dinonaktifkan.
+          </p>
+          <p className="state-card-body">
+            Jawaban yang sudah tersimpan tetap aman. Lanjutkan ujian di perangkat yang sedang aktif, atau pindahkan kembali ke perangkat ini.
+          </p>
+          {onRequestTakeover && (
+            <button type="button" className="btn btn-primary" onClick={onRequestTakeover} style={{ width: '100%', maxWidth: '300px', margin: '0.5rem auto 0', display: 'block' }}>
+              Lanjutkan di Perangkat Ini
+            </button>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   if (phase === 'timer_not_started') {
     return (
       <main className="fullscreen-state-container">
@@ -283,8 +443,18 @@ export const StudentExamWorkstation: React.FC = () => {
           </p>
           {submittedAt && (
             <p className="state-card-body" style={{ fontSize: '0.875rem', color: 'var(--color-neutral-500)' }}>
-              Waktu Pengumpulan: {new Date(submittedAt).toLocaleTimeString('id-ID')} WIB
+              Waktu Pengumpulan: {formatTime(submittedAt)}
             </p>
+          )}
+          {unreceivedAtCompletion > 0 && (
+            <p className="state-card-body" role="alert" style={{ color: 'var(--color-danger-text)' }}>
+              {unreceivedAtCompletion} jawaban terakhir di perangkat ini belum diterima server sebelum ujian berakhir. Laporkan kepada pengawas ruangan.
+            </p>
+          )}
+          {onExit && (
+            <button type="button" className="btn btn-secondary" onClick={onExit} style={{ width: '100%', maxWidth: '300px', margin: '0.5rem auto 0', display: 'block' }}>
+              Kembali ke Jadwal Ujian
+            </button>
           )}
         </div>
       </main>
@@ -299,6 +469,11 @@ export const StudentExamWorkstation: React.FC = () => {
           <p className="state-card-body">
             Sistem sedang mengumpulkan seluruh jawaban Anda secara otomatis. Harap tunggu hingga proses selesai.
           </p>
+          {!isOnline && (
+            <p className="state-card-body">
+              Koneksi terputus. Pengumpulan dicoba lagi otomatis saat kembali terhubung. Jangan tutup halaman ini.
+            </p>
+          )}
         </div>
       </main>
     );
@@ -434,6 +609,13 @@ export const StudentExamWorkstation: React.FC = () => {
             </div>
           </div>
         </div>
+        {(degraded || !isOnline) && (
+          <div className="connection-banner" role="status" aria-live="polite">
+            {storageDurable
+              ? 'Koneksi terputus. Jawaban disimpan sementara di perangkat ini dan akan dikirim otomatis saat kembali terhubung.'
+              : 'Koneksi terputus. Jangan tutup atau muat ulang halaman ini. Jawaban akan dikirim otomatis saat kembali terhubung.'}
+          </div>
+        )}
       </header>
 
       {/* Main Split Workstation */}
@@ -681,7 +863,11 @@ export const StudentExamWorkstation: React.FC = () => {
         answeredCount={answeredCount}
         unansweredCount={unansweredCount}
         isSubmitting={isSubmitting}
-        onCancel={() => setIsSubmitModalOpen(false)}
+        errorMessage={submitError}
+        onCancel={() => {
+          setSubmitError('');
+          setIsSubmitModalOpen(false);
+        }}
         onConfirm={handleConfirmSubmit}
       />
     </div>

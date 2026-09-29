@@ -3,6 +3,8 @@ import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx';
 import type { StudentSafeQuestion, ResumeResponse, QuestionsResponse, TimerResponse } from '../types/assessment.ts';
+import { openAnswerStore } from '../exam/answer-store.ts';
+import { storeExamSessionId } from '../exam/exam-session.ts';
 
 const VALID_ATTEMPT_ID = '11111111-1111-4111-8111-111111111111';
 const VALID_SESSION_ID = '22222222-2222-4222-8222-222222222222';
@@ -43,8 +45,8 @@ function createMockResume(overrides?: Partial<ResumeResponse>): ResumeResponse {
     attemptId: VALID_ATTEMPT_ID,
     session: {
       status: 'active',
-      sessionId: VALID_SESSION_ID,
       activatedAt: '2026-09-12T08:00:00.000Z',
+      ownedByCaller: true,
     },
     answers: [],
     timer: {
@@ -68,10 +70,14 @@ function createMockResume(overrides?: Partial<ResumeResponse>): ResumeResponse {
 describe('BU-081 StudentExamWorkstation Test Suite', () => {
   let fetchSpy: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.restoreAllMocks();
     fetchSpy = vi.fn();
     globalThis.fetch = fetchSpy;
+    // This tab owns the active exam session; no answers are left over from other tests.
+    window.sessionStorage.clear();
+    storeExamSessionId(VALID_ATTEMPT_ID, VALID_SESSION_ID);
+    await (await openAnswerStore()).clearAttempt('', VALID_ATTEMPT_ID);
   });
 
   afterEach(() => {

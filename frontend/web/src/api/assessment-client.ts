@@ -43,8 +43,10 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function getResume(attemptId: string): Promise<ResumeResponse> {
-  const url = `/api/v1/assessment/resume?attemptId=${encodeURIComponent(attemptId)}`;
+/** examSessionId: this tab's own exam session, so the server can say whether it is the active one. */
+export async function getResume(attemptId: string, examSessionId?: string | null): Promise<ResumeResponse> {
+  let url = `/api/v1/assessment/resume?attemptId=${encodeURIComponent(attemptId)}`;
+  if (examSessionId) url += `&examSessionId=${encodeURIComponent(examSessionId)}`;
   const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<ResumeResponse>(res);
 }

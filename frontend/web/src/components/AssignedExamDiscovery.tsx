@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getAssignedExams, postStartAttempt, ApiError } from '../api/assessment-client.ts';
 import type { AssignedExamItem } from '../types/assessment.ts';
 import { formatDateTime, formatDurationMinutes, formatWindow } from '../lib/format.ts';
+import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
+import '../styles/assigned-exam-discovery.css';
 
 // Entry guidance per exam (D04.2-73). Display only: the server decides eligibility
 // with its own clock when the student presses "Mulai Ujian" (D04.4-19).
@@ -40,17 +42,6 @@ function entryState(item: AssignedExamItem, serverNow: string | undefined): Entr
       return { kind: 'unknown' };
   }
 }
-
-const START_FAILURE_COPY: Record<string, string> = {
-  exam_not_active: 'Ujian belum dibuka oleh guru atau pengawas. Silakan tunggu.',
-  exam_not_open: 'Ujian belum dibuka. Silakan tunggu sesuai waktu pelaksanaan.',
-  exam_window_closed: 'Waktu pelaksanaan ujian telah berakhir.',
-  late_start_blocked: 'Batas waktu untuk memulai ujian ini telah lewat. Hubungi pengawas ruangan.',
-  exam_not_ready: 'Ujian belum siap dikerjakan. Hubungi guru atau pengawas.',
-  attempt_already_submitted: 'Ujian ini sudah dikumpulkan.',
-  not_participant: 'Anda tidak terdaftar sebagai peserta ujian ini. Hubungi pengawas ruangan.',
-};
-import '../styles/assigned-exam-discovery.css';
 
 export interface AssignedExamDiscoveryProps {
   onSelectAttempt?: (attemptId: string) => void;
@@ -105,8 +96,8 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
       const { attemptId } = await postStartAttempt(examInstanceId);
       handleLaunch(attemptId);
     } catch (err) {
-      const message = err instanceof ApiError && START_FAILURE_COPY[err.code]
-        ? START_FAILURE_COPY[err.code]
+      const message = err instanceof ApiError && START_REFUSAL_COPY[err.code]
+        ? START_REFUSAL_COPY[err.code]
         : 'Gagal memulai ujian. Periksa koneksi internet Anda dan coba lagi.';
       setStartErrors(prev => ({ ...prev, [examInstanceId]: message }));
     } finally {

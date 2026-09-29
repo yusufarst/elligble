@@ -171,7 +171,7 @@ test('BU-020 active-session resume tests', async (t) => {
         assert.equal(data.session.status, 'active');
     });
 
-    await t.test('4. active response returns authoritative sessionId', async () => {
+    await t.test('4. active response never discloses the session id; ownership comes from examSessionId', async () => {
         reset();
         sessions.push({
             id: '99999999-9999-9999-9999-999999999999',
@@ -183,7 +183,28 @@ test('BU-020 active-session resume tests', async (t) => {
         const res = new MockRes();
         await handleResumeGet(getReq() as any, res as any, deps);
         const data = JSON.parse(res.body);
-        assert.equal(data.session.sessionId, '99999999-9999-9999-9999-999999999999');
+        assert.equal(data.session.sessionId, undefined);
+        assert.equal(data.session.ownedByCaller, false);
+        assert.equal(res.body.includes('99999999-9999-9999-9999-999999999999'), false);
+
+        const owned = new MockRes();
+        const ownedReq = getReq();
+        ownedReq.url += '&examSessionId=99999999-9999-4999-8999-999999999999';
+        sessions[0].id = '99999999-9999-4999-8999-999999999999';
+        await handleResumeGet(ownedReq as any, owned as any, deps);
+        assert.equal(JSON.parse(owned.body).session.ownedByCaller, true);
+
+        const other = new MockRes();
+        const otherReq = getReq();
+        otherReq.url += '&examSessionId=88888888-8888-4888-8888-888888888888';
+        await handleResumeGet(otherReq as any, other as any, deps);
+        assert.equal(JSON.parse(other.body).session.ownedByCaller, false);
+
+        const malformed = new MockRes();
+        const malformedReq = getReq();
+        malformedReq.url += '&examSessionId=nope';
+        await handleResumeGet(malformedReq as any, malformed as any, deps);
+        assert.equal(malformed.statusCode, 400);
     });
 
     await t.test('5. active response returns activatedAt ISO timestamp', async () => {
@@ -323,7 +344,7 @@ test('BU-020 active-session resume tests', async (t) => {
         await handleResumeGet(getReq() as any, res as any, deps);
         const data = JSON.parse(res.body);
         assert.equal(data.session.status, 'active');
-        assert.equal(data.session.sessionId, '99999999-9999-9999-9999-999999999999');
+        assert.equal(data.session.sessionId, undefined);
     });
 
     await t.test('15. foreign-Attempt active Session ignored', async () => {
@@ -501,6 +522,6 @@ test('BU-020 active-session resume tests', async (t) => {
         const data2 = JSON.parse(res2.body);
         
         assert.deepEqual(data1.session, data2.session);
-        assert.equal(data1.session.sessionId, '99999999-9999-9999-9999-999999999999');
+        assert.equal(data1.session.sessionId, undefined);
     });
 });

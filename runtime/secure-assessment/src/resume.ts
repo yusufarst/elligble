@@ -20,8 +20,16 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
 
     const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
     const attemptId = parsedUrl.searchParams.get('attemptId');
+    // The caller's own exam session id (kept per browser tab). The active session id is
+    // never returned: knowing it is what lets a device write answers (D04.4-32/35/37).
+    const callerExamSessionId = parsedUrl.searchParams.get('examSessionId');
 
     if (!attemptId || !isValidUUID(attemptId)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request' }));
+        return;
+    }
+    if (callerExamSessionId !== null && !isValidUUID(callerExamSessionId)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'invalid_request' }));
         return;
@@ -156,8 +164,8 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
             if (sessionRes.rows.length === 1) {
                 sessionResponse = {
                     status: 'active',
-                    sessionId: sessionRes.rows[0].id,
-                    activatedAt: sessionRes.rows[0].activated_at.toISOString()
+                    activatedAt: sessionRes.rows[0].activated_at.toISOString(),
+                    ownedByCaller: callerExamSessionId !== null && sessionRes.rows[0].id === callerExamSessionId
                 };
             }
 
