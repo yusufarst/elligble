@@ -40,10 +40,8 @@ export async function buildAuthenticatedContext(
     }
     const { sessionId, secret: sessionSecret } = lookup.credential;
 
-    const tenantId = req.headers['x-tenant-id'];
-    if (!tenantId || typeof tenantId !== 'string' || !UUID_REGEX.test(tenantId)) {
-        throw new AuthenticationError(403, 'forbidden');
-    }
+    const tenantHeader = req.headers['x-tenant-id'];
+    const tenantId = typeof tenantHeader === 'string' && UUID_REGEX.test(tenantHeader) ? tenantHeader : null;
 
     let client: pg.PoolClient | null = null;
     try {
@@ -55,6 +53,13 @@ export async function buildAuthenticatedContext(
     try {
         const identityRuntime = new IdentityRuntime(client as unknown as pg.Client);
         const tenantAccessRuntime = new TenantAccessRuntime(client as unknown as pg.Client, identityRuntime);
+
+        if (!tenantId) {
+            // An invalid credential is 401 whatever the tenant locator says, so clients
+            // re-authenticate instead of treating the request as forbidden.
+            const session = await identityRuntime.resolveSession(sessionId, sessionSecret);
+            throw session ? new AuthenticationError(403, 'forbidden') : new AuthenticationError(401, 'unauthorized');
+        }
 
         const membership = await tenantAccessRuntime.resolveAuthenticatedMembershipContext(
             sessionId,

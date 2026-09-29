@@ -144,6 +144,32 @@ test('production process: preflight, client hosting, API, health and graceful st
         assert.equal(login.headers.get('set-cookie'), null);
     });
 
+    await t.test('protected routes use the real session wiring, not a test seam', async () => {
+        // Test seams answer 403/404 or null contexts; the production wiring answers 401
+        // for a missing or malformed credential on every protected route.
+        const probes: Array<[string, RequestInit]> = [
+            ['/api/v1/assessment/resume?attemptId=11111111-1111-4111-8111-111111111111', {}],
+            ['/api/v1/assessment/answer/save', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: JSON.stringify({ attemptId: '11111111-1111-4111-8111-111111111111' }) }],
+            ['/api/v1/assessment/assigned-exams', {}],
+            ['/api/v1/assessment/proctor-monitoring', {}],
+            ['/api/v1/assessment/teacher-readiness', {}],
+            ['/api/v1/me/context', {}],
+            ['/api/v1/assessment/attempts/start', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: base }, body: '{}' }],
+        ];
+        for (const [route, init] of probes) {
+            const anonymous = await fetch(base + route, init);
+            assert.equal(anonymous.status, 401, `${route} without a session`);
+            const tenantVariants: Array<Record<string, string>> = [{}, { 'X-Tenant-ID': '22222222-3333-4444-8555-666666666666' }];
+            for (const tenant of tenantVariants) {
+                const forged = await fetch(base + route, {
+                    ...init,
+                    headers: { ...(init.headers as Record<string, string> ?? {}), ...tenant, Cookie: '__Host-elligble_session=00000000-0000-4000-8000-000000000000.forgedsecretforgedsecret' },
+                });
+                assert.equal(forged.status, 401, `${route} with a forged session ${JSON.stringify(tenant)}`);
+            }
+        }
+    });
+
     await t.test('logs are JSON lines without credentials or query strings', async () => {
         await waitFor(() => app.output().includes('/api/v1/auth/login'));
         const lines = app.output().trim().split('\n').map(line => JSON.parse(line));
