@@ -91,6 +91,12 @@ export async function postStartTimer(req: import('../types/assessment.ts').Timer
   return handleResponse<import('../types/assessment.ts').TimerStartResponse>(res);
 }
 
+export async function postStartAttempt(examInstanceId: string): Promise<import('../types/assessment.ts').StartAttemptResponse> {
+  const url = '/api/v1/assessment/attempts/start';
+  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId } });
+  return handleResponse<import('../types/assessment.ts').StartAttemptResponse>(res);
+}
+
 export async function getAssignedExams(): Promise<AssignedExamsResponse> {
   const url = '/api/v1/assessment/assigned-exams';
   const res = await apiFetch(url, { method: 'GET' });

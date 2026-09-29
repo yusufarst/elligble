@@ -26,8 +26,8 @@ Status after the authentication and session work on this branch (baseline findin
 | Login / logout / session | `LoginScreen`, `ReauthDialog`, shell "Keluar" | `/api/v1/auth/login`, `/logout`, `/session` | IdentityRuntime (DEC-041 policy) | **WORKS** (integration-tested) |
 | Tenant selection / context | `TenantPicker`, shell label, "Ganti Sekolah" | `/api/v1/me/context` + `X-Tenant-ID` | membership re-validated per request | **WORKS** |
 | Assigned exams | `AssignedExamDiscovery` | `GET /assessment/assigned-exams` | session → membership → participant.person_id | **WORKS** |
-| Start attempt | no action ("Belum ada sesi pengerjaan") | missing | — | **BROKEN (P0-5)** |
-| Launch / session activate, timer, questions, answers, resume, submit | `AttemptLaunch`, `StudentExamWorkstation` | attempt routes | session → membership → participant → attempt | **AUTHORIZED**, unreachable until P0-5 / P0-6 |
+| Start attempt | "Mulai Ujian" with entry guidance | `POST /assessment/attempts/start` | session → membership → participant; eligibility | **WORKS** (integration + browser) |
+| Launch / session activate, timer, questions, answers, resume, submit | `AttemptLaunch`, `StudentExamWorkstation` | attempt routes | session → membership → participant → attempt | **WORKS** for ACTIVE exams (integration + real-browser journey incl. refresh); exams only become ACTIVE by SQL until P0-6 |
 | Proctor monitoring | `ProctorMonitoringView` | `GET /assessment/proctor-monitoring` | session → proctor assignments | **WORKS** (read) |
 | Teacher readiness | `TeacherReadinessView` | `GET /assessment/teacher-readiness` | session → teaching assignment | **WORKS** (read, SCHEDULED only); no READY/ACTIVE actions (P0-6) |
 | Deep links / refresh | query-string routes under `/` | — | session re-checked on load | works in dev; production hosting P0-9 |
@@ -54,7 +54,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P0-2 | Browser credential transport and tenant selection absent | `assessment-client.ts` sent no credentials | **RESOLVED**: HttpOnly `SameSite=Strict` cookie (`__Host-` + `Secure` in production), `X-Tenant-ID` via `apiFetch`, tenant picker, `GET /api/v1/me/context` |
 | P0-3 | Attempt routes had no production authorization (always 403) | `main.ts` wired `getAuthorizedContext` to `null` | **RESOLVED**: `createAttemptAuthorizer` (session → membership → participant → attempt), real-PostgreSQL negative tests |
 | P0-4 | Proctor monitoring and teacher readiness had no production context | `server.ts` passed undefined getters | **RESOLVED** for reads (session-derived person context); teacher operations remain P0-6 |
-| P0-5 | No attempt + timer creation; no start eligibility | no insert paths; `timer.ts` start has no checks | OPEN (next) |
+| P0-5 | No attempt + timer creation; no start eligibility | no insert paths; `timer.ts` start had no checks | **RESOLVED**: `POST /api/v1/assessment/attempts/start` (idempotent, concurrency-safe, eligibility with database time); timer start re-validates eligibility and applies the latest-start policy |
 | P0-6 | No SCHEDULED→READY→ACTIVE transition | only `exam-instance-draft-to-scheduled-transition.ts` | OPEN |
 | P0-7 | No way to put questions into an exam except raw SQL | no snapshot creation code | OPEN |
 | P0-8 | Answers are memory-only in the browser (data-loss path) | `useAnswerManager.ts` | OPEN |
@@ -75,10 +75,12 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-7 | Official `npm test` ran 6 of 46 secure-assessment test files; 2 broken test files never ran | **RESOLVED**: `npm test` runs all unit tests; broken `.js` import (also in `src/client-answer-save-state.ts`) and ordering test fixed |
 | P1-8 | No request/error logging, no metrics; startup logs only | `log.ts` |
 | P1-9 | Design tokens in code drifted from LOCKED design system v1.1.0 (navy actions/focus, slate neutrals, radii, undefined tokens) | **RESOLVED** in `design-tokens.css` + component CSS; screens still use hand-written CSS (migration to shadcn/ui components is incremental) |
-| P1-10 | Assigned-exam projection has no lifecycle/window/duration, so the student cannot see when an exam opens | `assigned-exams.ts` |
+| P1-10 | Assigned-exam projection had no lifecycle/window/duration | **RESOLVED**: `schedule` + `serverNow` in the projection; the list explains when and why an exam can or cannot be started (D04.2-73) |
 | P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes |
 | P1-13 | Shared-device hygiene: remembered school choice leaked to the next account; re-authentication could accept another account while keeping the previous context | found in rendered checks — **RESOLVED** (logout clears the choice; re-login locked to the same ELLIGBLE ID) |
 | P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
+| P1-15 | Question order follows random snapshot UUIDs, not the authored order ("Soal 1 dari 5" shows question 5); no position column (D04.3-41, D04.2-57..59) | `question-delivery.ts` `ORDER BY id`; found in the real-browser journey | OPEN (fix with content import, step 8) |
+| P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | `lib/format.ts` | OPEN |
 | P1-12 | Historical one-off verifiers are point-in-time: 14 of 44 fail on current schema by design | **RESOLVED** as a gate: durable suite `npm run test:integration` (disposable databases); historical verifiers are REFERENCE ONLY |
 
 ## 6. Critical path (ordered by dependency and value)
@@ -86,7 +88,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 1. **Governance and plan** (DEC-042, DEC-043, this plan). DONE in this change.
 2. **Durable test foundation**: full `npm test` gate, fix broken tests, reusable disposable PostgreSQL harness for integration tests (P1-7, P1-12). DONE.
 3. **Authentication and browser session** (P0-1, P0-2, P0-3, P0-4 reads, P1-3, P1-4, P1-5, P1-9, P1-13): DONE. Migration `0036_tenant_display_label`; capability discovery uses explicit assignments only (PB05 untouched).
-4. **Student attempt authorization and start** (P0-3, P0-5, P1-10): attempt ownership check (session → membership → participant → attempt), idempotent start-attempt with eligibility, latest-start policy applied at timer start, assigned-exam projection with schedule state.
+4. **Student attempt authorization and start** (P0-3, P0-5, P1-10): DONE. Ownership check, idempotent concurrency-safe start with eligibility (ACTIVE, window, latest-start policy) using database time, policy re-applied at timer start, schedule projection and entry guidance in the list.
 5. **Teacher exam operations** (P0-4, P0-6): production contexts for teacher/proctor views; SCHEDULED→READY (readiness composition) and READY→ACTIVE (final re-check, window) for teacher-managed exams.
 6. **Local-first answers** (P0-8, P1-2, P1-1): IndexedDB-backed coalescing queue with retry/backoff, honest save state, offline banner, session binding.
 7. **Production operations** (P0-9, P0-10, P1-8): migration runner with lock and history checks, single-process production server serving the built SPA with deep-link fallback, environment validation, preflight, structured request logging, container build, CI.
@@ -169,12 +171,21 @@ After authentication and browser session (this branch):
 | frontend vitest / `vite build` | 99/99 / PASS |
 | Leaked disposable databases | 0 |
 
+After student start and eligibility (this branch):
+
+| Check | Result |
+|---|---|
+| secure-assessment unit | 859/859 PASS (timer start eligibility, eligibility rules, projection contract) |
+| integration (real PostgreSQL) | 23/23 PASS, stable over 3 consecutive runs: full HTTP journey start → activate → timer → questions (no answer key) → versioned saves → resume → idempotent submit → no writes after submit; refusal reasons (not active, not open, closed, late start); remaining-window truncation; paused before timer start; 8 concurrent starts → 1 attempt; non-participant / other tenant / anonymous |
+| frontend vitest | 105/105 PASS |
+| real browser (Chromium 360 px, Asia/Jakarta) | login → "Mulai Ujian" → ready screen → workstation (server timer, "Tersimpan" after ACK) → answer → reload → answer restored; no page errors |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`). Planned: environment validator and production preflight; browser E2E runner; route parity check (client calls vs server routes); CI workflow. The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-Critical path step 4 (student start attempt and eligibility), then steps 5 → 9.
+Critical path step 5 (teacher exam operations: READY / ACTIVE), then steps 6 → 9.
 
 Local development: `npm run migrate` + `node test/support/seed-demo.ts` (runtime), `ELLIGBLE_ENV=development node src/main.ts`, and `npm run dev` in `frontend/web` (Vite proxies `/api` to port 3000). Demo accounts are documented in `seed-demo.ts`.

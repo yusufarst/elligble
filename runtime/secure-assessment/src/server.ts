@@ -13,6 +13,7 @@ import { handleTeacherReadinessGet, type TeacherReadinessContext } from './teach
 import { AuthenticationError, buildAuthenticatedContext } from './http/authenticated-context.ts';
 import { handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
 import { handleMeContextGet } from './http/me-context.ts';
+import { handleAttemptStart } from './attempt-start.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, sendError } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
 
@@ -258,6 +259,19 @@ export function createServer(deps: ServerDependencies): http.Server {
                 return;
             }
             return handleMeContextGet(req, res, { pool: deps.pool, cookie: security.cookie });
+        }
+
+        if (pathname === '/api/v1/assessment/attempts/start') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, getContext =>
+                handleAttemptStart(req, res, { pool: deps.pool, getContext: () => getContext()! }));
         }
 
         if (pathname === '/api/v1/assessment/assigned-exams') {

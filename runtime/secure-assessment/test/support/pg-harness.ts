@@ -67,6 +67,13 @@ export async function createDisposableDatabase(): Promise<DisposableDatabase> {
 }
 
 async function dropDatabase(admin: pg.Client, name: string): Promise<void> {
+    // Let closing pool sockets finish first; terminating a backend while its client is
+    // mid-shutdown surfaces as an unhandled client error.
+    for (let i = 0; i < 50; i++) {
+        const res = await admin.query('SELECT COUNT(*)::int AS n FROM pg_stat_activity WHERE datname = $1', [name]);
+        if (res.rows[0].n === 0) break;
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
     await admin.query(
         'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()',
         [name]

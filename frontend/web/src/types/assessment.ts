@@ -139,15 +139,29 @@ export interface AssignedExamAttempt {
   submittedAt: string | null;
 }
 
+export interface AssignedExamSchedule {
+  lifecycleState: string | null;
+  windowStartsAt: string | null;
+  windowEndsAt: string | null;
+  attemptDurationSeconds: number | null;
+}
+
 export interface AssignedExamItem {
   examInstanceId: string;
   subjectLabel: string | null;
   roomLabel: string | null;
+  schedule?: AssignedExamSchedule;
   attempts: AssignedExamAttempt[];
 }
 
 export interface AssignedExamsResponse {
+  serverNow?: string;
   assignments: AssignedExamItem[];
+}
+
+export interface StartAttemptResponse {
+  attemptId: string;
+  created: boolean;
 }
 
 export interface ProctorMonitoringRoomProjection {
