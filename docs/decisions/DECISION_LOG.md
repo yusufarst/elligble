@@ -1,9 +1,9 @@
 **Status:** ACTIVE  
-**Version:** 1.0.9
+**Version:** 1.1.0
 **Canonical:** YES  
-**Supersedes:** 1.0.8
+**Supersedes:** 1.0.9
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-09-18
+**Last Reviewed:** 2026-09-29
 
 # ELLIGBLE — Decision Log
 
@@ -52,6 +52,8 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-039 | Assessment UI Context | Secure Assessment Exam Focus Workspace Context Presentation | LOCKED | Owner / SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md |
 | DEC-040 | Platform Visual Foundation | ELLIGBLE Warm Monochrome Institutional Visual Foundation | LOCKED | Owner / DEC-040 / ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md |
 | DEC-041 | PB04 Authentication-Security Policy | Owner-approved final residual Authentication-Security Policy Matrix | LOCKED | Owner / Discovery 02 D02.5-59 |
+| DEC-042 | Execution model | Continuous Production Completion replaces the Build Unit / Stage workflow for all new work; BU-001..BU-090 remain historical assets | LOCKED | Owner / 00.10_CONTINUOUS_PRODUCTION_COMPLETION.md |
+| DEC-043 | UI foundation and UX reference | shadcn/ui approved as component foundation (themed with ELLIGBLE tokens); DesainPakeAI project b5a22aa4-7b38-49d2-9448-443eab6e8075 is the Owner-approved UX direction | LOCKED | Owner / DEC-043 |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -350,3 +352,35 @@ DEC-041 DOES NOT supersede:
 - PB04 closure requirements;
 - Permission Matrix;
 - Build gating.
+
+### DEC-042 — Continuous Production Completion (2026-09-29)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifact:** `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md`
+
+Owner explicitly superseded the Build Unit / Stage execution workflow for all new work:
+
+- No BU-091 or later Build Units; no Stage-1..5 lifecycle records or Controller stage audits.
+- BU-001..BU-090 remain historical, proven construction assets; they are not reopened or rewritten.
+- Work follows the shortest safe production critical path in `docs/production/PRODUCTION_COMPLETION_PLAN.md`, the single living execution tracker.
+- `CURRENT_STATE.md`, `HANDOFF_PACKET.md`, `BUILD_PHASE_INDEX.md` and the status fields of `PRODUCT_COMPLETION_ROADMAP.md` are frozen historical records at the BU-090 terminal state. Manifest SHA256 descriptors are historical; Git history is the integrity record.
+
+Supersedes for new work: DEC-027; DEC-034; the Build Unit / Stage execution parts of DEC-035 (00.09 §8 and the Build Unit / Fast-Track items of §10).
+
+Does NOT supersede: any LOCKED/FROZEN product, security, architecture, domain, privacy, policy or design decision; baseline-first priority; the Baseline Completion Gate; reuse of completed capabilities; Production Blockers; mandatory verification; secrets, migration, legacy and Git rules.
+
+BU-090 final state at adoption: Stage-5 final physical verification PASS (Owner-asserted, physically re-verified at `3a69883544ac3750b17fe5e4bdbd0f41b3608b07`: BU-090 real PostgreSQL verification PASS, identity 20/20, tenant-access 11/11, secure-assessment regression 153/153, frontend 88/88, typecheck and production build PASS). BU-090 is TERMINAL / DO NOT REOPEN.
+
+### DEC-043 — UI Component Foundation and Owner-Approved UX Reference (2026-09-29)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifacts:** this entry; `docs/design/FRONTEND_DESIGN_SYSTEM.md` §2 (prohibition lifted for shadcn/ui only)
+
+Owner explicitly approved:
+
+- **shadcn/ui** as the frontend component foundation, together with the dependencies it structurally requires (Tailwind CSS, Radix UI primitives, class-variance-authority, clsx, tailwind-merge). This is the explicit Owner approval required by FRONTEND_DESIGN_SYSTEM §2. Other suites (Material UI, Chakra, Bootstrap and similar) remain prohibited without separate approval.
+- Components must be themed with the locked ELLIGBLE warm-monochrome tokens. Generic default shadcn styling must not ship. Icons stay project-controlled outline SVGs per DEC-040.
+- **DesainPakeAI** project `b5a22aa4-7b38-49d2-9448-443eab6e8075` is the Owner-approved visual, layout, interaction and UX direction. It does not override security, authorization, privacy, real business logic, domain ownership, accessibility, responsive correctness or product functionality. Prototype code is reference only and must not be copied blindly. Access is through the `dpai` CLI only; `DPAI_API_KEY` is never printed or committed.
+- If a DesainPakeAI design value conflicts with a LOCKED design document value, the conflict is registered in the living plan for Owner decision; it is not silently resolved either way.

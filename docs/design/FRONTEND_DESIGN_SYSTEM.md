@@ -21,6 +21,7 @@ ELLIGBLE is an institutional education platform delivering mission-critical acad
 - **Styling Architecture:** Standard CSS custom properties (design tokens) combined with modular CSS / component styles.
 - **Decoupled Boundary:** Client builds are static artifacts communicating over bounded HTTP/JSON REST APIs with the authoritative backend (`runtime/secure-assessment/src/server.ts`).
 - **No Unapproved Frameworks:** The canonical approval of React + TypeScript + Vite does not permit arbitrary introduction of Tailwind, shadcn/ui, Material UI, Chakra, Bootstrap, or heavy third-party UI component suites without explicit Owner approval.
+- **Owner Approval Recorded (DEC-043, 2026-09-29):** shadcn/ui is approved as the component foundation, together with the dependencies it structurally requires (Tailwind CSS, Radix UI primitives, class-variance-authority, clsx, tailwind-merge). Components are themed with the tokens in this document; generic default shadcn styling must not ship. Material UI, Chakra, Bootstrap and other suites remain prohibited without separate approval.
 
 ## 3. Mobile-First Responsive Strategy
 

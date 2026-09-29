@@ -1,3 +1,6 @@
+> **FROZEN HISTORICAL RECORD (DEC-042, 2026-09-29).** This file is no longer live navigation. Live production state, critical path and next work: `docs/production/PRODUCTION_COMPLETION_PLAN.md`. Execution model: `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md`. Do not create Build Units or Stage records.
+> **Final Build Unit state:** BU-090 (Secure Assessment Authenticated Context HTTP API Integration Bootstrap): STAGE-5 FINAL PHYSICAL VERIFICATION PASS / DONE YES / FULL REPOSITORY FINALIZED YES / TERMINAL / DO NOT REOPEN (Owner-asserted; physically re-verified at `3a69883544ac3750b17fe5e4bdbd0f41b3608b07`).
+
 **Status:** ACTIVE / DYNAMIC PRODUCT COMPLETION CONTROL
 **Version:** 1.0.45
 **Canonical:** DYNAMIC ROADMAP / DOES NOT SUPERSEDE LOCKED GOVERNANCE
