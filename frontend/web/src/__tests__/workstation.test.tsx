@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx';
 import type { StudentSafeQuestion, ResumeResponse, QuestionsResponse, TimerResponse } from '../types/assessment.ts';
@@ -734,7 +734,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     expect(confirmBtn.disabled).toBe(true);
 
     // Check confirmation declaration checkbox
-    const checkbox = screen.getByRole('checkbox');
+    const checkbox = within(screen.getByRole('dialog')).getByRole('checkbox');
     await userEvent.click(checkbox);
     expect(confirmBtn.disabled).toBe(false);
 
@@ -1105,7 +1105,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     // Open submit dialog and confirm
     await userEvent.click(screen.getByRole('button', { name: 'Selesaikan Ujian' }));
-    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
 
     // Presented as safe terminal success
@@ -1362,7 +1362,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     });
 
     // Check declaration and confirm
-    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
 
     expect(await screen.findByText('Ujian Berhasil Dikumpulkan')).toBeTruthy();

@@ -29,6 +29,19 @@ export async function startExam(page: Page): Promise<string> {
     return new URL(page.url()).searchParams.get('attemptId')!;
 }
 
+/** Continues an attempt started earlier (from the exam list), taking the session over if needed. */
+export async function continueExam(page: Page): Promise<string> {
+    await page.getByRole('button', { name: 'Mulai Pengerjaan' }).click();
+    const launch = page.getByRole('button', { name: 'Mulai Ujian Sekarang' });
+    const takeover = page.getByRole('button', { name: 'Ya, Pindahkan Sesi' });
+    const workstation = page.getByText('Hasil dari 2 + 3 adalah');
+    await expect(launch.or(takeover).or(workstation)).toBeVisible();
+    if (await takeover.isVisible()) await takeover.click();
+    if (await launch.isVisible()) await launch.click();
+    await expect(workstation).toBeVisible();
+    return new URL(page.url()).searchParams.get('attemptId')!;
+}
+
 export const option = (page: Page, index: number) => page.locator('.options-list label').nth(index);
 export const saveStatus = (page: Page) => page.locator('.save-status-text');
 

@@ -70,6 +70,20 @@ export async function postSaveAnswer(req: SaveAnswerRequest): Promise<SaveAnswer
   return handleResponse<SaveAnswerResponse>(res);
 }
 
+export interface ReviewFlagRequest {
+  attemptId: string;
+  sessionId: string;
+  snapshotId: string;
+  flagged: boolean;
+}
+
+/** Stores the desired "Ragu-ragu" state of one question; repeating it is harmless. */
+export async function postReviewFlag(req: ReviewFlagRequest): Promise<{ snapshotId: string; flagged: boolean }> {
+  const url = '/api/v1/assessment/review-flag';
+  const res = await apiFetch(url, { method: 'POST', json: req });
+  return handleResponse<{ snapshotId: string; flagged: boolean }>(res);
+}
+
 export async function postSubmit(attemptId: string): Promise<SubmitResponse> {
   const url = '/api/v1/assessment/submit';
   const res = await apiFetch(url, { method: 'POST', json: { attemptId } });

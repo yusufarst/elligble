@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import { Readable } from 'node:stream';
 import * as pg from 'pg';
 import { handleSaveAnswer, type AuthorizedAssessmentContext } from './answer.ts';
+import { handleReviewFlag } from './review-flag.ts';
 import { handleTimerStart, handleTimerGet } from './timer.ts';
 import { handleSubmit, handleSubmissionGet, handleExpiryFinalize } from './submission.ts';
 import { handleResumeGet } from './resume.ts';
@@ -58,6 +59,7 @@ type AttemptRoute = { method: 'GET' | 'POST'; source: 'query' | 'body' };
 
 const ATTEMPT_ROUTES: Record<string, AttemptRoute> = {
     '/api/v1/assessment/answer/save': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/review-flag': { method: 'POST', source: 'body' },
     '/api/v1/assessment/timer/start': { method: 'POST', source: 'body' },
     '/api/v1/assessment/submit': { method: 'POST', source: 'body' },
     '/api/v1/assessment/expiry-finalize': { method: 'POST', source: 'body' },
@@ -179,6 +181,8 @@ export function createServer(deps: ServerDependencies): http.Server {
         switch (pathname) {
             case '/api/v1/assessment/answer/save':
                 return handleSaveAnswer(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/review-flag':
+                return handleReviewFlag(handlerReq, res, handlerDeps);
             case '/api/v1/assessment/timer/start':
                 return handleTimerStart(handlerReq, res, handlerDeps);
             case '/api/v1/assessment/submit':

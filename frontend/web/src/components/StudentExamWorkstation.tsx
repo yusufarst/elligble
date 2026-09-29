@@ -4,6 +4,7 @@ import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiE
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
 import { useAnswerManager } from '../hooks/useAnswerManager.ts';
+import { clearReviewFlags, useReviewFlags } from '../hooks/useReviewFlags.ts';
 import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
@@ -70,6 +71,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [initialRemainingSeconds, setInitialRemainingSeconds] = useState<number>(0);
   const [initialAnswers, setInitialAnswers] = useState<ResumeResponse['answers'] | null>(null);
+  const [initialFlags, setInitialFlags] = useState<string[] | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [unreceivedAtCompletion, setUnreceivedAtCompletion] = useState<number>(0);
   const [submitError, setSubmitError] = useState<string>('');
@@ -119,6 +121,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const completeAttempt = useCallback(async (id: string, at: string | null) => {
     const unreceived = await countUnreceivedLocalAnswers(tenantKey, id);
     await clearLocalAnswers(tenantKey, id);
+    clearReviewFlags(id);
     forgetExamSessionId(id);
     if (!mountedRef.current) return;
     setUnreceivedAtCompletion(unreceived);
@@ -226,6 +229,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         }
 
         setInitialAnswers(resume.answers);
+        setInitialFlags(resume.reviewFlags ?? []);
 
         // Load questions
         const qRes = await getQuestions(attemptId!);
@@ -342,6 +346,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     onTerminalEvent: handleTerminalEvent,
   });
   const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
+  const review = useReviewFlags({ attemptId: attemptId || '', sessionId, initialFlags, enabled: phase === 'active' });
   answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, hasUnresolvedSaves };
 
   // Handle final submission (idempotent on the server, D04.5-40/44).
@@ -660,6 +665,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             <span className="legend-chip"><span className="chip-indicator active-dot" /> Aktif</span>
             <span className="legend-chip"><span className="chip-indicator answered-dot" /> Terjawab</span>
             <span className="legend-chip"><span className="chip-indicator unanswered-dot" /> Kosong</span>
+            <span className="legend-chip"><span className="chip-indicator flagged-dot" /> Ragu-ragu</span>
           </div>
 
           <div className="navigator-grid" role="group" aria-label="Nomor Soal">
@@ -669,19 +675,23 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               const qState = saveStates[q.snapshotId];
               const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
 
+              const isFlagged = !!review.flags[q.snapshotId];
+
               let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
               if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
+              if (isFlagged) statusText += ', ditandai ragu-ragu';
 
               return (
                 <button
                   key={q.snapshotId}
                   type="button"
-                  className={`nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''}`}
+                  className={`nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''} ${isFlagged ? 'flagged' : ''}`}
                   onClick={() => setCurrentIndex(idx)}
                   aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
                   aria-current={isCurrent ? 'true' : undefined}
                 >
                   <span className="nav-btn-num">{idx + 1}</span>
+                  {isFlagged && <span className="flag-corner" aria-hidden="true" />}
                   {isAnswered && !isUnresolved && <span className="nav-btn-dot answered-dot" aria-hidden="true" />}
                   {isCurrent && <span className="nav-btn-dot current-dot" aria-hidden="true" />}
                   {isUnresolved && <span className="nav-btn-dot unresolved-dot" aria-hidden="true" />}
@@ -703,6 +713,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               <span className="navigator-summary-label">Belum Dijawab</span>
               <strong className="navigator-summary-val">{unansweredCount}</strong>
             </div>
+            {review.flaggedCount > 0 && (
+              <div className="navigator-summary-row">
+                <span className="navigator-summary-label">Ragu-ragu</span>
+                <strong className="navigator-summary-val">{review.flaggedCount}</strong>
+              </div>
+            )}
           </div>
         </nav>
 
@@ -760,6 +776,18 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                 })}
               </div>
             </fieldset>
+
+            <label className={`review-flag-toggle ${review.flags[currentQuestion.snapshotId] ? 'flagged' : ''}`}>
+              <input
+                type="checkbox"
+                checked={!!review.flags[currentQuestion.snapshotId]}
+                onChange={() => review.toggle(currentQuestion.snapshotId)}
+                aria-label="Ragu-ragu"
+                aria-describedby="review-flag-hint"
+              />
+              <span aria-hidden="true">Ragu-ragu</span>
+              <span id="review-flag-hint" className="review-flag-hint">Tandai untuk diperiksa lagi sebelum mengumpulkan. Jawaban tidak berubah.</span>
+            </label>
 
             {/* Workstation Actions: Persistent Bottom Bar on Mobile, Grid-aligned on Desktop */}
             <footer className="workstation-actions">
@@ -880,6 +908,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         currentIndex={currentIndex}
         selectedOptions={selectedOptions}
         saveStates={saveStates}
+        flags={review.flags}
         onSelectQuestion={idx => setCurrentIndex(idx)}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         hasUnresolvedSaves={hasUnresolvedSaves}
@@ -892,6 +921,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         totalQuestions={totalQuestions}
         answeredCount={answeredCount}
         unansweredCount={unansweredCount}
+        flaggedCount={review.flaggedCount}
         isSubmitting={isSubmitting}
         errorMessage={submitError}
         onCancel={() => {

@@ -64,6 +64,8 @@ export interface ResumeResponse {
   timer: ResumeTimer;
   submission: ResumeSubmission;
   context: ResumeContext;
+  /** Questions the student marked "Ragu-ragu" (D04.5-34); absent from older servers. */
+  reviewFlags?: string[];
 }
 
 export interface TimerResponse {

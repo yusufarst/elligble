@@ -5,6 +5,8 @@ export interface SubmitConfirmModalProps {
   totalQuestions: number;
   answeredCount: number;
   unansweredCount: number;
+  /** Questions still marked "Ragu-ragu": a reminder only, submitting stays possible. */
+  flaggedCount?: number;
   isSubmitting: boolean;
   /** Shown when the last submission request failed; the student can simply try again. */
   errorMessage?: string;
@@ -17,6 +19,7 @@ export const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
   totalQuestions,
   answeredCount,
   unansweredCount,
+  flaggedCount = 0,
   isSubmitting,
   errorMessage,
   onCancel,
@@ -104,6 +107,12 @@ export const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
             <span>Belum Dijawab:</span>
             <strong>{unansweredCount}</strong>
           </div>
+          {flaggedCount > 0 && (
+            <div className="summary-row">
+              <span>Ditandai Ragu-ragu:</span>
+              <strong>{flaggedCount}</strong>
+            </div>
+          )}
         </div>
 
         <label className="modal-declaration">

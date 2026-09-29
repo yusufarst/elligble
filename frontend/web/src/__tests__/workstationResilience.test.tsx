@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx';
 import type { ResumeResponse, StudentSafeQuestion } from '../types/assessment.ts';
@@ -219,7 +219,7 @@ describe('StudentExamWorkstation resilience', () => {
     await screen.findByText('Tersimpan');
 
     await userEvent.click(screen.getByRole('button', { name: 'Selesaikan Ujian' }));
-    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
     expect(await screen.findByText('Gagal mengumpulkan ujian. Periksa koneksi internet Anda lalu coba lagi.')).toBeTruthy();
     expect(alertSpy).not.toHaveBeenCalled();

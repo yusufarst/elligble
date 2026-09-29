@@ -31,6 +31,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getTimer: m => m.getTimer(ID),
         postSaveAnswer: m => m.postSaveAnswer({ attemptId: ID, sessionId: ID, snapshotId: ID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'w-1', expectedWriteVersion: null }),
         postSubmit: m => m.postSubmit(ID),
+        postReviewFlag: m => m.postReviewFlag({ attemptId: ID, sessionId: ID, snapshotId: ID, flagged: true }),
         postExpiryFinalize: m => m.postExpiryFinalize(ID),
         postActivateSession: m => m.postActivateSession({ attemptId: ID, sessionId: ID }),
         postStartTimer: m => m.postStartTimer({ attemptId: ID }),

@@ -66,7 +66,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes;
+        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes, reviewFlagsRes;
         try {
             await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
@@ -151,6 +151,14 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 WHERE a.id = $1 AND a.tenant_id = $2
             `, [attemptId, context.tenantId]);
 
+            // "Ragu-ragu" marks: the student's own navigation aid, kept apart from answers (D04.5-35).
+            reviewFlagsRes = await client.query(
+                `SELECT exam_question_snapshot_id AS "snapshotId" FROM secure_assessment_review_flags
+                 WHERE tenant_id = $1 AND exam_attempt_id = $2 AND flagged
+                 ORDER BY exam_question_snapshot_id ASC`,
+                [context.tenantId, attemptId]
+            );
+
             await client.query('COMMIT');
         } catch (dbErr) {
             try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
@@ -222,7 +230,8 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 answers,
                 timer: timerResponse,
                 submission: submissionResponse,
-                context: contextData
+                context: contextData,
+                reviewFlags: (reviewFlagsRes.rows ?? []).map(row => row.snapshotId as string)
             }));
         } catch (appErr) {
             res.writeHead(500, { 'Content-Type': 'application/json' });

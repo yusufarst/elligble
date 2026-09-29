@@ -40,7 +40,7 @@ test('a student answers, the answers survive a reload, and the exam is submitted
     await expect(page.locator('.options-list input[type=radio]').nth(2)).toBeChecked();
 
     await page.getByRole('button', { name: 'Selesaikan Ujian' }).click();
-    await page.getByRole('checkbox').check();
+    await page.getByRole('dialog').getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Kirim Jawaban Sekarang' }).click();
     await expect(page.getByText('Ujian Berhasil Dikumpulkan')).toBeVisible();
 

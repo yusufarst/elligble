@@ -1159,8 +1159,10 @@
 /* Integrated Summary Well in Bottom Sheet */
 .sheet-summary-box {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-around;
+  gap: 4px 14px;
   background-color: #f7f7f6;
   border: 1px solid #ebebeb;
   border-radius: 8px;
@@ -1374,4 +1376,67 @@
   color: #52525b;
   line-height: 1.5;
   margin: 0;
+}
+
+/* "Ragu-ragu / Tandai" review mark (D04.5-33/34/35): the student's own reminder, never a
+   save state. Amber marks it in the question card and as a corner on the question number. */
+.review-flag-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 8px 14px;
+  border: 1px solid #e7e7e5;
+  border-radius: 10px;
+  background-color: #ffffff;
+  color: #18181b;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.review-flag-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #b45309;
+  flex-shrink: 0;
+}
+
+.review-flag-toggle.flagged {
+  border-color: var(--color-warning-border);
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.review-flag-hint {
+  flex-basis: 100%;
+  padding-left: 28px;
+  color: #71717a;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.review-flag-toggle.flagged .review-flag-hint {
+  color: var(--color-warning-text);
+}
+
+.chip-indicator.flagged-dot {
+  background-color: var(--color-warning-base);
+}
+
+.flag-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-top: 12px solid var(--color-warning-base);
+  border-left: 12px solid transparent;
+  border-top-right-radius: 7px;
 }
