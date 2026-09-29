@@ -71,7 +71,11 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
 
 export class IndexedDbAnswerStore implements AnswerStore {
   readonly durable = true;
-  private constructor(private readonly db: IDBDatabase) {}
+  private readonly db: IDBDatabase;
+
+  private constructor(db: IDBDatabase) {
+    this.db = db;
+  }
 
   static async open(factory: IDBFactory = globalThis.indexedDB): Promise<IndexedDbAnswerStore> {
     if (!factory) throw new Error('IndexedDB unavailable');

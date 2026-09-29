@@ -222,7 +222,7 @@ After production operations (this branch):
 
 ## 12. Friction reducers (automation)
 
-Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test. Planned: browser E2E runner in the repository (step 9); route parity check (client calls vs server routes). The manifest SHA256 synchronization chore is retired (DEC-042).
+Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Planned: browser E2E runner in the repository (step 9). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
