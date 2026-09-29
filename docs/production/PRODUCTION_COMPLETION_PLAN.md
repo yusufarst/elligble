@@ -81,7 +81,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes | OPEN |
 | P1-13 | Shared-device hygiene: remembered school choice leaked to the next account; re-authentication could accept another account while keeping the previous context | found in rendered checks — **RESOLVED** (logout clears the choice; re-login locked to the same ELLIGBLE ID) | RESOLVED |
 | P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
-| P1-15 | Question order follows random snapshot UUIDs, not the authored order ("Soal 1 dari 5" shows question 5); no position column (D04.3-41, D04.2-57..59) | `question-delivery.ts` `ORDER BY id`; found in the real-browser journey | OPEN (fix with content import, step 8) |
+| P1-15 | Question order followed random snapshot UUIDs, not the authored order (D04.3-41, D04.2-57..59) | **RESOLVED**: migration `0038` adds a positive, per-exam unique `display_order` written when the snapshot is created (snapshots stay immutable); delivery orders by it, legacy rows follow by id; real-PostgreSQL test with identifier order opposite to the authored order | RESOLVED |
 | P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | `lib/format.ts` | OPEN |
 | P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | lifecycle ops implement READY/ACTIVE only | OPEN: Owner decision (§7) |
 | P1-18 | Readiness preflights accepted only SCHEDULED, so READY could not be re-evaluated (D04.2-25) or re-checked at activation (D04.2-68) | 10 preflight guards | **RESOLVED**: shared `readiness-states.ts` (SCHEDULED or READY) |
@@ -91,7 +91,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-20 | Automatic submission was tried once: a network failure left "Waktu Ujian Telah Habis" forever, and a device clock ahead of the server (`timer_not_expired`) got stuck | **RESOLVED**: pending answers are flushed first (D04.5-46), finalization retries with backoff (D04.5-45/49), the exam continues when the server still has time | RESOLVED |
 | P1-21 | A failed submission used a blocking `alert()` | **RESOLVED**: inline message in the confirmation dialog, retry is safe (idempotent submit) | RESOLVED |
 | P1-22 | Offline answers captured before expiry but delivered after it are rejected by the server | D04.5-48 treats them as an exception case with a deferred reconciliation policy. The student is told honestly how many choices the server did not receive; no silent loss claim. OPEN (policy deferred, not blocking) | OPEN |
-| P1-23 | Save does not validate the answer payload against the frozen question (any JSON up to the body limit is stored; option ids are not checked) | `answer.ts`; to fix with the question content contract in step 8 | OPEN |
+| P1-23 | Save did not validate the answer payload against the frozen question (any JSON was stored; option ids unchecked) | **RESOLVED**: `isAnswerForQuestion` in `answer.ts` accepts exactly `{ selectedOptionId }` naming an option of the frozen MULTIPLE_CHOICE_SINGLE question (D04.3-21), otherwise 400 `invalid_answer_payload` and nothing is stored | RESOLVED |
 | P1-24 | "Ragu-ragu / Tandai" flag for review (D04.5-34/35) not implemented | student navigation aid | OPEN |
 | P1-25 | Time reminders at configured thresholds (D04.5-32) were missing; only warning styling below 5 and 1 minutes | `StudentExamWorkstation`: **RESOLVED** with the decision's default thresholds (30, 15, 5 minutes): a non-blocking status line with the actual remaining minutes, hidden after 10 seconds; school-defined thresholds await tenant settings | RESOLVED |
 
@@ -141,7 +141,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 |---|---|
 | Environment config / validation | every variable validated at startup (`.env.example`): PostgreSQL URL scheme (never echoed), environment, port, pool, cookie security (cannot be off in production), allowed origins, migration mode (cannot be `off` in production), bounded database wait |
 | Secrets | none committed; `.env*` git-ignored and excluded from the image build context |
-| Migrations | 37 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
+| Migrations | 38 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
 | Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |

@@ -179,7 +179,7 @@ test('active-session answer authority guard tests', async (t) => {
         mutationCount = 0;
         
         attempts = [{ id: validAttemptId, tenant_id: validTenantId, exam_participant_id: validTenantId }];
-        snapshots = [{ id: validSnapshotId, tenant_id: validTenantId, exam_instance_id: validTenantId }];
+        snapshots = [{ id: validSnapshotId, tenant_id: validTenantId, exam_instance_id: validTenantId, frozen_content: { schemaVersion: 1, questionType: 'MULTIPLE_CHOICE_SINGLE', options: ['A', 'B', 'C', 'D', 'E'].map(id => ({ id, content: id })) } }];
         participants = [{ id: validTenantId, tenant_id: validTenantId, exam_instance_id: validTenantId }];
         answers = [];
         submissions = [];
@@ -189,7 +189,7 @@ test('active-session answer authority guard tests', async (t) => {
         mockContext = { tenantId: validTenantId, authorizedAttemptId: validAttemptId };
     });
 
-    const getBasePayload = (): any => ({ attemptId: validAttemptId, sessionId: validSessionId, snapshotId: validSnapshotId, answerPayload: { a: 1 }, clientWriteIdentity: 'req1' });
+    const getBasePayload = (): any => ({ attemptId: validAttemptId, sessionId: validSessionId, snapshotId: validSnapshotId, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
 
     await t.test('missing sessionId -> 400 invalid_request', async () => {
         const payload = getBasePayload();
@@ -326,7 +326,7 @@ test('active-session answer authority guard tests', async (t) => {
     });
 
     await t.test('old Session cannot increment an existing Answer write_version', async () => {
-        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"a":1}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         
         sessions[0].ended_at = new Date();
         const payload = getBasePayload();
@@ -340,25 +340,25 @@ test('active-session answer authority guard tests', async (t) => {
     });
 
     await t.test('old Session cannot change an existing Answer payload', async () => {
-        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"a":1}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         
         sessions[0].ended_at = new Date();
         const payload = getBasePayload();
         (payload as any).expectedWriteVersion = 1;
-        payload.answerPayload = { b: 2 };
+        payload.answerPayload = { selectedOptionId: 'B' };
         payload.clientWriteIdentity = 'req2';
         
         await sendPost(payload);
-        assert.equal(answers[0].answer_payload, '{"a":1}');
+        assert.equal(answers[0].answer_payload, '{"selectedOptionId":"A"}');
         assert.equal(mutationCount, 0);
     });
 
     await t.test('current active Session can update with matching expectedWriteVersion', async () => {
-        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"a":1}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         
         const payload = getBasePayload();
         (payload as any).expectedWriteVersion = 1;
-        payload.answerPayload = { b: 2 };
+        payload.answerPayload = { selectedOptionId: 'B' };
         payload.clientWriteIdentity = 'req2';
         
         const res = await sendPost(payload);
@@ -370,7 +370,7 @@ test('active-session answer authority guard tests', async (t) => {
     });
 
     await t.test('exact active-Session Answer retry preserves existing idempotent receipt', async () => {
-        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"a":1}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validTenantId, exam_attempt_id: validAttemptId, exam_question_snapshot_id: validSnapshotId, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         
         const res = await sendPost(getBasePayload());
         assert.equal(res.status, 200);

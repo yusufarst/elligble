@@ -194,7 +194,7 @@ test('answer save capability tests', async (t) => {
         triggerInsertCollision = null;
         lastTimerQuery = '';
         attempts = [{ id: validUUID, tenant_id: validUUID, exam_participant_id: validUUID }];
-        snapshots = [{ id: validSnapshotUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
+        snapshots = [{ id: validSnapshotUUID, tenant_id: validUUID, exam_instance_id: validUUID, frozen_content: { schemaVersion: 1, questionType: 'MULTIPLE_CHOICE_SINGLE', options: ['A', 'B', 'C', 'D', 'E'].map(id => ({ id, content: id })) } }];
         participants = [{ id: validUUID, tenant_id: validUUID, exam_instance_id: validUUID }];
         answers = [];
         submissions = [];
@@ -250,7 +250,7 @@ test('answer save capability tests', async (t) => {
 
     await t.test('clientWriteIdentity length 255 is accepted', async () => {
         const str255 = 'a'.repeat(255);
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: {}, clientWriteIdentity: str255 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: str255 });
         assert.equal(res.status, 200);
     });
 
@@ -280,10 +280,20 @@ test('answer save capability tests', async (t) => {
 
     await t.test('expectedWriteVersion 2147483647 -> accepted, enters standard flow', async () => {
         // Will fail because expectedWriteVersion is not matching the DB's current (which is non-existent)
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: {}, clientWriteIdentity: 'abc', expectedWriteVersion: 2147483647 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'abc', expectedWriteVersion: 2147483647 });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.deepEqual(data, { error: 'stale_write_version' });
+    });
+
+    await t.test('answer payload must name one of the frozen question options (baseline contract) -> 400', async () => {
+        for (const answerPayload of [{}, { selectedOptionId: 'Z' }, { selectedOptionId: 1 }, { selectedOptionId: 'A', note: 'x' }, { text: 'A' }, ['A'], 'A']) {
+            const before = answers.length;
+            const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload, clientWriteIdentity: 'req-invalid-payload' });
+            assert.equal(res.status, 400, JSON.stringify(answerPayload));
+            assert.deepEqual(await res.json(), { error: 'invalid_answer_payload' });
+            assert.equal(answers.length, before, 'nothing is stored');
+        }
     });
 
     await t.test('authorized Attempt/Snapshot not found -> 404', async () => {
@@ -303,7 +313,7 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('successful initial write -> 200 acknowledged version 1', async () => {
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(data.status, 'acknowledged');
@@ -313,9 +323,9 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('duplicate same logical write -> 200 same acknowledgement, no mutation, no increment', async () => {
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(data.writeVersion, 1);
@@ -324,9 +334,9 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('same identity + different payload -> 409 write_identity_reuse_conflict', async () => {
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'write_identity_reuse_conflict');
@@ -334,9 +344,9 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('new identity + matching expected version -> 200, increment exactly once', async () => {
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(data.writeVersion, 2);
@@ -344,10 +354,10 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('stale expected version -> 409 stale_write_version, no mutation', async () => {
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 }); // now at v2
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 }); // now at v2
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'C' }, clientWriteIdentity: 'req3', expectedWriteVersion: 1 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'C' }, clientWriteIdentity: 'req3', expectedWriteVersion: 1 });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'stale_write_version');
@@ -355,12 +365,12 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('delayed old retry cannot overwrite newer Answer', async () => {
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' }); // v1
-        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 }); // v2
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' }); // v1
+        await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 }); // v2
 
         // Req1 retry comes in very late (expectedWriteVersion was null).
         // This is caught by concurrent initial same logical write collision or stale version.
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 409); // write_identity_reuse_conflict (different payload A != B) OR if it was stale, but identity req1 != req2, so it falls into stale_write_version
         const data = await res.json();
         assert.equal(data.error, 'stale_write_version');
@@ -373,12 +383,12 @@ test('answer save capability tests', async (t) => {
             tenant_id: validUUID,
             exam_attempt_id: validUUID,
             exam_question_snapshot_id: validSnapshotUUID,
-            answer_payload: JSON.stringify({ text: 'A' }),
+            answer_payload: JSON.stringify({ selectedOptionId: 'A' }),
             client_write_identity: 'req_concurrent',
             write_version: 1
         };
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req_concurrent' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req_concurrent' });
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(data.writeVersion, 1);
@@ -392,12 +402,12 @@ test('answer save capability tests', async (t) => {
             tenant_id: validUUID,
             exam_attempt_id: validUUID,
             exam_question_snapshot_id: validSnapshotUUID,
-            answer_payload: JSON.stringify({ text: 'Winner' }),
+            answer_payload: JSON.stringify({ selectedOptionId: 'D' }),
             client_write_identity: 'winner_req',
             write_version: 1
         };
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'Loser' }, clientWriteIdentity: 'loser_req' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'E' }, clientWriteIdentity: 'loser_req' });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'stale_write_version');
@@ -412,24 +422,24 @@ test('answer save capability tests', async (t) => {
             tenant_id: validUUID,
             exam_attempt_id: validUUID,
             exam_question_snapshot_id: validSnapshotUUID,
-            answer_payload: JSON.stringify({ text: 'Old' }),
+            answer_payload: JSON.stringify({ selectedOptionId: 'D' }),
             client_write_identity: 'req_reuse',
             write_version: 1
         };
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'New' }, clientWriteIdentity: 'req_reuse' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'E' }, clientWriteIdentity: 'req_reuse' });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'write_identity_reuse_conflict');
         assert.equal(answers.length, 1);
-        assert.equal(answers[0].answer_payload, '{"text":"Old"}');
+        assert.equal(answers[0].answer_payload, '{"selectedOptionId":"D"}');
         assert.equal(insertCount, 1);
         assert.equal(selectForUpdateCount, 2);
     });
 
     await t.test('persistence unavailable (pool fail) -> 503, no false acknowledgement', async () => {
         mockPoolShouldFail = true;
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { ok: true }, clientWriteIdentity: 'req-db-fail' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req-db-fail' });
         assert.equal(res.status, 503);
         const data = await res.json();
         assert.equal(data.error, 'persistence_unavailable');
@@ -438,7 +448,7 @@ test('answer save capability tests', async (t) => {
 
     await t.test('post-connect database query failure -> 503, no false acknowledgement', async () => {
         mockQueryShouldFail = true; // Connection succeeds, query throws
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { ok: true }, clientWriteIdentity: 'req-db-fail-query' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req-db-fail-query' });
         assert.equal(res.status, 503);
         const data = await res.json();
         assert.equal(data.error, 'persistence_unavailable');
@@ -447,7 +457,7 @@ test('answer save capability tests', async (t) => {
 
     await t.test('submitted Attempt + new Answer -> 409', async () => {
         submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'attempt_already_submitted');
@@ -455,10 +465,10 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('submitted Attempt + update -> 409', async () => {
-        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'attempt_already_submitted');
@@ -466,10 +476,10 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('submitted Attempt + same identity/same payload -> 200 acknowledged, preserves writeVersion, no mutation', async () => {
-        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(data.status, 'acknowledged');
@@ -479,10 +489,10 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('submitted Attempt + same identity/different payload -> 409', async () => {
-        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         submissions.push({ tenant_id: validUUID, exam_attempt_id: validUUID });
 
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'attempt_already_submitted');
@@ -491,7 +501,7 @@ test('answer save capability tests', async (t) => {
 
     await t.test('expired timer + new Answer -> 409 timer_expired', async () => {
         timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 3601 });
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'timer_expired');
@@ -499,10 +509,10 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('expired timer + update Answer -> 409 timer_expired', async () => {
-        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 3601 });
         
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'B' }, clientWriteIdentity: 'req2', expectedWriteVersion: 1 });
         assert.equal(res.status, 409);
         const data = await res.json();
         assert.equal(data.error, 'timer_expired');
@@ -510,10 +520,10 @@ test('answer save capability tests', async (t) => {
     });
 
     await t.test('expired timer + exact retry -> 200 acknowledged, zero mutation', async () => {
-        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"text":"A"}', client_write_identity: 'req1', write_version: 1 });
+        answers.push({ tenant_id: validUUID, exam_attempt_id: validUUID, exam_question_snapshot_id: validSnapshotUUID, answer_payload: '{"selectedOptionId":"A"}', client_write_identity: 'req1', write_version: 1 });
         timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 3601 });
         
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 200);
         const data = await res.json();
         assert.equal(data.status, 'acknowledged');
@@ -523,7 +533,7 @@ test('answer save capability tests', async (t) => {
 
     await t.test('verifies timer query uses statement_timestamp() for lock-wait safe expiry', async () => {
         timerStates.push({ tenant_id: validUUID, exam_attempt_id: validUUID, started_at: new Date(), configured_duration_seconds: '3600', elapsed_seconds: 0 });
-        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { text: 'A' }, clientWriteIdentity: 'req1' });
+        const res = await sendPost({ attemptId: validUUID, snapshotId: validSnapshotUUID, answerPayload: { selectedOptionId: 'A' }, clientWriteIdentity: 'req1' });
         assert.equal(res.status, 200);
         assert.ok(lastTimerQuery.toLowerCase().includes('statement_timestamp()'), 'should use statement_timestamp() instead of CURRENT_TIMESTAMP');
     });

@@ -160,12 +160,13 @@ export function baselineQuestion(index: number, correct = 'B') {
     };
 }
 
+/** Snapshots in authored order: ids[i] is question i + 1 (display_order i + 1). */
 export async function addQuestionSnapshots(pool: pg.Pool, tenantId: string, examInstanceId: string, count: number): Promise<string[]> {
     const ids: string[] = [];
     for (let i = 1; i <= count; i++) {
         const res = await pool.query(
-            'INSERT INTO secure_assessment_exam_question_snapshots (tenant_id, exam_instance_id, frozen_content) VALUES ($1, $2, $3) RETURNING id',
-            [tenantId, examInstanceId, JSON.stringify(baselineQuestion(i))]
+            'INSERT INTO secure_assessment_exam_question_snapshots (tenant_id, exam_instance_id, frozen_content, display_order) VALUES ($1, $2, $3, $4) RETURNING id',
+            [tenantId, examInstanceId, JSON.stringify(baselineQuestion(i)), i]
         );
         ids.push(res.rows[0].id);
     }

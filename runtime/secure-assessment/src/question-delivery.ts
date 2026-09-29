@@ -180,13 +180,13 @@ export async function handleQuestionDelivery(
                 return;
             }
 
-            // 5. Read question snapshots for exact tenant + resolved Exam Instance
-            // Deterministic ordering: ORDER BY id ASC
+            // 5. Read question snapshots for exact tenant + resolved Exam Instance, in the
+            // authored order (D04.3-41); legacy snapshots without a position follow by id.
             snapshotsRes = await client.query(
                 `SELECT id, frozen_content
                 FROM secure_assessment_exam_question_snapshots
                 WHERE tenant_id = $1 AND exam_instance_id = $2
-                ORDER BY id ASC`,
+                ORDER BY display_order ASC NULLS LAST, id ASC`,
                 [context.tenantId, examInstance.exam_instance_id]
             );
 

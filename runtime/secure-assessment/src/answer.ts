@@ -2,6 +2,21 @@ import * as http from 'node:http';
 import * as pg from 'pg';
 import { isDeepStrictEqual } from 'node:util';
 
+/**
+ * The baseline answer contract (MULTIPLE_CHOICE_SINGLE, D04.3-21): exactly
+ * { selectedOptionId } naming one of the frozen question's options. Anything else is
+ * refused, so stored answers are always gradable and never arbitrary client data.
+ */
+export function isAnswerForQuestion(frozenContent: unknown, answerPayload: unknown): boolean {
+    if (!answerPayload || typeof answerPayload !== 'object' || Array.isArray(answerPayload)) return false;
+    const keys = Object.keys(answerPayload);
+    const selected = (answerPayload as { selectedOptionId?: unknown }).selectedOptionId;
+    if (keys.length !== 1 || keys[0] !== 'selectedOptionId' || typeof selected !== 'string') return false;
+    const question = frozenContent as { questionType?: unknown; options?: unknown } | null;
+    if (!question || question.questionType !== 'MULTIPLE_CHOICE_SINGLE' || !Array.isArray(question.options)) return false;
+    return question.options.some(option => !!option && typeof option === 'object' && (option as { id?: unknown }).id === selected);
+}
+
 export interface AuthorizedAssessmentContext {
     tenantId: string;
     authorizedAttemptId: string;
@@ -113,7 +128,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                 }
 
                 const snapshotRes = await client.query(
-                    'SELECT id, exam_instance_id FROM secure_assessment_exam_question_snapshots WHERE id = $1 AND tenant_id = $2',
+                    'SELECT id, exam_instance_id, frozen_content FROM secure_assessment_exam_question_snapshots WHERE id = $1 AND tenant_id = $2',
                     [snapshotId, context.tenantId]
                 );
                 if (snapshotRes.rows.length === 0) {
@@ -131,6 +146,13 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     await client.query('ROLLBACK');
                     res.writeHead(409, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'assessment_context_conflict' }));
+                    return;
+                }
+
+                if (!isAnswerForQuestion(snapshotRes.rows[0].frozen_content, answerPayload)) {
+                    await client.query('ROLLBACK');
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'invalid_answer_payload' }));
                     return;
                 }
 
