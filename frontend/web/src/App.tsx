@@ -111,7 +111,7 @@ const SessionGate: React.FC = () => {
         />
       );
     case 'anonymous':
-      return <LoginScreen onLogin={session.login} />;
+      return <LoginScreen onLogin={session.login} onActivate={session.activate} />;
     case 'no_membership':
       return <NoMembershipScreen onLogout={session.logout} />;
     case 'selecting_tenant':

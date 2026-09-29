@@ -42,6 +42,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),
+        activate: m => m.activate('pengguna.uji', 'ABCD-EFGH-JKMN', 'matahari-pagi-2026'),
         getSession: m => m.getSession(),
         logout: m => m.logout(),
         getMeContext: m => m.getMeContext(),
@@ -55,7 +56,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     },
 };
 /** Exports that never call the network. */
-const PURE_EXPORTS = new Set(['ApiError', 'LoginError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
+const PURE_EXPORTS = new Set(['ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
 
 const unavailablePool = {
     connect: async () => { throw new Error('database unavailable'); },

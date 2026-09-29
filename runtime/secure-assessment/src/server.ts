@@ -11,7 +11,7 @@ import { handleAssignedExamsGet, type AssignedExamDiscoveryContext } from './ass
 import { handleProctorMonitoringGet } from './proctor-monitoring.ts';
 import { handleTeacherReadinessGet, type TeacherReadinessContext } from './teacher-readiness.ts';
 import { AuthenticationError, buildAuthenticatedContext } from './http/authenticated-context.ts';
-import { handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
+import { handleActivate, handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
 import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
 import { performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
@@ -256,13 +256,14 @@ export function createServer(deps: ServerDependencies): http.Server {
             return;
         }
 
-        if (pathname === '/api/v1/auth/login' || pathname === '/api/v1/auth/logout' || pathname === '/api/v1/auth/session') {
+        if (pathname === '/api/v1/auth/login' || pathname === '/api/v1/auth/activate' || pathname === '/api/v1/auth/logout' || pathname === '/api/v1/auth/session') {
             if (!security) {
                 sendError(res, 404, 'not found');
                 return;
             }
             const authDeps = { pool: deps.pool, cookie: security.cookie };
             if (pathname === '/api/v1/auth/login') return handleLogin(req, res, authDeps);
+            if (pathname === '/api/v1/auth/activate') return handleActivate(req, res, authDeps);
             if (pathname === '/api/v1/auth/logout') return handleLogout(req, res, authDeps);
             return handleSessionGet(req, res, authDeps);
         }

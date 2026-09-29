@@ -50,6 +50,41 @@ export async function login(username: string, password: string): Promise<Session
   throw new LoginError('unavailable');
 }
 
+export type ActivationFailure = 'invalid_activation' | 'password_rejected' | 'invalid_request' | 'unavailable';
+export type PasswordRejection = 'too_short' | 'too_long' | 'too_common' | 'contains_username';
+
+export class ActivationError extends Error {
+  readonly reason: ActivationFailure;
+  readonly passwordRejection: PasswordRejection | null;
+  constructor(reason: ActivationFailure, passwordRejection: PasswordRejection | null = null) {
+    super(reason);
+    this.name = 'ActivationError';
+    this.reason = reason;
+    this.passwordRejection = passwordRejection;
+  }
+}
+
+/** First sign-in with a single-use activation code; the new password is the person's own. */
+export async function activate(username: string, activationCode: string, newPassword: string): Promise<SessionInfo> {
+  let res: Response;
+  try {
+    res = await apiFetch('/api/v1/auth/activate', { method: 'POST', json: { username, activationCode, newPassword } });
+  } catch {
+    throw new ActivationError('unavailable');
+  }
+  if (res.ok) return res.json() as Promise<SessionInfo>;
+  if (res.status === 401) throw new ActivationError('invalid_activation');
+  if (res.status === 400) {
+    const body = await res.json().catch(() => null);
+    if (body && body.error === 'password_rejected') {
+      const reason = body.reason as PasswordRejection;
+      throw new ActivationError('password_rejected', ['too_short', 'too_long', 'too_common', 'contains_username'].includes(reason) ? reason : 'too_common');
+    }
+    throw new ActivationError('invalid_request');
+  }
+  throw new ActivationError('unavailable');
+}
+
 /** Returns null when there is no valid session (401). Throws on network/server failure. */
 export async function getSession(): Promise<SessionInfo | null> {
   const res = await apiFetch('/api/v1/auth/session');

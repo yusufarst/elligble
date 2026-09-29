@@ -7,7 +7,7 @@ const TENANT_B = '55555555-5555-4555-8555-555555555555';
 
 vi.mock('../api/auth-client.ts', async () => {
   const actual = await vi.importActual<typeof import('../api/auth-client.ts')>('../api/auth-client.ts');
-  return { ...actual, getSession: vi.fn(), getMeContext: vi.fn(), login: vi.fn(), logout: vi.fn() };
+  return { ...actual, getSession: vi.fn(), getMeContext: vi.fn(), login: vi.fn(), logout: vi.fn(), activate: vi.fn() };
 });
 vi.mock('../api/assessment-client.ts', () => ({
   getAssignedExams: vi.fn(async () => ({ assignments: [] })),
@@ -16,7 +16,7 @@ vi.mock('../api/assessment-client.ts', () => ({
   ApiError: class ApiError extends Error {},
 }));
 
-import { getSession, getMeContext, login, logout, LoginError } from '../api/auth-client.ts';
+import { getSession, getMeContext, login, logout, activate, LoginError, ActivationError } from '../api/auth-client.ts';
 import { apiFetch, getActiveTenantId, setActiveTenantId } from '../api/http.ts';
 import { act } from '@testing-library/react';
 
@@ -172,5 +172,62 @@ describe('session gate', () => {
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Sesi Anda Telah Berakhir' })).toBeNull());
     expect(login).toHaveBeenCalledWith('siswa.satu', 'benar-sandi');
     expect(screen.getByText('Daftar Ujian Siswa')).toBeDefined();
+  });
+  async function openActivation() {
+    vi.mocked(getSession).mockResolvedValue(null);
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi' }));
+    expect(await screen.findByRole('heading', { name: 'Aktivasi Akun' })).toBeDefined();
+  }
+
+  function fillActivation(values: { username?: string; code?: string; password?: string; confirm?: string }) {
+    if (values.username !== undefined) fireEvent.change(screen.getByLabelText('ELLIGBLE ID'), { target: { value: values.username } });
+    if (values.code !== undefined) fireEvent.change(screen.getByLabelText('Kode Aktivasi'), { target: { value: values.code } });
+    if (values.password !== undefined) fireEvent.change(screen.getByLabelText('Kata Sandi Baru'), { target: { value: values.password } });
+    if (values.confirm !== undefined) fireEvent.change(screen.getByLabelText('Ulangi Kata Sandi Baru'), { target: { value: values.confirm } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aktifkan dan Masuk' }));
+  }
+
+  it('activation validates required fields, length and confirmation without calling the server', async () => {
+    await openActivation();
+    fillActivation({});
+    expect(await screen.findByText('ELLIGBLE ID wajib diisi.')).toBeDefined();
+    expect(screen.getByText('Kode aktivasi wajib diisi.')).toBeDefined();
+    expect(screen.getByText('Kata sandi baru wajib diisi.')).toBeDefined();
+    fillActivation({ username: 'siswa.baru', code: 'ABCD-EFGH-JKMN', password: 'pendek', confirm: 'pendek' });
+    expect(await screen.findByText('Kata sandi minimal 8 karakter.')).toBeDefined();
+    fillActivation({ password: 'matahari-pagi-2026', confirm: 'matahari-pagi-2025' });
+    expect(await screen.findByText('Kedua kata sandi tidak sama.')).toBeDefined();
+    expect(activate).not.toHaveBeenCalled();
+  });
+
+  it('activation explains a refused password next to the field', async () => {
+    vi.mocked(activate).mockRejectedValue(new ActivationError('password_rejected', 'too_common'));
+    await openActivation();
+    fillActivation({ username: 'siswa.baru', code: 'ABCD-EFGH-JKMN', password: 'bismillah1', confirm: 'bismillah1' });
+    expect(await screen.findByText('Kata sandi ini terlalu umum atau mudah ditebak. Pilih kata sandi lain.')).toBeDefined();
+    expect((screen.getByLabelText('Kata Sandi Baru') as HTMLInputElement).value).toBe('');
+  });
+
+  it('activation reports a wrong, used or expired code without revealing which', async () => {
+    vi.mocked(activate).mockRejectedValue(new ActivationError('invalid_activation'));
+    await openActivation();
+    fillActivation({ username: 'siswa.baru', code: 'ABCD-EFGH-JKMN', password: 'matahari-pagi-2026', confirm: 'matahari-pagi-2026' });
+    expect(await screen.findByText(/ELLIGBLE ID atau kode aktivasi tidak sesuai, sudah dipakai, atau sudah kedaluwarsa/)).toBeDefined();
+  });
+
+  it('a successful activation signs the person in like a login', async () => {
+    vi.mocked(activate).mockResolvedValue(session([{ tenantId: TENANT_A, displayLabel: 'SMA Negeri 1 Contoh' }]));
+    vi.mocked(getMeContext).mockResolvedValue(me(TENANT_A, { examParticipant: true }));
+    await openActivation();
+    fillActivation({ username: ' siswa.baru ', code: 'abcd efgh jkmn', password: 'matahari-pagi-2026', confirm: 'matahari-pagi-2026' });
+    expect(await screen.findByText('SMA Negeri 1 Contoh')).toBeDefined();
+    expect(activate).toHaveBeenCalledWith('siswa.baru', 'abcd efgh jkmn', 'matahari-pagi-2026');
+  });
+
+  it('the activation screen leads back to the login form', async () => {
+    await openActivation();
+    fireEvent.click(screen.getByRole('button', { name: 'Kembali ke halaman masuk' }));
+    expect(await screen.findByRole('heading', { name: 'Masuk ke ELLIGBLE' })).toBeDefined();
   });
 });

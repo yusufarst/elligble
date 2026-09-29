@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import {
   getMeContext,
   getSession,
+  activate as activateRequest,
   login as loginRequest,
   logout as logoutRequest,
   type MeContext,
@@ -24,6 +25,8 @@ export interface SessionApi {
   /** True while a previously ready session has expired and re-authentication is pending. */
   expired: boolean;
   login(username: string, password: string): Promise<void>;
+  /** First sign-in of a provisioned account with its activation code. */
+  activate(username: string, activationCode: string, newPassword: string): Promise<void>;
   reauthenticate(username: string, password: string): Promise<void>;
   logout(): Promise<void>;
   selectTenant(tenantId: string): void;
@@ -108,6 +111,12 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await enterSession(session);
   }, [enterSession]);
 
+  const activate = useCallback(async (username: string, activationCode: string, newPassword: string) => {
+    const session = await activateRequest(username, activationCode, newPassword);
+    setExpired(false);
+    await enterSession(session);
+  }, [enterSession]);
+
   const reauthenticate = useCallback(async (username: string, password: string) => {
     const session = await loginRequest(username, password);
     const current = phaseRef.current;
@@ -152,8 +161,8 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const api = useMemo<SessionApi>(() => ({
-    phase, expired, login, reauthenticate, logout, selectTenant, switchTenant, retry: check,
-  }), [phase, expired, login, reauthenticate, logout, selectTenant, switchTenant, check]);
+    phase, expired, login, activate, reauthenticate, logout, selectTenant, switchTenant, retry: check,
+  }), [phase, expired, login, activate, reauthenticate, logout, selectTenant, switchTenant, check]);
 
   return <SessionContext.Provider value={api}>{children}</SessionContext.Provider>;
 };
