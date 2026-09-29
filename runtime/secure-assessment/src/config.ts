@@ -1,9 +1,18 @@
+export type DeploymentEnvironment = 'production' | 'development' | 'test';
+
 export interface AppConfig {
     readonly DATABASE_URL: string;
     readonly SA_HOST: string;
     readonly SA_PORT: number;
     readonly SA_DB_POOL_MAX: number;
     readonly SA_DB_CONNECT_TIMEOUT_MS: number;
+    readonly ELLIGBLE_ENV: DeploymentEnvironment;
+    /** Session cookie carries the Secure attribute (and the __Host- prefix). */
+    readonly SA_COOKIE_SECURE: boolean;
+    /** Extra origins allowed to send state-changing requests (same-origin is always allowed). */
+    readonly SA_ALLOWED_ORIGINS: readonly string[];
+    /** Directory of the built web client to serve; null when the API runs alone. */
+    readonly SA_STATIC_DIR: string | null;
 }
 
 function parseStrictInteger(value: string | undefined, min: number, max: number, name: string): number {
@@ -15,6 +24,37 @@ function parseStrictInteger(value: string | undefined, min: number, max: number,
         throw new Error(`Malformed configuration: ${name} must be between ${min} and ${max}.`);
     }
     return parsed;
+}
+
+function parseEnvironment(value: string | undefined): DeploymentEnvironment {
+    const env = value ?? 'production';
+    if (env !== 'production' && env !== 'development' && env !== 'test') {
+        throw new Error('Malformed configuration: ELLIGBLE_ENV must be production, development or test.');
+    }
+    return env;
+}
+
+function parseBoolean(value: string | undefined, fallback: boolean, name: string): boolean {
+    if (value === undefined || value === '') return fallback;
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    throw new Error(`Malformed configuration: ${name} must be true or false.`);
+}
+
+function parseOrigins(value: string | undefined): string[] {
+    if (!value) return [];
+    return value.split(',').map(v => v.trim()).filter(Boolean).map(origin => {
+        let parsed: URL;
+        try {
+            parsed = new URL(origin);
+        } catch {
+            throw new Error('Malformed configuration: SA_ALLOWED_ORIGINS must be a comma-separated list of origins.');
+        }
+        if ((parsed.protocol !== 'https:' && parsed.protocol !== 'http:') || parsed.origin !== origin) {
+            throw new Error('Malformed configuration: SA_ALLOWED_ORIGINS entries must be bare http(s) origins.');
+        }
+        return parsed.origin;
+    });
 }
 
 export function parseConfig(environment: Record<string, string | undefined>): AppConfig {
@@ -29,11 +69,21 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
     const poolMax = parseStrictInteger(environment['SA_DB_POOL_MAX'] ?? '10', 1, 100, 'SA_DB_POOL_MAX');
     const connectTimeout = parseStrictInteger(environment['SA_DB_CONNECT_TIMEOUT_MS'] ?? '5000', 1, 60000, 'SA_DB_CONNECT_TIMEOUT_MS');
 
+    const deploymentEnv = parseEnvironment(environment['ELLIGBLE_ENV']);
+    const cookieSecure = parseBoolean(environment['SA_COOKIE_SECURE'], deploymentEnv === 'production', 'SA_COOKIE_SECURE');
+    if (deploymentEnv === 'production' && !cookieSecure) {
+        throw new Error('Unsafe configuration: SA_COOKIE_SECURE cannot be false when ELLIGBLE_ENV is production.');
+    }
+
     return Object.freeze({
         DATABASE_URL: databaseUrl,
         SA_HOST: host,
         SA_PORT: port,
         SA_DB_POOL_MAX: poolMax,
-        SA_DB_CONNECT_TIMEOUT_MS: connectTimeout
+        SA_DB_CONNECT_TIMEOUT_MS: connectTimeout,
+        ELLIGBLE_ENV: deploymentEnv,
+        SA_COOKIE_SECURE: cookieSecure,
+        SA_ALLOWED_ORIGINS: Object.freeze(parseOrigins(environment['SA_ALLOWED_ORIGINS'])),
+        SA_STATIC_DIR: environment['SA_STATIC_DIR'] || null,
     });
 }

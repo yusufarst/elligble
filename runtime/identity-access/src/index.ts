@@ -1,5 +1,10 @@
 import type { Client } from 'pg';
+import { randomBytes } from 'node:crypto';
 import { verifyPassword, hashPassword, generateSessionSecret, verifySessionSecret } from './crypto.ts';
+
+// Verifier for a random, unknowable password. Unknown usernames are checked against it so that
+// "no such account" costs the same key-derivation work as "wrong password" (no timing enumeration).
+const UNKNOWN_ACCOUNT_VERIFIER = hashPassword(randomBytes(32).toString('hex'));
 
 export interface Clock {
   now(): Date;
@@ -21,6 +26,7 @@ export const POLICY = {
 export interface SessionCreationResult {
   sessionId: string;
   secret: string;
+  expiresAt: Date;
 }
 
 export interface AuthenticationSuccess {
@@ -85,6 +91,7 @@ export class IdentityRuntime {
 
       if (res.rowCount === 0) {
         await this.#pg.query('COMMIT');
+        verifyPassword(passwordAttempt, UNKNOWN_ACCOUNT_VERIFIER);
         return { success: false, error: 'INVALID_CREDENTIALS' };
       }
 
@@ -92,6 +99,7 @@ export class IdentityRuntime {
 
       if (!creds.is_valid) {
         await this.#pg.query('COMMIT');
+        verifyPassword(passwordAttempt, creds.password_verifier);
         return { success: false, error: 'REVOKED' };
       }
 
@@ -203,7 +211,7 @@ export class IdentityRuntime {
       ) VALUES ($1, $2, $3, $4, $5, $6)
     `, [sessionId, userAccountId, verifier, authenticatedAt, expiresAt, authenticatedAt]);
 
-    return { sessionId, secret };
+    return { sessionId, secret, expiresAt };
   }
 
 
@@ -271,6 +279,22 @@ export class IdentityRuntime {
       expiresAt: new Date(session.expires_at),
       lastActivityAt: newActivityAt
     };
+  }
+
+  /**
+   * Returns the login identifier (ELLIGBLE ID / username) of an account, for display to
+   * its own authenticated owner. Callers must pass an account id from a resolved session.
+   */
+  async getLoginIdentifier(userAccountId: string): Promise<string | null> {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userAccountId || typeof userAccountId !== 'string' || !UUID_REGEX.test(userAccountId)) {
+      return null;
+    }
+    const res = await this.#pg.query(
+      'SELECT username FROM identity_account_credentials WHERE user_account_id = $1',
+      [userAccountId]
+    );
+    return res.rowCount === 1 ? res.rows[0].username : null;
   }
 
   /**

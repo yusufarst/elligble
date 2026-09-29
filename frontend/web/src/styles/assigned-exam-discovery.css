@@ -17,7 +17,7 @@
 .discovery-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--color-primary-900);
+  color: var(--color-text-primary);
   margin: 0 0 var(--space-1) 0;
 }
 
@@ -136,7 +136,7 @@
   font-weight: 600;
   font-family: var(--font-sans);
   color: var(--color-neutral-0);
-  background-color: var(--color-primary-600);
+  background-color: var(--color-primary);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -144,11 +144,11 @@
 }
 
 .discovery-launch-button:hover {
-  background-color: var(--color-primary-700);
+  background-color: var(--color-primary-hover);
 }
 
 .discovery-launch-button:focus-visible {
-  outline: 2px solid var(--color-primary-600);
+  outline: var(--border-focus);
   outline-offset: 2px;
 }
 

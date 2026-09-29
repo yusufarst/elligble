@@ -10,6 +10,7 @@ import type {
   ProctorMonitoringResponse,
   TeacherReadinessResponse,
 } from '../types/assessment.ts';
+import { apiFetch } from './http.ts';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -44,108 +45,66 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export async function getResume(attemptId: string): Promise<ResumeResponse> {
   const url = `/api/v1/assessment/resume?attemptId=${encodeURIComponent(attemptId)}`;
-  const res = await fetch(url, {
-    method: 'GET',
-  });
+  const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<ResumeResponse>(res);
 }
 
 export async function getQuestions(attemptId: string): Promise<QuestionsResponse> {
   const url = `/api/v1/assessment/questions?attemptId=${encodeURIComponent(attemptId)}`;
-  const res = await fetch(url, {
-    method: 'GET',
-  });
+  const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<QuestionsResponse>(res);
 }
 
 export async function getTimer(attemptId: string): Promise<TimerResponse> {
   const url = `/api/v1/assessment/timer?attemptId=${encodeURIComponent(attemptId)}`;
-  const res = await fetch(url, {
-    method: 'GET',
-  });
+  const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<TimerResponse>(res);
 }
 
 export async function postSaveAnswer(req: SaveAnswerRequest): Promise<SaveAnswerResponse> {
   const url = '/api/v1/assessment/answer/save';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(req),
-  });
+  const res = await apiFetch(url, { method: 'POST', json: req });
   return handleResponse<SaveAnswerResponse>(res);
 }
 
 export async function postSubmit(attemptId: string): Promise<SubmitResponse> {
   const url = '/api/v1/assessment/submit';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ attemptId }),
-  });
+  const res = await apiFetch(url, { method: 'POST', json: { attemptId } });
   return handleResponse<SubmitResponse>(res);
 }
 
 export async function postExpiryFinalize(attemptId: string): Promise<ExpiryFinalizeResponse> {
   const url = '/api/v1/assessment/expiry-finalize';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ attemptId }),
-  });
+  const res = await apiFetch(url, { method: 'POST', json: { attemptId } });
   return handleResponse<ExpiryFinalizeResponse>(res);
 }
 
 export async function postActivateSession(req: import('../types/assessment.ts').SessionActivationRequest): Promise<import('../types/assessment.ts').SessionActivationResponse> {
   const url = '/api/v1/assessment/session/activate';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(req),
-  });
+  const res = await apiFetch(url, { method: 'POST', json: req });
   return handleResponse<import('../types/assessment.ts').SessionActivationResponse>(res);
 }
 
 export async function postStartTimer(req: import('../types/assessment.ts').TimerStartRequest): Promise<import('../types/assessment.ts').TimerStartResponse> {
   const url = '/api/v1/assessment/timer/start';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(req),
-  });
+  const res = await apiFetch(url, { method: 'POST', json: req });
   return handleResponse<import('../types/assessment.ts').TimerStartResponse>(res);
 }
 
 export async function getAssignedExams(): Promise<AssignedExamsResponse> {
   const url = '/api/v1/assessment/assigned-exams';
-  const res = await fetch(url, {
-    method: 'GET',
-  });
+  const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<AssignedExamsResponse>(res);
 }
 
 export async function getProctorMonitoring(): Promise<ProctorMonitoringResponse> {
   const url = '/api/v1/assessment/proctor-monitoring';
-  const res = await fetch(url, {
-    method: 'GET',
-  });
+  const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<ProctorMonitoringResponse>(res);
 }
 
 export async function getTeacherReadiness(): Promise<TeacherReadinessResponse> {
   const url = '/api/v1/assessment/teacher-readiness';
-  const res = await fetch(url, {
-    method: 'GET',
-  });
+  const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<TeacherReadinessResponse>(res);
 }

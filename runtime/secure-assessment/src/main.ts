@@ -5,6 +5,7 @@ import { parseConfig, type AppConfig } from './config.ts';
 import { logInfo, logError } from './log.ts';
 import { createDatabasePool, checkDatabaseReadiness } from './db.ts';
 import { createServer } from './server.ts';
+import { createAttemptAuthorizer } from './http/attempt-authorization.ts';
 
 let activeServer: http.Server | undefined;
 let activePool: pg.Pool | undefined;
@@ -20,7 +21,7 @@ async function start() {
         return;
     }
 
-    logInfo('runtime_starting', { host: config.SA_HOST, port: config.SA_PORT, poolMax: config.SA_DB_POOL_MAX });
+    logInfo('runtime_starting', { host: config.SA_HOST, port: config.SA_PORT, poolMax: config.SA_DB_POOL_MAX, env: config.ELLIGBLE_ENV, cookieSecure: config.SA_COOKIE_SECURE });
 
     activePool = createDatabasePool(config);
 
@@ -31,14 +32,16 @@ async function start() {
         logInfo('database_not_ready');
     }
 
+    const cookie = { secure: config.SA_COOKIE_SECURE };
     activeServer = createServer({
         checkReadiness: () => activePool ? checkDatabaseReadiness(activePool) : Promise.resolve(false),
-        pool: activePool!,
-        getAuthorizedContext: (req) => {
-            // Full authentication out of scope. Fail closed by default.
-            // Tests or integration will inject realistic context here.
-            return null;
-        }
+        pool: activePool,
+        security: {
+            cookie,
+            allowedOrigins: config.SA_ALLOWED_ORIGINS,
+            hsts: config.SA_COOKIE_SECURE,
+        },
+        authorizeAttempt: createAttemptAuthorizer(activePool, cookie),
     });
 
     activeServer.listen(config.SA_PORT, config.SA_HOST, () => {

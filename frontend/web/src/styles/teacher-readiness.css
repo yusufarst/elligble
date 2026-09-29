@@ -31,7 +31,7 @@
 }
 
 .teacher-refresh-btn:hover {
-  background-color: var(--color-primary-hover, #1d4ed8);
+  background-color: var(--color-primary-hover);
 }
 
 .teacher-refresh-btn:disabled {

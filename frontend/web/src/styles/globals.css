@@ -1,0 +1,82 @@
+/*
+ * shadcn/ui foundation (DEC-043) on Tailwind CSS v4, themed exclusively with ELLIGBLE
+ * tokens from design-tokens.css. Generic default shadcn colors are intentionally absent.
+ */
+@import "tailwindcss";
+@import "./design-tokens.css";
+
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
+  --secondary: var(--color-surface);
+  --secondary-foreground: var(--color-text-primary);
+  --muted: var(--color-surface-muted);
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-surface-muted);
+  --accent-foreground: var(--color-text-primary);
+  --destructive: var(--color-danger-base);
+  --destructive-foreground: #ffffff;
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-primary);
+}
+
+/* Radius, shadow and font tokens share Tailwind's names (--radius-md, --shadow-sm,
+   --font-sans ...); the unlayered values in design-tokens.css take precedence. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--color-success-base);
+  --color-success-surface: var(--color-success-bg);
+  --color-success-line: var(--color-success-border);
+  --color-success-ink: var(--color-success-text);
+  --color-warning: var(--color-warning-base);
+  --color-warning-surface: var(--color-warning-bg);
+  --color-warning-line: var(--color-warning-border);
+  --color-warning-ink: var(--color-warning-text);
+  --color-danger: var(--color-danger-base);
+  --color-danger-surface: var(--color-danger-bg);
+  --color-danger-line: var(--color-danger-border);
+  --color-danger-ink: var(--color-danger-text);
+  --color-info-surface: var(--color-info-bg);
+  --color-info-line: var(--color-info-border);
+  --color-info-ink: var(--color-info-text);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Keep the canonical visible focus ring (FRONTEND_DESIGN_SYSTEM §37). */
+  :focus-visible {
+    outline: var(--border-focus);
+    outline-offset: 2px;
+  }
+}

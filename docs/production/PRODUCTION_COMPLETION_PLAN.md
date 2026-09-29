@@ -7,7 +7,7 @@
 
 ## 1. Current production state
 
-**Verdict: NOT production-ready. The flagship Student exam journey does not work end to end in a production deployment.**
+**Verdict: NOT production-ready. The flagship Student exam journey does not work end to end in a production deployment.** Authentication, browser session, tenant context and attempt authorization now work (§2); starting an attempt, exam activation, local-first answers, hosting and provisioning remain open.
 
 The repository holds strong, well-tested Secure Assessment building blocks (answer persistence, server-authoritative timer, idempotent submission, one-active-session, readiness preflights, rooms/proctors, identity sessions, tenant membership resolution) and browser screens for student, proctor and teacher views. They are not wired into a usable product:
 
@@ -17,24 +17,20 @@ The repository holds strong, well-tested Secure Assessment building blocks (answ
 - The browser answer path keeps answers only in memory. The local-first IndexedDB recovery store, queue and retry controller exist as tested modules but are not used by the web client (LOCKED D04.3-83A/B, D04.5-05/06/15/16).
 - There is no migration runner, no provisioning path for tenants/accounts/memberships, no production static hosting of the web client, no deployment configuration and no CI.
 
-## 2. Integrated dependency map (as found)
+## 2. Integrated dependency map
 
-| Journey step | UI | API client | HTTP route | AuthN | AuthZ | Runtime / DB | Status |
-|---|---|---|---|---|---|---|---|
-| Login | missing | missing | missing | `IdentityRuntime.authenticate` (no HTTP) | n/a | `identity_*` tables | **BROKEN (P0-1)** |
-| Session in browser | missing | no credentials sent | header `Authorization: ELLIGBLE-Session` only | BU-088/089/090 | membership | `identity_sessions` | **BROKEN (P0-2)** |
-| Tenant selection | missing | no `X-Tenant-ID` | header required | — | membership | `tenant_memberships` (no display name) | **BROKEN (P0-2)** |
-| Assigned exams | `AssignedExamDiscovery` | `getAssignedExams` | `GET /api/v1/assessment/assigned-exams` | real | participant.person_id | yes | works only with a manual header |
-| Start attempt | "no session available" text | missing | missing | — | — | no attempt/timer creation code | **BROKEN (P0-5)** |
-| Exam activation (teacher) | read-only readiness view | `getTeacherReadiness` | readiness GET only; no transition route | none in prod | teaching assignment | DRAFT→SCHEDULED function only | **BROKEN (P0-4, P0-6)** |
-| Launch / session activate | `AttemptLaunch` | yes | `POST /session/activate` | none | `null` in prod | yes | **BROKEN (P0-3)** |
-| Timer start / read | yes | yes | `POST /timer/start`, `GET /timer` | none | `null` in prod | yes; no eligibility/window/latest-start check at start | **BROKEN (P0-3, P0-5)** |
-| Questions | yes | yes | `GET /questions` | none | `null` in prod | requires ACTIVE | **BROKEN (P0-3, P0-6)** |
-| Answer save | in-memory only | yes | `POST /answer/save` | none | `null` in prod | idempotent, versioned | **BROKEN (P0-3, P0-8)** |
-| Refresh / resume | yes | yes | `GET /resume` | none | `null` in prod | yes | **BROKEN (P0-3)** |
-| Submit / expiry | yes | yes | `POST /submit`, `POST /expiry-finalize` | none | `null` in prod | idempotent | **BROKEN (P0-3)** |
-| Proctor monitoring | `ProctorMonitoringView` | yes | `GET /proctor-monitoring` | none | not wired | yes | **BROKEN (P0-4)** |
-| Deep links / refresh | query-string routing only; no SPA hosting | — | — | — | — | — | **BROKEN (P0-9)** |
+Status after the authentication and session work on this branch (baseline findings in §4-§5).
+
+| Journey step | UI | HTTP route | AuthN / AuthZ | Status |
+|---|---|---|---|---|
+| Login / logout / session | `LoginScreen`, `ReauthDialog`, shell "Keluar" | `/api/v1/auth/login`, `/logout`, `/session` | IdentityRuntime (DEC-041 policy) | **WORKS** (integration-tested) |
+| Tenant selection / context | `TenantPicker`, shell label, "Ganti Sekolah" | `/api/v1/me/context` + `X-Tenant-ID` | membership re-validated per request | **WORKS** |
+| Assigned exams | `AssignedExamDiscovery` | `GET /assessment/assigned-exams` | session → membership → participant.person_id | **WORKS** |
+| Start attempt | no action ("Belum ada sesi pengerjaan") | missing | — | **BROKEN (P0-5)** |
+| Launch / session activate, timer, questions, answers, resume, submit | `AttemptLaunch`, `StudentExamWorkstation` | attempt routes | session → membership → participant → attempt | **AUTHORIZED**, unreachable until P0-5 / P0-6 |
+| Proctor monitoring | `ProctorMonitoringView` | `GET /assessment/proctor-monitoring` | session → proctor assignments | **WORKS** (read) |
+| Teacher readiness | `TeacherReadinessView` | `GET /assessment/teacher-readiness` | session → teaching assignment | **WORKS** (read, SCHEDULED only); no READY/ACTIVE actions (P0-6) |
+| Deep links / refresh | query-string routes under `/` | — | session re-checked on load | works in dev; production hosting P0-9 |
 
 ## 3. Role journeys (canonical actors, MB-03)
 
@@ -52,19 +48,19 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 
 ## 4. P0 gaps (production blockers in the product itself)
 
-| ID | Gap | Evidence |
-|---|---|---|
-| P0-1 | No login/logout/session HTTP endpoints; no login UI | no `/auth` route in `server.ts`; `frontend/web/src/App.tsx` has no login |
-| P0-2 | Browser credential transport and tenant selection absent; client sends no credentials | `frontend/web/src/api/assessment-client.ts` (`fetch` without auth); `http/authenticated-context.ts` accepts header only |
-| P0-3 | Attempt routes have no production authorization (always 403) | `runtime/secure-assessment/src/main.ts:37-41` |
-| P0-4 | Proctor monitoring and teacher readiness have no production context (always 403) | `server.ts` passes `deps.getAssignedExamDiscoveryContext` / `getTeacherReadinessContext`, both undefined in `main.ts` |
-| P0-5 | No attempt + timer creation; no start eligibility (exam state, window, latest-start policy) at start | no `INSERT INTO secure_assessment_exam_attempts` / `timer_state` in runtime; `timer.ts` start has no eligibility checks (D04.2-72, D04.4-17) |
-| P0-6 | No SCHEDULED→READY→ACTIVE transition | only `exam-instance-draft-to-scheduled-transition.ts`; `question-delivery.ts` requires ACTIVE |
-| P0-7 | No way to put questions into an exam except raw SQL | no snapshot creation code; baseline content contract exists (`question-snapshot-baseline-frozen-content-contract.ts`) |
-| P0-8 | Answers are memory-only in the browser (data-loss path on refresh/offline) | `frontend/web/src/hooks/useAnswerManager.ts`; local-first modules unused |
-| P0-9 | No production hosting of the web client, no deep-link fallback, no same-origin API topology | no static serving in `server.ts`; no Vite proxy |
-| P0-10 | No migration runner / migration verification for real deployments | migrations applied only inside one-off verifiers |
-| P0-11 | No provisioning of tenants, persons, accounts, credentials, memberships | no runtime or CLI path |
+| ID | Gap | Evidence | Status |
+|---|---|---|---|
+| P0-1 | No login/logout/session HTTP endpoints; no login UI | no `/auth` route in `server.ts`; `App.tsx` had no login | **RESOLVED**: `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/session`; shadcn/ui login screen |
+| P0-2 | Browser credential transport and tenant selection absent | `assessment-client.ts` sent no credentials | **RESOLVED**: HttpOnly `SameSite=Strict` cookie (`__Host-` + `Secure` in production), `X-Tenant-ID` via `apiFetch`, tenant picker, `GET /api/v1/me/context` |
+| P0-3 | Attempt routes had no production authorization (always 403) | `main.ts` wired `getAuthorizedContext` to `null` | **RESOLVED**: `createAttemptAuthorizer` (session → membership → participant → attempt), real-PostgreSQL negative tests |
+| P0-4 | Proctor monitoring and teacher readiness had no production context | `server.ts` passed undefined getters | **RESOLVED** for reads (session-derived person context); teacher operations remain P0-6 |
+| P0-5 | No attempt + timer creation; no start eligibility | no insert paths; `timer.ts` start has no checks | OPEN (next) |
+| P0-6 | No SCHEDULED→READY→ACTIVE transition | only `exam-instance-draft-to-scheduled-transition.ts` | OPEN |
+| P0-7 | No way to put questions into an exam except raw SQL | no snapshot creation code | OPEN |
+| P0-8 | Answers are memory-only in the browser (data-loss path) | `useAnswerManager.ts` | OPEN |
+| P0-9 | No production hosting of the web client / deep-link fallback | no static serving in `server.ts` | OPEN (dev uses the Vite `/api` proxy, same-origin) |
+| P0-10 | No migration runner / verification for real deployments | migrations applied only by one-off verifiers | **RESOLVED**: `npm run migrate` / `migrate:check` (advisory lock, history check, refuses unknown migrations) |
+| P0-11 | No provisioning of tenants, persons, accounts, credentials, memberships | no runtime or CLI path | OPEN |
 
 ## 5. P1 gaps
 
@@ -72,22 +68,24 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 |---|---|---|
 | P1-1 | One-active-session bypass: `GET /resume` returns the active exam session id, so any tab/device with the attempt id can write as that session (D04.1-42, D04.4-32/35) | `resume.ts` session projection; `StudentExamWorkstation` uses it |
 | P1-2 | Local-first queue replays stale `expectedWriteVersion` forever after two quick changes while offline (would never converge) | `client-answer-reconciliation-queue.ts` keeps failed records with fixed version |
-| P1-3 | Username enumeration by timing (no password hash work for unknown usernames) | `identity-access/src/index.ts` `authenticate` |
-| P1-4 | No request body size limit (memory DoS) on JSON routes | `answer.ts`, `session.ts`, `submission.ts`, `timer.ts` buffer unbounded bodies |
-| P1-5 | No security headers (CSP, frame, referrer, nosniff), no Origin/CSRF check | `server.ts` |
+| P1-3 | Username enumeration by timing (no password hash work for unknown usernames) | `identity-access/src/index.ts` `authenticate` — **RESOLVED** (constant key-derivation work for unknown/revoked accounts) |
+| P1-4 | No request body size limit (memory DoS) on JSON routes | `answer.ts`, `session.ts`, `submission.ts`, `timer.ts` buffer unbounded bodies — **RESOLVED** (64 KB limit in server pre-dispatch, 8 KB for login, 413) |
+| P1-5 | No security headers (CSP, frame, referrer, nosniff), no Origin/CSRF check | `server.ts` — **RESOLVED** (headers on every response, `no-store` API cache, HSTS when secure, Origin check on state-changing API calls) |
 | P1-6 | `transitionExamInstanceDraftToScheduled` defaults to `granted` when no capability evaluator is passed (fail-open default) | `exam-instance-draft-to-scheduled-transition.ts` `defaultCapabilityEvaluator` |
-| P1-7 | Official `npm test` runs 6 of 46 secure-assessment test files; the full suite has 2 broken test files (3 failures) that never ran in the gate | `runtime/secure-assessment/package.json`; `test/client-answer-save-state.test.ts` (`.js` import), `test/active-session-resume.test.ts` #10 |
+| P1-7 | Official `npm test` ran 6 of 46 secure-assessment test files; 2 broken test files never ran | **RESOLVED**: `npm test` runs all unit tests; broken `.js` import (also in `src/client-answer-save-state.ts`) and ordering test fixed |
 | P1-8 | No request/error logging, no metrics; startup logs only | `log.ts` |
-| P1-9 | Design tokens in code drift from LOCKED design system v1.1.0 (navy focus ring, slate neutrals, radii 6/8/12 vs 8/12/16) | `frontend/web/src/styles/design-tokens.css` vs `FRONTEND_DESIGN_SYSTEM.md` §10-§14 |
+| P1-9 | Design tokens in code drifted from LOCKED design system v1.1.0 (navy actions/focus, slate neutrals, radii, undefined tokens) | **RESOLVED** in `design-tokens.css` + component CSS; screens still use hand-written CSS (migration to shadcn/ui components is incremental) |
 | P1-10 | Assigned-exam projection has no lifecycle/window/duration, so the student cannot see when an exam opens | `assigned-exams.ts` |
 | P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes |
-| P1-12 | Historical one-off verifiers are point-in-time: 14 of 44 fail on current schema by design (e.g. "migration 0035 must not exist"); there is no durable real-PostgreSQL regression suite | `database/verification/*`, `runtime/secure-assessment/verification/*` |
+| P1-13 | Shared-device hygiene: remembered school choice leaked to the next account; re-authentication could accept another account while keeping the previous context | found in rendered checks — **RESOLVED** (logout clears the choice; re-login locked to the same ELLIGBLE ID) |
+| P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
+| P1-12 | Historical one-off verifiers are point-in-time: 14 of 44 fail on current schema by design | **RESOLVED** as a gate: durable suite `npm run test:integration` (disposable databases); historical verifiers are REFERENCE ONLY |
 
 ## 6. Critical path (ordered by dependency and value)
 
 1. **Governance and plan** (DEC-042, DEC-043, this plan). DONE in this change.
-2. **Durable test foundation**: full `npm test` gate, fix broken tests, reusable disposable PostgreSQL harness for integration tests (P1-7, P1-12).
-3. **Authentication and browser session** (P0-1, P0-2, P1-3, P1-4, P1-5): login/logout/session endpoints, HttpOnly cookie transport (header kept for API clients), Origin check, body limits, security headers, tenant display name + membership list, capability discovery from explicit assignments (no invented Permission Matrix), login screen and session-aware shell on the shadcn/ui foundation.
+2. **Durable test foundation**: full `npm test` gate, fix broken tests, reusable disposable PostgreSQL harness for integration tests (P1-7, P1-12). DONE.
+3. **Authentication and browser session** (P0-1, P0-2, P0-3, P0-4 reads, P1-3, P1-4, P1-5, P1-9, P1-13): DONE. Migration `0036_tenant_display_label`; capability discovery uses explicit assignments only (PB05 untouched).
 4. **Student attempt authorization and start** (P0-3, P0-5, P1-10): attempt ownership check (session → membership → participant → attempt), idempotent start-attempt with eligibility, latest-start policy applied at timer start, assigned-exam projection with schedule state.
 5. **Teacher exam operations** (P0-4, P0-6): production contexts for teacher/proctor views; SCHEDULED→READY (readiness composition) and READY→ACTIVE (final re-check, window) for teacher-managed exams.
 6. **Local-first answers** (P0-8, P1-2, P1-1): IndexedDB-backed coalescing queue with retry/backoff, honest save state, offline banner, session binding.
@@ -128,7 +126,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 |---|---|
 | Environment config / validation | runtime validates `DATABASE_URL`, host, port, pool, timeout only |
 | Secrets | none committed; `.env*` git-ignored |
-| Migrations | 35 idempotent SQL files; no runner, no lock, no drift check |
+| Migrations | 36 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`) |
 | Build | frontend `vite build` PASS; runtime runs TypeScript directly on Node 24 (type stripping) |
 | Startup / health | `/healthz`, `/readyz` (DB `SELECT 1`), graceful SIGTERM |
 | Hosting / TLS / cookies | none |
@@ -140,8 +138,9 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 ## 10. Design and UI status
 
 - DesainPakeAI CLI 0.2.2 is installed; `dpai auth status`: not authenticated (`DPAI_API_KEY` absent). Live alignment with project `b5a22aa4-7b38-49d2-9448-443eab6e8075` is **not verified**.
-- shadcn/ui: not configured before this plan. Approved by DEC-043; to be set up once, themed with ELLIGBLE tokens.
-- Existing screens use hand-written CSS with tokens that drift from the LOCKED design system (P1-9).
+- shadcn/ui: configured once (`frontend/web/components.json`, Tailwind CSS v4 via `@tailwindcss/vite`, `src/components/ui/*`, `src/styles/globals.css`) and themed only with ELLIGBLE tokens (DEC-043). `ui.shadcn.com` is blocked by this environment's network policy, so components were written from the official new-york v4 sources instead of the CLI.
+- Tokens aligned to FRONTEND_DESIGN_SYSTEM v1.1.0 (P1-9). New screens (login, school picker, shell, re-login dialog) use shadcn/ui; older screens keep their CSS and migrate incrementally.
+- Rendered checks (Playwright, Chromium, 360 px and 1280 px): login, validation, wrong password, student, school picker, no-workspace, proctor and teacher screens render without horizontal overflow.
 
 ## 11. Verification evidence
 
@@ -158,10 +157,24 @@ Baseline `3a69883` (Node 24.21.0, PostgreSQL 16.13, disposable databases):
 | BU-090 real PostgreSQL verification | PASS |
 | Historical real-PostgreSQL verifiers | 30/44 PASS; 14 fail on point-in-time assertions or stale fixtures (P1-12) |
 
+After authentication and browser session (this branch):
+
+| Check | Result |
+|---|---|
+| Typecheck: 3 runtime packages + frontend | PASS |
+| identity-access / tenant-access unit | 20/20 / 11/11 PASS |
+| secure-assessment unit (`npm test`, all files) | 845/845 PASS |
+| secure-assessment integration (`npm run test:integration`, real PostgreSQL 16, production wiring) | 16/16 PASS: login/logout/session, cookie attributes, `__Host-` + `Secure` mode, header transport, capability discovery, attempt ownership (own / classmate / other tenant / anonymous), Origin refusal, 413 body limit, DEC-041 throttling, migration runner |
+| BU-090 real PostgreSQL verifier | PASS |
+| frontend vitest / `vite build` | 99/99 / PASS |
+| Leaked disposable databases | 0 |
+
 ## 12. Friction reducers (automation)
 
-Planned, in critical-path order: full test gate; reusable disposable PostgreSQL harness; migration runner/verifier; environment validator and production preflight; browser E2E runner; route parity check (client calls vs server routes); CI workflow. The manifest SHA256 synchronization chore is retired (DEC-042).
+Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`). Planned: environment validator and production preflight; browser E2E runner; route parity check (client calls vs server routes); CI workflow. The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-Critical path steps 2 → 9 above, in order.
+Critical path step 4 (student start attempt and eligibility), then steps 5 → 9.
+
+Local development: `npm run migrate` + `node test/support/seed-demo.ts` (runtime), `ELLIGBLE_ENV=development node src/main.ts`, and `npm run dev` in `frontend/web` (Vite proxies `/api` to port 3000). Demo accounts are documented in `seed-demo.ts`.

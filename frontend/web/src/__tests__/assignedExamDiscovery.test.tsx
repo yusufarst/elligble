@@ -21,6 +21,26 @@ vi.mock('../api/assessment-client.ts', () => ({
 
 import { getAssignedExams, ApiError } from '../api/assessment-client.ts';
 
+const TENANT_ID = '44444444-4444-4444-8444-444444444444';
+
+vi.mock('../api/auth-client.ts', async () => {
+  const actual = await vi.importActual<typeof import('../api/auth-client.ts')>('../api/auth-client.ts');
+  return {
+    ...actual,
+    getSession: vi.fn(async () => ({
+      status: 'authenticated',
+      username: 'siswa.satu',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+      memberships: [{ tenantId: '44444444-4444-4444-8444-444444444444', displayLabel: 'SMA Negeri 1 Contoh' }],
+    })),
+    getMeContext: vi.fn(async () => ({
+      tenantId: '44444444-4444-4444-8444-444444444444',
+      tenantDisplayLabel: 'SMA Negeri 1 Contoh',
+      capabilities: { examParticipant: true, proctor: false, teacher: false },
+    })),
+  };
+});
+
 vi.mock('../components/AttemptLaunch.tsx', () => ({
   AttemptLaunch: () => <div data-testid="attempt-launch-view">AttemptLaunch Component</div>
 }));
@@ -231,6 +251,8 @@ describe('BU-085 AssignedExamDiscovery and App Navigation Test Suite', () => {
       expect(screen.getByText('Daftar Ujian Siswa')).toBeDefined();
     });
     expect(screen.queryByTestId('attempt-launch-view')).toBeNull();
+    expect(screen.getByTestId('active-tenant').textContent).toBe('SMA Negeri 1 Contoh');
+    expect(TENANT_ID).toBeTruthy();
   });
 
   it('11. App with direct attemptId renders BU-084 AttemptLaunch directly', async () => {
@@ -238,7 +260,9 @@ describe('BU-085 AssignedExamDiscovery and App Navigation Test Suite', () => {
 
     render(<App />);
 
-    expect(screen.getByTestId('attempt-launch-view')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByTestId('attempt-launch-view')).toBeDefined();
+    });
     expect(screen.queryByText('Daftar Ujian Siswa')).toBeNull();
   });
 

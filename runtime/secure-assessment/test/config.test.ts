@@ -127,3 +127,36 @@ test('explicit empty SA_DB_CONNECT_TIMEOUT_MS is rejected', () => {
     };
     assert.throws(() => parseConfig(env), /SA_DB_CONNECT_TIMEOUT_MS must be a positive bounded integer/);
 });
+
+test('deployment environment defaults to production with secure cookies', () => {
+    const config = parseConfig({ DATABASE_URL: 'postgres://localhost/db' });
+    assert.equal(config.ELLIGBLE_ENV, 'production');
+    assert.equal(config.SA_COOKIE_SECURE, true);
+    assert.deepEqual(config.SA_ALLOWED_ORIGINS, []);
+    assert.equal(config.SA_STATIC_DIR, null);
+});
+
+test('insecure cookies are refused in production', () => {
+    assert.throws(
+        () => parseConfig({ DATABASE_URL: 'postgres://localhost/db', SA_COOKIE_SECURE: 'false' }),
+        /SA_COOKIE_SECURE cannot be false when ELLIGBLE_ENV is production/
+    );
+});
+
+test('development defaults to insecure cookies for plain-http local work', () => {
+    const config = parseConfig({ DATABASE_URL: 'postgres://localhost/db', ELLIGBLE_ENV: 'development' });
+    assert.equal(config.SA_COOKIE_SECURE, false);
+});
+
+test('unknown environment and malformed booleans or origins are rejected', () => {
+    assert.throws(() => parseConfig({ DATABASE_URL: 'x', ELLIGBLE_ENV: 'staging' }), /ELLIGBLE_ENV must be/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'x', SA_COOKIE_SECURE: 'yes' }), /SA_COOKIE_SECURE must be true or false/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'x', SA_ALLOWED_ORIGINS: 'https://a.example/path' }), /bare http\(s\) origins/);
+    assert.throws(() => parseConfig({ DATABASE_URL: 'x', SA_ALLOWED_ORIGINS: 'ftp://a.example' }), /bare http\(s\) origins/);
+});
+
+test('allowed origins are parsed and frozen', () => {
+    const config = parseConfig({ DATABASE_URL: 'x', SA_ALLOWED_ORIGINS: 'https://ujian.sekolah.sch.id, https://admin.sekolah.sch.id' });
+    assert.deepEqual(config.SA_ALLOWED_ORIGINS, ['https://ujian.sekolah.sch.id', 'https://admin.sekolah.sch.id']);
+    assert.ok(Object.isFrozen(config.SA_ALLOWED_ORIGINS));
+});
