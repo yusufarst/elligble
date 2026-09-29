@@ -244,13 +244,9 @@ test('BU-020 active-session resume tests', async (t) => {
         const res = new MockRes();
         await handleResumeGet(getReq() as any, res as any, deps);
         
-        let attemptIdx = -1;
-        let sessionIdx = -1;
-        
-        queries.forEach((q, i) => {
-            if (q.text.includes('secure_assessment_exam_attempts')) attemptIdx = i;
-            if (q.text.includes('secure_assessment_exam_sessions')) sessionIdx = i;
-        });
+        // First occurrence of each: the later context-projection query also joins attempts.
+        const attemptIdx = queries.findIndex(q => q.text.includes('secure_assessment_exam_attempts'));
+        const sessionIdx = queries.findIndex(q => q.text.includes('secure_assessment_exam_sessions'));
         
         assert.ok(attemptIdx > -1);
         assert.ok(sessionIdx > attemptIdx);

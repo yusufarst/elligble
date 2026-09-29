@@ -9,7 +9,10 @@
   "scripts": {
     "start": "node src/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --test test/config.test.ts test/server.test.ts test/answer.test.ts test/timer.test.ts test/submission.test.ts test/resume.test.ts"
+    "test": "node --test \"test/*.test.ts\" \"test/http/*.test.ts\"",
+    "test:integration": "ELLIGBLE_REQUIRE_INTEGRATION=1 node --test \"test/integration/*.test.ts\"",
+    "migrate": "node src/ops/migrate-cli.ts",
+    "migrate:check": "node src/ops/migrate-cli.ts --check"
   },
   "dependencies": {
     "pg": "8.23.0"
