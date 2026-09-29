@@ -1,11 +1,6 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
-import {
-    checkExamInstanceBaselineReadinessChecksCompositionPreflight
-} from './exam-instance-baseline-readiness-checks-composition-preflight.ts';
-import {
-    checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight
-} from './exam-instance-conditional-room-proctor-readiness-composition-preflight.ts';
+import { evaluateExamReadiness } from './exam-lifecycle-operations.ts';
 
 export interface TeacherReadinessContext {
     tenantId: string;
@@ -18,21 +13,38 @@ export interface TeacherReadinessDependencies {
 }
 
 export interface TeacherExamBaselineProjection {
-    status: 'baseline_readiness_checks_pass' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable';
+    status: 'baseline_readiness_checks_pass' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable' | 'not_evaluated';
     category?: string;
     blocker?: string;
 }
 
 export interface TeacherExamRoomProctorProjection {
-    status: 'room_proctor_readiness_ready' | 'room_proctor_readiness_not_applicable' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable';
+    status: 'room_proctor_readiness_ready' | 'room_proctor_readiness_not_applicable' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable' | 'not_evaluated';
     blocker?: string;
+}
+
+/** Aggregate delivery progress of an ACTIVE exam; counts only, no participant identities. */
+export interface TeacherExamProgressProjection {
+    participants: number;
+    started: number;
+    submitted: number;
 }
 
 export interface TeacherExamReadinessProjection {
     examInstanceId: string;
     subjectLabel: string | null;
+    lifecycleState: string | null;
+    windowStartsAt: string | null;
+    windowEndsAt: string | null;
     baseline: TeacherExamBaselineProjection;
     roomProctor: TeacherExamRoomProctorProjection;
+    progress: TeacherExamProgressProjection | null;
+}
+
+function isoOrNull(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 export interface TeacherReadinessResponse {
@@ -114,6 +126,9 @@ export async function handleTeacherReadinessGet(
         const query = `
             SELECT
                 i.id AS exam_instance_id,
+                i.lifecycle_state AS lifecycle_state,
+                i.window_starts_at AS window_starts_at,
+                i.window_ends_at AS window_ends_at,
                 s.display_label AS subject_label
             FROM tenant_memberships tm
             JOIN tenant_teacher_assignments tta
@@ -127,14 +142,14 @@ export async function handleTeacherReadinessGet(
             JOIN secure_assessment_exam_instances i
                 ON i.teaching_assignment_id = ata.id
                AND i.tenant_id = ata.tenant_id
-               AND i.lifecycle_state = 'SCHEDULED'
+               AND i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE')
             LEFT JOIN academic_core_subject_offerings so
                 ON so.id = ata.subject_offering_id AND so.tenant_id = ata.tenant_id
             LEFT JOIN academic_core_subjects s
                 ON s.id = so.subject_id AND s.tenant_id = ata.tenant_id
             WHERE tm.tenant_id = $1
               AND tm.person_id = $2
-            ORDER BY i.id ASC
+            ORDER BY i.window_starts_at ASC NULLS LAST, i.id ASC
         `;
 
         const queryResult = await client.query(query, [context.tenantId, context.personId]);
@@ -143,46 +158,46 @@ export async function handleTeacherReadinessGet(
 
         for (const row of queryResult.rows) {
             const examInstanceId = row.exam_instance_id;
+            let baseline: TeacherExamBaselineProjection = { status: 'not_evaluated' };
+            let roomProctor: TeacherExamRoomProctorProjection = { status: 'not_evaluated' };
+            let progress: TeacherExamProgressProjection | null = null;
 
-            const baselineRaw = await checkExamInstanceBaselineReadinessChecksCompositionPreflight(
-                client,
-                context.tenantId,
-                examInstanceId,
-                async () => 'granted' as const
-            );
-
-            const roomProctorRaw = await checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight(
-                client,
-                context.tenantId,
-                examInstanceId,
-                async () => 'granted' as const
-            );
-
-            let baseline: TeacherExamBaselineProjection;
-            if (baselineRaw.type === 'baseline_readiness_checks_pass') {
-                baseline = { status: 'baseline_readiness_checks_pass' };
-            } else if (baselineRaw.type === 'not_ready') {
-                baseline = { status: 'not_ready', category: baselineRaw.category, blocker: baselineRaw.blocker };
+            if (row.lifecycle_state === 'ACTIVE') {
+                const progressResult = await client.query(`
+                    SELECT
+                        COUNT(DISTINCT p.id)::int AS participants,
+                        COUNT(DISTINCT a.id) FILTER (WHERE t.started_at IS NOT NULL)::int AS started,
+                        COUNT(DISTINCT sub.id)::int AS submitted
+                    FROM secure_assessment_exam_participants p
+                    LEFT JOIN secure_assessment_exam_attempts a
+                        ON a.exam_participant_id = p.id AND a.tenant_id = p.tenant_id
+                    LEFT JOIN secure_assessment_timer_state t
+                        ON t.exam_attempt_id = a.id AND t.tenant_id = a.tenant_id
+                    LEFT JOIN secure_assessment_exam_submissions sub
+                        ON sub.exam_attempt_id = a.id AND sub.tenant_id = a.tenant_id
+                    WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
+                `, [context.tenantId, examInstanceId]);
+                const counts = progressResult.rows[0] ?? {};
+                progress = {
+                    participants: Number(counts.participants ?? 0),
+                    started: Number(counts.started ?? 0),
+                    submitted: Number(counts.submitted ?? 0),
+                };
             } else {
-                baseline = { status: baselineRaw.type };
-            }
-
-            let roomProctor: TeacherExamRoomProctorProjection;
-            if (roomProctorRaw.type === 'room_proctor_readiness_ready') {
-                roomProctor = { status: 'room_proctor_readiness_ready' };
-            } else if (roomProctorRaw.type === 'room_proctor_readiness_not_applicable') {
-                roomProctor = { status: 'room_proctor_readiness_not_applicable' };
-            } else if (roomProctorRaw.type === 'not_ready') {
-                roomProctor = { status: 'not_ready', blocker: roomProctorRaw.blocker };
-            } else {
-                roomProctor = { status: roomProctorRaw.type };
+                const readiness = await evaluateExamReadiness(client as unknown as pg.PoolClient, context.tenantId, examInstanceId);
+                baseline = readiness.baseline as TeacherExamBaselineProjection;
+                roomProctor = readiness.roomProctor as TeacherExamRoomProctorProjection;
             }
 
             exams.push({
                 examInstanceId,
                 subjectLabel: row.subject_label ?? null,
+                lifecycleState: row.lifecycle_state ?? null,
+                windowStartsAt: isoOrNull(row.window_starts_at),
+                windowEndsAt: isoOrNull(row.window_ends_at),
                 baseline,
-                roomProctor
+                roomProctor,
+                progress,
             });
         }
 

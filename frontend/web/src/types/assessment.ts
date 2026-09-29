@@ -182,21 +182,38 @@ export interface ProctorMonitoringResponse {
 }
 
 export interface TeacherExamBaselineProjection {
-  status: 'baseline_readiness_checks_pass' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable';
+  status: 'baseline_readiness_checks_pass' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable' | 'not_evaluated';
   category?: string;
   blocker?: string;
 }
 
 export interface TeacherExamRoomProctorProjection {
-  status: 'room_proctor_readiness_ready' | 'room_proctor_readiness_not_applicable' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable';
+  status: 'room_proctor_readiness_ready' | 'room_proctor_readiness_not_applicable' | 'not_ready' | 'invalid_state' | 'denied' | 'unavailable' | 'not_evaluated';
   blocker?: string;
+}
+
+export interface TeacherExamProgressProjection {
+  participants: number;
+  started: number;
+  submitted: number;
 }
 
 export interface TeacherExamReadinessProjection {
   examInstanceId: string;
   subjectLabel: string | null;
+  lifecycleState?: string | null;
+  windowStartsAt?: string | null;
+  windowEndsAt?: string | null;
   baseline: TeacherExamBaselineProjection;
   roomProctor: TeacherExamRoomProctorProjection;
+  progress?: TeacherExamProgressProjection | null;
+}
+
+export type TeacherExamAction = 'mark_ready' | 'activate';
+
+export interface TeacherExamTransitionResponse {
+  examInstanceId: string;
+  lifecycleState: 'READY' | 'ACTIVE';
 }
 
 export interface TeacherReadinessResponse {

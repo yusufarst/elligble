@@ -14,7 +14,8 @@ import { AuthenticationError, buildAuthenticatedContext } from './http/authentic
 import { handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
 import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
-import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, sendError } from './http/http-utils.ts';
+import { performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
+import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
 
 export interface ServerSecurityConfig {
@@ -272,6 +273,56 @@ export function createServer(deps: ServerDependencies): http.Server {
             }
             return withPersonContext(req, res, undefined, getContext =>
                 handleAttemptStart(req, res, { pool: deps.pool, getContext: () => getContext()! }));
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/transition') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const examInstanceId = body['examInstanceId'];
+                const action = body['action'];
+                if (typeof examInstanceId !== 'string' || (action !== 'mark_ready' && action !== 'activate')) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await performTeacherExamAction(deps.pool, getContext()!, examInstanceId, action as TeacherExamAction);
+                switch (result.type) {
+                    case 'transitioned':
+                        sendJson(res, 200, { examInstanceId: result.examInstanceId, lifecycleState: result.lifecycleState });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'not_ready':
+                        sendJson(res, 409, { error: 'not_ready', readiness: result.readiness });
+                        return;
+                    case 'window_not_started':
+                        sendJson(res, 409, { error: 'window_not_started', windowStartsAt: result.windowStartsAt });
+                        return;
+                    case 'window_closed':
+                        sendError(res, 409, 'window_closed');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
         }
 
         if (pathname === '/api/v1/assessment/assigned-exams') {

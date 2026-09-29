@@ -1,6 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTeacherReadiness, ApiError } from '../api/assessment-client.ts';
-import type { TeacherReadinessResponse, TeacherExamReadinessProjection } from '../types/assessment.ts';
+import { getTeacherReadiness, postTeacherExamTransition, ApiError } from '../api/assessment-client.ts';
+import type { TeacherReadinessResponse, TeacherExamReadinessProjection, TeacherExamAction } from '../types/assessment.ts';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { formatDateTime, formatWindow } from '../lib/format.ts';
+
+const LIFECYCLE_LABELS: Record<string, string> = {
+  SCHEDULED: 'Terjadwal',
+  READY: 'Siap Dibuka',
+  ACTIVE: 'Berlangsung',
+};
+
+function transitionFailureMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    switch (err.code) {
+      case 'not_ready': return 'Ujian belum memenuhi syarat kesiapan. Periksa rincian kesiapan di bawah.';
+      case 'window_not_started': return err.data?.windowStartsAt
+        ? `Ujian baru dapat dibuka mulai ${formatDateTime(err.data.windowStartsAt)}.`
+        : 'Ujian belum dapat dibuka sebelum waktu pelaksanaan dimulai.';
+      case 'window_closed': return 'Waktu pelaksanaan ujian telah berakhir.';
+      case 'invalid_state': return 'Status ujian telah berubah. Data ditampilkan ulang.';
+      case 'forbidden': return 'Anda tidak memiliki hak untuk mengelola ujian ini.';
+    }
+  }
+  return 'Gagal memproses permintaan. Periksa koneksi internet Anda dan coba lagi.';
+}
 import '../styles/teacher-readiness.css';
 import '../styles/design-tokens.css';
 
@@ -36,6 +60,9 @@ export const TeacherReadinessView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
+  const [confirmActivate, setConfirmActivate] = useState<TeacherExamReadinessProjection | null>(null);
 
   const fetchReadinessData = useCallback(async () => {
     try {
@@ -70,6 +97,20 @@ export const TeacherReadinessView: React.FC = () => {
   useEffect(() => {
     initialLoad();
   }, [initialLoad]);
+
+  const runTransition = async (examInstanceId: string, action: TeacherExamAction) => {
+    setPendingAction(examInstanceId);
+    setActionErrors(prev => ({ ...prev, [examInstanceId]: '' }));
+    try {
+      await postTeacherExamTransition(examInstanceId, action);
+    } catch (err) {
+      setActionErrors(prev => ({ ...prev, [examInstanceId]: transitionFailureMessage(err) }));
+    } finally {
+      setPendingAction(null);
+      setConfirmActivate(null);
+      await fetchReadinessData();
+    }
+  };
 
   if (loading) {
     return (
@@ -123,7 +164,7 @@ export const TeacherReadinessView: React.FC = () => {
   return (
     <div className="teacher-readiness-container">
       <div className="teacher-readiness-header">
-        <h1 className="teacher-readiness-title">Kesiapan Ujian</h1>
+        <h1 className="teacher-readiness-title">Pelaksanaan Ujian</h1>
         <button
           className="teacher-refresh-btn"
           onClick={handleRefresh}
@@ -177,12 +218,32 @@ export const TeacherReadinessView: React.FC = () => {
               break;
           }
 
+          const lifecycle = exam.lifecycleState ?? 'SCHEDULED';
+          const readinessPass =
+            exam.baseline.status === 'baseline_readiness_checks_pass' &&
+            (exam.roomProctor.status === 'room_proctor_readiness_ready' || exam.roomProctor.status === 'room_proctor_readiness_not_applicable');
+          const busy = pendingAction === exam.examInstanceId;
+          const actionError = actionErrors[exam.examInstanceId];
+
           return (
-            <div key={exam.examInstanceId} className="teacher-exam-card">
+            <div key={exam.examInstanceId} className="teacher-exam-card" data-testid={`teacher-exam-${exam.examInstanceId}`}>
               <div className="teacher-exam-card-header">
                 <h2 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h2>
+                {exam.lifecycleState && (
+                  <span className={`teacher-lifecycle-badge lifecycle-${lifecycle.toLowerCase()}`}>{LIFECYCLE_LABELS[lifecycle] ?? lifecycle}</span>
+                )}
               </div>
+              {exam.windowStartsAt && exam.windowEndsAt && (
+                <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
+              )}
 
+              {lifecycle === 'ACTIVE' && exam.progress ? (
+                <dl className="teacher-exam-progress" aria-label="Kemajuan pelaksanaan ujian">
+                  <div><dt>Peserta</dt><dd>{exam.progress.participants}</dd></div>
+                  <div><dt>Sudah mulai</dt><dd>{exam.progress.started}</dd></div>
+                  <div><dt>Dikumpulkan</dt><dd>{exam.progress.submitted}</dd></div>
+                </dl>
+              ) : (
               <div className="teacher-readiness-details">
                 <div className="readiness-section">
                   <h3 className="readiness-section-title">Kesiapan Dasar</h3>
@@ -198,10 +259,50 @@ export const TeacherReadinessView: React.FC = () => {
                   </div>
                 </div>
               </div>
+              )}
+
+              {exam.lifecycleState && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
+                <div className="teacher-exam-actions">
+                  {lifecycle === 'SCHEDULED' && (
+                    <Button onClick={() => runTransition(exam.examInstanceId, 'mark_ready')} disabled={!readinessPass || busy}>
+                      {busy ? 'Memproses...' : 'Tandai Siap'}
+                    </Button>
+                  )}
+                  {lifecycle === 'READY' && (
+                    <Button onClick={() => setConfirmActivate(exam)} disabled={busy}>
+                      {busy ? 'Memproses...' : 'Buka Ujian'}
+                    </Button>
+                  )}
+                  {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      <Dialog open={confirmActivate !== null} onOpenChange={open => { if (!open) setConfirmActivate(null); }}>
+        <DialogContent aria-describedby="activate-exam-description">
+          <DialogHeader>
+            <DialogTitle>Buka Ujian untuk Peserta?</DialogTitle>
+            <DialogDescription id="activate-exam-description">
+              Setelah dibuka, peserta dapat mulai mengerjakan sesuai waktu pelaksanaan. Soal dan pengaturan ujian tidak dapat diubah lagi.
+            </DialogDescription>
+          </DialogHeader>
+          {confirmActivate && (
+            <p className="m-0 font-medium">{confirmActivate.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" onClick={() => setConfirmActivate(null)}>Batal</Button>
+            <Button
+              onClick={() => confirmActivate && runTransition(confirmActivate.examInstanceId, 'activate')}
+              disabled={pendingAction !== null}
+            >
+              Buka Ujian
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -86,6 +86,9 @@ export interface ExamInstanceOptions {
     windowEndsAt?: Date;
     durationSeconds?: number;
     latestStartPolicy?: 'FULL_DURATION_BEYOND_WINDOW' | 'REMAINING_WINDOW_ONLY' | 'LATE_START_BLOCKED';
+    /** Room/proctor requirement policy (0034); defaults to teacher-managed without room operations. */
+    roomBasedOperations?: boolean | null;
+    proctorPerRoomRequired?: boolean | null;
 }
 
 export async function createExamInstance(
@@ -98,8 +101,9 @@ export async function createExamInstance(
     const res = await pool.query(
         `INSERT INTO secure_assessment_exam_instances (
             tenant_id, teaching_assignment_id, assessment_type_id, lifecycle_state,
-            window_starts_at, window_ends_at, configured_attempt_duration_seconds, latest_start_policy
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+            window_starts_at, window_ends_at, configured_attempt_duration_seconds, latest_start_policy,
+            room_based_operations_enabled, proctor_per_room_required
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
         [
             tenantId,
             teaching.teachingAssignmentId,
@@ -109,6 +113,8 @@ export async function createExamInstance(
             options.windowEndsAt ?? new Date(now + 2 * 60 * 60 * 1000),
             options.durationSeconds ?? 3600,
             options.latestStartPolicy ?? 'FULL_DURATION_BEYOND_WINDOW',
+            options.roomBasedOperations === undefined ? false : options.roomBasedOperations,
+            options.proctorPerRoomRequired === undefined ? false : options.proctorPerRoomRequired,
         ]
     );
     return res.rows[0].id;

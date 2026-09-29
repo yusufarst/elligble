@@ -8,8 +8,8 @@ import {
 // never imported by production code. Usage:
 //   DATABASE_URL=postgres://.../elligble_dev node test/support/seed-demo.ts
 // Accounts (password for all: kata-sandi-demo):
-//   siswa.demo      student in SMA Negeri 1 Contoh, assigned to one ACTIVE exam
-//   guru.demo       teacher of that exam (teacher-managed mode)
+//   siswa.demo      student in SMA Negeri 1 Contoh, assigned to one SCHEDULED exam
+//   guru.demo       teacher of that exam (teacher-managed mode): marks it ready and opens it
 //   pengawas.demo   proctor assigned to that exam
 //   guru.dua        member of both demo schools (tenant selection)
 
@@ -29,7 +29,7 @@ export async function seedDemo(pool: pg.Pool) {
     await addMembership(pool, tenantB, multi.personId);
 
     const teaching = await createTeachingContext(pool, tenantA, teacherMembership, 'Matematika Wajib');
-    const exam = await createExamInstance(pool, tenantA, teaching, { durationSeconds: 45 * 60 });
+    const exam = await createExamInstance(pool, tenantA, teaching, { lifecycleState: 'SCHEDULED', durationSeconds: 45 * 60 });
     await addQuestionSnapshots(pool, tenantA, exam, 5);
     await addParticipant(pool, tenantA, exam, student.personId);
     await addProctorAssignment(pool, tenantA, exam, proctor.personId);

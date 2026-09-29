@@ -109,6 +109,15 @@ export async function getProctorMonitoring(): Promise<ProctorMonitoringResponse>
   return handleResponse<ProctorMonitoringResponse>(res);
 }
 
+export async function postTeacherExamTransition(
+  examInstanceId: string,
+  action: import('../types/assessment.ts').TeacherExamAction
+): Promise<import('../types/assessment.ts').TeacherExamTransitionResponse> {
+  const url = '/api/v1/assessment/teacher-exams/transition';
+  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, action } });
+  return handleResponse<import('../types/assessment.ts').TeacherExamTransitionResponse>(res);
+}
+
 export async function getTeacherReadiness(): Promise<TeacherReadinessResponse> {
   const url = '/api/v1/assessment/teacher-readiness';
   const res = await apiFetch(url, { method: 'GET' });
