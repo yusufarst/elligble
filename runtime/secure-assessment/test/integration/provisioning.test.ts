@@ -52,14 +52,38 @@ test('pilot onboarding through the provisioning CLI (real PostgreSQL)', { skip: 
     const audit = ['--operator', 'Tim Platform', '--case', 'PILOT-001'];
 
     let tenantId = '';
-    await t.test('school create is audited and refuses an accidental duplicate', () => {
-        const created = cli('school', 'create', '--label', 'SMA Negeri 9 Contoh', ...audit);
+    await t.test('school create is audited, needs an explicit time zone and refuses an accidental duplicate', async () => {
+        assert.equal(cli('school', 'create', '--label', 'Tanpa Zona', ...audit).code, 2, 'the time zone is required (D04.2-36)');
+        const badZone = cli('school', 'create', '--label', 'Zona Salah', '--time-zone', 'WIB', ...audit);
+        assert.equal(badZone.code, 2);
+        assert.match(badZone.out, /Asia\/Jakarta \(WIB\)/);
+        assert.equal(cli('school', 'create', '--label', 'Uji Coba', '--time-zone', 'Asia/Jakarta', '--dry-run').code, 2, 'no dry run that would create a school');
+
+        const created = cli('school', 'create', '--label', 'SMA Negeri 9 Contoh', '--time-zone', 'Asia/Makassar', ...audit);
         assert.equal(created.code, 0, created.out);
         tenantId = /Tenant id: ([0-9a-f-]{36})/.exec(created.out)![1];
-        const again = cli('school', 'create', '--label', 'SMA Negeri 9 Contoh', ...audit);
+        const again = cli('school', 'create', '--label', 'SMA Negeri 9 Contoh', '--time-zone', 'Asia/Makassar', ...audit);
         assert.equal(again.code, 1);
         assert.match(again.out, /already exists/);
-        assert.equal(cli('school', 'create', '--label', 'Tanpa Audit').code, 2, 'operator and case are required');
+        assert.equal(cli('school', 'create', '--label', 'Tanpa Audit', '--time-zone', 'Asia/Jakarta').code, 2, 'operator and case are required');
+        const stored = await db.pool.query('SELECT time_zone FROM tenant_tenants WHERE id = $1', [tenantId]);
+        assert.equal(stored.rows[0].time_zone, 'Asia/Makassar');
+        const count = await db.pool.query(`SELECT count(*)::int AS n FROM tenant_tenants WHERE display_label IN ('Tanpa Zona', 'Zona Salah', 'Uji Coba')`);
+        assert.equal(count.rows[0].n, 0, 'refused commands create nothing');
+    });
+
+    await t.test('the time zone can be corrected through the audited command only', async () => {
+        assert.equal(cli('school', 'set-time-zone', '--tenant', tenantId, '--time-zone', 'Asia/Jakarta').code, 2, 'operator and case are required');
+        assert.equal(cli('school', 'set-time-zone', '--tenant', 'bukan-uuid', '--time-zone', 'Asia/Jakarta', ...audit).code, 2);
+        const missing = cli('school', 'set-time-zone', '--tenant', '00000000-0000-4000-8000-000000000000', '--time-zone', 'Asia/Jakarta', ...audit);
+        assert.equal(missing.code, 1);
+        const set = cli('school', 'set-time-zone', '--tenant', tenantId, '--time-zone', 'Asia/Jakarta', ...audit);
+        assert.equal(set.code, 0, set.out);
+        assert.match(set.out, /was Asia\/Makassar/);
+        const events = await db.pool.query(
+            `SELECT summary FROM platform_provisioning_events WHERE tenant_id = $1 AND action = 'tenant_time_zone_set'`, [tenantId]
+        );
+        assert.deepEqual(events.rows.map(r => r.summary), [{ timeZone: 'Asia/Jakarta', previous: 'Asia/Makassar' }]);
     });
 
     const people = file('people.csv', [
@@ -147,7 +171,7 @@ test('pilot onboarding through the provisioning CLI (real PostgreSQL)', { skip: 
         assert.match(again.out, /already imported/);
         const actions = await pool.query('SELECT action FROM platform_provisioning_events WHERE tenant_id = $1 ORDER BY occurred_at', [tenantId]);
         // Every operator run is recorded, including idempotent re-runs that changed nothing.
-        assert.deepEqual(actions.rows.map(r => r.action), ['tenant_created', 'people_imported', 'people_imported', 'academic_imported', 'academic_imported', 'exam_imported']);
+        assert.deepEqual(actions.rows.map(r => r.action), ['tenant_created', 'tenant_time_zone_set', 'people_imported', 'people_imported', 'academic_imported', 'academic_imported', 'exam_imported']);
         await assert.rejects(pool.query('DELETE FROM platform_provisioning_events'), /append-only/);
     });
 

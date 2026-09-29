@@ -46,6 +46,7 @@ export async function handleMeContextGet(req: http.IncomingMessage, res: http.Se
         const result = await deps.pool.query(`
             SELECT
                 t.display_label,
+                t.time_zone,
                 EXISTS (
                     SELECT 1 FROM secure_assessment_exam_participants p
                     WHERE p.tenant_id = $1 AND p.person_id = $2
@@ -76,6 +77,8 @@ export async function handleMeContextGet(req: http.IncomingMessage, res: http.Se
         sendJson(res, 200, {
             tenantId: membership.tenantId,
             tenantDisplayLabel: row?.display_label ?? null,
+            /** The school's IANA time zone for showing exam times (D04.2-36); null until set. */
+            tenantTimeZone: row?.time_zone ?? null,
             capabilities,
         });
     } catch {

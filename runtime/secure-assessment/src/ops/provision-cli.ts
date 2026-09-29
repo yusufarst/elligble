@@ -4,9 +4,10 @@ import { parseArgs } from 'node:util';
 import pg from 'pg';
 import { importAcademic } from './provisioning/academic.ts';
 import { isValidOperatorContext, type OperatorContext } from './provisioning/audit.ts';
+import { isValidTimeZone } from '../../../tenant-access/src/provisioning.ts';
 import { importExam } from './provisioning/exam.ts';
 import { importPeople, reissueActivation } from './provisioning/people.ts';
-import { createSchool } from './provisioning/school.ts';
+import { createSchool, setSchoolTimeZone, TIME_ZONE_PROBLEM } from './provisioning/school.ts';
 import { renderActivationSheetHtml, type ActivationCard } from './provisioning/sheet.ts';
 
 // Operator provisioning for the pilot (platform staff, D02.2-28): every change is validated
@@ -17,7 +18,8 @@ const USAGE = `ELLIGBLE provisioning (platform operators)
 
 Usage: node runtime/secure-assessment/src/ops/provision-cli.ts <command> [options]
 
-  school create      --label <school name> [--allow-duplicate-label]
+  school create      --label <school name> --time-zone <IANA> [--allow-duplicate-label]
+  school set-time-zone --tenant <id> --time-zone <IANA>
   people import      --tenant <id> --file <people.csv> --sheet <cards.html>
                      [--dry-run] [--link-existing] [--valid-days 1-30] [--app-url <url>] [--time-zone <IANA>]
   activation reissue --tenant <id> --elligble-id <id> --sheet <card.html> [--full-name <name>]
@@ -26,6 +28,8 @@ Usage: node runtime/secure-assessment/src/ops/provision-cli.ts <command> [option
   exam import        --tenant <id> --file <exam.json> --questions <questions.csv> [--dry-run]
 
 Every change needs --operator <name> --case <reference> (recorded in the audit trail).
+Time zones are IANA names: Asia/Jakarta (WIB), Asia/Makassar (WITA), Asia/Jayapura (WIT).
+Activation cards show expiry in the school's time zone unless --time-zone is given.
 Templates: people.csv header "elligble_id,full_name,kind" (kind: student, teacher, staff);
 academic.json "template": "elligble-academic-v1"; exam.json "template": "elligble-exam-v1";
 questions.csv header "no,prompt,option_a,option_b,option_c,option_d,option_e,correct,score".
@@ -58,30 +62,36 @@ function validDays(value: string | undefined): number {
     return days * DAY_MS;
 }
 
-function timeZone(value: string | undefined): string {
-    const zone = value ?? 'Asia/Jakarta';
-    try {
-        new Intl.DateTimeFormat('id-ID', { timeZone: zone });
-    } catch {
-        throw new UsageError('--time-zone must be an IANA time zone such as Asia/Jakarta, Asia/Makassar or Asia/Jayapura');
-    }
-    return zone;
+function timeZone(value: string | undefined): string | undefined {
+    if (value === undefined) return undefined;
+    if (!isValidTimeZone(value)) throw new UsageError(`--time-zone: ${TIME_ZONE_PROBLEM}`);
+    return value;
 }
 
-function writeSheet(path: string, cards: ActivationCard[], schoolLabel: string, values: Record<string, unknown>): void {
+function writeSheet(path: string, cards: ActivationCard[], school: { label: string; timeZone: string | null }, values: Record<string, unknown>): void {
+    const zone = timeZone(values['time-zone'] as string | undefined) ?? school.timeZone;
+    if (!zone) throw new UsageError('this school has no time zone yet: run "school set-time-zone" first, or pass --time-zone for the cards');
     const html = renderActivationSheetHtml(cards, {
-        schoolLabel,
+        schoolLabel: school.label,
         appUrl: (values['app-url'] as string | undefined) ?? null,
-        timeZone: timeZone(values['time-zone'] as string | undefined),
+        timeZone: zone,
     });
     // Owner-only, and never overwrite an existing file.
     writeFileSync(path, html, { mode: 0o600, flag: 'wx' });
     out(`Activation cards written to ${path} (${cards.length}). Print them, hand them out, then delete the file.`);
 }
 
-async function schoolLabel(pool: pg.Pool, tenantId: string): Promise<string> {
-    const res = await pool.query('SELECT display_label FROM tenant_tenants WHERE id = $1', [tenantId]);
-    return res.rows[0]?.display_label ?? 'Sekolah';
+async function school(pool: pg.Pool, tenantId: string): Promise<{ label: string; timeZone: string | null }> {
+    const res = await pool.query('SELECT display_label, time_zone FROM tenant_tenants WHERE id = $1', [tenantId]);
+    return { label: res.rows[0]?.display_label ?? 'Sekolah', timeZone: res.rows[0]?.time_zone ?? null };
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function tenant(value: string | undefined): string {
+    const id = required(value, 'tenant').trim();
+    if (!UUID_REGEX.test(id)) throw new UsageError('--tenant must be the school\'s tenant id printed by "school create"');
+    return id;
 }
 
 async function run(argv: string[]): Promise<number> {
@@ -105,15 +115,17 @@ async function run(argv: string[]): Promise<number> {
     });
     const dryRun = values['dry-run'] === true;
     const command = `${group} ${action ?? ''}`.trim();
-    const knownCommands = ['school create', 'people import', 'activation reissue', 'academic import', 'exam import'];
+    const knownCommands = ['school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import'];
     if (!knownCommands.includes(command)) throw new UsageError(`unknown command "${command}"`);
     const context = operatorContext(values, dryRun);
     // Validate options that do not need the database before connecting.
     const validForMs = command === 'people import' || command === 'activation reissue' ? validDays(values['valid-days']) : 0;
+    timeZone(values['time-zone']);
     if (command === 'people import' || command === 'activation reissue') {
-        timeZone(values['time-zone']);
         if (!dryRun) required(values.sheet, 'sheet');
     }
+    if (command === 'school create' || command === 'school set-time-zone') required(values['time-zone'], 'time-zone');
+    if (command !== 'school create') tenant(values.tenant);
 
     const databaseUrl = env['DATABASE_URL'];
     if (!databaseUrl) throw new UsageError('DATABASE_URL is not set');
@@ -121,12 +133,26 @@ async function run(argv: string[]): Promise<number> {
     try {
         switch (command) {
             case 'school create': {
-                const result = await createSchool(pool, { label: required(values.label, 'label'), context, allowDuplicateLabel: values['allow-duplicate-label'] === true });
+                if (dryRun) throw new UsageError('school create has no dry run');
+                const result = await createSchool(pool, {
+                    label: required(values.label, 'label'), timeZone: values['time-zone']!, context,
+                    allowDuplicateLabel: values['allow-duplicate-label'] === true,
+                });
                 if (!result.ok) {
                     out(`Refused: ${result.problem}`);
                     return 1;
                 }
                 out(`School created. Tenant id: ${result.tenantId}`);
+                return 0;
+            }
+            case 'school set-time-zone': {
+                if (dryRun) throw new UsageError('school set-time-zone has no dry run');
+                const result = await setSchoolTimeZone(pool, { tenantId: tenant(values.tenant), timeZone: values['time-zone']!, context });
+                if (!result.ok) {
+                    out(`Refused: ${result.problem}`);
+                    return 1;
+                }
+                out(`Time zone set to ${values['time-zone']} (was ${result.previous ?? 'not set'}). Exam times are shown in this zone.`);
                 return 0;
             }
             case 'people import': {
@@ -139,7 +165,7 @@ async function run(argv: string[]): Promise<number> {
                 for (const row of result.outcomes) out(`line ${row.line} ${row.elligbleId}: ${row.outcome}`);
                 out(`${dryRun ? 'Dry run' : 'Import'} ${result.ok ? 'OK' : 'REFUSED, nothing was changed'}: ${JSON.stringify(result.summary)}`);
                 if (result.ok && !dryRun && result.activations.length > 0) {
-                    writeSheet(required(values.sheet, 'sheet'), result.activations, await schoolLabel(pool, tenantId), values);
+                    writeSheet(required(values.sheet, 'sheet'), result.activations, await school(pool, tenantId), values);
                 }
                 return result.ok ? 0 : 1;
             }
@@ -156,7 +182,7 @@ async function run(argv: string[]): Promise<number> {
                 writeSheet(required(values.sheet, 'sheet'), [{
                     elligbleId: elligbleId.trim().toLowerCase(), fullName: (values['full-name'] as string | undefined) ?? elligbleId,
                     code: result.code, expiresAt: result.expiresAt,
-                }], await schoolLabel(pool, tenantId), values);
+                }], await school(pool, tenantId), values);
                 return 0;
             }
             case 'academic import': {

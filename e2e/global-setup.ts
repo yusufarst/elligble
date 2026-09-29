@@ -77,9 +77,9 @@ export default async function globalSetup(): Promise<void> {
         return name;
     };
 
-    const tenantId = /Tenant id: ([0-9a-f-]{36})/.exec(cli('school', 'create', '--label', 'SMA Negeri E2E'))![1];
+    const tenantId = /Tenant id: ([0-9a-f-]{36})/.exec(cli('school', 'create', '--label', 'SMA Negeri E2E', '--time-zone', 'Asia/Jakarta'))![1];
     state.tenantId = tenantId;
-    state.otherTenantId = /Tenant id: ([0-9a-f-]{36})/.exec(cli('school', 'create', '--label', 'SMA Negeri E2E Lain'))![1];
+    state.otherTenantId = /Tenant id: ([0-9a-f-]{36})/.exec(cli('school', 'create', '--label', 'SMA Negeri E2E Lain', '--time-zone', 'Asia/Makassar'))![1];
     const people = ['elligble_id,full_name,kind', 'guru.e2e,Guru E2E,teacher', 'pengawas.e2e,Pengawas E2E,staff', ...STUDENTS.map((id, i) => `${id},Siswa E2E ${i + 1},student`)].join('\n');
     cli('people', 'import', '--tenant', tenantId, '--file', file('people.csv', people), '--sheet', 'kartu.html');
     cli('academic', 'import', '--tenant', tenantId, '--file', file('academic.json', JSON.stringify({

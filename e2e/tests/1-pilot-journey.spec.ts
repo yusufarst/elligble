@@ -24,6 +24,9 @@ test('the proctor sees the running exam', async ({ page }) => {
 test('a student answers, the answers survive a reload, and the exam is submitted once', async ({ page }) => {
     await activate(page, 'siswa.e2e.01', 'bintang-kejora-2026');
     await expect(page.getByText('Daftar Ujian Siswa')).toBeVisible();
+    // The browser runs in UTC; the schedule is shown in the school's zone.
+    await expect(page.getByText(/\d{2}\.\d{2} WIB/).first()).toBeVisible();
+    await expect(page.getByText(/UTC/)).toHaveCount(0);
     const attemptId = await startExam(page);
 
     await option(page, 1).click();

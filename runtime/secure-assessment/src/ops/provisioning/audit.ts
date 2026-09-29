@@ -4,7 +4,9 @@ import type { ClientBase } from 'pg';
 // Append-only provisioning audit (migration 0040): who (operator), why (case reference),
 // what (action) and a count-only summary. Never personal data or activation codes.
 
-export type ProvisioningAction = 'tenant_created' | 'people_imported' | 'activation_reissued' | 'academic_imported' | 'exam_imported';
+export type ProvisioningAction =
+    | 'tenant_created' | 'people_imported' | 'activation_reissued' | 'academic_imported' | 'exam_imported'
+    | 'tenant_time_zone_set';
 
 export interface OperatorContext {
     operator: string;

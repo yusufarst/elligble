@@ -84,7 +84,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-13 | Shared-device hygiene: remembered school choice leaked to the next account; re-authentication could accept another account while keeping the previous context | found in rendered checks — **RESOLVED** (logout clears the choice; re-login locked to the same ELLIGBLE ID) | RESOLVED |
 | P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
 | P1-15 | Question order followed random snapshot UUIDs, not the authored order (D04.3-41, D04.2-57..59) | **RESOLVED**: migration `0038` adds a positive, per-exam unique `display_order` written when the snapshot is created (snapshots stay immutable); delivery orders by it, legacy rows follow by id; real-PostgreSQL test with identifier order opposite to the authored order | RESOLVED |
-| P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | `lib/format.ts` | OPEN |
+| P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | **RESOLVED**: migration `0043` adds an explicit IANA zone per school, required by `school create` and changed only by the audited `school set-time-zone`; `GET /me/context` returns it and the web client formats every date and time in it (WIB, WITA, WIT) whatever the device zone; activation cards use it. Verified with the browser clock in UTC | RESOLVED |
 | P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | lifecycle ops implement READY/ACTIVE only | OPEN: Owner decision (§7) |
 | P1-18 | Readiness preflights accepted only SCHEDULED, so READY could not be re-evaluated (D04.2-25) or re-checked at activation (D04.2-68) | 10 preflight guards | **RESOLVED**: shared `readiness-states.ts` (SCHEDULED or READY) |
 | P1-12 | Historical one-off verifiers are point-in-time: 14 of 44 fail on current schema by design | **RESOLVED** as a gate: durable suite `npm run test:integration` (disposable databases); historical verifiers are REFERENCE ONLY | RESOLVED |
@@ -110,7 +110,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 7. **Production operations** (P0-9, P0-10, P1-8): DONE. Migration runner; startup preflight (bounded wait for the database, schema `check` or `apply`, refuses a database ahead of the release); single process serving API and built client with deep-link fallback; environment validation; structured request logging; container image (non-root) with health check; CI (typecheck, unit, PostgreSQL integration, web build, image build and smoke test); operations runbook with a verified local restore drill.
 8. **Provisioning and content** (P0-11, P0-7, P1-15, P1-23): DONE. Authored question order and answer payload validation; account activation; audited operator CLI for schools, people (activation cards), academic setup (new `runtime/academic-core` module), exams and activation reissue.
 9. **Browser E2E** (PB06, PB07 contribution): DONE. Playwright suite `e2e/` against the real production process on a disposable database provisioned only through the operator CLI, run in CI: pilot journey (activation cards, teacher opens the exam, proctor view, student answers, reload, one submission with idempotent receipts), resilience (offline, reload while saves fail, second-tab takeover, duplicated tab) and security (other school, other student's attempt, session ending mid-exam).
-10. **Milestone 2 hardening** (in progress): server finalization at time expiry (P1-27) DONE; provisional teacher results with deterministic baseline scoring (P1-28) DONE; "Ragu-ragu" review marks (P1-24) DONE. Remaining: Proctor Feed (P1-11), pause/lock and time adjustments, ENDED/PAUSED once the policy is set (P1-17), result finalization, publication and export. Then Academic Core administration UI and the remaining baseline domains.
+10. **Milestone 2 hardening** (in progress): server finalization at time expiry (P1-27) DONE; provisional teacher results with deterministic baseline scoring (P1-28) DONE; "Ragu-ragu" review marks (P1-24) DONE; school time zone (P1-16) DONE. Remaining: Proctor Feed (P1-11), pause/lock and time adjustments, ENDED/PAUSED once the policy is set (P1-17), result finalization, publication and export. Then Academic Core administration UI and the remaining baseline domains.
 
 ## 7. Owner decisions
 
@@ -149,14 +149,14 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 |---|---|
 | Environment config / validation | every variable validated at startup (`.env.example`): PostgreSQL URL scheme (never echoed), environment, port, pool, cookie security (cannot be off in production), allowed origins, migration mode (cannot be `off` in production), bounded database wait |
 | Secrets | none committed; `.env*` git-ignored and excluded from the image build context |
-| Migrations | 42 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
+| Migrations | 43 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
 | Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
 | Logging / monitoring / error reporting | JSON-lines access and error log with request ids; no metrics or alerting yet |
 | Backup / restore / incident response / rollback | runbook procedures; local restore drill verified; production drill pending (PB11) |
 | Rate limiting | per-account login policy in runtime (DEC-041); infrastructure limits at the proxy (P1-14) |
-| Provisioning | audited operator CLI (runbook §7) for schools, people with activation cards, academic setup, exams and activation reissue |
+| Provisioning | audited operator CLI (runbook §7) for schools (with their time zone), people with activation cards, academic setup, exams and activation reissue |
 | CI | `.github/workflows/ci.yml`: runtime typecheck, unit and PostgreSQL 16 integration; web typecheck, tests and build; browser end-to-end suite against the production process; image build and smoke test |
 
 ## 10. Design and UI status
@@ -275,12 +275,21 @@ After "Ragu-ragu" review marks (this branch):
 | browser E2E | 11/11 PASS: a mark set at 360 px shows in the "Daftar Soal" sheet with its count, is on the server, survives a reload with the answer unchanged, and removing it reaches the server |
 | rendered check (Chromium 360 px) | calm amber mark in the question card and as a corner on the question number; the sheet summary wraps instead of running together (fixed after the first render) |
 
+After the school time zone (this branch):
+
+| Check | Result |
+|---|---|
+| tenant-access unit | 12/12 PASS incl. zone validation (IANA names the runtime knows; abbreviations such as "WIB", offsets and malformed names refused) |
+| integration (real PostgreSQL 16) | provisioning CLI: `school create` refuses a missing or invalid zone and has no dry run that would create a school, stores the zone, `school set-time-zone` needs operator and case, refuses unknown schools and malformed ids, is audited with the previous zone; `/me/context` returns the zone |
+| web vitest | WIB, WITA and WIT abbreviations and local hours; a window crossing midnight in UTC shows the school's date; invalid zones fall back to the device zone; the app formats a Jayapura school's exam in WIT |
+| browser E2E | 11/11 PASS with the browser clock in UTC: the student's exam list shows the schedule in WIB and never in UTC |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-Critical path step 10, Milestone 2 hardening, continuing in dependency order: the Proctor Feed (P1-11, events and interventions the proctor needs during a live exam); ENDED and PAUSED operations once the Owner sets the policy (P1-17, §7); result finalization (D04.8-17/57), CSV/printable export for teachers (D04.8-52) and publication to students once the visibility policy is set (§7). Alongside, small student and school items: the school time zone (P1-16), school-admin self-service import (D02.7) and teacher-facing exam import. Infrastructure: edge rate limits (P1-14), metrics and alerting, and the PB11 drill on the production infrastructure.
+Critical path step 10, Milestone 2 hardening, continuing in dependency order: the Proctor Feed (P1-11, events and interventions the proctor needs during a live exam); ENDED and PAUSED operations once the Owner sets the policy (P1-17, §7); result finalization (D04.8-17/57), CSV/printable export for teachers (D04.8-52) and publication to students once the visibility policy is set (§7). Alongside, school items: school-admin self-service import (D02.7) and teacher-facing exam import. Infrastructure: edge rate limits (P1-14), metrics and alerting, and the PB11 drill on the production infrastructure.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

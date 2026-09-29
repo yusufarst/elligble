@@ -12,16 +12,46 @@ export function isValidTenantLabel(value: unknown): value is string {
     return typeof value === 'string' && value.trim().length > 0 && value.trim().length <= MAX_LABEL_LENGTH;
 }
 
-export async function createTenant(client: ClientBase, displayLabel: string): Promise<string> {
+/**
+ * The school's time zone (D04.2-36): an IANA name the runtime knows, such as Asia/Jakarta
+ * (WIB), Asia/Makassar (WITA) or Asia/Jayapura (WIT).
+ */
+export function isValidTimeZone(value: unknown): value is string {
+    if (typeof value !== 'string' || value.length === 0 || value.length > 64) return false;
+    if (!/^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+)*$/.test(value)) return false;
+    try {
+        new Intl.DateTimeFormat('en', { timeZone: value });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export async function createTenant(client: ClientBase, displayLabel: string, timeZone: string): Promise<string> {
     if (!isValidTenantLabel(displayLabel)) throw new Error('Invalid school display label.');
+    if (!isValidTimeZone(timeZone)) throw new Error('Invalid school time zone.');
     const id = randomUUID();
-    await client.query('INSERT INTO tenant_tenants (id, display_label) VALUES ($1, $2)', [id, displayLabel.trim()]);
+    await client.query('INSERT INTO tenant_tenants (id, display_label, time_zone) VALUES ($1, $2, $3)', [id, displayLabel.trim(), timeZone]);
     return id;
 }
 
-export async function findTenant(client: ClientBase, tenantId: string): Promise<{ id: string; displayLabel: string | null } | null> {
-    const res = await client.query('SELECT id, display_label FROM tenant_tenants WHERE id = $1', [tenantId]);
-    return res.rowCount === 1 ? { id: res.rows[0].id, displayLabel: res.rows[0].display_label } : null;
+export interface TenantSummary {
+    id: string;
+    displayLabel: string | null;
+    /** Null for schools created before their zone was recorded (migration 0043). */
+    timeZone: string | null;
+}
+
+export async function findTenant(client: ClientBase, tenantId: string): Promise<TenantSummary | null> {
+    const res = await client.query('SELECT id, display_label, time_zone FROM tenant_tenants WHERE id = $1', [tenantId]);
+    return res.rowCount === 1 ? { id: res.rows[0].id, displayLabel: res.rows[0].display_label, timeZone: res.rows[0].time_zone } : null;
+}
+
+/** Sets the school's time zone; false when the school does not exist. */
+export async function setTenantTimeZone(client: ClientBase, tenantId: string, timeZone: string): Promise<boolean> {
+    if (!isValidTimeZone(timeZone)) throw new Error('Invalid school time zone.');
+    const res = await client.query('UPDATE tenant_tenants SET time_zone = $2 WHERE id = $1', [tenantId, timeZone]);
+    return res.rowCount === 1;
 }
 
 async function lock(client: ClientBase, key: string): Promise<void> {

@@ -64,8 +64,9 @@ Platform staff provision pilot schools with the operator CLI (D02.2-27/28). Ever
 
 ```text
 node runtime/secure-assessment/src/ops/provision-cli.ts <command> ... --operator "<name>" --case "<ticket>"
-  school create      --label "SMA Negeri 1 Contoh"
-  people import      --tenant <id> --file people.csv --sheet kartu.html [--dry-run] [--link-existing] [--valid-days 7] [--app-url https://...] [--time-zone Asia/Jakarta]
+  school create      --label "SMA Negeri 1 Contoh" --time-zone Asia/Jakarta
+  school set-time-zone --tenant <id> --time-zone Asia/Makassar
+  people import      --tenant <id> --file people.csv --sheet kartu.html [--dry-run] [--link-existing] [--valid-days 7] [--app-url https://...] [--time-zone <IANA>]
   academic import    --tenant <id> --file academic.json [--dry-run]
   exam import        --tenant <id> --file exam.json --questions questions.csv [--dry-run]
   activation reissue --tenant <id> --elligble-id <id> --sheet kartu-baru.html [--full-name "..."]
@@ -73,6 +74,7 @@ node runtime/secure-assessment/src/ops/provision-cli.ts <command> ... --operator
 
 In the container: `docker run --rm -v "$PWD:/work" -w /work -e DATABASE_URL -e PGPASSWORD elligble:<version> node /app/runtime/secure-assessment/src/ops/provision-cli.ts ...`.
 
+- **School time zone** (D04.2-36): every school has an explicit IANA zone, `Asia/Jakarta` (WIB), `Asia/Makassar` (WITA) or `Asia/Jayapura` (WIT). Exam times are shown in it on every device, whatever zone the device is set to; activation cards show their expiry in it unless `--time-zone` is given. `school set-time-zone` corrects it (audited); stored exam times are instants and do not move. Schools created before migration 0043 have no zone until it is set, and their times show in each device's zone.
 - **People** (`elligble_id,full_name,kind`, kind `student`, `teacher` or `staff`): accounts start activation-required; each new person gets a single-use activation code on a printable card (`--sheet`, written owner-only, never overwritten). Names only label the cards and are not stored. Print the cards, hand them out, delete the file. There is never a password list (D02.7-38..41). An ELLIGBLE ID that already exists outside the school is linked only with `--link-existing` after confirming it is the same person (D02.7-16..21). Re-running an unchanged file changes nothing.
 - **Activation**: the person opens the app, chooses "Belum pernah masuk? Aktifkan akun dengan kode aktivasi" and sets their own password. Codes expire (default 7 days, 1 to 30), die after use and after 10 wrong tries. A lost card or forgotten password: `activation reissue` (ends the old password, code and sessions).
 - **Academic setup** (`elligble-academic-v1`): year, periods, grades, groups, subjects, offerings, teaching assignments (teachers must be imported with kind `teacher`), enrollments. Idempotent by label; an existing entity with different facts is refused.

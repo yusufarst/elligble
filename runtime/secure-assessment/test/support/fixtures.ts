@@ -6,10 +6,10 @@ import { hashPassword } from '../../../identity-access/src/crypto.ts';
 // with SQL, mirroring the canonical schema; production code paths are exercised by the
 // tests, never by these builders.
 
-export async function createTenant(pool: pg.Pool, displayLabel: string | null = null): Promise<string> {
+export async function createTenant(pool: pg.Pool, displayLabel: string | null = null, timeZone: string | null = 'Asia/Jakarta'): Promise<string> {
     const res = await pool.query(
-        'INSERT INTO tenant_tenants (id, display_label) VALUES (gen_random_uuid(), $1) RETURNING id',
-        [displayLabel]
+        'INSERT INTO tenant_tenants (id, display_label, time_zone) VALUES (gen_random_uuid(), $1, $2) RETURNING id',
+        [displayLabel, timeZone]
     );
     return res.rows[0].id;
 }

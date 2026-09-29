@@ -12,6 +12,7 @@ import { ReauthDialog } from './session/ReauthDialog.tsx';
 import { AppShell, availableWorkspaces, type Workspace } from './session/AppShell.tsx';
 import { Button } from '@/components/ui/button';
 import type { MeContext } from './api/auth-client.ts';
+import { setDisplayTimeZone } from './lib/format.ts';
 
 interface RouteState {
   attemptId: string | null;
@@ -34,6 +35,8 @@ function pushRoute(search: string): void {
 }
 
 const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membershipCount: number }> = ({ me, username, membershipCount }) => {
+  // Every time below is shown in the school's zone (D04.2-36); set before any child formats.
+  setDisplayTimeZone(me.tenantTimeZone);
   const session = useSession();
   const [route, setRoute] = useState<RouteState>(readRoute);
 

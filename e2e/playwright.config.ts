@@ -21,7 +21,8 @@ export default defineConfig({
     use: {
         baseURL: `http://127.0.0.1:${E2E_PORT}`,
         locale: 'id-ID',
-        timezoneId: 'Asia/Jakarta',
+        // A device clock zone unlike the school's: every time must still show in WIB (D04.2-36).
+        timezoneId: 'UTC',
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },

@@ -22,6 +22,8 @@ export interface WorkspaceCapabilities {
 export interface MeContext {
   tenantId: string;
   tenantDisplayLabel: string | null;
+  /** The school's IANA time zone (D04.2-36); null when the school has none recorded yet. */
+  tenantTimeZone?: string | null;
   capabilities: WorkspaceCapabilities;
 }
 

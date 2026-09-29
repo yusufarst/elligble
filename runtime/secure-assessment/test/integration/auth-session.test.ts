@@ -100,7 +100,7 @@ test('authentication, browser session and attempt authorization (real PostgreSQL
             c.tenantId = tenantA;
             const res = await c.request('/api/v1/me/context');
             assert.equal(res.status, 200, person.username);
-            assert.deepEqual(res.body, { tenantId: tenantA, tenantDisplayLabel: 'SMA Negeri 1 Contoh', capabilities });
+            assert.deepEqual(res.body, { tenantId: tenantA, tenantDisplayLabel: 'SMA Negeri 1 Contoh', tenantTimeZone: 'Asia/Jakarta', capabilities });
         }
         const c = new BrowserLikeClient(app.baseUrl);
         await c.login(student1.username, student1.password);
