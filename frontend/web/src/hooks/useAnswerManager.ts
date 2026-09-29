@@ -29,6 +29,8 @@ export interface AnswerManager {
   selectedOptions: Record<string, string>;
   saveStates: Record<string, SaveState>;
   selectOption: (snapshotId: string, optionId: string) => void;
+  /** Local intents are loaded and reconciled with the server answers. */
+  ready: boolean;
   /** True while any choice is not yet acknowledged by the server (or still loading). */
   hasUnresolvedSaves: boolean;
   /** Sends are failing (offline or server unreachable); intents are kept and retried. */
@@ -173,6 +175,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     selectedOptions,
     saveStates,
     selectOption,
+    ready: ready && engine !== null,
     hasUnresolvedSaves: !ready || !engine || engine.hasUnresolved,
     degraded: engine?.degraded ?? false,
     storageDurable: engine?.storageDurable ?? false,

@@ -490,7 +490,9 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     );
   }
 
-  if (phase === 'loading') {
+  // Questions appear only once this device's unsynced choices are restored, so nothing can
+  // be answered or submitted before the local buffer and the server state are reconciled.
+  if (phase === 'loading' || (phase === 'active' && !answers.ready)) {
     return (
       <main className="fullscreen-state-container">
         <div className="state-card">
