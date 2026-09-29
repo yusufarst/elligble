@@ -56,6 +56,26 @@ Never logged: query strings (attempt ids), request or response bodies, cookies, 
 2. Database unavailable: students' answers stay in their browsers and are re-sent automatically once the service is back; the server timer keeps running (server-authoritative).
 3. Security incident: preserve logs, rotate the database password, and revoke sessions if needed (`UPDATE identity_sessions SET is_revoked = TRUE WHERE ...`; revoked sessions fail closed on the next request). There is no administration screen for this yet. The incident response owner, notification duties and contact list are part of PB12 (Owner decision).
 
-## 7. Local development
+## 7. Provisioning a pilot school
+
+Platform staff provision pilot schools with the operator CLI (D02.2-27/28). Every change is validated first (`--dry-run` shows the per-row outcome without writing), applied in one transaction, and recorded in the append-only `platform_provisioning_events` with `--operator` and `--case`; summaries hold counts only. Example templates (fictitious data) are in `docs/production/provisioning-templates/`.
+
+```text
+node runtime/secure-assessment/src/ops/provision-cli.ts <command> ... --operator "<name>" --case "<ticket>"
+  school create      --label "SMA Negeri 1 Contoh"
+  people import      --tenant <id> --file people.csv --sheet kartu.html [--dry-run] [--link-existing] [--valid-days 7] [--app-url https://...] [--time-zone Asia/Jakarta]
+  academic import    --tenant <id> --file academic.json [--dry-run]
+  exam import        --tenant <id> --file exam.json --questions questions.csv [--dry-run]
+  activation reissue --tenant <id> --elligble-id <id> --sheet kartu-baru.html [--full-name "..."]
+```
+
+In the container: `docker run --rm -v "$PWD:/work" -w /work -e DATABASE_URL -e PGPASSWORD elligble:<version> node /app/runtime/secure-assessment/src/ops/provision-cli.ts ...`.
+
+- **People** (`elligble_id,full_name,kind`, kind `student`, `teacher` or `staff`): accounts start activation-required; each new person gets a single-use activation code on a printable card (`--sheet`, written owner-only, never overwritten). Names only label the cards and are not stored. Print the cards, hand them out, delete the file. There is never a password list (D02.7-38..41). An ELLIGBLE ID that already exists outside the school is linked only with `--link-existing` after confirming it is the same person (D02.7-16..21). Re-running an unchanged file changes nothing.
+- **Activation**: the person opens the app, chooses "Belum pernah masuk? Aktifkan akun dengan kode aktivasi" and sets their own password. Codes expire (default 7 days, 1 to 30), die after use and after 10 wrong tries. A lost card or forgotten password: `activation reissue` (ends the old password, code and sessions).
+- **Academic setup** (`elligble-academic-v1`): year, periods, grades, groups, subjects, offerings, teaching assignments (teachers must be imported with kind `teacher`), enrollments. Idempotent by label; an existing entity with different facts is refused.
+- **Exam** (`elligble-exam-v1` plus questions `no,prompt,option_a..option_e,correct,score`): a teacher-managed exam with five-option single-choice questions in the listed order, participants from the group's enrollments on the exam day (or a listed subset) and proctors. The exam is SCHEDULED; the teacher marks it ready and opens it in "Pelaksanaan Ujian". The same files cannot be imported twice.
+
+## 8. Local development
 
 `runtime/secure-assessment`: `npm run migrate`, `node test/support/seed-demo.ts` (demo accounts documented there), `ELLIGBLE_ENV=development node src/main.ts`. `frontend/web`: `npm run dev` (Vite proxies `/api` to port 3000). Integration tests: `ELLIGBLE_TEST_DATABASE_URL=postgresql://user@host/postgres npm run test:integration`.

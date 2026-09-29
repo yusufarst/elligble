@@ -12,7 +12,8 @@
     "test": "node --test \"test/*.test.ts\" \"test/http/*.test.ts\"",
     "test:integration": "ELLIGBLE_REQUIRE_INTEGRATION=1 node --test \"test/integration/*.test.ts\"",
     "migrate": "node src/ops/migrate-cli.ts",
-    "migrate:check": "node src/ops/migrate-cli.ts --check"
+    "migrate:check": "node src/ops/migrate-cli.ts --check",
+    "provision": "node src/ops/provision-cli.ts"
   },
   "dependencies": {
     "pg": "8.23.0"

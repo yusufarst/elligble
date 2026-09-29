@@ -15,8 +15,9 @@ FROM ${NODE_IMAGE} AS runtime-deps
 WORKDIR /app/runtime
 COPY runtime/identity-access/package.json runtime/identity-access/package-lock.json ./identity-access/
 COPY runtime/tenant-access/package.json runtime/tenant-access/package-lock.json ./tenant-access/
+COPY runtime/academic-core/package.json runtime/academic-core/package-lock.json ./academic-core/
 COPY runtime/secure-assessment/package.json runtime/secure-assessment/package-lock.json ./secure-assessment/
-RUN for pkg in identity-access tenant-access secure-assessment; do \
+RUN for pkg in identity-access tenant-access academic-core secure-assessment; do \
         (cd "$pkg" && npm ci --omit=dev --no-audit --no-fund) || exit 1; \
     done
 
@@ -30,6 +31,7 @@ WORKDIR /app
 COPY --from=runtime-deps /app/runtime /app/runtime
 COPY runtime/identity-access/src /app/runtime/identity-access/src
 COPY runtime/tenant-access/src /app/runtime/tenant-access/src
+COPY runtime/academic-core/src /app/runtime/academic-core/src
 COPY runtime/secure-assessment/src /app/runtime/secure-assessment/src
 COPY database/migrations /app/database/migrations
 COPY --from=web /build/frontend/web/dist /app/web

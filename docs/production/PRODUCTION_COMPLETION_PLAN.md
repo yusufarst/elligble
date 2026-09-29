@@ -28,6 +28,7 @@ Status after the authentication and session work on this branch (baseline findin
 | Assigned exams | `AssignedExamDiscovery` | `GET /assessment/assigned-exams` | session → membership → participant.person_id | **WORKS** |
 | Start attempt | "Mulai Ujian" with entry guidance | `POST /assessment/attempts/start` | session → membership → participant; eligibility | **WORKS** (integration + browser) |
 | Launch / session activate, timer, questions, answers, resume, submit | `AttemptLaunch`, `StudentExamWorkstation` | attempt routes | session → membership → participant → attempt | **WORKS** (integration + real-browser journeys incl. refresh) |
+| School onboarding | printable activation cards; "Aktivasi Akun" | operator CLI; `POST /api/v1/auth/activate` | platform operator (audited, case-linked); activation code proves the person | **WORKS** (real PostgreSQL: CLI process, activation, teacher opens the imported exam, student takes it) |
 | Exam session per device / tab | `AttemptLaunch` takeover screen, "Sesi Dipindahkan" notice | `POST /assessment/session/activate`, `GET /assessment/resume?examSessionId=` | active session id never disclosed; takeover needs the fingerprint and explicit confirmation | **WORKS** (real PostgreSQL + real browser: second tab, duplicated tab) |
 | Answers (local-first) | `useAnswerManager` on `AnswerSyncEngine` + IndexedDB | `POST /assessment/answer/save` | write needs the active exam session | **WORKS**: offline answering, reload/browser-restart recovery, retry with backoff, honest save states (real browser) |
 | Proctor monitoring | `ProctorMonitoringView` | `GET /assessment/proctor-monitoring` | session → proctor assignments | **WORKS** (read) |
@@ -39,12 +40,12 @@ Status after the authentication and session work on this branch (baseline findin
 | Role | Works today | Incomplete | Blocks production |
 |---|---|---|---|
 | Student | login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, timer, submit and automatic submission | "Ragu-ragu" flag (P1-24), time reminders (P1-25), results | P0-9 (hosting) |
-| Teacher (teacher-managed mode, D04.4-26A) | readiness, "Tandai Siap", "Buka Ujian", aggregate progress | exam/question authoring or import, ENDED/PAUSED | P0-7 |
+| Teacher (teacher-managed mode, D04.4-26A) | readiness, "Tandai Siap", "Buka Ujian", aggregate progress | exam/question authoring or import, ENDED/PAUSED | P0-7 | No way to put questions into an exam except raw SQL | no snapshot creation code | **RESOLVED** as a pilot bridge: `exam import` in the operator CLI creates a scheduled teacher-managed exam from `elligble-exam-v1` JSON and an `elligble-questions-v1` CSV (five-option single choice, random option ids, authored order, participants from enrollments, proctors); the teacher still marks it ready and opens it. Teacher-facing authoring or import in the UI remains to be built |
 | Proctor | monitoring read model and screen (session-derived context) | Proctor Feed events, interventions | Feed is P1-11 |
+| Platform operations | container release, preflight, logs, CI, runbook, audited provisioning CLI | school-admin self-service, metrics and alerting | PB11 drill on production infrastructure |
 | School / tenant administration | Academic Core schema + creation functions (no HTTP/UI) | account provisioning, import, academic management UI | P0-11 (minimum: operator CLI) |
 | Parent / Guardian | nothing | whole domain (schema, runtime, UI) | Milestone 7 |
 | Partner | nothing | whole domain; PB09 policy | Milestone 6-7 |
-| Platform operations | nothing | provisioning, migrations, deploy, monitoring, backup | P0-10, P0-11, PB11, PB12 |
 
 Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outcome and Alumni are not started (Milestones 4-6). They are baseline scope but come after Secure Assessment on the critical path.
 
@@ -62,7 +63,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P0-8 | Answers are memory-only in the browser (data-loss path) | `useAnswerManager.ts` | **RESOLVED**: every choice is written to IndexedDB before it is sent (`src/exam/answer-store.ts`), `AnswerSyncEngine` keeps one latest intent per question, retries with backoff and jitter, rebases on the latest server version, recovers after reload or browser restart (previous-session intents are replayed only if nobody answered since), reports "Tersimpan" only after the server acknowledgement, and falls back to memory with an explicit "do not close this page" warning when storage is unavailable |
 | P0-9 | No production hosting of the web client / deep-link fallback | no static serving in `server.ts` | **RESOLVED**: the runtime serves the built client from memory (`SA_STATIC_DIR`; no filesystem access or traversal at request time), deep-link fallback, immutable hashed assets, gzip, ETag; `Dockerfile` builds one image for API and client |
 | P0-10 | No migration runner / verification for real deployments | migrations applied only by one-off verifiers | **RESOLVED**: `npm run migrate` / `migrate:check` (advisory lock, history check, refuses unknown migrations) |
-| P0-11 | No provisioning of tenants, persons, accounts, credentials, memberships | no runtime or CLI path | IN PROGRESS: account activation DONE (migration `0039`; single-use, expiring activation codes stored only as verifiers, own password with the DEC-022/DEC-041 policy and a local blocklist, reissue as administrative reset, `POST /api/v1/auth/activate`, "Aktivasi Akun" screen); operator provisioning CLI next |
+| P0-11 | No provisioning of tenants, persons, accounts, credentials, memberships | no runtime or CLI path | **RESOLVED** for pilot onboarding: account activation (migration `0039`, single-use expiring codes, own password with the DEC-022/DEC-041 policy, "Aktivasi Akun" screen) and the audited operator CLI (`provision-cli.ts`: school, people with printable activation cards, academic setup, exam, activation reissue; append-only `platform_provisioning_events`, migration `0040`; writes through the owning domain modules, including the new `runtime/academic-core`). School-admin self-service import (D02.7) remains to be built |
 
 ## 5. P1 gaps
 
@@ -104,7 +105,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 5. **Teacher exam operations** (P0-4, P0-6): DONE for teacher-managed exams. SCHEDULED→READY / READY→ACTIVE with readiness re-checks, window guard, row lock (concurrent activation transitions once), attributed events; teacher UI with lifecycle badges, confirmation dialog and aggregate progress. ENDED/PAUSED await policy (§7).
 6. **Local-first answers and exam-session binding** (P0-8, P1-1, P1-2, P1-19..P1-21): DONE. IndexedDB buffer and sync engine (coalescing, backoff with jitter, version rebase, reload and browser-restart recovery), honest save states and offline banner, per-tab exam session with fingerprint-confirmed takeover and duplicated-tab detection, monotonic countdown, retried automatic submission.
 7. **Production operations** (P0-9, P0-10, P1-8): DONE. Migration runner; startup preflight (bounded wait for the database, schema `check` or `apply`, refuses a database ahead of the release); single process serving API and built client with deep-link fallback; environment validation; structured request logging; container image (non-root) with health check; CI (typecheck, unit, PostgreSQL integration, web build, image build and smoke test); operations runbook with a verified local restore drill.
-8. **Provisioning and content** (P0-11, P0-7): operator CLI for tenant/person/account/membership/academic setup and exam content import (baseline MCQ contract).
+8. **Provisioning and content** (P0-11, P0-7, P1-15, P1-23): DONE. Authored question order and answer payload validation; account activation; audited operator CLI for schools, people (activation cards), academic setup (new `runtime/academic-core` module), exams and activation reissue.
 9. **Browser E2E**: real browser → server → PostgreSQL for student, teacher and proctor journeys, including refresh, offline, duplicate submit and wrong-tenant cases.
 10. Then Milestone 2 hardening (Proctor Feed, pause/lock, time adjustments, scoring/results), followed by Academic Core administration UI and the remaining baseline domains.
 
@@ -117,6 +118,9 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | PB01, PB02, PB03, PB10 (legal allocation, retention, DPIA, classification/consent) | Production launch with real student data | Owner/legal artifacts | OPEN |
 | Centralized (institution-managed) exam governance roles (D04.4-26D/E) | Activation of non-teacher-managed exams | Teacher-managed mode first | OPEN (not blocking critical path) |
 | End-of-exam handling (D04.2-81) and pause timer behaviour (D04.2-77) | ENDED / PAUSED operations | Each attempt keeps its own server timer and auto-submits at expiry; ENDED only blocks new starts; pause freezes remaining time | OPEN (policy says "exact policy later") |
+| ELLIGBLE ID format and generation (D02.10-C) | Account provisioning at scale | Until decided, operators supply IDs in a conservative syntax (3 to 64 lower-case letters, digits, dot, dash, underscore; not e-mail based); the platform only checks uniqueness | OPEN (not blocking the pilot) |
+| Activation code validity (D02.3-09 "short-lived") | Activation cards | 7 days by default, operator may choose 1 to 30 days per issue | IMPLEMENTED DEFAULT, adjustable |
+| Exam content import by platform operators on behalf of teachers | Pilot exams before a teacher authoring or import screen exists | Audited, case-linked operator import; teachers keep readiness and activation | IMPLEMENTED AS PILOT BRIDGE |
 
 ## 8. Production Blockers (PB01-PB12)
 
@@ -141,13 +145,14 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 |---|---|
 | Environment config / validation | every variable validated at startup (`.env.example`): PostgreSQL URL scheme (never echoed), environment, port, pool, cookie security (cannot be off in production), allowed origins, migration mode (cannot be `off` in production), bounded database wait |
 | Secrets | none committed; `.env*` git-ignored and excluded from the image build context |
-| Migrations | 38 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
+| Migrations | 40 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
 | Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
 | Logging / monitoring / error reporting | JSON-lines access and error log with request ids; no metrics or alerting yet |
 | Backup / restore / incident response / rollback | runbook procedures; local restore drill verified; production drill pending (PB11) |
 | Rate limiting | per-account login policy in runtime (DEC-041); infrastructure limits at the proxy (P1-14) |
+| Provisioning | audited operator CLI (runbook §7) for schools, people with activation cards, academic setup, exams and activation reissue |
 | CI | `.github/workflows/ci.yml`: runtime typecheck, unit and PostgreSQL 16 integration; web typecheck, tests and build; image build and smoke test |
 
 ## 10. Design and UI status
@@ -227,6 +232,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-Critical path step 8 (provisioning CLI for schools, accounts, memberships and academic setup; exam content import with authored question order and answer payload validation, P0-11, P0-7, P1-15, P1-23), then step 9 (browser E2E in the repository).
+Critical path step 9: browser E2E in the repository (Playwright, run in CI) for the pilot journey from the provisioning CLI through activation, teacher activation, student exam with offline, reload and takeover cases, and the proctor view. Then Milestone 2 hardening (Proctor Feed, ENDED and PAUSED policy, results).
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

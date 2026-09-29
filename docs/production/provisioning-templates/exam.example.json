@@ -1,0 +1,13 @@
+{
+  "template": "elligble-exam-v1",
+  "teacher": "guru.contoh",
+  "subject": "Matematika Wajib",
+  "period": "Semester Ganjil",
+  "group": "X-1",
+  "assessmentType": "Ulangan Harian",
+  "window": { "startsAt": "2026-10-05T08:00:00+07:00", "endsAt": "2026-10-05T10:00:00+07:00" },
+  "durationMinutes": 90,
+  "latestStartPolicy": "FULL_DURATION_BEYOND_WINDOW",
+  "participants": "group",
+  "proctors": ["pengawas.contoh"]
+}

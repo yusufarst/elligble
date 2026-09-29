@@ -1,0 +1,15 @@
+{
+  "template": "elligble-academic-v1",
+  "year": { "label": "2026/2027", "startDate": "2026-07-13", "endDate": "2027-06-30" },
+  "periods": [
+    { "label": "Semester Ganjil", "type": "SEMESTER", "startDate": "2026-07-13", "endDate": "2026-12-19" }
+  ],
+  "grades": ["Kelas 10"],
+  "groups": [{ "label": "X-1", "grade": "Kelas 10" }],
+  "subjects": ["Matematika Wajib"],
+  "offerings": [{ "subject": "Matematika Wajib", "period": "Semester Ganjil", "grade": "Kelas 10" }],
+  "teaching": [{ "teacher": "guru.contoh", "subject": "Matematika Wajib", "period": "Semester Ganjil", "group": "X-1" }],
+  "enrollments": [
+    { "group": "X-1", "period": "Semester Ganjil", "startDate": "2026-07-13", "students": ["siswa.contoh.01", "siswa.contoh.02"] }
+  ]
+}

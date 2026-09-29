@@ -37,17 +37,17 @@ jobs:
           node-version: '24'
       - name: Install
         run: |
-          for pkg in identity-access tenant-access secure-assessment; do
+          for pkg in identity-access tenant-access academic-core secure-assessment; do
             (cd "runtime/$pkg" && npm ci --no-audit --no-fund) || exit 1
           done
       - name: Typecheck
         run: |
-          for pkg in identity-access tenant-access secure-assessment; do
+          for pkg in identity-access tenant-access academic-core secure-assessment; do
             (cd "runtime/$pkg" && npm run typecheck) || exit 1
           done
       - name: Unit tests
         run: |
-          for pkg in identity-access tenant-access secure-assessment; do
+          for pkg in identity-access tenant-access academic-core secure-assessment; do
             (cd "runtime/$pkg" && npm test) || exit 1
           done
       - name: Integration tests (real PostgreSQL 16, production wiring)

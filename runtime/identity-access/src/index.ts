@@ -1,10 +1,10 @@
 import type { Client } from 'pg';
 import { randomBytes } from 'node:crypto';
 import {
-  verifyPassword, hashPassword, generateSessionSecret, verifySessionSecret,
-  generateActivationCode, normalizeActivationCode, formatActivationCode,
+  verifyPassword, hashPassword, generateSessionSecret, verifySessionSecret, normalizeActivationCode,
 } from './crypto.ts';
 import { checkNewPassword, type PasswordRejection } from './password-policy.ts';
+import { createUnusableVerifier, issueActivationInTransaction } from './provisioning.ts';
 
 export { checkNewPassword, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, type PasswordRejection } from './password-policy.ts';
 
@@ -235,10 +235,7 @@ export class IdentityRuntime {
       throw new RangeError('Activation validity must be between 1 hour and 30 days.');
     }
     const now = this.#clock.now();
-    const expiresAt = new Date(now.getTime() + validForMs);
-    const code = generateActivationCode();
-    const codeVerifier = hashPassword(code);
-    const unusableVerifier = options.rotatePassword === false ? null : hashPassword(randomBytes(32).toString('hex'));
+    const unusableVerifier = options.rotatePassword === false ? null : createUnusableVerifier();
 
     await this.#pg.query('BEGIN');
     try {
@@ -250,31 +247,9 @@ export class IdentityRuntime {
         await this.#pg.query('ROLLBACK');
         return null;
       }
-      await this.#pg.query(
-        `UPDATE identity_account_activations SET revoked_at = $2
-         WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL`,
-        [userAccountId, now]
-      );
-      if (unusableVerifier) {
-        await this.#pg.query(
-          `UPDATE identity_account_credentials
-           SET password_verifier = $2, failed_attempts_timeline = '[]'::jsonb, consecutive_failures_count = 0,
-               locked_until = NULL, updated_at = $3
-           WHERE user_account_id = $1`,
-          [userAccountId, unusableVerifier, now]
-        );
-        await this.#pg.query(
-          'UPDATE identity_sessions SET is_revoked = TRUE WHERE user_account_id = $1 AND is_revoked = FALSE',
-          [userAccountId]
-        );
-      }
-      await this.#pg.query(
-        `INSERT INTO identity_account_activations (user_account_id, code_verifier, issued_at, expires_at)
-         VALUES ($1, $2, $3, $4)`,
-        [userAccountId, codeVerifier, now, expiresAt]
-      );
+      const issued = await issueActivationInTransaction(this.#pg, userAccountId, { now, validForMs, unusableVerifier });
       await this.#pg.query('COMMIT');
-      return { code: formatActivationCode(code), expiresAt };
+      return issued;
     } catch (err) {
       await this.#pg.query('ROLLBACK');
       throw err;
