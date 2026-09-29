@@ -36,6 +36,9 @@ export interface StudentExamWorkstationProps {
   onExit?: () => void;
 }
 
+/** Non-blocking reminders (D04.5-32); the server timer stays the only authority. */
+const TIME_REMINDER_THRESHOLDS_SECONDS = [30 * 60, 15 * 60, 5 * 60];
+const TIME_REMINDER_VISIBLE_MS = 10000;
 const FINALIZE_RETRY_INITIAL_MS = 2000;
 const FINALIZE_RETRY_MAX_MS = 30000;
 const EXPIRY_FLUSH_WAIT_MS = 3000;
@@ -285,7 +288,27 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     onExpire: handleExpire,
   });
   timerControlRef.current = timer;
-  const { formattedTime, isWarning, isUrgent } = timer;
+  const { formattedTime, isWarning, isUrgent, remainingSeconds } = timer;
+
+  const [timeReminder, setTimeReminder] = useState<string | null>(null);
+  const lastRemainingRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (phase !== 'active') {
+      lastRemainingRef.current = null;
+      return;
+    }
+    const previous = lastRemainingRef.current;
+    lastRemainingRef.current = remainingSeconds;
+    if (previous === null || remainingSeconds <= 0) return;
+    if (TIME_REMINDER_THRESHOLDS_SECONDS.some(t => previous > t && remainingSeconds <= t)) {
+      setTimeReminder(`Sisa waktu ${Math.ceil(remainingSeconds / 60)} menit.`);
+    }
+  }, [remainingSeconds, phase]);
+  useEffect(() => {
+    if (!timeReminder) return;
+    const hide = setTimeout(() => setTimeReminder(null), TIME_REMINDER_VISIBLE_MS);
+    return () => clearTimeout(hide);
+  }, [timeReminder]);
 
   // Re-align with the server clock after a reconnect (D04.5-28).
   useEffect(() => {
@@ -611,6 +634,11 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             </div>
           </div>
         </div>
+        {timeReminder && (
+          <div className="time-reminder-banner" role="status" aria-live="polite">
+            {timeReminder}
+          </div>
+        )}
         {(degraded || !isOnline) && (
           <div className="connection-banner" role="status" aria-live="polite">
             {storageDurable

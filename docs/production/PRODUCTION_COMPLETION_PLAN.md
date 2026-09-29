@@ -92,7 +92,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-22 | Offline answers captured before expiry but delivered after it are rejected by the server | D04.5-48 treats them as an exception case with a deferred reconciliation policy. The student is told honestly how many choices the server did not receive; no silent loss claim. OPEN (policy deferred, not blocking) | OPEN |
 | P1-23 | Save does not validate the answer payload against the frozen question (any JSON up to the body limit is stored; option ids are not checked) | `answer.ts`; to fix with the question content contract in step 8 | OPEN |
 | P1-24 | "Ragu-ragu / Tandai" flag for review (D04.5-34/35) not implemented | student navigation aid | OPEN |
-| P1-25 | Time reminders at configured thresholds (D04.5-32) not implemented; only warning styling below 5 and 1 minutes | `useAuthoritativeTimer` | OPEN |
+| P1-25 | Time reminders at configured thresholds (D04.5-32) were missing; only warning styling below 5 and 1 minutes | `StudentExamWorkstation`: **RESOLVED** with the decision's default thresholds (30, 15, 5 minutes): a non-blocking status line with the actual remaining minutes, hidden after 10 seconds; school-defined thresholds await tenant settings | RESOLVED |
 
 ## 6. Critical path (ordered by dependency and value)
 

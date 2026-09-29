@@ -229,4 +229,17 @@ describe('StudentExamWorkstation resilience', () => {
     expect(submitCalls).toBe(2);
     expect(readExamSessionId(ATTEMPT)).toBeNull();
   });
+  it('reminds the student without blocking when the remaining time crosses 5 minutes', async () => {
+    globalThis.fetch = server({
+      '/api/v1/assessment/resume': () => json(resume({
+        timer: { status: 'active', startedAt: '2026-09-29T08:00:00.000Z', configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 301 },
+      })),
+    });
+    await openExam();
+    expect(screen.queryByText(/Sisa waktu \d+ menit\./)).toBeNull();
+    expect(await screen.findByText('Sisa waktu 5 menit.', {}, { timeout: 4000 })).toBeTruthy();
+    // Answering continues while the reminder is shown.
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    expect(await screen.findByText('Tersimpan')).toBeTruthy();
+  });
 });
