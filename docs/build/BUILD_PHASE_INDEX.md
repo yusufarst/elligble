@@ -1,6 +1,7 @@
 **Status:** ACTIVE / CONTROL BASELINE
-**Version:** 0.1.443
-**Supersedes:** 0.1.442
+**Version:** 0.1.444
+**Supersedes:** 0.1.443
+0.1.444 corrects BU-090 Stage-5 lower/global navigation after Stage-4 lifecycle close; engineering state unchanged.
 0.1.443 records BU-090 Stage-3 Controller physical re-audit PASS / Stage-4 lifecycle close COMPLETE / DONE YES / FULL BU-090 REPOSITORY FINALIZED YES / Stage-5 final physical verification PENDING.
 0.1.442 records BU-090 Stage-2 TARGETED REMEDIATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / IMPLEMENTATION REPOSITORY FINALIZED YES / STAGE-3 CONTROLLER PHYSICAL RE-AUDIT PENDING.
 0.1.441 records BU-090 Stage-2 IMPLEMENTATION COMPLETE / ENGINEERING VERIFICATION PASS / REAL POSTGRESQL VERIFICATION PASS / STAGE-3 CONTROLLER PHYSICAL AUDIT PENDING.
@@ -146,7 +147,7 @@
 - **ROUND-2 POST-STOP PHYSICAL AUDIT:** FAIL (NON-MATERIAL EXECUTION-CONTROL DEFECT: 12 staged files, 0 unstaged, 0 untracked, DOCUMENT_MANIFEST untouched, HEAD/origin preserved, remaining defects: trailing whitespace in verifier; character_maximum_length assertion absent; credential username index assertion absent; process truth incomplete.)
 - **BU-088 ROUND-2 FINAL CONTROLLER SEMANTIC AUDIT:** FAIL. Reasons: 1. TypeScript-only private session creation remained runtime-callable; 2. protected Academic/Secure Assessment snapshot covered only a hardcoded subset; 3. disposable database cleanup verifier remained fail-open; 4. exact schema/index checks were not fully public-schema/index-definition scoped; 5. implementation-file truth omitted package-lock; 6. public runtime credential-provisioning surface exceeded the bounded consumer runtime contract.
 - **BU-088 TARGETED STAGE-3 REMEDIATION ROUND-3:** COMPLETE / ENGINEERING RE-VERIFICATION PASS / REAL POSTGRESQL RE-VERIFICATION PASS / CONTROLLER FINAL PHYSICAL/SEMANTIC AUDIT PASS / SUPERSEDED BY STAGE-5 FINAL PHYSICAL VERIFICATION PASS
-- **AUTHENTICATION IMPLEMENTATION:** BU-088 MINIMUM FOUNDATION IMPLEMENTED / NOT YET CONSUMED BY SECURE ASSESSMENT TRUSTED-CONTEXT SEAMS
+- **AUTHENTICATION IMPLEMENTATION:** BU-088 IDENTITY + BU-089 TENANT CONTEXT CONSUMED BY BU-090 ASSIGNED-EXAM HTTP TRUSTED-CONTEXT PATH / browser credential persistence and transport integration remain outside BU-090
 - **PB04:** CLOSED
 - **PB05:** OPEN
 - **PB06:** OPEN
@@ -227,8 +228,8 @@
 - **STAGE-5 FINAL PHYSICAL VERIFICATION:** PASS
 - **FINAL PHYSICAL VERIFICATION:** PASS
 - **NEXT BUILD UNIT SELECTION / SCOPE FREEZE:** AUTHORIZED
-- **NEXT BUILD UNIT:** BU-089
-- **SUCCESSOR EXECUTION:** DEFERRED / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
+- **NEXT BUILD UNIT:** BU-090
+- **SUCCESSOR EXECUTION:** NOT AUTHORIZED UNTIL STAGE-5 PASS / PB04 CLOSURE FINAL PHYSICAL RE-AUDIT PENDING
 - **CURRENT RESPONSIBILITY:** PB04 CLOSURE FINAL PHYSICAL RE-AUDIT
 - **NEXT SAFE ACTION:** Controller final physical re-audit of the targeted PB04 closure canonical-integrity correction. If PASS, return to repository-first milestone-driven Next Build Unit selection / scope freeze.
 
@@ -854,20 +855,20 @@
 - **FULL BU-020 REPOSITORY FINALIZED:** YES
 - **FINAL PHYSICAL VERIFICATION:** PASS
 
-**LAST COMPLETED BUILD UNIT:** BU-087
+**LAST COMPLETED BUILD UNIT:** BU-089 ? TERMINAL / DO NOT REOPEN
 
-**ACTIVE BUILD UNIT:** BU-089
+**ACTIVE BUILD UNIT:** BU-090
 
 **NEXT BUILD UNIT:** BU-089
 
 **CURRENT CONTROLLER:** MAIN PROJECT CONTROL 010
 
-**CURRENT RESPONSIBILITY:** BU-089 STAGE-5 FINAL PHYSICAL VERIFICATION PENDING
+**CURRENT RESPONSIBILITY:** BU-090 STAGE-5 FINAL PHYSICAL VERIFICATION
 
-**NEXT SAFE ACTION:** Controller Stage-5 final physical verification.
-**SUCCESSOR EXECUTION:** NOT YET AUTHORIZED
+**NEXT SAFE ACTION:** Controller Stage-5 final physical verification of the BU-090 lifecycle-close commit.
+**SUCCESSOR EXECUTION:** NOT AUTHORIZED UNTIL STAGE-5 PASS
 
-**NEXT BUILD UNIT SELECTION:** DEFERRED
+**NEXT BUILD UNIT SELECTION:** COMPLETE / BU-090 FROZEN
 
 **SUCCESSOR EXECUTION:** DEFERRED
 
