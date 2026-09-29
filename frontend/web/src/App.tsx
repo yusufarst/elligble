@@ -6,6 +6,7 @@ import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
 import { ProctorMonitoringView } from './components/ProctorMonitoringView.tsx';
 import { TeacherReadinessView } from './components/TeacherReadinessView.tsx';
 import { TeacherResultsView } from './components/TeacherResultsView.tsx';
+import { ExamMonitoringView } from './components/ExamMonitoringView.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
 import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './session/SessionScreens.tsx';
 import { ReauthDialog } from './session/ReauthDialog.tsx';
@@ -19,11 +20,13 @@ interface RouteState {
   view: string | null;
   /** Teacher workspace: the exam whose results are open. */
   examResults: string | null;
+  /** Proctor or teacher workspace: the exam whose participants are being monitored. */
+  monitorExam: string | null;
 }
 
 function readRoute(): RouteState {
   const params = new URLSearchParams(window.location.search);
-  return { attemptId: params.get('attemptId'), view: params.get('view'), examResults: params.get('examResults') };
+  return { attemptId: params.get('attemptId'), view: params.get('view'), examResults: params.get('examResults'), monitorExam: params.get('monitorExam') };
 }
 
 function pushRoute(search: string): void {
@@ -65,12 +68,23 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   if (current === 'student') {
     content = <AssignedExamDiscovery onSelectAttempt={attemptId => navigate(`?attemptId=${encodeURIComponent(attemptId)}`)} />;
   } else if (current === 'proctor') {
-    content = <ProctorMonitoringView />;
+    content = route.monitorExam ? (
+      <ExamMonitoringView key={route.monitorExam} examInstanceId={route.monitorExam} backLabel="Kembali ke Monitoring Ujian" onBack={() => navigate('?view=proctor')} />
+    ) : (
+      <ProctorMonitoringView onOpenExam={id => navigate(`?view=proctor&monitorExam=${encodeURIComponent(id)}`)} />
+    );
+  } else if (current === 'teacher' && route.monitorExam) {
+    content = (
+      <ExamMonitoringView key={route.monitorExam} examInstanceId={route.monitorExam} backLabel="Kembali ke Pelaksanaan Ujian" onBack={() => navigate('?view=teacher')} />
+    );
   } else if (current === 'teacher') {
     content = route.examResults ? (
       <TeacherResultsView key={route.examResults} examInstanceId={route.examResults} onBack={() => navigate('?view=teacher')} />
     ) : (
-      <TeacherReadinessView onOpenResults={id => navigate(`?view=teacher&examResults=${encodeURIComponent(id)}`)} />
+      <TeacherReadinessView
+        onOpenResults={id => navigate(`?view=teacher&examResults=${encodeURIComponent(id)}`)}
+        onOpenMonitoring={id => navigate(`?view=teacher&monitorExam=${encodeURIComponent(id)}`)}
+      />
     );
   } else {
     content = (

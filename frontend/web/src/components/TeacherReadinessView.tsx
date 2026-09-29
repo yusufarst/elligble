@@ -55,7 +55,10 @@ const mapRoomProctorBlocker = (blocker?: string): string => {
   }
 };
 
-export const TeacherReadinessView: React.FC<{ onOpenResults?(examInstanceId: string): void }> = ({ onOpenResults }) => {
+export const TeacherReadinessView: React.FC<{
+  onOpenResults?(examInstanceId: string): void;
+  onOpenMonitoring?(examInstanceId: string): void;
+}> = ({ onOpenResults, onOpenMonitoring }) => {
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -244,9 +247,14 @@ export const TeacherReadinessView: React.FC<{ onOpenResults?(examInstanceId: str
                   <div><dt>Sudah mulai</dt><dd>{exam.progress.started}</dd></div>
                   <div><dt>Dikumpulkan</dt><dd>{exam.progress.submitted}</dd></div>
                 </dl>
-                {onOpenResults && (
+                {(onOpenResults || onOpenMonitoring) && (
                   <div className="teacher-exam-actions">
-                    <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>
+                    {onOpenMonitoring && (
+                      <Button variant="secondary" onClick={() => onOpenMonitoring(exam.examInstanceId)}>Pantau Peserta</Button>
+                    )}
+                    {onOpenResults && (
+                      <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>
+                    )}
                   </div>
                 )}
                 </>

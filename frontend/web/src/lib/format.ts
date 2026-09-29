@@ -15,6 +15,7 @@ function buildFormats(timeZone: string | undefined) {
     dayKey: new Intl.DateTimeFormat('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone }),
     dateOnly: new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone }),
     timeOnly: new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone }),
+    clock: new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short', timeZone }),
   };
 }
 
@@ -41,6 +42,11 @@ export function formatDateTime(iso: string): string {
 
 export function formatTime(iso: string): string {
   return formats.time.format(new Date(iso));
+}
+
+/** "10.14.07 WIB": for showing how fresh monitoring data is (D04.6-17/18). */
+export function formatClockTime(iso: string): string {
+  return formats.clock.format(new Date(iso));
 }
 
 export function formatDurationMinutes(seconds: number): string {

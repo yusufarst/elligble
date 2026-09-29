@@ -10,6 +10,7 @@ import type {
   ProctorMonitoringResponse,
   TeacherReadinessResponse,
   TeacherExamResultsResponse,
+  ExamMonitoringResponse,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 
@@ -139,6 +140,12 @@ export async function getTeacherReadiness(): Promise<TeacherReadinessResponse> {
   const url = '/api/v1/assessment/teacher-readiness';
   const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<TeacherReadinessResponse>(res);
+}
+
+export async function getExamMonitoring(examInstanceId: string): Promise<ExamMonitoringResponse> {
+  const url = `/api/v1/assessment/exam-monitoring?examInstanceId=${encodeURIComponent(examInstanceId)}`;
+  const res = await apiFetch(url, { method: 'GET' });
+  return handleResponse<ExamMonitoringResponse>(res);
 }
 
 export async function getTeacherExamResults(examInstanceId: string): Promise<TeacherExamResultsResponse> {

@@ -1,10 +1,11 @@
+import { Button } from '@/components/ui/button';
 import React, { useState, useEffect, useCallback } from 'react';
 import { getProctorMonitoring, ApiError } from '../api/assessment-client.ts';
 import type { ProctorMonitoringResponse, ProctorMonitoringExamProjection, ProctorMonitoringRoomProjection } from '../types/assessment.ts';
 import '../styles/proctor-monitoring.css';
 import '../styles/design-tokens.css';
 
-export const ProctorMonitoringView: React.FC = () => {
+export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: string): void }> = ({ onOpenExam }) => {
   const [data, setData] = useState<ProctorMonitoringResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,12 +110,11 @@ export const ProctorMonitoringView: React.FC = () => {
       {assignments.map((exam: ProctorMonitoringExamProjection) => (
         <div key={exam.examInstanceId} className="proctor-exam-group">
           <h2 className="proctor-exam-title">{exam.subjectLabel || 'Mata Pelajaran Tidak Diketahui'}</h2>
+          {onOpenExam && (
+            <Button variant="secondary" className="mb-3" onClick={() => onOpenExam(exam.examInstanceId)}>Lihat Peserta</Button>
+          )}
 
-          {exam.rooms.length === 0 ? (
-            <div className="proctor-state-message" style={{ padding: '24px', marginTop: '0' }}>
-              <p>Tidak ada ruangan yang ditugaskan untuk ujian ini.</p>
-            </div>
-          ) : (
+          {exam.rooms.length === 0 ? null : (
             <div className="proctor-rooms-grid">
               {exam.rooms.map((room: ProctorMonitoringRoomProjection) => (
                 <div key={room.roomId} className="proctor-room-card">

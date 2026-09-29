@@ -77,3 +77,33 @@ test('the student whose time ran out away from the device sees the attempt as su
     await expect(page.getByText('Sudah dikumpulkan')).toBeVisible();
     await expect(page.getByText(/Nilai|66,67|\b0\/3\b/)).toHaveCount(0);
 });
+
+test('the proctor sees who is expected, working, finished or moved to another device', async ({ page }) => {
+    await login(page, 'pengawas.e2e', 'ruang-ujian-tenang');
+    await expect(page.getByRole('heading', { name: 'Monitoring Ujian' })).toBeVisible();
+    await page.getByRole('button', { name: 'Lihat Peserta' }).click();
+    await expect(page.getByRole('heading', { name: 'Pemantauan Peserta' })).toBeVisible();
+    await expect(page).toHaveURL(/view=proctor&monitorExam=/);
+    await expect(page.getByText(/^Diperbarui \d{2}\.\d{2}\.\d{2} WIB/)).toBeVisible();
+
+    const ids = await page.locator('tbody th[scope=row] > span:first-child').allTextContents();
+    expect(ids).toEqual(['siswa.e2e.01', 'siswa.e2e.02', 'siswa.e2e.03', 'siswa.e2e.04', 'siswa.e2e.05', 'siswa.e2e.06']);
+    await expect(row(page, 'siswa.e2e.01')).toContainText('Dikumpulkan');
+    await expect(row(page, 'siswa.e2e.02')).toContainText('Dikumpulkan otomatis');
+    await expect(row(page, 'siswa.e2e.03')).toContainText('Mengerjakan');
+    await expect(row(page, 'siswa.e2e.04')).toContainText('Pindah perangkat');
+    await expect(row(page, 'siswa.e2e.06')).toContainText('Belum mulai');
+    await expect(page.getByText(/66,67|Nilai/)).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Belum mulai', exact: true }).click();
+    await expect(page.locator('tbody th[scope=row] > span:first-child')).toHaveText(['siswa.e2e.06']);
+    await page.getByRole('button', { name: 'Semua', exact: true }).click();
+    await page.getByLabel('Cari ELLIGBLE ID').fill('e2e.04');
+    await expect(page.locator('tbody th[scope=row] > span:first-child')).toHaveText(['siswa.e2e.04']);
+    await page.getByLabel('Cari ELLIGBLE ID').fill('');
+
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('monitoring-360.png'), fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.screenshot({ path: test.info().outputPath('monitoring-1280.png'), fullPage: true });
+});

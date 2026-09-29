@@ -270,3 +270,28 @@ export interface TeacherExamResultsResponse {
   summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
   participants: ParticipantResult[];
 }
+
+export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
+
+export interface MonitoredParticipant {
+  elligbleId: string | null;
+  roomLabel: string | null;
+  status: MonitoringStatus;
+  finalizationSource: FinalizationSource | null;
+  submittedAt: string | null;
+  remainingSeconds: number | null;
+  answeredCount: number;
+  lastAcceptedAt: string | null;
+  sessionActive: boolean;
+  sessionMoves: number;
+}
+
+/** Exam-day participant list for the assigned proctor or the managing teacher (D04.6). */
+export interface ExamMonitoringResponse {
+  exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean };
+  scope: 'PROCTOR' | 'TEACHER';
+  serverTime: string;
+  questionCount: number;
+  summary: { participants: number; notStarted: number; active: number; submitted: number };
+  participants: MonitoredParticipant[];
+}

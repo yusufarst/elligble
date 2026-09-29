@@ -111,8 +111,8 @@ describe('ProctorMonitoringView', () => {
     expect(screen.getByText('20')).toBeDefined();
     expect(screen.getByText('0')).toBeDefined(); // Ruang 2 active sessions
 
-    // Check no rooms message for Fisika
-    expect(screen.getByText('Tidak ada ruangan yang ditugaskan untuk ujian ini.')).toBeDefined();
+    // An exam without room operations lists no room cards; its participants open from "Lihat Peserta".
+    expect(screen.queryByText('Tidak ada ruangan yang ditugaskan untuk ujian ini.')).toBeNull();
   });
 
   it('handles manual refresh button click and updates data', async () => {

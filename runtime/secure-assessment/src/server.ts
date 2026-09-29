@@ -17,6 +17,7 @@ import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
 import { performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
+import { readExamMonitoring } from './exam-monitoring.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
 import type { StaticSite } from './http/static-site.ts';
@@ -336,6 +337,36 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'window_closed':
                         sendError(res, 409, 'window_closed');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readExamMonitoring(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.monitoring);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');
