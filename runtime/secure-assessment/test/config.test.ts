@@ -187,3 +187,11 @@ test('startup database wait is bounded', () => {
     assert.throws(() => parseConfig({ ...base, SA_STARTUP_DB_WAIT_SECONDS: '601' }), /between 0 and 600/);
     assert.throws(() => parseConfig({ ...base, SA_STARTUP_DB_WAIT_SECONDS: '-1' }), /bounded integer/);
 });
+
+test('the expiry finalization interval is bounded', () => {
+    const base = { DATABASE_URL: 'postgres://u@h/db' };
+    assert.equal(parseConfig(base).SA_EXPIRY_SWEEP_SECONDS, 15);
+    assert.equal(parseConfig({ ...base, SA_EXPIRY_SWEEP_SECONDS: '1' }).SA_EXPIRY_SWEEP_SECONDS, 1);
+    assert.throws(() => parseConfig({ ...base, SA_EXPIRY_SWEEP_SECONDS: '0' }), /between 1 and 300/);
+    assert.throws(() => parseConfig({ ...base, SA_EXPIRY_SWEEP_SECONDS: '301' }), /between 1 and 300/);
+});

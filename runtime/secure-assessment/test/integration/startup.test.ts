@@ -8,6 +8,10 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { createDisposableDatabase, skipWithoutDatabase } from '../support/pg-harness.ts';
+import {
+    addMembership, addParticipant, createAttemptWithTimer, createExamInstance, createPersonWithAccount,
+    createTeachingContext, createTenant,
+} from '../support/fixtures.ts';
 import { runStartupPreflight } from '../../src/ops/preflight.ts';
 import { listMigrationFiles } from '../../src/ops/migrations.ts';
 import type { LogEvent, LogLevel } from '../../src/log.ts';
@@ -119,6 +123,7 @@ test('production process: preflight, client hosting, API, health and graceful st
         SA_PORT: String(port),
         SA_STATIC_DIR: site,
         SA_STARTUP_DB_WAIT_SECONDS: '5',
+        SA_EXPIRY_SWEEP_SECONDS: '1',
     });
     t.after(() => { app.child.kill('SIGKILL'); });
     await waitFor(() => app.output().includes('"runtime_started"'));
@@ -168,6 +173,26 @@ test('production process: preflight, client hosting, API, health and graceful st
                 assert.equal(forged.status, 401, `${route} with a forged session ${JSON.stringify(tenant)}`);
             }
         }
+    });
+
+    await t.test('finalizes attempts whose time ran out while the device was away', async () => {
+        const tenant = await createTenant(db.pool);
+        const teacher = await createPersonWithAccount(db.pool);
+        const teaching = await createTeachingContext(db.pool, tenant, await addMembership(db.pool, tenant, teacher.personId));
+        const exam = await createExamInstance(db.pool, tenant, teaching);
+        const student = await createPersonWithAccount(db.pool);
+        await addMembership(db.pool, tenant, student.personId);
+        const attemptId = await createAttemptWithTimer(db.pool, tenant, await addParticipant(db.pool, tenant, exam, student.personId), 60);
+        await db.pool.query(
+            `UPDATE secure_assessment_timer_state SET started_at = statement_timestamp() - interval '61 seconds' WHERE exam_attempt_id = $1`,
+            [attemptId]
+        );
+        const source = async () => (await db.pool.query(
+            'SELECT finalization_source FROM secure_assessment_exam_submissions WHERE exam_attempt_id = $1', [attemptId]
+        )).rows[0]?.finalization_source ?? null;
+        for (let i = 0; i < 50 && (await source()) === null; i++) await new Promise(resolve => setTimeout(resolve, 100));
+        assert.equal(await source(), 'EXPIRY_SERVER');
+        await waitFor(() => app.output().includes('"expired_attempts_finalized"'));
     });
 
     await t.test('logs are JSON lines without credentials or query strings', async () => {

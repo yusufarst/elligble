@@ -18,6 +18,8 @@ export interface AppConfig {
     readonly SA_MIGRATIONS_ON_START: MigrationStartupMode;
     /** How long startup waits for the database before giving up. */
     readonly SA_STARTUP_DB_WAIT_SECONDS: number;
+    /** How often the server finalizes attempts whose time ran out while the device was away. */
+    readonly SA_EXPIRY_SWEEP_SECONDS: number;
 }
 
 function parseStrictInteger(value: string | undefined, min: number, max: number, name: string): number {
@@ -105,6 +107,7 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
         throw new Error('Unsafe configuration: SA_MIGRATIONS_ON_START cannot be off when ELLIGBLE_ENV is production.');
     }
     const dbWaitSeconds = parseStrictInteger(environment['SA_STARTUP_DB_WAIT_SECONDS'] ?? '60', 0, 600, 'SA_STARTUP_DB_WAIT_SECONDS');
+    const expirySweepSeconds = parseStrictInteger(environment['SA_EXPIRY_SWEEP_SECONDS'] ?? '15', 1, 300, 'SA_EXPIRY_SWEEP_SECONDS');
 
     return Object.freeze({
         DATABASE_URL: databaseUrl,
@@ -118,5 +121,6 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
         SA_STATIC_DIR: environment['SA_STATIC_DIR'] || null,
         SA_MIGRATIONS_ON_START: migrationMode,
         SA_STARTUP_DB_WAIT_SECONDS: dbWaitSeconds,
+        SA_EXPIRY_SWEEP_SECONDS: expirySweepSeconds,
     });
 }

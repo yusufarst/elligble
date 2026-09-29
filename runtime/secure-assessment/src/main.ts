@@ -8,9 +8,11 @@ import { createServer } from './server.ts';
 import { createAttemptAuthorizer } from './http/attempt-authorization.ts';
 import { loadStaticSite, type StaticSite } from './http/static-site.ts';
 import { runStartupPreflight } from './ops/preflight.ts';
+import { startExpiryFinalizationSweeper, type ExpiryFinalizationSweeper } from './expiry-finalization.ts';
 
 let activeServer: http.Server | undefined;
 let activePool: pg.Pool | undefined;
+let activeSweeper: ExpiryFinalizationSweeper | undefined;
 let isShuttingDown = false;
 
 async function start() {
@@ -31,6 +33,7 @@ async function start() {
         cookieSecure: config.SA_COOKIE_SECURE,
         migrationsOnStart: config.SA_MIGRATIONS_ON_START,
         servesWebClient: config.SA_STATIC_DIR !== null,
+        expirySweepSeconds: config.SA_EXPIRY_SWEEP_SECONDS,
     });
 
     let staticSite: StaticSite | undefined;
@@ -80,6 +83,7 @@ async function start() {
     activeServer.listen(config.SA_PORT, config.SA_HOST, () => {
         logInfo('runtime_started');
     });
+    activeSweeper = startExpiryFinalizationSweeper(activePool, { intervalMs: config.SA_EXPIRY_SWEEP_SECONDS * 1000, log: writeLog });
 
     activeServer.on('error', (err: Error) => {
         logError('fatal_startup_error', { message: err.message });
@@ -101,6 +105,10 @@ async function shutdown(exitCode = 0) {
         } catch {
             // Ignored
         }
+    }
+
+    if (activeSweeper) {
+        await activeSweeper.stop();
     }
 
     if (activePool) {

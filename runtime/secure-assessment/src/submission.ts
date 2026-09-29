@@ -11,15 +11,18 @@ function isValidUUID(uuid: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
 }
 
-async function executeSubmissionInsertion(client: pg.PoolClient, tenantId: string, attemptId: string): Promise<{ submissionId: string, submittedAt: string } | null> {
+/** What finalized the attempt (migration 0041); the first finalization wins. */
+export type FinalizationSource = 'STUDENT_SUBMIT' | 'EXPIRY_CLIENT' | 'EXPIRY_SERVER';
+
+async function executeSubmissionInsertion(client: pg.PoolClient, tenantId: string, attemptId: string, source: FinalizationSource): Promise<{ submissionId: string, submittedAt: string } | null> {
     const insertRes = await client.query(
         `INSERT INTO secure_assessment_exam_submissions
-        (tenant_id, exam_attempt_id)
-        VALUES ($1, $2)
+        (tenant_id, exam_attempt_id, finalization_source)
+        VALUES ($1, $2, $3)
         ON CONFLICT (tenant_id, exam_attempt_id)
         DO NOTHING
         RETURNING id, submitted_at`,
-        [tenantId, attemptId]
+        [tenantId, attemptId, source]
     );
 
     if (insertRes.rows.length > 0) {
@@ -141,7 +144,7 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
 
             let result;
             try {
-                result = await executeSubmissionInsertion(client, context.tenantId, attemptId);
+                result = await executeSubmissionInsertion(client, context.tenantId, attemptId, 'STUDENT_SUBMIT');
             } catch (err) {
                 try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
                 res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -416,7 +419,7 @@ export async function handleExpiryFinalize(req: http.IncomingMessage, res: http.
                 return;
             }
 
-            const result = await executeSubmissionInsertion(client, context.tenantId, attemptId);
+            const result = await executeSubmissionInsertion(client, context.tenantId, attemptId, 'EXPIRY_CLIENT');
 
             if (!result) {
                 await client.query('ROLLBACK');

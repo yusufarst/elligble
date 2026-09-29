@@ -35,7 +35,9 @@ Do not deploy during an active exam window unless the release is an incident fix
 | `GET /healthz` | process alive (container `HEALTHCHECK`) |
 | `GET /readyz` | database reachable (`SELECT 1`); 503 otherwise |
 
-Logs are JSON lines on stdout/stderr: `runtime_starting` (configuration summary without secrets), `static_site_loaded`, `migrations_verified`, `runtime_started`, one `http_request` per request (`requestId`, `kind`, `method`, `path`, `status`, `durationMs`), `request_failed` (error class and code only), `preflight_failed`, `shutdown_complete`. Requests answered with 5xx are logged at `ERROR`.
+Logs are JSON lines on stdout/stderr: `runtime_starting` (configuration summary without secrets), `static_site_loaded`, `migrations_verified`, `runtime_started`, one `http_request` per request (`requestId`, `kind`, `method`, `path`, `status`, `durationMs`), `request_failed` (error class and code only), `preflight_failed`, `expired_attempts_finalized` (count), `expiry_finalization_failed` (error class and code, retried on the next sweep), `shutdown_complete`. Requests answered with 5xx are logged at `ERROR`.
+
+Time expiry: every `SA_EXPIRY_SWEEP_SECONDS` (default 15) the process finalizes started attempts whose server deadline passed without a submission, from the answers the server accepted (D04.5-47). The submission records what finalized it (`finalization_source`: `STUDENT_SUBMIT`, `EXPIRY_CLIENT` when the student's device did it, `EXPIRY_SERVER` when the device was away; `EXPIRY_SERVER` is where answers may still wait on the device, D04.5-48). Concurrent instances are safe: busy attempts are skipped and each attempt is finalized once.
 
 Never logged: query strings (attempt ids), request or response bodies, cookies, `Authorization`, passwords, database URLs. Every response carries `X-Request-ID`; quote it when reporting a problem.
 

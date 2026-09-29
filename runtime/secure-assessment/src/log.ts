@@ -15,7 +15,9 @@ export type LogEvent =
     | 'migrations_verified'
     | 'static_site_loaded'
     | 'http_request'
-    | 'request_failed';
+    | 'request_failed'
+    | 'expired_attempts_finalized'
+    | 'expiry_finalization_failed';
 
 export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 
