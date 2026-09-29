@@ -39,6 +39,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getProctorMonitoring: m => m.getProctorMonitoring(),
         postTeacherExamTransition: m => m.postTeacherExamTransition(ID, 'mark_ready'),
         getTeacherReadiness: m => m.getTeacherReadiness(),
+        getTeacherExamResults: m => m.getTeacherExamResults(ID),
     },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),

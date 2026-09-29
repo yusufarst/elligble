@@ -230,3 +230,41 @@ export interface TeacherExamTransitionResponse {
 export interface TeacherReadinessResponse {
   exams: TeacherExamReadinessProjection[];
 }
+
+export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED';
+export type FinalizationSource = 'STUDENT_SUBMIT' | 'EXPIRY_CLIENT' | 'EXPIRY_SERVER';
+
+export interface ParticipantScore {
+  correct: number;
+  incorrect: number;
+  unanswered: number;
+  rawScore: number;
+  maxScore: number;
+  /** 0 to 100, two decimals, half up. */
+  scaledScore: number;
+}
+
+export interface ParticipantResult {
+  elligbleId: string | null;
+  status: ParticipantResultStatus;
+  finalizationSource: FinalizationSource | null;
+  submittedAt: string | null;
+  score: ParticipantScore | null;
+}
+
+/** Provisional results of a teacher-managed exam (not finalized, not shown to students). */
+export interface TeacherExamResultsResponse {
+  exam: {
+    examInstanceId: string;
+    subjectLabel: string | null;
+    groupLabel: string | null;
+    assessmentTypeLabel: string | null;
+    lifecycleState: string;
+    windowStartsAt: string | null;
+    windowEndsAt: string | null;
+  };
+  scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null };
+  resultState: 'PROVISIONAL';
+  summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
+  participants: ParticipantResult[];
+}

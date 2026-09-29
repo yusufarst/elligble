@@ -33,14 +33,15 @@ Status on this branch (baseline findings in §4-§5). Rows marked E2E are exerci
 | Answers (local-first) | `useAnswerManager` on `AnswerSyncEngine` + IndexedDB | `POST /assessment/answer/save` | write needs the active exam session | **WORKS**: offline answering, reload/browser-restart recovery, retry with backoff, honest save states (real browser; E2E) |
 | Proctor monitoring | `ProctorMonitoringView` | `GET /assessment/proctor-monitoring` | session → proctor assignments | **WORKS** (read; E2E) |
 | Teacher operations | `TeacherReadinessView` ("Pelaksanaan Ujian") | `GET /assessment/teacher-readiness`, `POST /assessment/teacher-exams/transition` | session → teaching assignment of the exam | **WORKS**: readiness, "Tandai Siap", "Buka Ujian", aggregate progress (integration + browser; E2E) |
+| Teacher results | `TeacherResultsView` ("Hasil Ujian", from "Lihat Hasil") | `GET /assessment/teacher-exams/results` | session → teaching assignment of the exam (not proctors, other teachers or participants) | **WORKS** (provisional): per-participant status and auto-score of finalized attempts, scores hidden until shown (integration; E2E) |
 | Deep links / refresh | query-string routes under `/` | client served by the runtime with deep-link fallback | session re-checked on load | **WORKS** (production container, real browser) |
 
 ## 3. Role journeys (canonical actors, MB-03)
 
 | Role | Works today | Incomplete | Blocks production |
 |---|---|---|---|
-| Student | activation, login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, timer with reminders, submit and automatic submission | "Ragu-ragu" flag (P1-24), results | none in the product (Owner/legal PBs, §8) |
-| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", aggregate progress; exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, ENDED/PAUSED (P1-17) | none for the pilot; teacher authoring or import for scale |
+| Student | activation, login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, timer with reminders, submit and automatic submission | "Ragu-ragu" flag (P1-24), seeing results (publication policy, §7) | none in the product (Owner/legal PBs, §8) |
+| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", aggregate progress, provisional results ("Hasil Ujian"); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, ENDED/PAUSED (P1-17), result finalization, publication and export | none for the pilot; teacher authoring or import for scale |
 | Proctor | monitoring read model and screen (session-derived context) | Proctor Feed events, interventions | Feed is P1-11 |
 | Platform operations | container release, preflight, logs, CI, runbook, audited provisioning CLI | school-admin self-service, metrics and alerting | PB11 drill on production infrastructure |
 | School / tenant administration | onboarding by the platform operator (audited CLI): people with activation cards, academic setup through `runtime/academic-core` | school-admin self-service import (D02.7), academic management UI | none for the pilot; self-service for scale |
@@ -95,6 +96,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-23 | Save did not validate the answer payload against the frozen question (any JSON was stored; option ids unchecked) | **RESOLVED**: `isAnswerForQuestion` in `answer.ts` accepts exactly `{ selectedOptionId }` naming an option of the frozen MULTIPLE_CHOICE_SINGLE question (D04.3-21), otherwise 400 `invalid_answer_payload` and nothing is stored | RESOLVED |
 | P1-24 | "Ragu-ragu / Tandai" flag for review (D04.5-34/35) not implemented | student navigation aid | OPEN |
 | P1-27 | An attempt whose time ran out while the student's device was unreachable stayed open indefinitely: only the device triggered expiry finalization (D04.5-45/47/49) | found while designing results: **RESOLVED**, the runtime finalizes such attempts from the server-accepted answers every `SA_EXPIRY_SWEEP_SECONDS`, skipping attempts held by an in-flight save or submit; every finalization path converges on one submission, which records its source (`STUDENT_SUBMIT`, `EXPIRY_CLIENT`, `EXPIRY_SERVER`, migration `0041`) so the D04.5-48 exception case stays visible | RESOLVED |
+| P1-28 | No scoring or results: after an exam the teacher saw only counts (D04.8) | **RESOLVED (provisional)**: deterministic rule `BASELINE_SINGLE_CHOICE_V1` (correct option earns the question's maximum, otherwise 0, raw ÷ maximum × 100 rounded half up to two decimals, exact integer arithmetic) computed on read from the frozen snapshots and accepted answers of finalized attempts; `GET /assessment/teacher-exams/results` only for the teacher who manages the exam; "Hasil Ujian" screen lists participants by ELLIGBLE ID (never ranked), absent is not zero, shows how each attempt was finalized, keeps scores hidden until shown (FRONTEND_DESIGN_SYSTEM §58). Students see no score. Finalization, publication, export and corrections remain | RESOLVED (provisional) |
 | P1-25 | Time reminders at configured thresholds (D04.5-32) were missing; only warning styling below 5 and 1 minutes | `StudentExamWorkstation`: **RESOLVED** with the decision's default thresholds (30, 15, 5 minutes): a non-blocking status line with the actual remaining minutes, hidden after 10 seconds; school-defined thresholds await tenant settings | RESOLVED |
 
 ## 6. Critical path (ordered by dependency and value)
@@ -108,7 +110,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 7. **Production operations** (P0-9, P0-10, P1-8): DONE. Migration runner; startup preflight (bounded wait for the database, schema `check` or `apply`, refuses a database ahead of the release); single process serving API and built client with deep-link fallback; environment validation; structured request logging; container image (non-root) with health check; CI (typecheck, unit, PostgreSQL integration, web build, image build and smoke test); operations runbook with a verified local restore drill.
 8. **Provisioning and content** (P0-11, P0-7, P1-15, P1-23): DONE. Authored question order and answer payload validation; account activation; audited operator CLI for schools, people (activation cards), academic setup (new `runtime/academic-core` module), exams and activation reissue.
 9. **Browser E2E** (PB06, PB07 contribution): DONE. Playwright suite `e2e/` against the real production process on a disposable database provisioned only through the operator CLI, run in CI: pilot journey (activation cards, teacher opens the exam, proctor view, student answers, reload, one submission with idempotent receipts), resilience (offline, reload while saves fail, second-tab takeover, duplicated tab) and security (other school, other student's attempt, session ending mid-exam).
-10. Then Milestone 2 hardening (Proctor Feed, pause/lock, time adjustments, scoring/results), followed by Academic Core administration UI and the remaining baseline domains.
+10. **Milestone 2 hardening** (in progress): server finalization at time expiry (P1-27) DONE; provisional teacher results with deterministic baseline scoring (P1-28) DONE. Remaining: Proctor Feed (P1-11), pause/lock and time adjustments, ENDED/PAUSED once the policy is set (P1-17), result finalization, publication and export. Then Academic Core administration UI and the remaining baseline domains.
 
 ## 7. Owner decisions
 
@@ -121,6 +123,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | End-of-exam handling (D04.2-81) and pause timer behaviour (D04.2-77) | ENDED / PAUSED operations | Each attempt keeps its own server timer and auto-submits at expiry; ENDED only blocks new starts; pause freezes remaining time | OPEN (policy says "exact policy later") |
 | ELLIGBLE ID format and generation (D02.10-C) | Account provisioning at scale | Until decided, operators supply IDs in a conservative syntax (3 to 64 lower-case letters, digits, dot, dash, underscore; not e-mail based); the platform only checks uniqueness | OPEN (not blocking the pilot) |
 | Activation code validity (D02.3-09 "short-lived") | Activation cards | 7 days by default, operator may choose 1 to 30 days per issue | IMPLEMENTED DEFAULT, adjustable |
+| Student result visibility (D04.8-16/21/22: options exist, "exact school-facing options later") | Showing scores to students | Hidden until the teacher publishes a finalized result, per exam; only the student's own score, no ranking or peer results (D04.8-50/51) | OPEN (students see no scores today; teachers see provisional results) |
 | Exam content import by platform operators on behalf of teachers | Pilot exams before a teacher authoring or import screen exists | Audited, case-linked operator import; teachers keep readiness and activation | IMPLEMENTED AS PILOT BRIDGE |
 
 ## 8. Production Blockers (PB01-PB12)
@@ -250,12 +253,25 @@ After browser E2E (this branch):
 | workflow lint (actionlint) | clean |
 | Leaked disposable databases | 0 |
 
+After server expiry finalization and provisional results (this branch):
+
+| Check | Result |
+|---|---|
+| Typecheck: 4 runtime packages, web client, E2E suite | PASS |
+| identity-access / tenant-access / academic-core unit | 24/24 / 11/11 / 3/3 PASS |
+| secure-assessment unit | 898/898 PASS incl. scoring: the decision examples (34/40 = 85, 37/45 = 82.22), exact half-up rounding, fractional weights without drift, unanswered and malformed answers score 0, unscorable content never becomes a zero, determinism |
+| integration (real PostgreSQL 16) | 81/81 PASS: server finalization from accepted answers (time left, adjustment, never started and already submitted untouched; idempotent; returning device and late submit get the same receipt; busy attempts left to the next sweep; bounded batches; the production process sweeps on its own); teacher results (scores of finalized attempts only, absent not zero, ordered by ELLIGBLE ID, finalization source; students receive no score or answer key; other teacher, proctor, participant, other school, anonymous, unknown exam and revoked teaching assignment refused). Mutation-checked: a deadline ignoring adjustments and a loosened teacher condition are both caught |
+| web vitest / `vite build` | 157/157 / PASS |
+| browser E2E | 10/10 PASS: a student away at time expiry is finalized by the server within the sweep; the teacher opens "Hasil Ujian" from "Lihat Hasil", scores hidden until "Tampilkan Nilai", 66,67 for 2 of 3, 0/3 for the timed-out student with the device-away note, "Belum ada nilai" for others; reload and back keep the route; the timed-out student sees the attempt as submitted without a score |
+| rendered check (Chromium, 360 px and 1280 px) | results screen without horizontal overflow; participant, status and scores readable at 360 px after moving the status under the ELLIGBLE ID |
+| Leaked disposable databases | 0 |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-Critical path step 10, Milestone 2 hardening in dependency order: the Proctor Feed (P1-11, events and interventions the proctor needs during a live exam); ENDED and PAUSED operations once the Owner sets the policy (P1-17, §7); scoring and results for teachers and students. Alongside, small student and school items: the "Ragu-ragu" review flag (P1-24), the school time zone (P1-16), school-admin self-service import (D02.7) and teacher-facing exam import. Infrastructure: edge rate limits (P1-14), metrics and alerting, and the PB11 drill on the production infrastructure.
+Critical path step 10, Milestone 2 hardening, continuing in dependency order: the Proctor Feed (P1-11, events and interventions the proctor needs during a live exam); ENDED and PAUSED operations once the Owner sets the policy (P1-17, §7); result finalization (D04.8-17/57), CSV/printable export for teachers (D04.8-52) and publication to students once the visibility policy is set (§7). Alongside, small student and school items: the "Ragu-ragu" review flag (P1-24), the school time zone (P1-16), school-admin self-service import (D02.7) and teacher-facing exam import. Infrastructure: edge rate limits (P1-14), metrics and alerting, and the PB11 drill on the production infrastructure.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

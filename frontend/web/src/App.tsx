@@ -5,6 +5,7 @@ import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
 import { ProctorMonitoringView } from './components/ProctorMonitoringView.tsx';
 import { TeacherReadinessView } from './components/TeacherReadinessView.tsx';
+import { TeacherResultsView } from './components/TeacherResultsView.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
 import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './session/SessionScreens.tsx';
 import { ReauthDialog } from './session/ReauthDialog.tsx';
@@ -15,11 +16,13 @@ import type { MeContext } from './api/auth-client.ts';
 interface RouteState {
   attemptId: string | null;
   view: string | null;
+  /** Teacher workspace: the exam whose results are open. */
+  examResults: string | null;
 }
 
 function readRoute(): RouteState {
   const params = new URLSearchParams(window.location.search);
-  return { attemptId: params.get('attemptId'), view: params.get('view') };
+  return { attemptId: params.get('attemptId'), view: params.get('view'), examResults: params.get('examResults') };
 }
 
 function pushRoute(search: string): void {
@@ -61,7 +64,11 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   } else if (current === 'proctor') {
     content = <ProctorMonitoringView />;
   } else if (current === 'teacher') {
-    content = <TeacherReadinessView />;
+    content = route.examResults ? (
+      <TeacherResultsView key={route.examResults} examInstanceId={route.examResults} onBack={() => navigate('?view=teacher')} />
+    ) : (
+      <TeacherReadinessView onOpenResults={id => navigate(`?view=teacher&examResults=${encodeURIComponent(id)}`)} />
+    );
   } else {
     content = (
       <main className="mx-auto max-w-[540px] px-4 py-12 text-center">

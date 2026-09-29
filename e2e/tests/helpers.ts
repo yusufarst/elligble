@@ -15,6 +15,13 @@ export async function activate(page: Page, elligbleId: string, password: string)
     await page.getByRole('button', { name: 'Aktifkan dan Masuk' }).click();
 }
 
+export async function login(page: Page, elligbleId: string, password: string): Promise<void> {
+    await page.goto('/');
+    await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(elligbleId);
+    await page.getByLabel('Kata Sandi', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Masuk', exact: true }).click();
+}
+
 export async function startExam(page: Page): Promise<string> {
     await page.getByRole('button', { name: 'Mulai Ujian' }).click();
     await page.getByRole('button', { name: 'Mulai Ujian Sekarang' }).click();

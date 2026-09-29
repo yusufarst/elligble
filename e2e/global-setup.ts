@@ -48,7 +48,7 @@ export default async function globalSetup(): Promise<void> {
     const logFile = process.env['E2E_SERVER_LOG'] ?? path.join(workDir, 'server.log');
     const log = openSync(logFile, 'a');
     const server = spawn(process.execPath, [MAIN], {
-        env: { ...env, ELLIGBLE_ENV: 'production', SA_HOST: '127.0.0.1', SA_PORT: String(E2E_PORT), SA_STATIC_DIR: WEB_DIST, SA_MIGRATIONS_ON_START: 'apply', SA_STARTUP_DB_WAIT_SECONDS: '30' },
+        env: { ...env, ELLIGBLE_ENV: 'production', SA_HOST: '127.0.0.1', SA_PORT: String(E2E_PORT), SA_STATIC_DIR: WEB_DIST, SA_MIGRATIONS_ON_START: 'apply', SA_STARTUP_DB_WAIT_SECONDS: '30', SA_EXPIRY_SWEEP_SECONDS: '1' },
         stdio: ['ignore', log, log],
         detached: false,
     });

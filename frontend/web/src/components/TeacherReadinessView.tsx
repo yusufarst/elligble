@@ -55,7 +55,7 @@ const mapRoomProctorBlocker = (blocker?: string): string => {
   }
 };
 
-export const TeacherReadinessView: React.FC = () => {
+export const TeacherReadinessView: React.FC<{ onOpenResults?(examInstanceId: string): void }> = ({ onOpenResults }) => {
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -238,11 +238,18 @@ export const TeacherReadinessView: React.FC = () => {
               )}
 
               {lifecycle === 'ACTIVE' && exam.progress ? (
+                <>
                 <dl className="teacher-exam-progress" aria-label="Kemajuan pelaksanaan ujian">
                   <div><dt>Peserta</dt><dd>{exam.progress.participants}</dd></div>
                   <div><dt>Sudah mulai</dt><dd>{exam.progress.started}</dd></div>
                   <div><dt>Dikumpulkan</dt><dd>{exam.progress.submitted}</dd></div>
                 </dl>
+                {onOpenResults && (
+                  <div className="teacher-exam-actions">
+                    <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>
+                  </div>
+                )}
+                </>
               ) : (
               <div className="teacher-readiness-details">
                 <div className="readiness-section">
