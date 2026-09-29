@@ -1,7 +1,8 @@
 **Status:** ACTIVE / CANONICAL DOCUMENT INDEX
-**Version:** 1.1.1
+**Version:** 1.1.2
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.1.0
+**Supersedes:** 1.1.1
+> **Administrative Note:** v1.1.2 updates the `OPERATIONS_RUNBOOK.md` descriptor for pilot school provisioning (operator CLI, templates in `docs/production/provisioning-templates/`) and the browser end-to-end suite (`e2e/`).
 > **Administrative Note:** v1.1.1 registers `docs/production/OPERATIONS_RUNBOOK.md` (deployment, release, health and logs, rollback, backup and restore, incident basics).
 > **Administrative Note:** v1.1.0 adopts DEC-042 (Continuous Production Completion). This manifest remains the canonical document index. Embedded SHA256 values in descriptors are historical snapshots (last maintained at v1.0.486) and are no longer updated; Git history is the integrity record. Registers `00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` and the living plan `docs/production/PRODUCTION_COMPLETION_PLAN.md`; marks CURRENT_STATE, HANDOFF_PACKET, BUILD_PHASE_INDEX and roadmap status as frozen historical records at the BU-090 terminal state; records DEC-042 and DEC-043.
 > **Administrative Note:** v1.0.486 completes BU-090 Stage-5 current/global navigation correction in BUILD_PHASE_INDEX; Stage-3 PASS; Stage-4 COMPLETE; DONE YES; FULL BU-090 REPOSITORY FINALIZED YES; Stage-5 final physical verification PENDING.
@@ -82,7 +83,7 @@ NEVER_DEFAULT
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control: baseline-first priority, Baseline Completion Gate, domain scope, reuse of completed capabilities (§8 and Build Unit items of §10 superseded for new work by 00.10 / DEC-042). Version 1.0.2. | Canonical / LOCKED v1.0.2 (partially superseded) | PHASE: Build |
 | `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` | Execution model: Continuous Production Completion (DEC-042). Supersedes the Build Unit / Stage workflow for new work. Version 1.0.0. | Canonical / LOCKED v1.0.0 | ALWAYS |
 | `docs/production/PRODUCTION_COMPLETION_PLAN.md` | Living production completion plan: capabilities, P0/P1 gaps, critical path, Owner decisions, verification evidence, blockers, deployment readiness, next work. The only live execution tracker. | LIVING PLAN (DEC-042) | ALWAYS |
-| `docs/production/OPERATIONS_RUNBOOK.md` | Operations runbook: deployment shape, release and migration procedure, health and log fields, rollback, backup and restore drill, incident basics, local development. | ACTIVE (DEC-042) | WHEN DEPLOYING OR OPERATING |
+| `docs/production/OPERATIONS_RUNBOOK.md` | Operations runbook: deployment shape, release and migration procedure, health and log fields, rollback, backup and restore drill, incident basics, pilot school provisioning with the audited operator CLI, local development and the browser end-to-end suite. | ACTIVE (DEC-042) | WHEN DEPLOYING OR OPERATING |
 | `docs/build/BUILD_PHASE_INDEX.md` | Historical Build Unit phase index (BU-001..BU-090), frozen at the BU-090 terminal state. Not live navigation. | FROZEN HISTORICAL RECORD (DEC-042) | ON_DEMAND |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product milestone roadmap (Milestones 1-8, Baseline Completion Gate). Status fields frozen at BU-090; live status is in the living production plan. | MILESTONE ROADMAP / STATUS FROZEN (DEC-042) | PHASE: Build |
 | `docs/00-recovery/00.00_ELLIGBLE_MASTER_RECOVERY_INDEX.md` | Recovery index/handoff | Frozen index | ON_DEMAND |
