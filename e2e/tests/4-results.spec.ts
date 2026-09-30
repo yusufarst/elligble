@@ -1,22 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { login, withDatabase } from './helpers.ts';
+import { expireAttemptOf, login, withDatabase } from './helpers.ts';
 
 // Results after the exam (D04.5-47, D04.8): a student whose device was away when the time
 // ran out is finalized by the server from the answers it accepted, and the teacher who
 // manages the exam sees provisional results, scores hidden until shown, never ranked.
-
-async function expireAttemptOf(elligbleId: string): Promise<void> {
-    await withDatabase(client => client.query(
-        `UPDATE secure_assessment_timer_state t
-         SET started_at = statement_timestamp() - (t.configured_duration_seconds + 1) * interval '1 second'
-         FROM secure_assessment_exam_attempts a
-         JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id
-         JOIN identity_user_accounts ua ON ua.person_id = p.person_id
-         JOIN identity_account_credentials c ON c.user_account_id = ua.id
-         WHERE t.exam_attempt_id = a.id AND c.username = $1`,
-        [elligbleId]
-    ));
-}
 
 async function finalizationSourceOf(elligbleId: string): Promise<string | null> {
     return withDatabase(async client => (await client.query(

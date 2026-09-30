@@ -133,7 +133,8 @@ test('teacher-managed exam operations (real PostgreSQL, production wiring)', { s
         const s = await clientFor(student);
         assert.equal((await transition(s, exam, 'mark_ready')).status, 403);
         assert.equal((await transition(teacherClient, randomUUID(), 'mark_ready')).status, 403);
-        assert.equal((await transition(teacherClient, exam, 'finalize')).status, 400);
+        assert.equal((await transition(teacherClient, exam, 'archive')).status, 400, 'not an operation');
+        assert.equal((await transition(teacherClient, exam, 'finalize')).status, 409, 'only an ended exam is finalized');
         const anonymous = new BrowserLikeClient(app.baseUrl);
         anonymous.tenantId = tenant;
         assert.equal((await transition(anonymous, exam, 'mark_ready')).status, 401);

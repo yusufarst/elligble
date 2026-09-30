@@ -244,3 +244,8 @@
   padding-top: var(--space-4);
   border-top: var(--border-default);
 }
+
+.teacher-lifecycle-badge.lifecycle-finalized {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+}

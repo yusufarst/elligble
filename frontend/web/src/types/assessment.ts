@@ -234,9 +234,11 @@ export interface TeacherExamReadinessProjection {
   progress?: TeacherExamProgressProjection | null;
   /** Start of the open pause while the exam is PAUSED. */
   pausedAt?: string | null;
+  /** When the results were finalized (FINALIZED only). */
+  finalizedAt?: string | null;
 }
 
-export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end';
+export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
 
 export interface TeacherExamTransitionResponse {
   examInstanceId: string;
@@ -249,7 +251,8 @@ export interface TeacherReadinessResponse {
   exams: TeacherExamReadinessProjection[];
 }
 
-export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED';
+/** ABSENT: in finalized results, a participant who did not work on the exam (not a zero). */
+export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'ABSENT';
 export type FinalizationSource = 'STUDENT_SUBMIT' | 'EXPIRY_CLIENT' | 'EXPIRY_SERVER';
 
 export interface ParticipantScore {
@@ -270,7 +273,7 @@ export interface ParticipantResult {
   score: ParticipantScore | null;
 }
 
-/** Provisional results of a teacher-managed exam (not finalized, not shown to students). */
+/** Results of a teacher-managed exam: provisional, or frozen once finalized; never shown to students. */
 export interface TeacherExamResultsResponse {
   exam: {
     examInstanceId: string;
@@ -282,7 +285,9 @@ export interface TeacherExamResultsResponse {
     windowEndsAt: string | null;
   };
   scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null };
-  resultState: 'PROVISIONAL';
+  resultState: 'PROVISIONAL' | 'FINAL';
+  /** When the results were finalized (FINAL only). */
+  finalizedAt?: string | null;
   summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
   participants: ParticipantResult[];
 }

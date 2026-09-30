@@ -13,13 +13,15 @@ const LIFECYCLE_LABELS: Record<string, string> = {
   ACTIVE: 'Berlangsung',
   PAUSED: 'Dijeda',
   ENDED: 'Diakhiri',
+  FINALIZED: 'Hasil Final',
 };
 
 // Exams being delivered: progress, monitoring, results and the pause, resume and end
-// controls (Owner decision 2026-09-30).
-const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
+// controls (Owner decision 2026-09-30); an ended exam is finalized once nobody is still
+// working (D04.8-17).
+const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED']);
 
-type ConfirmableAction = 'activate' | 'pause' | 'resume' | 'end';
+type ConfirmableAction = 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
 
 const CONFIRM_COPY: Record<ConfirmableAction, { title: string; description: string; confirm: string; destructive?: boolean }> = {
   activate: {
@@ -43,6 +45,11 @@ const CONFIRM_COPY: Record<ConfirmableAction, { title: string; description: stri
     confirm: 'Akhiri Ujian',
     destructive: true,
   },
+  finalize: {
+    title: 'Finalisasi Hasil Ujian?',
+    description: 'Nilai setiap peserta dibekukan seperti sekarang dan tidak berubah oleh perubahan data berikutnya. Peserta yang tidak mengerjakan dicatat tidak mengerjakan, bukan bernilai 0. Nilai tetap tidak terlihat oleh siswa. Finalisasi tidak dapat dibatalkan.',
+    confirm: 'Finalisasi Hasil',
+  },
 };
 
 function transitionFailureMessage(err: unknown): string {
@@ -54,6 +61,8 @@ function transitionFailureMessage(err: unknown): string {
         : 'Ujian belum dapat dibuka sebelum waktu pelaksanaan dimulai.';
       case 'window_closed': return 'Waktu pelaksanaan ujian telah berakhir.';
       case 'invalid_state': return 'Status ujian telah berubah. Data ditampilkan ulang.';
+      case 'attempts_running': return 'Masih ada peserta yang mengerjakan. Finalisasi dapat dilakukan setelah semua peserta selesai.';
+      case 'scoring_unavailable': return 'Konten soal ujian ini tidak dapat dinilai otomatis, sehingga hasil belum dapat difinalisasi. Hubungi operator sekolah.';
       case 'forbidden': return 'Anda tidak memiliki hak untuk mengelola ujian ini.';
     }
   }
@@ -290,6 +299,11 @@ export const TeacherReadinessView: React.FC<{
                       : 'Ujian telah diakhiri. Tidak ada peserta yang masih mengerjakan.'}
                   </p>
                 )}
+                {lifecycle === 'FINALIZED' && (
+                  <p className="teacher-exam-note">
+                    {exam.finalizedAt ? `Hasil difinalisasi ${formatDateTime(exam.finalizedAt)}.` : 'Hasil telah difinalisasi.'} Nilai tidak ditampilkan kepada siswa.
+                  </p>
+                )}
                 <dl className="teacher-exam-progress" aria-label="Kemajuan pelaksanaan ujian">
                   <div><dt>Peserta</dt><dd>{exam.progress.participants}</dd></div>
                   <div><dt>Sudah mulai</dt><dd>{exam.progress.started}</dd></div>
@@ -306,6 +320,17 @@ export const TeacherReadinessView: React.FC<{
                     {onOpenResults && (
                       <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>
                     )}
+                  </div>
+                )}
+                {lifecycle === 'ENDED' && (
+                  <div className="teacher-exam-actions teacher-exam-controls" role="group" aria-label="Kendali ujian">
+                    <Button onClick={() => setConfirm({ exam, action: 'finalize' })} disabled={busy || (exam.progress.running ?? 0) > 0}>
+                      {busy ? 'Memproses...' : 'Finalisasi Hasil'}
+                    </Button>
+                    {(exam.progress.running ?? 0) > 0 && (
+                      <p className="teacher-exam-note m-0">Finalisasi dapat dilakukan setelah semua peserta selesai.</p>
+                    )}
+                    {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
                   </div>
                 )}
                 {(lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && (

@@ -338,6 +338,12 @@ export function createServer(deps: ServerDependencies): http.Server {
                     case 'window_closed':
                         sendError(res, 409, 'window_closed');
                         return;
+                    case 'attempts_running':
+                        sendJson(res, 409, { error: 'attempts_running', running: result.running });
+                        return;
+                    case 'scoring_unavailable':
+                        sendError(res, 409, 'scoring_unavailable');
+                        return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');
                         return;

@@ -1,6 +1,7 @@
 import type * as pg from 'pg';
 import { checkExamInstanceBaselineReadinessChecksCompositionPreflight } from './exam-instance-baseline-readiness-checks-composition-preflight.ts';
 import { checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight } from './exam-instance-conditional-room-proctor-readiness-composition-preflight.ts';
+import { freezeExamResults } from './result-finalization.ts';
 
 // Teacher-managed exam operations (D04.4-26A/B/C): the teacher who holds the active
 // Teaching Assignment of an Exam Instance may move it SCHEDULED -> READY (all mandatory
@@ -17,11 +18,14 @@ import { checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight } 
 // or automatic submission at their own expiry; nothing is force-submitted and no result
 // becomes visible. The three are idempotent: repeating one that already took effect changes
 // nothing and records nothing. END of a paused exam needs a resume first (not decided).
+// FINALIZE (ENDED -> FINALIZED, D04.8-17/57, Owner decision point ENDED-5) is refused while
+// any attempt still runs and freezes the results (result-finalization.ts); idempotent too.
+// It publishes nothing to students (D04.8-21).
 // Institution-managed governance (D04.4-26D/E) is intentionally not implemented here.
 
-export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end';
+export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
 
-export const TEACHER_EXAM_ACTIONS: readonly TeacherExamAction[] = ['mark_ready', 'activate', 'pause', 'resume', 'end'];
+export const TEACHER_EXAM_ACTIONS: readonly TeacherExamAction[] = ['mark_ready', 'activate', 'pause', 'resume', 'end', 'finalize'];
 
 export interface TeacherActor {
     tenantId: string;
@@ -40,6 +44,8 @@ export type TeacherExamActionResult =
     | { type: 'not_ready'; readiness: ReadinessSummary }
     | { type: 'window_not_started'; windowStartsAt: string }
     | { type: 'window_closed' }
+    | { type: 'attempts_running'; running: number }
+    | { type: 'scoring_unavailable' }
     | { type: 'unavailable' };
 
 const TRANSITIONS: Record<TeacherExamAction, { from: string; to: string; idempotent: boolean }> = {
@@ -48,6 +54,7 @@ const TRANSITIONS: Record<TeacherExamAction, { from: string; to: string; idempot
     pause: { from: 'ACTIVE', to: 'PAUSED', idempotent: true },
     resume: { from: 'PAUSED', to: 'ACTIVE', idempotent: true },
     end: { from: 'ACTIVE', to: 'ENDED', idempotent: true },
+    finalize: { from: 'ENDED', to: 'FINALIZED', idempotent: true },
 };
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -118,7 +125,15 @@ export async function performTeacherExamAction(
             return { type: 'invalid_state', currentState: row.lifecycle_state };
         }
 
-        if (action === 'pause' || action === 'resume' || action === 'end') {
+        if (action === 'finalize') {
+            const frozen = await freezeExamResults(client, actor.tenantId, examInstanceId, actor.personId);
+            if (frozen.type !== 'frozen') {
+                await client.query('ROLLBACK');
+                return frozen;
+            }
+        }
+
+        if (action === 'pause' || action === 'resume' || action === 'end' || action === 'finalize') {
             const moved = await client.query(
                 `UPDATE secure_assessment_exam_instances SET lifecycle_state = $3
                  WHERE id = $1 AND tenant_id = $2 AND lifecycle_state = $4`,

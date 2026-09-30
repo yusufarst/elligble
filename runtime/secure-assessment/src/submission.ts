@@ -117,8 +117,11 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
 
         try {
             let attemptRes;
+            let exam: Awaited<ReturnType<typeof readAttemptExamState>> = null;
             try {
                 await client.query('BEGIN');
+                // Exam row before attempt row, the order every attempt writer uses.
+                exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
                 attemptRes = await client.query(
                     'SELECT id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE',
                     [attemptId, context.tenantId]
@@ -151,9 +154,8 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
                     'SELECT 1 FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
                     [context.tenantId, attemptId]
                 );
-                if (existing.rows.length === 0) {
-                    const exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
-                    if (exam?.lifecycleState === 'PAUSED') pausedAt = exam.pausedAt ? exam.pausedAt.toISOString() : null;
+                if (existing.rows.length === 0 && exam?.lifecycleState === 'PAUSED') {
+                    pausedAt = exam.pausedAt ? exam.pausedAt.toISOString() : null;
                 }
             } catch (err) {
                 try { await client.query('ROLLBACK'); } catch (rollbackErr) { }

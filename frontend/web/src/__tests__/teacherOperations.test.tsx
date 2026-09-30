@@ -134,6 +134,41 @@ describe('pausing, resuming and ending a running exam', () => {
     expect(document.body.textContent).not.toContain('\u2014');
   });
 
+  it('finalizes an ended exam once nobody is still working, and then shows it as final', async () => {
+    vi.mocked(getTeacherReadiness)
+      .mockResolvedValueOnce({ exams: [exam({ lifecycleState: 'ENDED', progress: { ...progress, running: 0, submitted: 28 } })] })
+      .mockResolvedValueOnce({ exams: [exam({ lifecycleState: 'FINALIZED', finalizedAt: '2026-09-29T04:05:00.000Z', progress: { ...progress, running: 0, submitted: 28 } })] });
+    vi.mocked(postTeacherExamTransition).mockResolvedValue({ examInstanceId: EXAM, lifecycleState: 'FINALIZED', changed: true });
+    render(<TeacherReadinessView onOpenResults={() => {}} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Finalisasi Hasil' }));
+    expect(await screen.findByRole('heading', { name: 'Finalisasi Hasil Ujian?' })).toBeDefined();
+    expect(screen.getByText(/bukan bernilai 0/)).toBeDefined();
+    expect(screen.getByText(/Nilai tetap tidak terlihat oleh siswa/)).toBeDefined();
+    fireEvent.click(lastDialogButton('Finalisasi Hasil'));
+    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'finalize'));
+    expect(await screen.findByText('Hasil Final')).toBeDefined();
+    // The ICU data decides between "2026, 11.05" and "2026 pukul 11.05".
+    expect(screen.getByText(/^Hasil difinalisasi 29 September 2026(,| pukul) 11\.05 WIB\./)).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Finalisasi Hasil' })).toBeNull();
+  });
+
+  it('keeps finalization closed while participants are still working', async () => {
+    vi.mocked(getTeacherReadiness).mockResolvedValue({ exams: [exam({ lifecycleState: 'ENDED', progress })] });
+    render(<TeacherReadinessView />);
+    const button = await screen.findByRole('button', { name: 'Finalisasi Hasil' });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText('Finalisasi dapat dilakukan setelah semua peserta selesai.')).toBeDefined();
+  });
+
+  it('explains a refused finalization', async () => {
+    vi.mocked(getTeacherReadiness).mockResolvedValue({ exams: [exam({ lifecycleState: 'ENDED', progress: { ...progress, running: 0 } })] });
+    vi.mocked(postTeacherExamTransition).mockRejectedValue(new (ApiError as any)(409, 'attempts_running', undefined, { error: 'attempts_running', running: 1 }));
+    render(<TeacherReadinessView />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Finalisasi Hasil' }));
+    fireEvent.click(lastDialogButton('Finalisasi Hasil'));
+    expect(await screen.findByText('Masih ada peserta yang mengerjakan. Finalisasi dapat dilakukan setelah semua peserta selesai.')).toBeDefined();
+  });
+
   it('resumes a paused exam after confirmation', async () => {
     vi.mocked(getTeacherReadiness).mockResolvedValue({ exams: [exam({ lifecycleState: 'PAUSED', pausedAt: '2026-09-29T01:14:00.000Z', progress })] });
     vi.mocked(postTeacherExamTransition).mockResolvedValue({ examInstanceId: EXAM, lifecycleState: 'ACTIVE', changed: true });

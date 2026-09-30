@@ -51,6 +51,9 @@ export async function handleReviewFlag(req: http.IncomingMessage, res: http.Serv
     }
     try {
         await client.query('BEGIN');
+        // Exam row before attempt row, the order every attempt writer uses; waits for a
+        // pause, resume or finalization in progress.
+        const exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
         // Shares the attempt with other writers but waits for a submission in progress.
         const attempt = await client.query(
             `SELECT p.exam_instance_id FROM secure_assessment_exam_attempts a
@@ -98,7 +101,6 @@ export async function handleReviewFlag(req: http.IncomingMessage, res: http.Serv
             sendError(res, 409, 'timer_expired');
             return;
         }
-        const exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
         if (exam?.lifecycleState === 'PAUSED') {
             await client.query('ROLLBACK');
             sendJson(res, 409, { error: 'exam_paused', pausedAt: exam.pausedAt ? exam.pausedAt.toISOString() : null });

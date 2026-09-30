@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { continueExam, login, option, saveStatus, state, withDatabase } from './helpers.ts';
+import { continueExam, expireAttemptOf, login, option, saveStatus, state, withDatabase } from './helpers.ts';
 
 // Pause, resume and end on the real production process (Owner decision 2026-09-30). Runs
 // last: it ends the shared exam. A paused exam hides the questions and freezes the time;
@@ -140,4 +140,49 @@ test('ending the exam stops new starts only: a running attempt keeps working and
 
     await page.getByRole('button', { name: 'Perbarui Data' }).click();
     await expect(page.getByText(/^Ujian telah diakhiri\./)).toBeVisible();
+});
+
+test('the teacher finalizes once every attempt is finished; the results are final and still hidden from students', async ({ page, browser }) => {
+    await login(page, 'guru.e2e', 'papan-tulis-hijau');
+    await expect(page.getByText('Diakhiri', { exact: true })).toBeVisible();
+    // Two students are still working on their own time.
+    await expect(page.getByRole('button', { name: 'Finalisasi Hasil' })).toBeDisabled();
+    await expect(page.getByText('Finalisasi dapat dilakukan setelah semua peserta selesai.')).toBeVisible();
+
+    await expireAttemptOf('siswa.e2e.04');
+    await expireAttemptOf('siswa.e2e.05');
+    await expect(async () => {
+        await page.getByRole('button', { name: 'Perbarui Data' }).click();
+        await expect(page.getByRole('button', { name: 'Finalisasi Hasil' })).toBeEnabled({ timeout: 1000 });
+    }).toPass({ timeout: 30_000 });
+    await teacherAction(page, 'Finalisasi Hasil', 'Finalisasi Hasil Ujian?');
+    await expect(page.getByText('Hasil Final', { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Hasil difinalisasi .* WIB\. Nilai tidak ditampilkan kepada siswa\.$/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Lihat Hasil' }).click();
+    await expect(page.getByText('Hasil final', { exact: true })).toBeVisible();
+    const row = (id: string) => page.getByRole('row').filter({ has: page.getByText(id, { exact: true }) });
+    await expect(row('siswa.e2e.06')).toContainText('Tidak mengerjakan');
+    await expect(row('siswa.e2e.06')).toContainText('Tidak ada nilai');
+    await expect(row('siswa.e2e.04')).toContainText('Dikumpulkan otomatis');
+    await page.getByRole('button', { name: 'Tampilkan Nilai' }).click();
+    await expect(row('siswa.e2e.01')).toContainText('66,67');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('final-results-360.png'), fullPage: true });
+
+    const frozen = await withDatabase(async client => (await client.query(
+        `SELECT f.scoring_rule, count(r.*)::int AS rows, count(*) FILTER (WHERE r.standing = 'ABSENT')::int AS absent
+         FROM secure_assessment_exam_result_finalizations f JOIN secure_assessment_attempt_results r ON r.finalization_id = f.id
+         WHERE f.exam_instance_id = $1 GROUP BY f.scoring_rule`,
+        [state.examInstanceId]
+    )).rows[0]);
+    expect(frozen).toEqual({ scoring_rule: 'BASELINE_SINGLE_CHOICE_V1', rows: 6, absent: 1 });
+
+    // Finalized is not published: the student still sees no score.
+    const studentContext = await browser.newContext({ viewport: { width: 360, height: 780 }, locale: 'id-ID', timezoneId: 'UTC' });
+    const student = await studentContext.newPage();
+    await login(student, 'siswa.e2e.01', PASSWORD);
+    await expect(student.getByText('Sudah dikumpulkan')).toBeVisible();
+    await expect(student.getByText(/Nilai|66,67/)).toHaveCount(0);
+    await studentContext.close();
 });

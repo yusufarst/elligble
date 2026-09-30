@@ -111,6 +111,16 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
             try {
                 await client.query('BEGIN');
 
+                // Locks in the order every attempt writer uses, exam row before attempt row:
+                // waits for a pause, resume or finalization in progress (see exam-pause.ts).
+                const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
+                if (!examState) {
+                    await client.query('ROLLBACK');
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                    return;
+                }
+
                 const attemptRes = await client.query(
                     'SELECT id, exam_participant_id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE',
                     [attemptId, context.tenantId]
@@ -159,15 +169,6 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     await client.query('ROLLBACK');
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'invalid_answer_payload' }));
-                    return;
-                }
-
-                // Waits for a pause or resume in progress (see exam-pause.ts).
-                const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
-                if (!examState) {
-                    await client.query('ROLLBACK');
-                    res.writeHead(404, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
                     return;
                 }
 

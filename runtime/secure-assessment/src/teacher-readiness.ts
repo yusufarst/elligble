@@ -43,9 +43,11 @@ export interface TeacherExamReadinessProjection {
     progress: TeacherExamProgressProjection | null;
     /** Start of the open pause while the exam is PAUSED. */
     pausedAt: string | null;
+    /** When the results were finalized (FINALIZED only). */
+    finalizedAt: string | null;
 }
 
-const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
+const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED']);
 
 function isoOrNull(value: unknown): string | null {
     if (value === null || value === undefined) return null;
@@ -148,7 +150,7 @@ export async function handleTeacherReadinessGet(
             JOIN secure_assessment_exam_instances i
                 ON i.teaching_assignment_id = ata.id
                AND i.tenant_id = ata.tenant_id
-               AND i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE', 'PAUSED', 'ENDED')
+               AND i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED')
             LEFT JOIN academic_core_subject_offerings so
                 ON so.id = ata.subject_offering_id AND so.tenant_id = ata.tenant_id
             LEFT JOIN academic_core_subjects s
@@ -168,6 +170,7 @@ export async function handleTeacherReadinessGet(
             let roomProctor: TeacherExamRoomProctorProjection = { status: 'not_evaluated' };
             let progress: TeacherExamProgressProjection | null = null;
             let pausedAt: string | null = null;
+            let finalizedAt: string | null = null;
 
             if (DELIVERY_STATES.has(row.lifecycle_state)) {
                 const progressResult = await client.query(`
@@ -203,6 +206,13 @@ export async function handleTeacherReadinessGet(
                     );
                     pausedAt = isoOrNull(open.rows[0]?.paused_at);
                 }
+                if (row.lifecycle_state === 'FINALIZED') {
+                    const done = await client.query(
+                        'SELECT finalized_at FROM secure_assessment_exam_result_finalizations WHERE tenant_id = $1 AND exam_instance_id = $2',
+                        [context.tenantId, examInstanceId]
+                    );
+                    finalizedAt = isoOrNull(done.rows[0]?.finalized_at);
+                }
             } else {
                 const readiness = await evaluateExamReadiness(client as unknown as pg.PoolClient, context.tenantId, examInstanceId);
                 baseline = readiness.baseline as TeacherExamBaselineProjection;
@@ -219,6 +229,7 @@ export async function handleTeacherReadinessGet(
                 roomProctor,
                 progress,
                 pausedAt,
+                finalizedAt,
             });
         }
 

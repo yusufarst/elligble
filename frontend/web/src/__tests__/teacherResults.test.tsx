@@ -43,6 +43,31 @@ describe('TeacherResultsView', () => {
     vi.clearAllMocks();
   });
 
+  it('shows finalized results as final, with who did not take the exam instead of a zero', async () => {
+    vi.mocked(getTeacherExamResults).mockResolvedValue(response({
+      exam: { ...response().exam, lifecycleState: 'FINALIZED' },
+      resultState: 'FINAL',
+      finalizedAt: '2026-09-29T04:05:00.000Z',
+      summary: { participants: 3, notStarted: 1, inProgress: 0, submitted: 2 },
+      participants: [
+        response().participants[0],
+        response().participants[1],
+        { elligbleId: 'siswa.d', status: 'ABSENT', finalizationSource: null, submittedAt: null, score: null },
+      ],
+    }));
+    render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
+    expect(await screen.findByText('Hasil final')).toBeTruthy();
+    expect(screen.queryByText('Hasil sementara')).toBeNull();
+    expect(screen.getByText(/Nilai dibekukan dan tidak berubah oleh perubahan data berikutnya/)).toBeTruthy();
+    const summary = screen.getByLabelText('Ringkasan peserta');
+    expect(within(summary).getByText('Tidak mengerjakan').nextSibling?.textContent).toBe('1');
+    expect(within(summary).queryByText('Sedang mengerjakan')).toBeNull();
+    const absent = screen.getAllByRole('row').find(r => r.textContent?.includes('siswa.d'))!;
+    expect(within(absent).getByText('Tidak mengerjakan')).toBeTruthy();
+    expect(within(absent).getByText('Tidak ada nilai')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('\u2014');
+  });
+
   it('lists participants in the server order with scores hidden until the teacher shows them', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response());
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);

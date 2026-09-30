@@ -5,11 +5,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { formatTime, formatWindow } from '../lib/format.ts';
+import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 
-// Provisional results for the teacher who manages the exam (D04.8). Scores come only from
-// finalized attempts; a participant who never started has no score (absent is not zero,
-// D04.4-12). Rows follow the ELLIGBLE ID, never the score (D04.8-51). Scores stay hidden
+// Results for the teacher who manages the exam (D04.8): provisional until the exam is
+// finalized, then the frozen final results (D04.8-17/20). Scores come only from submitted
+// attempts; a participant who never started has no score (absent is not zero, D04.4-12). Rows follow the ELLIGBLE ID, never the score (D04.8-51). Scores stay hidden
 // until the teacher shows them, so a shared or projected screen does not expose them
 // (FRONTEND_DESIGN_SYSTEM §58).
 
@@ -31,6 +31,8 @@ function statusOf(row: ParticipantResult): { label: string; tone: 'success' | 'n
       return { label: 'Sedang mengerjakan', tone: 'neutral', note: null };
     case 'NOT_STARTED':
       return { label: 'Belum mulai', tone: 'neutral', note: null };
+    case 'ABSENT':
+      return { label: 'Tidak mengerjakan', tone: 'neutral', note: null };
   }
 }
 
@@ -97,6 +99,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   }
 
   const { exam, scoring, summary, participants } = data;
+  const final = data.resultState === 'FINAL';
   const context = [exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ');
 
   return (
@@ -111,21 +114,37 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
         )}
       </header>
 
-      <Alert variant="info" role="note">
-        <IconInfo aria-hidden="true" />
-        <AlertTitle>Hasil sementara</AlertTitle>
-        <AlertDescription>
-          Nilai dihitung otomatis dari jawaban yang diterima server. Hasil ini belum difinalisasi dan tidak ditampilkan kepada siswa.
-        </AlertDescription>
-      </Alert>
+      {final ? (
+        <Alert variant="success" role="note">
+          <IconInfo aria-hidden="true" />
+          <AlertTitle>Hasil final</AlertTitle>
+          <AlertDescription>
+            {data.finalizedAt ? `Difinalisasi ${formatDateTime(data.finalizedAt)}. ` : ''}Nilai dibekukan dan tidak berubah oleh perubahan data berikutnya. Hasil ini tidak ditampilkan kepada siswa.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert variant="info" role="note">
+          <IconInfo aria-hidden="true" />
+          <AlertTitle>Hasil sementara</AlertTitle>
+          <AlertDescription>
+            Nilai dihitung otomatis dari jawaban yang diterima server. Hasil ini belum difinalisasi dan tidak ditampilkan kepada siswa.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan peserta">
-        {[
-          ['Peserta', summary.participants],
-          ['Dikumpulkan', summary.submitted],
-          ['Sedang mengerjakan', summary.inProgress],
-          ['Belum mulai', summary.notStarted],
-        ].map(([label, value]) => (
+      <dl className={cn('m-0 grid grid-cols-2 gap-3', final ? 'sm:grid-cols-3' : 'sm:grid-cols-4')} aria-label="Ringkasan peserta">
+        {(final
+          ? [
+            ['Peserta', summary.participants],
+            ['Dikumpulkan', summary.submitted],
+            ['Tidak mengerjakan', summary.notStarted],
+          ]
+          : [
+            ['Peserta', summary.participants],
+            ['Dikumpulkan', summary.submitted],
+            ['Sedang mengerjakan', summary.inProgress],
+            ['Belum mulai', summary.notStarted],
+          ]).map(([label, value]) => (
           <div key={label} className="rounded-md border border-border bg-background px-3 py-2">
             <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
             <dd className="m-0 text-xl font-semibold tabular-nums">{value}</dd>
@@ -197,7 +216,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
                         </td>
                       </>
                     ) : (
-                      <td colSpan={2} className="px-3 py-3 text-right text-muted-foreground">Belum ada nilai</td>
+                      <td colSpan={2} className="px-3 py-3 text-right text-muted-foreground">{row.status === 'ABSENT' ? 'Tidak ada nilai' : 'Belum ada nilai'}</td>
                     )}
                   </tr>
                 );
@@ -208,7 +227,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       )}
 
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-        Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. Peserta yang belum mulai tidak diberi nilai. Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.
+        Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.
       </p>
     </main>
   );

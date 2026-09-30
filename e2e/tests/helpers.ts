@@ -65,3 +65,17 @@ export async function withDatabase<T>(run: (client: pg.Client) => Promise<T>): P
         await client.end();
     }
 }
+
+/** Moves a student's attempt start back so that its server time has run out. */
+export async function expireAttemptOf(elligbleId: string): Promise<void> {
+    await withDatabase(client => client.query(
+        `UPDATE secure_assessment_timer_state t
+         SET started_at = statement_timestamp() - (t.configured_duration_seconds + 1) * interval '1 second'
+         FROM secure_assessment_exam_attempts a
+         JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id
+         JOIN identity_user_accounts ua ON ua.person_id = p.person_id
+         JOIN identity_account_credentials c ON c.user_account_id = ua.id
+         WHERE t.exam_attempt_id = a.id AND c.username = $1`,
+        [elligbleId]
+    ));
+}

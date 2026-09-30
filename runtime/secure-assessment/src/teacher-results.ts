@@ -2,6 +2,7 @@ import type * as pg from 'pg';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import type { FinalizationSource } from './submission.ts';
 import { BASELINE_SCORING_RULE, scoreBaselineAttempt, type ScorableQuestion } from './scoring.ts';
+import { readFinalizedResults } from './result-finalization.ts';
 
 // Provisional results of a teacher-managed exam for the teacher who manages it (D04.4-26A/C,
 // D04.8). Scores are computed on read from the frozen snapshots and the answers the server
@@ -10,8 +11,10 @@ import { BASELINE_SCORING_RULE, scoreBaselineAttempt, type ScorableQuestion } fr
 // zero, D04.4-12). Results are neither finalized nor published (D04.8-17/21): students do
 // not see them. Participants are listed by ELLIGBLE ID, never ranked by score (D04.8-51).
 // When a participant has more than one attempt, the original (first) attempt is shown.
+// Once the exam is finalized (D04.8-17/20) the frozen results are shown instead, exactly
+// as stored at finalization; a participant who did not work on it is ABSENT.
 
-export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED';
+export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'ABSENT';
 
 export interface ParticipantScore {
     correct: number;
@@ -41,8 +44,10 @@ export interface TeacherExamResults {
         windowStartsAt: string | null;
         windowEndsAt: string | null;
     };
-    scoring: { rule: typeof BASELINE_SCORING_RULE; available: boolean; questionCount: number; maxScore: number | null };
-    resultState: 'PROVISIONAL';
+    scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null };
+    resultState: 'PROVISIONAL' | 'FINAL';
+    /** When the results were finalized (FINAL only). */
+    finalizedAt: string | null;
     summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
     participants: ParticipantResult[];
 }
@@ -58,6 +63,14 @@ function isoOrNull(value: unknown): string | null {
     if (value === null || value === undefined) return null;
     const date = value instanceof Date ? value : new Date(String(value));
     return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/** Rows follow the ELLIGBLE ID, never the score (D04.8-51). */
+function sortByElligbleId(list: ParticipantResult[]): void {
+    list.sort((a, b) => {
+        if (a.elligbleId === null || b.elligbleId === null) return a.elligbleId === b.elligbleId ? 0 : a.elligbleId === null ? 1 : -1;
+        return a.elligbleId < b.elligbleId ? -1 : a.elligbleId > b.elligbleId ? 1 : 0;
+    });
 }
 
 export async function readTeacherExamResults(
@@ -96,6 +109,55 @@ export async function readTeacherExamResults(
         if (exam.rows.length !== 1) {
             await client.query('ROLLBACK');
             return { type: 'forbidden' };
+        }
+        const examRow = exam.rows[0];
+        const examInfo = {
+            examInstanceId,
+            subjectLabel: examRow.subject_label ?? null,
+            groupLabel: examRow.group_label ?? null,
+            assessmentTypeLabel: examRow.assessment_type_label ?? null,
+            lifecycleState: examRow.lifecycle_state,
+            windowStartsAt: isoOrNull(examRow.window_starts_at),
+            windowEndsAt: isoOrNull(examRow.window_ends_at),
+        };
+
+        const finalized = await readFinalizedResults(client, actor.tenantId, examInstanceId);
+        if (finalized) {
+            const ids = await listElligbleIds(client, finalized.rows.map(row => row.personId));
+            await client.query('COMMIT');
+            const list: ParticipantResult[] = finalized.rows.map(row => ({
+                elligbleId: ids.get(row.personId) ?? null,
+                status: row.standing === 'SUBMITTED' ? 'SUBMITTED' : 'ABSENT',
+                finalizationSource: (row.finalizationSource as FinalizationSource | null) ?? null,
+                submittedAt: row.submittedAt,
+                score: row.standing === 'SUBMITTED'
+                    ? {
+                        correct: row.correct ?? 0,
+                        incorrect: row.incorrect ?? 0,
+                        unanswered: row.unanswered ?? 0,
+                        rawScore: row.rawScore ?? 0,
+                        maxScore: row.maxScore ?? 0,
+                        scaledScore: row.scaledScore ?? 0,
+                    }
+                    : null,
+            }));
+            sortByElligbleId(list);
+            return {
+                type: 'ok',
+                results: {
+                    exam: examInfo,
+                    scoring: { rule: finalized.scoringRule, available: true, questionCount: finalized.questionCount, maxScore: finalized.maxScore },
+                    resultState: 'FINAL',
+                    finalizedAt: finalized.finalizedAt,
+                    summary: {
+                        participants: list.length,
+                        notStarted: list.filter(r => r.status === 'ABSENT').length,
+                        inProgress: 0,
+                        submitted: list.filter(r => r.status === 'SUBMITTED').length,
+                    },
+                    participants: list,
+                },
+            };
         }
 
         const snapshots = await client.query(
@@ -160,25 +222,13 @@ export async function readTeacherExamResults(
                 score,
             };
         });
-        results.sort((a, b) => {
-            if (a.elligbleId === null || b.elligbleId === null) return a.elligbleId === b.elligbleId ? 0 : a.elligbleId === null ? 1 : -1;
-            return a.elligbleId < b.elligbleId ? -1 : a.elligbleId > b.elligbleId ? 1 : 0;
-        });
+        sortByElligbleId(results);
 
-        const row = exam.rows[0];
         const count = (status: ParticipantResultStatus) => results.filter(r => r.status === status).length;
         return {
             type: 'ok',
             results: {
-                exam: {
-                    examInstanceId,
-                    subjectLabel: row.subject_label ?? null,
-                    groupLabel: row.group_label ?? null,
-                    assessmentTypeLabel: row.assessment_type_label ?? null,
-                    lifecycleState: row.lifecycle_state,
-                    windowStartsAt: isoOrNull(row.window_starts_at),
-                    windowEndsAt: isoOrNull(row.window_ends_at),
-                },
+                exam: examInfo,
                 scoring: {
                     rule: BASELINE_SCORING_RULE,
                     available: scoringAvailable,
@@ -186,6 +236,7 @@ export async function readTeacherExamResults(
                     maxScore: probe.type === 'scored' ? probe.score.maxScore : null,
                 },
                 resultState: 'PROVISIONAL',
+                finalizedAt: null,
                 summary: { participants: results.length, notStarted: count('NOT_STARTED'), inProgress: count('IN_PROGRESS'), submitted: count('SUBMITTED') },
                 participants: results,
             },
