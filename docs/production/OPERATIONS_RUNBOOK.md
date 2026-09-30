@@ -1,6 +1,6 @@
 **Status:** ACTIVE (DEC-042), operational reference for the current release
 **Canonical:** YES for deployment and operations procedure. Does not override LOCKED decisions; open blockers are tracked only in `PRODUCTION_COMPLETION_PLAN.md`.
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-09-30
 
 # ELLIGBLE Operations Runbook
 
@@ -14,6 +14,14 @@ Browser ──HTTPS──> reverse proxy (TLS, HSTS) ──HTTP──> elligble 
 - One Node 24 process serves `/api/*`, `/healthz`, `/readyz` and the built web client (`Dockerfile`, image user `node`).
 - HTTPS is mandatory: the session cookie is `__Host-elligble_session` with `Secure`, `HttpOnly`, `SameSite=Strict`. The proxy must forward the original `Host` and should set `X-Request-ID`.
 - Configuration is environment only; every variable is validated at startup (`.env.example`). Secrets (database password) come from the platform's secret store or `PGPASSWORD`, never from files in the repository.
+
+### Reverse proxy (reference)
+
+`deploy/nginx/elligble.conf` is a reviewed nginx (1.24 or later) configuration for the proxy in front of the container: HTTP to HTTPS redirect (with the ACME path for certificate renewal), TLS 1.2 and 1.3 only, HTTP/2, exactly one HSTS header on every answer (the proxy's own errors included), the original `Host` forwarded (the runtime compares the `Origin` of state-changing requests with it), `X-Request-ID` set so proxy and runtime logs correlate, an access log without query strings (they carry attempt ids), bodies over 64 KB refused, unknown host names closed, and per-address limits that stop floods without touching legitimate exam storms (D04.9-42). Replace the host name, certificate paths and upstream address before use; never proxy the metrics port.
+
+Per-address limits: a whole school usually shares one public address. Sign-in (`/api/v1/auth/login`, `/activate`) allows 10 requests a second per address with a burst of 200, on top of the runtime's per-account limit (DEC-041); the rest of the API allows 300 a second with a burst of 2 000, which covers about 1 000 students answering behind one address, including reconnect and submit storms. Size the API `rate` at about 0.3 x the largest number of students behind one address. Limited requests answer 429, which the exam client retries without losing answers.
+
+Check a proxy before an exam day with `deploy/nginx/smoke-test.sh https://<host> --http http://<host>` (read-only: it signs in with an account that does not exist). It checks readiness through the proxy, one HSTS header, the request id, that no metrics are public, that sign-in reaches the runtime with its `Origin` (a 403 means the `Host` is not forwarded), the 64 KB limit and the HTTPS redirect. On staging only, `--flood` also sends 400 rapid sign-ins and expects the proxy to refuse part of them and to recover.
 
 ## 2. Release procedure
 
@@ -51,7 +59,7 @@ Never logged: query strings (attempt ids), request or response bodies, cookies, 
 
 ### Metrics and alerts
 
-Set `SA_METRICS_PORT` (for example `9464`) to start the internal metrics listener; it serves only `GET /metrics` in the Prometheus text format, which any compatible collector reads (no vendor, no agent in the image). It binds to `SA_METRICS_HOST` (default `127.0.0.1`); in a container, use the address of an internal network that only the collector reaches, and never route this port through the public reverse proxy. The public port never serves metrics (`/metrics` there is an ordinary 404). Labels are fixed vocabularies only: no ids, paths or personal data.
+Set `SA_METRICS_PORT` (for example `9464`) to start the internal metrics listener; it serves only `GET /metrics` in the Prometheus text format, which any compatible collector reads (no vendor, no agent in the image). It binds to `SA_METRICS_HOST` (default `127.0.0.1`); in a container, use the address of an internal network that only the collector reaches, and never route this port through the public reverse proxy. The public port never serves metrics (`/metrics` there answers the web client's page, or 404 when the runtime serves no client). Labels are fixed vocabularies only: no ids, paths or personal data.
 
 | Metric | Meaning |
 |---|---|
@@ -75,7 +83,7 @@ Example scrape job (the collector runs on the same internal network): `{ job_nam
 | `ElligbleResponsePersistenceSlow`, `ElligbleDatabasePoolExhausted`, `ElligbleEventLoopDelayed` | warning | load: look for slow queries and the request rate per component before raising `SA_DB_POOL_MAX` or adding instances |
 | `ElligbleExpiryBacklog`, `ElligbleServerErrors` | warning | a held attempt or a failing component: follow the request ids in the log |
 
-Without a metrics collector, the same conditions show in the logs: `http_request` lines with `status` 5xx on `/api/v1/assessment/answer/save` (answers not stored), `expiry_finalization_failed` (sweep failing), `database_not_ready` and 503 from `/readyz`. Drill on a running process: `curl -s http://127.0.0.1:9464/metrics | grep elligble_database_ready` answers `elligble_database_ready 1`, and `curl -s -o /dev/null -w '%{http_code}' http://<public-address>/metrics` answers `404`.
+Without a metrics collector, the same conditions show in the logs: `http_request` lines with `status` 5xx on `/api/v1/assessment/answer/save` (answers not stored), `expiry_finalization_failed` (sweep failing), `database_not_ready` and 503 from `/readyz`. Drill on a running process: `curl -s http://127.0.0.1:9464/metrics | grep elligble_database_ready` answers `elligble_database_ready 1`, and `curl -s https://<public-address>/metrics | grep -c '^elligble_'` answers `0`.
 
 ## 4. Rollback
 

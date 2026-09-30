@@ -84,7 +84,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-10 | Assigned-exam projection had no lifecycle/window/duration | **RESOLVED**: `schedule` + `serverNow` in the projection; the list explains when and why an exam can or cannot be started (D04.2-73) | RESOLVED |
 | P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes. First part done: the exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61) from server facts, including session moves (D04.6-30). Second part done: lock and unlock of one participant (D04.6-38/39/40, ASSESS-PROCTOR-001). Third part done: broadcast messages (D04.1-77A..G, D04.6-49..55, ASSESS-PROCTOR-002). Remaining: device-side signals and their policy (D04.6-19..32, D04.7 presets), incidents, other control actions | OPEN (in progress) |
 | P1-13 | Shared-device hygiene: remembered school choice leaked to the next account; re-authentication could accept another account while keeping the previous context | found in rendered checks — **RESOLVED** (logout clears the choice; re-login locked to the same ELLIGBLE ID) | RESOLVED |
-| P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
+| P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041); **RESOLVED as a reference** by OPS-003: `deploy/nginx/elligble.conf` limits sign-in and API per address with bursts sized for whole schools, tested against the runtime (a 1 500-request storm passes, a sign-in flood is limited); applying it to the production proxy is part of OPS-001 | RESOLVED (reference; deployment with OPS-001) |
 | P1-15 | Question order followed random snapshot UUIDs, not the authored order (D04.3-41, D04.2-57..59) | **RESOLVED**: migration `0038` adds a positive, per-exam unique `display_order` written when the snapshot is created (snapshots stay immutable); delivery orders by it, legacy rows follow by id; real-PostgreSQL test with identifier order opposite to the authored order | RESOLVED |
 | P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | **RESOLVED**: migration `0043` adds an explicit IANA zone per school, required by `school create` and changed only by the audited `school set-time-zone`; `GET /me/context` returns it and the web client formats every date and time in it (WIB, WITA, WIT) whatever the device zone; activation cards use it. Verified with the browser clock in UTC | RESOLVED |
 | P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | **RESOLVED**: server semantics and teacher controls (ASSESS-LIFE-001), student exam screen and pre-pause answer protocol (ASSESS-LIFE-002) | RESOLVED (§6, §7) |
@@ -108,14 +108,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → OPS-003.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | none (next: OPS-003) |
-| READY QUEUE (by value) | OPS-003, E2E-001, ASSESS-TEACHER-001 |
+| IN PROGRESS | none (next: E2E-001) |
+| READY QUEUE (by value) | E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -272,23 +272,20 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Out of scope | choosing a hosted monitoring vendor; dashboards |
 | Delivered | `metrics.ts`: in-memory counters, gauges and histograms rendered in the Prometheus text format without any dependency; requests and durations per exam-day component of D04.9-03 (every API route is mapped, a test fails for an unmapped new route), answer saves by outcome (acknowledged, refused by the exam rules, rejected, failed), expiry sweeps with finalized and still pending attempts and the last success time, database readiness and pool state, event loop delay, memory and start time; labels are fixed vocabularies, never ids or paths. A separate listener (`SA_METRICS_PORT`, `SA_METRICS_HOST` default loopback, off unless set, never the public port) serves only `GET /metrics`. `deploy/monitoring/elligble-alerts.yml`: nine alert rules with severities, answer saves failing and the database first; a test keeps every metric they use exported. Runbook §3: metrics, scrape example, alerts with their first action, the same conditions in the logs, and a drill |
 | Known limits | thresholds are starting points to tune after the first exam days; metrics are per process (several instances are summed by the collector); no dashboard is shipped |
-| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Commit / PR | `c45b223`, CI run 26; part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### OPS-003 · Edge rate limiting guidance and defaults
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | OPS / P2 / READY (parallelizable) |
+| Workstream / priority / status | OPS / P2 / DONE |
 | Dependencies / blocks | none / OPS-001 |
-| Repository evidence | P1-14; runtime has per-account login limits only |
-| Why | whole schools share one address, so per-IP limits must be generous |
+| Why | P1-14; D04.9-42 LOCKED (tell an abusive burst from a legitimate autosave, reconnect or submit storm); whole schools share one address, so per-address limits must be generous |
 | Exact scope | reference reverse-proxy configuration with TLS, HSTS and generous per-IP limits in the runbook, tested against the container |
 | Out of scope | provisioning real infrastructure (OPS-001) |
-| Expected product result | a deployable, reviewed edge configuration |
-| Surfaces | runbook, `deploy/` example |
-| Verification | local proxy smoke test |
-| Owner decision | none |
-| Commit / PR | pending |
+| Delivered | `deploy/nginx/elligble.conf` (nginx 1.24 or later): HTTP to HTTPS redirect with the ACME path, TLS 1.2 and 1.3, HTTP/2, one HSTS header on every answer, the original Host forwarded for the runtime's Origin check, `X-Request-ID` for correlation, an access log without query strings, 64 KB body limit, unknown host names closed, sign-in limited to 10 a second per address (burst 200) and the API to 300 a second (burst 2 000), 429 on refusal. `deploy/nginx/smoke-test.sh`: read-only checks of a deployed proxy, with an optional flood test for staging. Runbook §1 |
+| Known limits | nginx only (the same rules translate to other proxies); certificates and their renewal come with the real infrastructure (OPS-001); limits are per address, so a very large school behind one address needs a higher `rate` |
+| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### E2E-001 · Browser capability evidence beyond Chromium
 
@@ -323,7 +320,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| OPS-002 | Internal metrics listener per exam-day component and alert rules with first actions | this change (§11) |
+| OPS-003 | Reference nginx configuration and smoke test: TLS, HSTS, correlation, per-address limits sized for schools | this change (§11) |
+| OPS-002 | Internal metrics listener per exam-day component and alert rules with first actions | `c45b223`, CI run 26 |
 | ASSESS-PROCTOR-002 | Messages from supervisors to the exam, a room or chosen participants; non-blocking on the exam screen; delivery to devices, never "read" | `cd69126`, CI run 25 |
 | ASSESS-SYNC-001 | Exam-state answers ordered by server time: no resend loop, no choice dropped by a late refusal (P1-29) | `3e28d9b`, CI run 24 |
 | ASSESS-PROCTOR-001 | Lock and unlock of one participant by the proctor or the managing teacher, audited; questions hidden while the time runs | `9243a85`, CI run 23 |
@@ -386,10 +384,10 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Migrations | 47 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
-| Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
+| Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy with a reviewed reference configuration and smoke test (`deploy/nginx/`, runbook §1); `__Host-` Secure cookie and HSTS in production |
 | Logging / monitoring / error reporting | JSON-lines access and error log with request ids; internal metrics listener (`SA_METRICS_PORT`) per exam-day component and alert rules in `deploy/monitoring/` (OPS-002); choosing where the collector and alerting run belongs to OPS-001 |
 | Backup / restore / incident response / rollback | runbook procedures; local restore drill verified; production drill pending (PB11) |
-| Rate limiting | per-account login policy in runtime (DEC-041); infrastructure limits at the proxy (P1-14) |
+| Rate limiting | per-account login policy in runtime (DEC-041); per-address limits at the proxy in the reference configuration `deploy/nginx/elligble.conf` (OPS-003, P1-14) |
 | Provisioning | audited operator CLI (runbook §7) for schools (with their time zone), people with activation cards, academic setup, exams and activation reissue |
 | CI | `.github/workflows/ci.yml`: runtime typecheck, unit and PostgreSQL 16 integration; web typecheck, tests and build; browser end-to-end suite against the production process; image build and smoke test |
 
@@ -606,7 +604,17 @@ After operator metrics and alert rules (OPS-002, this branch):
 | runtime unit | 905/905 PASS: every API route of the server belongs to a named component; counters, cumulative histogram buckets with +Inf, sum and count, save outcomes and sweep results render in the text format without ids or paths; the listener serves only GET /metrics (404 elsewhere, 405 for POST) with live pool state and a readiness of 0 when the database check fails; the public server counts requests but answers 404 for /metrics; every metric the alert rules use is exported; the metrics port must differ from the public port |
 | integration (real PostgreSQL 16) | 118/118 PASS: through the production wiring an acknowledged and a refused save are counted by outcome with their latency, per-component request counts follow the journey, no attempt id appears; an overdue attempt held by another transaction is reported as pending by the sweep, then finalized and counted once released |
 | mutation checks | refused saves counted as rejected, non-cumulative buckets, an unmapped route, running attempts counted as pending, a sweep never reported, metrics on the public port: all caught |
-| runbook drill (real process, `SA_METRICS_PORT=9464`) | `metrics_listening` logged; the internal listener answers with request counts, a successful sweep, pool state, `elligble_database_ready 1` and the event loop delay; POST answers 405; the public port answers 404 for /metrics; SIGTERM closes both listeners (`shutdown_complete`) |
+| runbook drill (real process, `SA_METRICS_PORT=9464`) | `metrics_listening` logged; the internal listener answers with request counts, a successful sweep, pool state, `elligble_database_ready 1` and the event loop delay; POST answers 405; the public port (serving no web client in this drill) answers 404 for /metrics, and with the web client it answers the client's page, never metrics (OPS-003 smoke test); SIGTERM closes both listeners (`shutdown_complete`) |
+
+After the reference reverse proxy (OPS-003, this branch):
+
+| Check | Result |
+|---|---|
+| `nginx -t` (nginx 1.24.0) | the reference configuration is valid (with local ports, host name and a self-signed certificate substituted) |
+| smoke test (`deploy/nginx/smoke-test.sh`, runtime in production mode with the web client behind the proxy) | readiness through the proxy, one HSTS header, the request id echoed, no metrics on the public side, sign-in reaching the runtime with its Origin (401 for the unknown account), 64 KB limit (413), HTTP to HTTPS (301): all ok; the first run against a stopped runtime failed with 502 as it should, and a first version of the metrics check expecting 404 was corrected (the public side answers /metrics with the web client's page, never metrics) |
+| sign-in through TLS | a real sign-in answers 200 with `__Host-elligble_session` marked `Secure`, `HttpOnly`, `SameSite=Strict`; the session is then valid through the proxy; a state change with a foreign Origin answers 403 |
+| D04.9-42 | 1 500 API requests from one address in 5.6 s (about 270 a second, more than 1 000 answering students) all reach the runtime without a single 429; 400 rapid sign-ins from one address are partly refused by the proxy with 429, and sign-in works again after the flood |
+| correlation and privacy | the proxy's access log line carries the path without the query string (no attempt id) and the request id that the runtime logs for the same request |
 
 ## 12. Friction reducers (automation)
 
@@ -614,6 +622,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: OPS-003 (edge rate limiting guidance), then E2E-001 (browser evidence beyond Chromium); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: E2E-001 (browser evidence beyond Chromium), then ASSESS-TEACHER-001 (teacher question import); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
