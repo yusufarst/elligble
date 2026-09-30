@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
+import { buildResultsCsv, downloadTextFile, resultsCsvFileName } from '../lib/results-export.ts';
 
 // Results for the teacher who manages the exam (D04.8): provisional until the exam is
 // finalized, then the frozen final results (D04.8-17/20). Scores come only from submitted
@@ -66,7 +67,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   };
 
   const back = (
-    <Button variant="ghost" size="sm" className="-ml-3 self-start" onClick={onBack}>
+    <Button variant="ghost" size="sm" className="-ml-3 self-start print:hidden" onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       Kembali ke Pelaksanaan Ujian
     </Button>
@@ -152,7 +153,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
         ))}
       </dl>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 print:hidden">
         <Button variant="secondary" aria-pressed={showScores} onClick={() => setShowScores(s => !s)} disabled={!scoring.available}>
           {showScores ? <IconEyeOff aria-hidden="true" /> : <IconEye aria-hidden="true" />}
           {showScores ? 'Sembunyikan Nilai' : 'Tampilkan Nilai'}
@@ -160,7 +161,14 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
         <Button variant="secondary" onClick={refresh} disabled={refreshing}>
           {refreshing ? 'Memperbarui...' : 'Perbarui Data'}
         </Button>
+        <Button variant="secondary" onClick={() => downloadTextFile(buildResultsCsv(data), resultsCsvFileName(data))} disabled={participants.length === 0}>
+          Unduh CSV
+        </Button>
+        <Button variant="secondary" onClick={() => window.print()}>Cetak</Button>
       </div>
+      <p className="m-0 text-xs text-muted-foreground print:hidden">
+        Berkas CSV memakai titik koma sebagai pemisah kolom dan koma sebagai tanda desimal, sesuai pengaturan Indonesia pada Excel dan Google Sheets. Berkas berisi nilai; simpan hanya di perangkat sekolah.
+      </p>
       {error === 'failed' && (
         <p role="alert" className="m-0 text-sm text-danger-ink">Gagal memperbarui data. Data yang tampil adalah data terakhir.</p>
       )}

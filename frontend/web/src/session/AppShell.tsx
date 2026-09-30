@@ -39,7 +39,7 @@ export const AppShell: React.FC<{
   children: React.ReactNode;
 }> = ({ me, username, workspaces, current, canSwitchTenant, onNavigate, onSwitchTenant, onLogout, children }) => (
   <div className="flex min-h-dvh flex-col bg-background">
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm print:static">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:flex-nowrap md:px-6">
         <span className="order-1 font-mono text-xs font-semibold tracking-[0.2em] text-foreground">ELLIGBLE</span>
         {/* Tenant context stays visible at every width (D02.2-20): own row on small screens. */}
@@ -47,7 +47,7 @@ export const AppShell: React.FC<{
           <IconBuilding className="shrink-0" />
           <span className="truncate" data-testid="active-tenant">{tenantLabel(me.tenantDisplayLabel, me.tenantId)}</span>
         </span>
-        <div className="order-2 ml-auto flex items-center gap-1 md:order-3">
+        <div className="order-2 ml-auto flex items-center gap-1 md:order-3 print:hidden">
           {username && (
             <span className="hidden max-w-[200px] truncate px-2 text-sm text-muted-foreground md:inline" title={username}>
               {username}
@@ -63,7 +63,7 @@ export const AppShell: React.FC<{
         </div>
       </div>
       {workspaces.length > 1 && (
-        <nav aria-label="Ruang kerja" className="mx-auto flex max-w-[1440px] gap-1 overflow-x-auto px-2 md:px-4">
+        <nav aria-label="Ruang kerja" className="mx-auto flex max-w-[1440px] gap-1 overflow-x-auto px-2 md:px-4 print:hidden">
           {workspaces.map(w => {
             const Icon = WORKSPACE_ICONS[w];
             const active = w === current;

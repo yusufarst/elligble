@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { continueExam, expireAttemptOf, login, option, saveStatus, state, withDatabase } from './helpers.ts';
 
@@ -169,6 +170,26 @@ test('the teacher finalizes once every attempt is finished; the results are fina
     await expect(row('siswa.e2e.01')).toContainText('66,67');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath('final-results-360.png'), fullPage: true });
+
+    // Export (D04.8-52/53): one self-describing row per participant, Indonesian spreadsheet form.
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Unduh CSV' }).click()]);
+    expect(download.suggestedFilename()).toMatch(/^hasil-ujian_matematika-wajib_x-e2e_\d{4}-\d{2}-\d{2}_final\.csv$/);
+    const csv = readFileSync(await download.path(), 'utf8');
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    const lines = csv.replace(/^\uFEFF/, '').trimEnd().split('\r\n');
+    expect(lines).toHaveLength(7);
+    expect(lines[0].split(';').slice(0, 6)).toEqual(['Mata pelajaran', 'Kelas', 'Jenis penilaian', 'Status hasil', 'Waktu finalisasi (WIB)', 'ELLIGBLE ID']);
+    expect(lines.find(line => line.includes(';siswa.e2e.01;'))).toContain(';Dikumpulkan;Oleh siswa;');
+    expect(lines.find(line => line.includes(';siswa.e2e.01;'))).toContain(';66,67;BASELINE_SINGLE_CHOICE_V1');
+    expect(lines.find(line => line.includes(';siswa.e2e.06;'))).toMatch(/;Tidak mengerjakan(;){10}$/);
+
+    // Printing keeps the table and drops the controls.
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.getByRole('button', { name: 'Unduh CSV' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Keluar' })).toBeHidden();
+    await expect(row('siswa.e2e.01')).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath('final-results-print-360.png'), fullPage: true });
+    await page.emulateMedia({ media: 'screen' });
 
     const frozen = await withDatabase(async client => (await client.query(
         `SELECT f.scoring_rule, count(r.*)::int AS rows, count(*) FILTER (WHERE r.standing = 'ABSENT')::int AS absent

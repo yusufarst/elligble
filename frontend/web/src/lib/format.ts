@@ -62,3 +62,22 @@ export function formatWindow(startIso: string, endIso: string): string {
   }
   return `${formatDateTime(startIso)} sampai ${formatDateTime(endIso)}`;
 }
+
+/** "2026-09-30 08:27" in the school's zone: for spreadsheets, which read this form as a date. */
+export function formatSheetDateTime(iso: string): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: displayTimeZone,
+  }).formatToParts(new Date(iso));
+  const part = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`;
+}
+
+/** "2026-09-30" in the school's zone. */
+export function formatSheetDate(iso: string): string {
+  return formatSheetDateTime(iso).slice(0, 10);
+}
+
+/** The school's zone abbreviation at that instant ("WIB", "WITA", "WIT"), or the device's. */
+export function zoneLabel(iso: string = new Date().toISOString()): string {
+  return formats.time.formatToParts(new Date(iso)).find(p => p.type === 'timeZoneName')?.value ?? '';
+}

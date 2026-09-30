@@ -42,7 +42,7 @@ Status on this branch (baseline findings in §4-§5). Rows marked E2E are exerci
 | Role | Works today | Incomplete | Blocks production |
 |---|---|---|---|
 | Student | activation, login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, "Ragu-ragu" marks, timer with reminders, submit and automatic submission, paused screen with frozen time and exact resume, ended note (ASSESS-LIFE-002) | seeing results (publication policy, §7) | none in the product (Owner/legal PBs, §8) |
-| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" (ASSESS-LIFE-001), aggregate progress with who is still working, provisional results ("Hasil Ujian"), "Finalisasi Hasil" and final results (RESULT-001); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, result export, publication | none for the pilot; teacher authoring or import for scale |
+| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" (ASSESS-LIFE-001), aggregate progress with who is still working, provisional results ("Hasil Ujian"), "Finalisasi Hasil" and final results (RESULT-001), "Unduh CSV" and "Cetak" (RESULT-002); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, publication | none for the pilot; teacher authoring or import for scale |
 | Proctor | monitoring read model and screen; exam-day participant list (who is expected, working, finished or moved) | Proctor Feed events, interventions (lock, add time, broadcast) | Feed is P1-11 |
 | Platform operations | container release, preflight, logs, CI, runbook, audited provisioning CLI | school-admin self-service, metrics and alerting | PB11 drill on production infrastructure |
 | School / tenant administration | onboarding by the platform operator (audited CLI): people with activation cards, academic setup through `runtime/academic-core` | school-admin self-service import (D02.7), academic management UI | none for the pilot; self-service for scale |
@@ -97,7 +97,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-23 | Save did not validate the answer payload against the frozen question (any JSON was stored; option ids unchecked) | **RESOLVED**: `isAnswerForQuestion` in `answer.ts` accepts exactly `{ selectedOptionId }` naming an option of the frozen MULTIPLE_CHOICE_SINGLE question (D04.3-21), otherwise 400 `invalid_answer_payload` and nothing is stored | RESOLVED |
 | P1-24 | "Ragu-ragu / Tandai" flag for review (D04.5-34/35) not implemented | **RESOLVED**: migration `0042` stores marks apart from answers; `POST /assessment/review-flag` only for the attempt's active exam session while it is open (not after submission or time expiry); resume returns the marks; the question card has a "Ragu-ragu" checkbox, both navigators show an amber corner and a count, the submit dialog reminds without blocking; unsent marks stay on the device across a reload and retry; teachers, proctors and scoring never read them | RESOLVED |
 | P1-27 | An attempt whose time ran out while the student's device was unreachable stayed open indefinitely: only the device triggered expiry finalization (D04.5-45/47/49) | found while designing results: **RESOLVED**, the runtime finalizes such attempts from the server-accepted answers every `SA_EXPIRY_SWEEP_SECONDS`, skipping attempts held by an in-flight save or submit; every finalization path converges on one submission, which records its source (`STUDENT_SUBMIT`, `EXPIRY_CLIENT`, `EXPIRY_SERVER`, migration `0041`) so the D04.5-48 exception case stays visible | RESOLVED |
-| P1-28 | No scoring or results: after an exam the teacher saw only counts (D04.8) | **RESOLVED (provisional)**: deterministic rule `BASELINE_SINGLE_CHOICE_V1` (correct option earns the question's maximum, otherwise 0, raw ÷ maximum × 100 rounded half up to two decimals, exact integer arithmetic) computed on read from the frozen snapshots and accepted answers of finalized attempts; `GET /assessment/teacher-exams/results` only for the teacher who manages the exam; "Hasil Ujian" screen lists participants by ELLIGBLE ID (never ranked), absent is not zero, shows how each attempt was finalized, keeps scores hidden until shown (FRONTEND_DESIGN_SYSTEM §58). Students see no score. Finalization DONE (RESULT-001: explicit, audited, frozen, absent is not zero); export (RESULT-002), publication (RESULT-003, Owner) and corrections (D04.8-24+) remain | RESOLVED (provisional, finalization DONE) |
+| P1-28 | No scoring or results: after an exam the teacher saw only counts (D04.8) | **RESOLVED (provisional)**: deterministic rule `BASELINE_SINGLE_CHOICE_V1` (correct option earns the question's maximum, otherwise 0, raw ÷ maximum × 100 rounded half up to two decimals, exact integer arithmetic) computed on read from the frozen snapshots and accepted answers of finalized attempts; `GET /assessment/teacher-exams/results` only for the teacher who manages the exam; "Hasil Ujian" screen lists participants by ELLIGBLE ID (never ranked), absent is not zero, shows how each attempt was finalized, keeps scores hidden until shown (FRONTEND_DESIGN_SYSTEM §58). Students see no score. Finalization DONE (RESULT-001: explicit, audited, frozen, absent is not zero); export DONE (RESULT-002); publication (RESULT-003, Owner) and corrections (D04.8-24+) remain | RESOLVED (provisional, finalization and export DONE) |
 | P1-25 | Time reminders at configured thresholds (D04.5-32) were missing; only warning styling below 5 and 1 minutes | `StudentExamWorkstation`: **RESOLVED** with the decision's default thresholds (30, 15, 5 minutes): a non-blocking status line with the actual remaining minutes, hidden after 10 seconds; school-defined thresholds await tenant settings | RESOLVED |
 
 ## 6. Production task graph
@@ -106,14 +106,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → RESULT-002 → PR checkpoint → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → PR checkpoint → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | RESULT-002 |
+| IN PROGRESS | PR checkpoint |
 | READY QUEUE (by value) | ASSESS-PROCTOR-001, ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -173,7 +173,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | RESULT / P2 / READY (parallelizable) |
+| Workstream / priority / status | RESULT / P2 / DONE |
 | Dependencies / blocks | ASSESS-LIFE-001 (for the final flag) / none |
 | Repository evidence | results only on screen (`TeacherResultsView.tsx`) |
 | Why | D04.8-52 (export baseline-useful, formats later), D04.8-53 (provenance) |
@@ -183,7 +183,9 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Surfaces | `TeacherResultsView.tsx`, a CSV builder, tests |
 | Verification | unit (escaping, provenance), component, E2E download |
 | Owner decision | none |
-| Commit / PR | pending |
+| Delivered | "Unduh CSV" on the results screen (`lib/results-export.ts`, built on the device from the results the teacher is already authorized to see; no new server route): one row per participant carrying its provenance (subject, class, assessment type, provisional or final and when finalized, status, how and when the attempt was submitted, attempt kind "Asli", rule); counts, raw and maximum score and the 0 to 100 score; absent participants with empty score cells; Indonesian spreadsheet form (semicolon columns, decimal comma, UTF-8 with byte-order mark, times as "yyyy-mm-dd hh:mm" in the school zone with its label in the header); values a spreadsheet could run as formulas are prefixed with an apostrophe; file name from subject, class, date and state. "Cetak" prints the screen without controls (scores print as shown on screen) |
+| Known limits | exact formats beyond CSV (Excel workbook, integration format) wait for D04.8-52 "formats later"; a spreadsheet set to an English locale may read the decimal comma as text; exports are not logged |
+| Commit / PR | this change (see §11) |
 
 #### ASSESS-PROCTOR-001 · Participant lock and unlock
 
@@ -314,7 +316,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| RESULT-001 | Explicit, audited result finalization with frozen per-participant results | this change (§11) |
+| RESULT-002 | Teacher result export (CSV with provenance) and print view | this change (§11) |
+| RESULT-001 | Explicit, audited result finalization with frozen per-participant results | `c5aecdb` |
 | ASSESS-LIFE-002 | Student exam screen under pause and end; answers chosen before a pause are never lost | `1a8e81c`, CI run 19 |
 | ASSESS-LIFE-001 | Exam pause, resume and end on the server with pause-aware time; teacher controls | `a40565e`, CI run 18 |
 | TOOL-001 | DesainPakeAI CLI authenticated at user level (no repository file holds the key), skill installed, project and context verified (§10) | `2459f48` |
@@ -540,12 +543,20 @@ After result finalization (RESULT-001, this branch):
 | browser E2E | 15/15 PASS: after the end, finalization stays closed while two students still work; once their time runs out the teacher finalizes; "Hasil final" lists every participant (automatic submissions marked, the absent student "Tidak mengerjakan", 66,67 for the first student) and the database holds six frozen rows with one ABSENT; the student still sees no score |
 | rendered check (Chromium, 360 px and 1280 px) | ended card with "Finalisasi Hasil", its confirmation, finalized card and final results: no page errors, no horizontal overflow, no em dash |
 
+After the teacher result export (RESULT-002, this branch):
+
+| Check | Result |
+|---|---|
+| web vitest / `vite build` | 204/204 / PASS: header and rows in WIB, decimal comma, empty cells for the absent participant, provisional marked, formula-like values neutralized, quoting of separators and quotes, file names; the button hands a UTF-8 CSV to the browser and "Cetak" opens the print dialog |
+| browser E2E | 15/15 PASS: the teacher downloads the final results: expected file name, byte-order mark, header and six rows with "Oleh siswa", "66,67" and an absent row of empty cells; in print mode the controls and the sign-out button are hidden and the table stays |
+| rendered check (Chromium, 360 px) | results with the new actions and the print rendering: no horizontal overflow |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: RESULT-002 (teacher export), then the pull-request checkpoint, then the proctor items. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: the pull-request checkpoint, then the proctor items. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

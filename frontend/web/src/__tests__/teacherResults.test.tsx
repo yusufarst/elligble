@@ -43,6 +43,34 @@ describe('TeacherResultsView', () => {
     vi.clearAllMocks();
   });
 
+  it('downloads the results as a CSV file and opens the print dialog', async () => {
+    vi.mocked(getTeacherExamResults).mockResolvedValue(response({ resultState: 'FINAL', finalizedAt: '2026-09-29T04:05:00.000Z' }));
+    const blobs: Blob[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => { blobs.push(blob); return 'blob:hasil'; });
+    const revokeObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    const clicked: HTMLAnchorElement[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { clicked.push(this); });
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {});
+    render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Unduh CSV' }));
+    expect(clicked).toHaveLength(1);
+    expect(clicked[0].download).toBe('hasil-ujian_matematika-wajib_x-1_2026-09-29_final.csv');
+    const content = await new Promise<string>(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsText(blobs[0]);
+    });
+    expect(content.split('\r\n')[0]).toContain('ELLIGBLE ID');
+    expect(content).toContain('siswa.a;Dikumpulkan;Oleh siswa');
+    expect(content).toContain('66,67');
+    expect(blobs[0].type).toBe('text/csv;charset=utf-8');
+    fireEvent.click(screen.getByRole('button', { name: 'Cetak' }));
+    expect(print).toHaveBeenCalledTimes(1);
+    click.mockRestore();
+    print.mockRestore();
+  });
+
   it('shows finalized results as final, with who did not take the exam instead of a zero', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response({
       exam: { ...response().exam, lifecycleState: 'FINALIZED' },
