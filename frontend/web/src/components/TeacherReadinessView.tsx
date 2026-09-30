@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IconInfo } from '@/components/icons';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { RescheduleDialog } from './TeacherExamReschedule.tsx';
+import { CancelExamDialog } from './TeacherExamCancel.tsx';
 
 const LIFECYCLE_LABELS: Record<string, string> = {
   SCHEDULED: 'Terjadwal',
@@ -15,6 +16,8 @@ const LIFECYCLE_LABELS: Record<string, string> = {
   PAUSED: 'Dijeda',
   ENDED: 'Diakhiri',
   FINALIZED: 'Hasil Final',
+  // Never the raw state name on screen; a cancelled exam is listed as "Dibatalkan" instead.
+  ARCHIVED: 'Diarsipkan',
 };
 
 // Exams being delivered: progress, monitoring, results and the pause, resume and end
@@ -117,6 +120,7 @@ export const TeacherReadinessView: React.FC<{
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<{ exam: TeacherExamReadinessProjection; action: ConfirmableAction } | null>(null);
   const [rescheduleFor, setRescheduleFor] = useState<TeacherExamReadinessProjection | null>(null);
+  const [cancelFor, setCancelFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [statusNotice, setStatusNotice] = useState<{ failed: boolean; text: string } | null>(null);
 
   const fetchReadinessData = useCallback(async () => {
@@ -200,7 +204,10 @@ export const TeacherReadinessView: React.FC<{
     );
   }
 
-  const exams = data?.exams || [];
+  const allExams = data?.exams || [];
+  // Cancelled exams keep their record in a history section, never among the exams to run.
+  const exams = allExams.filter(exam => !exam.cancellation);
+  const cancelledExams = allExams.filter(exam => exam.cancellation);
 
   const shownNotice = statusNotice ?? (notice ? { failed: false, text: notice } : null);
   const noticeBanner = shownNotice ? (
@@ -210,7 +217,7 @@ export const TeacherReadinessView: React.FC<{
     </Alert>
   ) : null;
 
-  if (exams.length === 0) {
+  if (allExams.length === 0) {
     return (
       <div className="teacher-readiness-container">
         {noticeBanner}
@@ -243,6 +250,7 @@ export const TeacherReadinessView: React.FC<{
         </div>
       </div>
 
+      {exams.length === 0 && <p className="m-0 mb-4 text-muted-foreground">Tidak ada ujian yang terjadwal atau berlangsung.</p>}
       <div className="teacher-exams-list">
         {exams.map((exam: TeacherExamReadinessProjection) => {
 
@@ -413,6 +421,7 @@ export const TeacherReadinessView: React.FC<{
                       {busy ? 'Memproses...' : 'Buka Ujian'}
                     </Button>
                   )}
+                  <Button variant="destructive" onClick={() => setCancelFor(exam)} disabled={busy}>Batalkan Ujian</Button>
                   {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
                 </div>
               )}
@@ -420,6 +429,44 @@ export const TeacherReadinessView: React.FC<{
           );
         })}
       </div>
+
+      {cancelledExams.length > 0 && (
+        <section aria-labelledby="cancelled-exams-title" className="mt-8 flex flex-col gap-3">
+          <h2 id="cancelled-exams-title" className="m-0 text-lg font-semibold">Ujian Dibatalkan</h2>
+          <div className="teacher-exams-list">
+            {cancelledExams.map(exam => {
+              const cancellation = exam.cancellation!;
+              return (
+                <div key={exam.examInstanceId} className="teacher-exam-card" data-testid={`teacher-exam-${exam.examInstanceId}`}>
+                  <div className="teacher-exam-card-header">
+                    <h3 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h3>
+                    <span className="teacher-lifecycle-badge">Dibatalkan</span>
+                  </div>
+                  {(exam.groupLabel || exam.assessmentTypeLabel) && (
+                    <p className="teacher-exam-window">{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>
+                  )}
+                  {exam.windowStartsAt && exam.windowEndsAt && (
+                    <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
+                  )}
+                  <p className="teacher-exam-note [overflow-wrap:anywhere]">
+                    Dibatalkan {formatDateTime(cancellation.cancelledAt)} oleh {cancellation.by.you ? 'Anda' : (cancellation.by.elligbleId ?? 'guru lain')}. Alasan: {cancellation.reason}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <CancelExamDialog
+        exam={cancelFor}
+        onClose={() => setCancelFor(null)}
+        onDone={outcome => {
+          setCancelFor(null);
+          setStatusNotice(outcome);
+          void fetchReadinessData();
+        }}
+      />
 
       <RescheduleDialog
         exam={rescheduleFor}

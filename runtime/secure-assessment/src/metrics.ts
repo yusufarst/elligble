@@ -57,6 +57,7 @@ const COMPONENT_BY_PATH: Record<string, Component> = {
     '/api/v1/assessment/teacher-exams/import/preview': 'exam_setup',
     '/api/v1/assessment/teacher-exams/import': 'exam_setup',
     '/api/v1/assessment/teacher-exams/reschedule': 'exam_setup',
+    '/api/v1/assessment/teacher-exams/cancel': 'exam_setup',
 };
 
 export function componentOf(pathname: string): Component {

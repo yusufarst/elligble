@@ -127,6 +127,11 @@ export async function handleAssignedExamsGet(
             LEFT JOIN secure_assessment_exam_submissions sub
                 ON sub.exam_attempt_id = a.id AND sub.tenant_id = p.tenant_id
             WHERE p.tenant_id = $1 AND p.person_id = $2
+              -- A cancelled exam is no longer the student's (Owner decision 2026-09-30).
+              AND NOT EXISTS (
+                  SELECT 1 FROM secure_assessment_exam_cancellations c
+                  WHERE c.tenant_id = i.tenant_id AND c.exam_instance_id = i.id
+              )
             ORDER BY p.created_at ASC, i.id ASC, a.created_at ASC, a.id ASC
         `;
 

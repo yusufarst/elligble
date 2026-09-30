@@ -1,6 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { evaluateExamReadiness } from './exam-lifecycle-operations.ts';
+import { listElligbleIds } from '../../identity-access/src/directory.ts';
 
 export interface TeacherReadinessContext {
     tenantId: string;
@@ -46,6 +47,8 @@ export interface TeacherExamReadinessProjection {
     latestStartPolicy: string | null;
     /** When the schedule was last changed before the exam opened (D04.2-45), or null. */
     scheduleChangedAt: string | null;
+    /** The cancellation of an exam that never opened (Owner decision 2026-09-30), or null. */
+    cancellation: { cancelledAt: string; reason: string; by: { you: boolean; elligbleId: string | null } } | null;
     baseline: TeacherExamBaselineProjection;
     roomProctor: TeacherExamRoomProctorProjection;
     progress: TeacherExamProgressProjection | null;
@@ -149,6 +152,7 @@ export async function handleTeacherReadinessGet(
                 i.latest_start_policy AS latest_start_policy,
                 (SELECT max(sc.changed_at) FROM secure_assessment_exam_schedule_changes sc
                  WHERE sc.tenant_id = i.tenant_id AND sc.exam_instance_id = i.id) AS schedule_changed_at,
+                ec.cancelled_at, ec.reason AS cancellation_reason, ec.cancelled_by_person_id,
                 s.display_label AS subject_label,
                 g.display_label AS group_label,
                 t.display_label AS assessment_type_label
@@ -164,7 +168,9 @@ export async function handleTeacherReadinessGet(
             JOIN secure_assessment_exam_instances i
                 ON i.teaching_assignment_id = ata.id
                AND i.tenant_id = ata.tenant_id
-               AND i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED')
+            -- A cancelled exam stays in the teacher's history as "Dibatalkan" (Owner decision 2026-09-30).
+            LEFT JOIN secure_assessment_exam_cancellations ec
+                ON ec.tenant_id = i.tenant_id AND ec.exam_instance_id = i.id
             LEFT JOIN academic_core_subject_offerings so
                 ON so.id = ata.subject_offering_id AND so.tenant_id = ata.tenant_id
             LEFT JOIN academic_core_subjects s
@@ -175,10 +181,13 @@ export async function handleTeacherReadinessGet(
                 ON t.id = i.assessment_type_id AND t.tenant_id = i.tenant_id
             WHERE tm.tenant_id = $1
               AND tm.person_id = $2
+              AND (i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED') OR ec.id IS NOT NULL)
             ORDER BY i.window_starts_at ASC NULLS LAST, i.id ASC
         `;
 
         const queryResult = await client.query(query, [context.tenantId, context.personId]);
+        const cancellers = await listElligbleIds(client as unknown as pg.PoolClient,
+            [...new Set(queryResult.rows.filter(r => r.cancelled_by_person_id).map(r => r.cancelled_by_person_id as string))]);
 
         const exams: TeacherExamReadinessProjection[] = [];
 
@@ -190,7 +199,9 @@ export async function handleTeacherReadinessGet(
             let pausedAt: string | null = null;
             let finalizedAt: string | null = null;
 
-            if (DELIVERY_STATES.has(row.lifecycle_state)) {
+            if (row.cancelled_at) {
+                // Nothing to evaluate for a cancelled exam: it keeps its record only.
+            } else if (DELIVERY_STATES.has(row.lifecycle_state)) {
                 const progressResult = await client.query(`
                     SELECT
                         COUNT(DISTINCT p.id)::int AS participants,
@@ -248,6 +259,11 @@ export async function handleTeacherReadinessGet(
                 durationMinutes: row.duration_seconds === null || row.duration_seconds === undefined ? null : Math.round(Number(row.duration_seconds) / 60),
                 latestStartPolicy: row.latest_start_policy ?? null,
                 scheduleChangedAt: isoOrNull(row.schedule_changed_at),
+                cancellation: row.cancelled_at ? {
+                    cancelledAt: isoOrNull(row.cancelled_at)!,
+                    reason: row.cancellation_reason,
+                    by: { you: row.cancelled_by_person_id === context.personId, elligbleId: cancellers.get(row.cancelled_by_person_id) ?? null },
+                } : null,
                 baseline,
                 roomProctor,
                 progress,

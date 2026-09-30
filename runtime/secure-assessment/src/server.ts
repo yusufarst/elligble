@@ -20,6 +20,7 @@ import { readTeacherExamResults } from './teacher-results.ts';
 import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImport } from './teacher-exam-import.ts';
 import { readTeacherExamPreview } from './teacher-exam-preview.ts';
 import { parseRescheduleRequest, rescheduleTeacherExam } from './teacher-exam-schedule.ts';
+import { cancelTeacherExam, parseCancellationRequest } from './teacher-exam-cancel.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
@@ -515,6 +516,55 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'invalid':
                         sendJson(res, 422, { error: 'reschedule_invalid', problems: outcome.problems });
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
+                        return;
+                    case 'action_key_reused':
+                        sendError(res, 409, 'action_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/cancel') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseCancellationRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await cancelTeacherExam(deps.pool, getContext()!, request);
+                switch (outcome.type) {
+                    case 'cancelled':
+                        sendJson(res, 200, {
+                            examInstanceId: outcome.examInstanceId,
+                            cancelledAt: outcome.cancelledAt,
+                            reason: outcome.reason,
+                            changed: outcome.changed,
+                            replayed: outcome.replayed,
+                        });
                         return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });

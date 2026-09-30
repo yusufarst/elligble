@@ -25,6 +25,8 @@ export interface ProctorMonitoringExamProjection {
     windowEndsAt: string | null;
     /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
     scheduleChange: { changedAt: string; previousWindowStartsAt: string | null; previousWindowEndsAt: string | null } | null;
+    /** When the exam was cancelled before it opened (Owner decision 2026-09-30), or null. */
+    cancelledAt: string | null;
     rooms: ProctorMonitoringRoomProjection[];
 }
 
@@ -89,6 +91,8 @@ export async function handleProctorMonitoringGet(
                 sc.changed_at as schedule_changed_at,
                 sc.previous_window_starts_at,
                 sc.previous_window_ends_at,
+                (SELECT ec.cancelled_at FROM secure_assessment_exam_cancellations ec
+                 WHERE ec.tenant_id = i.tenant_id AND ec.exam_instance_id = i.id) AS cancelled_at,
                 er.id as room_id,
                 er.display_label as room_label,
                 COUNT(DISTINCT pra.exam_participant_id) as participant_count,
@@ -122,7 +126,7 @@ export async function handleProctorMonitoringGet(
                 AND sess.activated_at IS NOT NULL AND sess.ended_at IS NULL
             WHERE pa.tenant_id = $1 AND pa.person_id = $2 AND pa.revoked_at IS NULL
             GROUP BY pa.exam_instance_id, s.display_label, i.window_starts_at, i.window_ends_at,
-                     sc.changed_at, sc.previous_window_starts_at, sc.previous_window_ends_at, er.id, er.display_label
+                     sc.changed_at, sc.previous_window_starts_at, sc.previous_window_ends_at, i.tenant_id, i.id, er.id, er.display_label
             ORDER BY pa.exam_instance_id ASC, er.id ASC
         `;
 
@@ -145,6 +149,7 @@ export async function handleProctorMonitoringGet(
                         previousWindowStartsAt: isoOrNull(row.previous_window_starts_at),
                         previousWindowEndsAt: isoOrNull(row.previous_window_ends_at),
                     } : null,
+                    cancelledAt: isoOrNull(row.cancelled_at),
                     rooms: []
                 };
                 assignmentsMap.set(examInstanceId, item);

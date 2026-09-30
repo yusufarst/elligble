@@ -86,12 +86,14 @@ export async function handleAttemptStart(req: http.IncomingMessage, res: http.Se
         }
 
         const exam = await client.query(
-            `SELECT lifecycle_state, window_starts_at, window_ends_at,
-                    configured_attempt_duration_seconds, latest_start_policy,
+            `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at,
+                    i.configured_attempt_duration_seconds, i.latest_start_policy,
+                    EXISTS (SELECT 1 FROM secure_assessment_exam_cancellations c
+                            WHERE c.tenant_id = i.tenant_id AND c.exam_instance_id = i.id) AS cancelled,
                     statement_timestamp() AS db_now
-             FROM secure_assessment_exam_instances
-             WHERE id = $1 AND tenant_id = $2
-             FOR SHARE`,
+             FROM secure_assessment_exam_instances i
+             WHERE i.id = $1 AND i.tenant_id = $2
+             FOR SHARE OF i`,
             [examInstanceId, context.tenantId]
         );
         if (exam.rows.length !== 1) {

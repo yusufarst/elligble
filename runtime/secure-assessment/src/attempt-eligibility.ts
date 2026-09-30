@@ -5,6 +5,7 @@
 export type LatestStartPolicy = 'FULL_DURATION_BEYOND_WINDOW' | 'REMAINING_WINDOW_ONLY' | 'LATE_START_BLOCKED';
 
 export type StartIneligibility =
+    | 'exam_cancelled'
     | 'exam_not_active'
     | 'exam_paused'
     | 'exam_ended'
@@ -19,6 +20,8 @@ export interface ExamTimingRow {
     window_ends_at: Date | string | null;
     configured_attempt_duration_seconds: number | string | null;
     latest_start_policy: string | null;
+    /** The exam was cancelled before it opened (migration 0052). */
+    cancelled?: boolean;
 }
 
 export type StartEligibility =
@@ -34,6 +37,8 @@ function toDate(value: Date | string | null): Date | null {
 }
 
 export function evaluateStartEligibility(row: ExamTimingRow, now: Date): StartEligibility {
+    // A cancelled exam never opens (Owner decision 2026-09-30); the student is told so.
+    if (row.cancelled) return { eligible: false, reason: 'exam_cancelled' };
     if (row.lifecycle_state !== 'ACTIVE') {
         // PAUSED and ENDED both stop every new start (Owner decision 2026-09-30); the
         // student is told which one applies.

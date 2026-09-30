@@ -76,6 +76,14 @@ export async function closeQuestionList(page: Page): Promise<void> {
     if (!isWide(page)) await page.getByRole('dialog', { name: 'Daftar Soal' }).getByRole('button', { name: 'Tutup daftar soal' }).click();
 }
 
+/** Wall-clock date and time in WIB, the school's zone, `minutes` from now, as a datetime-local field takes it. */
+export function wib(minutes: number): string {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(Date.now() + minutes * 60_000)).map(p => [p.type, p.value]));
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
 /** Screenshot name with the project (browser and width) it was taken in. */
 export const shotName = (name: string) => `${name}-${test.info().project.name}.png`;
 export const saveStatus = (page: Page) => page.locator('.save-status-text');

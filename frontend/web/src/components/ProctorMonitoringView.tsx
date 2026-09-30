@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getProctorMonitoring, ApiError } from '../api/assessment-client.ts';
 import type { ProctorMonitoringResponse, ProctorMonitoringExamProjection, ProctorMonitoringRoomProjection } from '../types/assessment.ts';
 import { formatDateTime, formatWindow } from '../lib/format.ts';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import '../styles/proctor-monitoring.css';
 import '../styles/design-tokens.css';
 
@@ -114,15 +115,21 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
           {exam.windowStartsAt && exam.windowEndsAt && (
             <p className="proctor-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
           )}
-          {exam.scheduleChange && (
-            <p className="proctor-schedule-change" role="note">
-              Jadwal diubah pada {formatDateTime(exam.scheduleChange.changedAt)}.
-              {exam.scheduleChange.previousWindowStartsAt && exam.scheduleChange.previousWindowEndsAt
-                ? ` Jadwal sebelumnya: ${formatWindow(exam.scheduleChange.previousWindowStartsAt, exam.scheduleChange.previousWindowEndsAt)}.`
-                : ''}
-            </p>
+          {exam.cancelledAt ? (
+            <Alert role="note" className="mb-3">
+              <AlertDescription>Ujian ini dibatalkan oleh guru pada {formatDateTime(exam.cancelledAt)} dan tidak akan dibuka.</AlertDescription>
+            </Alert>
+          ) : exam.scheduleChange && (
+            <Alert variant="info" role="note" className="mb-3">
+              <AlertDescription>
+                Jadwal diubah pada {formatDateTime(exam.scheduleChange.changedAt)}.
+                {exam.scheduleChange.previousWindowStartsAt && exam.scheduleChange.previousWindowEndsAt
+                  ? ` Jadwal sebelumnya: ${formatWindow(exam.scheduleChange.previousWindowStartsAt, exam.scheduleChange.previousWindowEndsAt)}.`
+                  : ''}
+              </AlertDescription>
+            </Alert>
           )}
-          {onOpenExam && (
+          {onOpenExam && !exam.cancelledAt && (
             <Button variant="secondary" className="mb-3" onClick={() => onOpenExam(exam.examInstanceId)}>Lihat Peserta</Button>
           )}
 

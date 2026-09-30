@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAssignedExams, postStartAttempt, ApiError } from '../api/assessment-client.ts';
 import type { AssignedExamItem } from '../types/assessment.ts';
 import { formatDateTime, formatDurationMinutes, formatWindow } from '../lib/format.ts';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
 import '../styles/assigned-exam-discovery.css';
 
@@ -231,12 +232,14 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                 </dl>
               )}
               {item.schedule?.change && !hasAttempts && (
-                <p className="discovery-schedule-change" role="note">
-                  Jadwal diubah oleh guru pada {formatDateTime(item.schedule.change.changedAt)}.
-                  {item.schedule.change.previousWindowStartsAt && item.schedule.change.previousWindowEndsAt
-                    ? ` Jadwal sebelumnya: ${formatWindow(item.schedule.change.previousWindowStartsAt, item.schedule.change.previousWindowEndsAt)}.`
-                    : ''}
-                </p>
+                <Alert variant="info" role="note" className="mb-4">
+                  <AlertDescription>
+                    Jadwal diubah oleh guru pada {formatDateTime(item.schedule.change.changedAt)}.
+                    {item.schedule.change.previousWindowStartsAt && item.schedule.change.previousWindowEndsAt
+                      ? ` Jadwal sebelumnya: ${formatWindow(item.schedule.change.previousWindowStartsAt, item.schedule.change.previousWindowEndsAt)}.`
+                      : ''}
+                  </AlertDescription>
+                </Alert>
               )}
 
               {!hasAttempts ? (

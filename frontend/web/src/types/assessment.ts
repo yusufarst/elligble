@@ -215,6 +215,8 @@ export interface ProctorMonitoringExamProjection {
   windowEndsAt?: string | null;
   /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
   scheduleChange?: ScheduleChange | null;
+  /** When the exam was cancelled before it opened, or null. */
+  cancelledAt?: string | null;
   rooms: ProctorMonitoringRoomProjection[];
 }
 
@@ -255,6 +257,8 @@ export interface TeacherExamReadinessProjection {
   latestStartPolicy?: LatestStartPolicy | null;
   /** When the schedule was last changed before the exam opened, or null. */
   scheduleChangedAt?: string | null;
+  /** The cancellation of an exam that never opened, or null (shown as "Dibatalkan"). */
+  cancellation?: { cancelledAt: string; reason: string; by: { you: boolean; elligbleId: string | null } } | null;
   baseline: TeacherExamBaselineProjection;
   roomProctor: TeacherExamRoomProctorProjection;
   progress?: TeacherExamProgressProjection | null;
@@ -265,6 +269,23 @@ export interface TeacherExamReadinessProjection {
 }
 
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
+
+/** Cancelling a scheduled or ready exam (ASSESS-TEACHER-003, Owner decision 2026-09-30). */
+export interface TeacherExamCancelInput {
+  examInstanceId: string;
+  reason: string;
+  /** Chosen by the device once per dialog; a retry reuses it. */
+  actionKey: string;
+}
+
+export interface TeacherExamCancelResult {
+  examInstanceId: string;
+  cancelledAt: string;
+  reason: string;
+  /** False when the exam had already been cancelled: nothing new was recorded. */
+  changed: boolean;
+  replayed: boolean;
+}
 
 /** A new schedule for a scheduled or ready exam (ASSESS-TEACHER-003, D04.2-45). */
 export interface TeacherExamRescheduleInput {

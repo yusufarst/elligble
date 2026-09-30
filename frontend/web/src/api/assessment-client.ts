@@ -25,6 +25,8 @@ import type {
   TeacherExamPreview,
   TeacherExamRescheduleInput,
   TeacherExamRescheduleResult,
+  TeacherExamCancelInput,
+  TeacherExamCancelResult,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -200,6 +202,12 @@ export async function getTeacherExamResults(examInstanceId: string): Promise<Tea
 export async function getTeacherExamSetup(): Promise<TeacherExamSetup> {
   const res = await apiFetch('/api/v1/assessment/teacher-exams/setup', { method: 'GET' });
   return handleResponse<TeacherExamSetup>(res);
+}
+
+/** Cancels a scheduled or ready exam; repeating it is safe (the same key, or an exam already cancelled). */
+export async function postTeacherExamCancel(input: TeacherExamCancelInput): Promise<TeacherExamCancelResult> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/cancel', { method: 'POST', json: input });
+  return handleResponse<TeacherExamCancelResult>(res);
 }
 
 /** Moves a scheduled or ready exam before it opens; a retry with the same action key changes nothing twice. */

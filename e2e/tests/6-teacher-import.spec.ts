@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, shotName, withDatabase } from './helpers.ts';
+import { login, shotName, wib, withDatabase } from './helpers.ts';
 
 // The teacher prepares an exam without platform staff (ASSESS-TEACHER-001; D04.4-26A,
 // D04.3-61..66): upload the question file, see every problem with its line, fix it, check
@@ -20,14 +20,6 @@ const FIXED = [HEADER, '1;Lambang unsur oksigen adalah;O;Os;Ok;Og;Ox;A;1', '2;Ru
 
 function seconds(clock: string): number {
     return clock.split(':').map(Number).reduce((total, part) => total * 60 + part, 0);
-}
-
-/** Wall-clock date and time in WIB, the school's zone, `minutes` from now. */
-function wib(minutes: number): string {
-    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-    }).formatToParts(new Date(Date.now() + minutes * 60_000)).map(p => [p.type, p.value]));
-    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
 test('a teacher schedules an exam from a question file, and an included student takes it', async ({ page, browser }) => {

@@ -3,6 +3,7 @@ import { checkExamInstanceDurationWindowPolicyCompatibilityReadiness } from './e
 import { checkExamInstanceParticipantProctorScheduleConflictReadiness } from './exam-instance-participant-proctor-schedule-conflict-readiness-preflight.ts';
 import { LATEST_START_POLICIES, type LatestStartPolicy } from './exam-provisioning.ts';
 import { LOCAL_DATE_TIME, MAX_DURATION_MINUTES, isRealLocalDateTime } from './teacher-exam-import.ts';
+import { lockManagedExam } from './managed-exam.ts';
 
 // The teacher moves a scheduled or ready exam before it opens (ASSESS-TEACHER-003). D04.2-45
 // LOCKED: rescheduling before ACTIVE is allowed under governance, with a readiness re-check,
@@ -120,29 +121,11 @@ export async function rescheduleTeacherExam(
         await client.query('BEGIN');
         // The managing teacher's exam, locked like every lifecycle transition: requests for one
         // exam are decided one at a time, so a retry that overtakes the original finds its change.
-        const exam = await client.query(
-            `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at, i.configured_attempt_duration_seconds,
-                    i.latest_start_policy, t.time_zone, statement_timestamp() AS db_now
-             FROM secure_assessment_exam_instances i
-             JOIN tenant_tenants t ON t.id = i.tenant_id
-             WHERE i.id = $1 AND i.tenant_id = $2
-               AND EXISTS (
-                   SELECT 1
-                   FROM tenant_memberships tm
-                   JOIN tenant_teacher_assignments tta
-                     ON tta.membership_id = tm.id AND tta.tenant_id = tm.tenant_id AND tta.revoked_at IS NULL
-                   JOIN academic_core_teaching_assignments ata
-                     ON ata.teacher_assignment_id = tta.id AND ata.tenant_id = tta.tenant_id AND ata.revoked_at IS NULL
-                   WHERE tm.tenant_id = i.tenant_id AND tm.person_id = $3 AND ata.id = i.teaching_assignment_id
-               )
-             FOR UPDATE OF i`,
-            [request.examInstanceId, actor.tenantId, actor.personId]
-        );
-        if (exam.rows.length !== 1) {
+        const row = await lockManagedExam(client, actor, request.examInstanceId);
+        if (!row) {
             await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
-        const row = exam.rows[0];
         const timeZone: string | null = row.time_zone ?? null;
         if (!timeZone) problems.push({ code: 'time_zone_missing' });
 
