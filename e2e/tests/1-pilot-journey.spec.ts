@@ -12,7 +12,7 @@ test('the teacher activates their account and opens the imported exam', async ({
     await expect(page.getByRole('heading', { name: 'Pelaksanaan Ujian' })).toBeVisible();
     // The teacher's screen is downloaded when it is first shown (WEB-001). Its heading shows
     // while the file downloads, so wait for the request itself rather than for the heading.
-    await expect.poll(() => requested.some(path => STAFF_SCREEN_FILE.test(path) && path.startsWith('/assets/TeacherReadinessView-'))).toBe(true);
+    await expect.poll(() => requested.some(path => STAFF_SCREEN_FILE.test(path))).toBe(true);
     await expect(page.getByText('Terjadwal')).toBeVisible();
     await page.getByRole('button', { name: 'Tandai Siap' }).click();
     await page.getByRole('button', { name: 'Buka Ujian' }).first().click();

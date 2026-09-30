@@ -98,7 +98,9 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     expect(await serverAnswers(page, attemptId)).toHaveLength(2);
 });
 
-test('a proctor screen that cannot be downloaded says so, and "Coba Lagi" loads it', async ({ page }) => {
+// An engine may keep a failed download for the page and answer the same address with the same
+// failure, WebKit even after a reload (CI run 45): "Coba Lagi" asks under a new address.
+test('a proctor screen that cannot be downloaded says so, and "Coba Lagi" loads it in the same page', async ({ page }) => {
     const staffScreen = (url: URL) => STAFF_SCREEN_FILE.test(url.pathname);
     await page.route(staffScreen, route => route.abort());
     await login(page, 'pengawas.e2e', 'ruang-ujian-tenang');
@@ -106,7 +108,10 @@ test('a proctor screen that cannot be downloaded says so, and "Coba Lagi" loads 
     await expect(page.getByText('Periksa koneksi internet Anda, lalu coba lagi.')).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: 'Monitoring Ujian' })).toBeVisible();
     await page.unroute(staffScreen);
+    const navigations: string[] = [];
+    page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations.push(frame.url()); });
     await page.getByRole('button', { name: 'Coba Lagi' }).click();
     await expect(page.getByText('Matematika Wajib').first()).toBeVisible();
     await expect(page.getByText('Gagal Memuat Halaman')).toHaveCount(0);
+    expect(navigations).toEqual([]);
 });

@@ -69,7 +69,6 @@ function transitionFailureMessage(err: unknown): string {
   }
   return 'Gagal memproses permintaan. Periksa koneksi internet Anda dan coba lagi.';
 }
-import '../styles/teacher-readiness.css';
 
 const mapBaselineBlocker = (blocker?: string): string => {
   switch (blocker) {

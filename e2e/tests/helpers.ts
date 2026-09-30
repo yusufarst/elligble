@@ -67,8 +67,8 @@ export function requestedPaths(page: Page): string[] {
     return paths;
 }
 
-/** The built file of a teacher or proctor screen, which a student never downloads (WEB-001). */
-export const STAFF_SCREEN_FILE = /^\/assets\/(Teacher|Proctor|ExamMonitoring)\w*-[\w-]+\.js$/;
+/** The built file of the teacher and proctor screens, which a student never downloads (WEB-001). */
+export const STAFF_SCREEN_FILE = /^\/assets\/staff-screens-[\w-]+\.js$/;
 
 export const option = (page: Page, index: number) => page.locator('.options-list label').nth(index);
 

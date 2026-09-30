@@ -36,7 +36,7 @@ Check a proxy before an exam day with `deploy/nginx/smoke-test.sh https://<host>
 
 Do not deploy during an active exam window unless the release is an incident fix: students keep answering locally, but saves and submissions pause while the service restarts.
 
-Pages already open keep the client they loaded. The student's screens, the exam workspace included, are in the first download, so an open exam never fetches another client file. The teacher and proctor screens are fetched the first time they are shown; once a release has replaced the client files, such a screen on a page opened before the release shows "Gagal Memuat Halaman", and "Coba Lagi" loads the new client.
+Pages already open keep the client they loaded. The student's screens, the exam workspace included, are in the first download, so an open exam never fetches another client file. The teacher and proctor screens are one file fetched the first time one of them is shown; once a release has replaced the client files, a page opened before the release that had not fetched it yet shows "Gagal Memuat Halaman", and "Coba Lagi" finds the file gone and loads the new client. After a failed download (offline), "Coba Lagi" asks for the file again in the page.
 
 ## 3. Health, logs and correlation
 

@@ -1,9 +1,16 @@
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import './styles/globals.css';
 import './styles/workstation.css';
+// The two teacher and proctor list styles are in the first download, so the file of those
+// screens (WEB-001) is one script with nothing else to fetch.
+import './styles/proctor-monitoring.css';
+import './styles/teacher-readiness.css';
 import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
-import { ScreenLoadBoundary, ScreenLoading, onDemand } from './components/ScreenLoadBoundary.tsx';
+import {
+  ExamMonitoringView, ProctorMonitoringView, ScreenLoadBoundary, ScreenLoading, TeacherExamImportView, TeacherExamPreviewView,
+  TeacherReadinessView, TeacherResultsView,
+} from './components/ScreenLoadBoundary.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
 import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './session/SessionScreens.tsx';
 import { ReauthDialog } from './session/ReauthDialog.tsx';
@@ -12,17 +19,6 @@ import { Button } from '@/components/ui/button';
 import type { MeContext } from './api/auth-client.ts';
 import { setDisplayTimeZone } from './lib/format.ts';
 import { SCREEN_TITLE } from './lib/screen-titles.ts';
-
-// The student's screens (exam list, launch, exam workspace) are in the first download, so an
-// exam never waits for, or depends on, another file once it is open (WEB-001). The teacher and
-// proctor screens load on demand: a student's phone on a slow connection fetches only what a
-// student uses.
-const ProctorMonitoringView = onDemand(() => import('./components/ProctorMonitoringView.tsx').then(m => m.ProctorMonitoringView));
-const TeacherReadinessView = onDemand(() => import('./components/TeacherReadinessView.tsx').then(m => m.TeacherReadinessView));
-const TeacherResultsView = onDemand(() => import('./components/TeacherResultsView.tsx').then(m => m.TeacherResultsView));
-const ExamMonitoringView = onDemand(() => import('./components/ExamMonitoringView.tsx').then(m => m.ExamMonitoringView));
-const TeacherExamImportView = onDemand(() => import('./components/TeacherExamImportView.tsx').then(m => m.TeacherExamImportView));
-const TeacherExamPreviewView = onDemand(() => import('./components/TeacherExamPreviewView.tsx').then(m => m.TeacherExamPreviewView));
 
 interface RouteState {
   attemptId: string | null;

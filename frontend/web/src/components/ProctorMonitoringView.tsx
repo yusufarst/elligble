@@ -11,7 +11,6 @@ import { ActionGroup } from '@/components/ui/action-group';
 import { CANCELLED_EXAM_STATUS } from '../lib/status.ts';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
-import '../styles/proctor-monitoring.css';
 
 export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: string): void }> = ({ onOpenExam }) => {
   const [data, setData] = useState<ProctorMonitoringResponse | null>(null);
