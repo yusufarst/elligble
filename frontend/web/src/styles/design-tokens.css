@@ -79,6 +79,11 @@
   --color-neutral-badge-bg: #f4f4f5;
   --color-neutral-badge-text: #4e4e4e;
 
+  /* Running now (an exam in progress, a participant working): the DesainPakeAI status chip,
+     revision sha256-5d0d7779... (5.9:1). */
+  --color-active-bg: #e8f7f1;
+  --color-active-text: #006b49;
+
   /* Surfaces (§12) */
   --surface-0: var(--color-background);
   --surface-1: var(--color-surface);

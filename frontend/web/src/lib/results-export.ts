@@ -1,5 +1,6 @@
 import type { ParticipantResult, TeacherExamResultsResponse } from '../types/assessment.ts';
 import { formatSheetDate, formatSheetDateTime, zoneLabel } from './format.ts';
+import { resultStatus } from './status.ts';
 
 // Result export for the teacher who manages the exam (D04.8-52/53). One flat table in which
 // every row carries its own provenance (exam, result state, how and when the attempt was
@@ -28,16 +29,7 @@ function integer(value: number | null | undefined): string {
 }
 
 function participantStatus(row: ParticipantResult): string {
-  switch (row.status) {
-    case 'SUBMITTED':
-      return row.finalizationSource === 'EXPIRY_CLIENT' || row.finalizationSource === 'EXPIRY_SERVER' ? 'Dikumpulkan otomatis' : 'Dikumpulkan';
-    case 'IN_PROGRESS':
-      return 'Sedang mengerjakan';
-    case 'NOT_STARTED':
-      return 'Belum mulai';
-    case 'ABSENT':
-      return 'Tidak mengerjakan';
-  }
+  return resultStatus(row).label;
 }
 
 function submittedBy(row: ParticipantResult): string {

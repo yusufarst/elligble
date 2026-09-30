@@ -3,10 +3,12 @@ import { ApiError, getTeacherExamResults } from '../api/assessment-client.ts';
 import type { ParticipantResult, TeacherExamResultsResponse } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { buildResultsCsv, downloadTextFile, resultsCsvFileName } from '../lib/results-export.ts';
+import { resultStatus, type StatusView } from '../lib/status.ts';
 
 // Results for the teacher who manages the exam (D04.8): provisional until the exam is
 // finalized, then the frozen final results (D04.8-17/20). Scores come only from submitted
@@ -20,21 +22,12 @@ export function formatScore(value: number): string {
   return scoreFormat.format(value);
 }
 
-function statusOf(row: ParticipantResult): { label: string; tone: 'success' | 'neutral'; note: string | null } {
-  switch (row.status) {
-    case 'SUBMITTED':
-      if (row.finalizationSource === 'EXPIRY_CLIENT') return { label: 'Dikumpulkan otomatis', tone: 'neutral', note: 'Waktu habis' };
-      if (row.finalizationSource === 'EXPIRY_SERVER') {
-        return { label: 'Dikumpulkan otomatis', tone: 'neutral', note: 'Waktu habis saat perangkat tidak terhubung' };
-      }
-      return { label: 'Dikumpulkan', tone: 'success', note: null };
-    case 'IN_PROGRESS':
-      return { label: 'Sedang mengerjakan', tone: 'neutral', note: null };
-    case 'NOT_STARTED':
-      return { label: 'Belum mulai', tone: 'neutral', note: null };
-    case 'ABSENT':
-      return { label: 'Tidak mengerjakan', tone: 'neutral', note: null };
-  }
+function statusOf(row: ParticipantResult): StatusView & { note: string | null } {
+  const note = row.status !== 'SUBMITTED' ? null
+    : row.finalizationSource === 'EXPIRY_CLIENT' ? 'Waktu habis'
+    : row.finalizationSource === 'EXPIRY_SERVER' ? 'Waktu habis saat perangkat tidak terhubung'
+    : null;
+  return { ...resultStatus(row), note };
 }
 
 const Hidden: React.FC = () => (
@@ -200,14 +193,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
                   <tr key={row.elligbleId ?? `tanpa-id-${index}`} className="border-t border-border align-top">
                     <th scope="row" className="px-3 py-3 text-left font-normal">
                       <span className="block font-mono text-[13px] [overflow-wrap:anywhere]">{row.elligbleId ?? 'Tanpa ELLIGBLE ID'}</span>
-                      <span
-                        className={cn(
-                          'mt-1.5 inline-block rounded-md px-2 py-0.5 text-xs font-medium',
-                          status.tone === 'success' ? 'bg-success-surface text-success-ink' : 'bg-[var(--color-neutral-badge-bg)] text-[var(--color-neutral-badge-text)]'
-                        )}
-                      >
-                        {status.label}
-                      </span>
+                      <StatusBadge tone={status.tone} className="mt-1.5">{status.label}</StatusBadge>
                       {(status.note || row.submittedAt) && (
                         <span className="mt-1 block text-xs text-muted-foreground">
                           {[status.note, row.submittedAt ? formatTime(row.submittedAt) : null].filter(Boolean).join(', ')}

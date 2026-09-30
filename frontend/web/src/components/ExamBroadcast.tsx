@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatTime } from '../lib/format.ts';
+import { participantStatus } from '../lib/status.ts';
 
 // Supervisor messages to participants (D04.1-77A..F, D04.6-49..55): the composer asks only
 // for the target and the message (D04.6-50), offers the quick messages of D04.6-51, and
@@ -20,13 +21,6 @@ export const QUICK_MESSAGES = [
 ];
 
 export const BROADCAST_MAX_LENGTH = 200;
-
-const STATUS_LABEL: Record<MonitoredParticipant['status'], string> = {
-  NOT_STARTED: 'Belum mulai',
-  ACTIVE: 'Mengerjakan',
-  TIME_UP: 'Waktu habis',
-  SUBMITTED: 'Dikumpulkan',
-};
 
 function sendFailureMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -138,7 +132,7 @@ export const BroadcastComposer: React.FC<{
                 <label key={p.participantId} className="flex min-h-9 items-center gap-2 text-sm">
                   <input type="checkbox" checked={selected.has(p.participantId)} onChange={() => toggle(p.participantId)} className="size-4 accent-primary" />
                   <span className="font-mono text-[13px] [overflow-wrap:anywhere]">{p.elligbleId ?? 'Tanpa ELLIGBLE ID'}</span>
-                  <span className="text-xs text-muted-foreground">{STATUS_LABEL[p.status]}</span>
+                  <span className="text-xs text-muted-foreground">{participantStatus(p).label}</span>
                 </label>
               ))}
             </div>

@@ -65,6 +65,10 @@
   --color-info-surface: var(--color-info-bg);
   --color-info-line: var(--color-info-border);
   --color-info-ink: var(--color-info-text);
+  --color-active-surface: var(--color-active-bg);
+  --color-active-ink: var(--color-active-text);
+  --color-neutral-surface: var(--color-neutral-badge-bg);
+  --color-neutral-ink: var(--color-neutral-badge-text);
 }
 
 @layer base {

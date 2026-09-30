@@ -89,7 +89,7 @@ describe('teacher exam operations', () => {
       })],
     });
     render(<TeacherReadinessView />);
-    expect(await screen.findByText('Berlangsung')).toBeDefined();
+    expect((await screen.findByText('Berlangsung')).getAttribute('data-tone')).toBe('active');
     const progress = screen.getByLabelText('Kemajuan pelaksanaan ujian');
     expect(progress.textContent).toContain('32');
     expect(progress.textContent).toContain('30');

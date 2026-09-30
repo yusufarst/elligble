@@ -3,6 +3,8 @@ import { getAssignedExams, postStartAttempt, ApiError } from '../api/assessment-
 import type { AssignedExamItem } from '../types/assessment.ts';
 import { formatDateTime, formatDurationMinutes, formatWindow } from '../lib/format.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { SUBMITTED_ATTEMPT_STATUS } from '../lib/status.ts';
 import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
 import '../styles/assigned-exam-discovery.css';
 
@@ -209,9 +211,7 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                 <div className="discovery-card-header">
                   <h2 className="discovery-subject-title">{subjectDisplay}</h2>
                   {item.roomLabel && (
-                    <span className="discovery-room-badge">
-                      Ruang: {item.roomLabel}
-                    </span>
+                    <StatusBadge tone="neutral">Ruang: {item.roomLabel}</StatusBadge>
                   )}
                 </div>
 
@@ -287,9 +287,7 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                         >
                           <div className="discovery-attempt-info">
                             {isSubmitted && (
-                              <span className="discovery-status-badge submitted">
-                                Sudah dikumpulkan
-                              </span>
+                              <StatusBadge tone={SUBMITTED_ATTEMPT_STATUS.tone}>{SUBMITTED_ATTEMPT_STATUS.label}</StatusBadge>
                             )}
                           </div>
 

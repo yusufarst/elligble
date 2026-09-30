@@ -5,8 +5,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
-import { cn } from '@/lib/utils';
+import { LOCKED_PARTICIPANT_STATUS, participantStatus } from '../lib/status.ts';
 import { formatClockTime, formatTime } from '../lib/format.ts';
 import { BroadcastComposer, BroadcastHistory } from './ExamBroadcast.tsx';
 import { AddTimeDialog, TIME_STATES, timeAddedLabel } from './ParticipantTime.tsx';
@@ -36,28 +37,6 @@ function matches(filter: Filter, status: MonitoringStatus): boolean {
   if (filter === 'ACTIVE') return status === 'ACTIVE' || status === 'TIME_UP';
   return status === filter;
 }
-
-function statusBadge(p: MonitoredParticipant): { label: string; tone: 'success' | 'info' | 'warning' | 'neutral' } {
-  switch (p.status) {
-    case 'SUBMITTED':
-      return p.finalizationSource === 'EXPIRY_CLIENT' || p.finalizationSource === 'EXPIRY_SERVER'
-        ? { label: 'Dikumpulkan otomatis', tone: 'neutral' }
-        : { label: 'Dikumpulkan', tone: 'success' };
-    case 'ACTIVE':
-      return { label: 'Mengerjakan', tone: 'info' };
-    case 'TIME_UP':
-      return { label: 'Waktu habis', tone: 'warning' };
-    case 'NOT_STARTED':
-      return { label: 'Belum mulai', tone: 'neutral' };
-  }
-}
-
-const TONE_CLASS: Record<'success' | 'info' | 'warning' | 'neutral', string> = {
-  success: 'bg-success-surface text-success-ink',
-  info: 'bg-info-surface text-info-ink',
-  warning: 'bg-warning-surface text-warning-ink',
-  neutral: 'bg-[var(--color-neutral-badge-bg)] text-[var(--color-neutral-badge-text)]',
-};
 
 // Exam states in which a supervisor may lock or unlock a participant (as on the server).
 const SUPERVISED_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
@@ -315,7 +294,7 @@ export const ExamMonitoringView: React.FC<{
             </thead>
             <tbody>
               {visible.map((p, index) => {
-                const badge = statusBadge(p);
+                const badge = participantStatus(p);
                 const remaining = remainingLabel(p);
                 const lockAction = lockActionFor(p, exam.lifecycleState);
                 const canAddTime = Boolean(data.canAddTime) && TIME_STATES.has(exam.lifecycleState) && p.status === 'ACTIVE';
@@ -327,8 +306,8 @@ export const ExamMonitoringView: React.FC<{
                       <span className="block font-mono text-[13px] [overflow-wrap:anywhere]">{shownId}</span>
                       {p.roomLabel && <span className="block text-xs text-muted-foreground">{p.roomLabel}</span>}
                       <span className="mt-1.5 flex flex-wrap gap-1.5">
-                        <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', TONE_CLASS[badge.tone])}>{badge.label}</span>
-                        {p.lockedAt && <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', TONE_CLASS.warning)}>Dikunci</span>}
+                        <StatusBadge tone={badge.tone}>{badge.label}</StatusBadge>
+                        {p.lockedAt && <StatusBadge tone={LOCKED_PARTICIPANT_STATUS.tone}>{LOCKED_PARTICIPANT_STATUS.label}</StatusBadge>}
                       </span>
                       {p.lockedAt && <span className="mt-1 block text-xs text-muted-foreground">Dikunci sejak {formatTime(p.lockedAt)}</span>}
                       {added && <span className="mt-1 block text-xs text-info-ink">{added}</span>}

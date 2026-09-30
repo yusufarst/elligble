@@ -4,22 +4,13 @@ import type { TeacherReadinessResponse, TeacherExamReadinessProjection, TeacherE
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { IconInfo } from '@/components/icons';
+import { CANCELLED_EXAM_STATUS, examLifecycleStatus } from '../lib/status.ts';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { RescheduleDialog } from './TeacherExamReschedule.tsx';
 import { CancelExamDialog } from './TeacherExamCancel.tsx';
 import { AddParticipantsDialog } from './TeacherExamParticipants.tsx';
-
-const LIFECYCLE_LABELS: Record<string, string> = {
-  SCHEDULED: 'Terjadwal',
-  READY: 'Siap Dibuka',
-  ACTIVE: 'Berlangsung',
-  PAUSED: 'Dijeda',
-  ENDED: 'Diakhiri',
-  FINALIZED: 'Hasil Final',
-  // Never the raw state name on screen; a cancelled exam is listed as "Dibatalkan" instead.
-  ARCHIVED: 'Diarsipkan',
-};
 
 // Exams being delivered: progress, monitoring, results and the pause, resume and end
 // controls (Owner decision 2026-09-30); an ended exam is finalized once nobody is still
@@ -305,7 +296,7 @@ export const TeacherReadinessView: React.FC<{
               <div className="teacher-exam-card-header">
                 <h2 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h2>
                 {exam.lifecycleState && (
-                  <span className={`teacher-lifecycle-badge lifecycle-${lifecycle.toLowerCase()}`}>{LIFECYCLE_LABELS[lifecycle] ?? lifecycle}</span>
+                  <StatusBadge tone={examLifecycleStatus(lifecycle).tone}>{examLifecycleStatus(lifecycle).label}</StatusBadge>
                 )}
               </div>
               {(exam.groupLabel || exam.assessmentTypeLabel) && (
@@ -445,7 +436,7 @@ export const TeacherReadinessView: React.FC<{
                 <div key={exam.examInstanceId} className="teacher-exam-card" data-testid={`teacher-exam-${exam.examInstanceId}`}>
                   <div className="teacher-exam-card-header">
                     <h3 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h3>
-                    <span className="teacher-lifecycle-badge">Dibatalkan</span>
+                    <StatusBadge tone={CANCELLED_EXAM_STATUS.tone}>{CANCELLED_EXAM_STATUS.label}</StatusBadge>
                   </div>
                   {(exam.groupLabel || exam.assessmentTypeLabel) && (
                     <p className="teacher-exam-window">{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>

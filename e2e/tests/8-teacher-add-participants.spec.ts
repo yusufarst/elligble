@@ -21,6 +21,15 @@ const END = START + 120;
 const noOverflow = (page: import('@playwright/test').Page) =>
     page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
+/** Every action of an exam card stays inside the card: a row of actions wraps, never overflows it. */
+const actionsInside = (card: import('@playwright/test').Locator) => card.evaluate(el => {
+    const box = el.getBoundingClientRect();
+    return [...el.querySelectorAll('button')].every(b => {
+        const r = b.getBoundingClientRect();
+        return r.left >= box.left - 0.5 && r.right <= box.right + 0.5;
+    });
+});
+
 test('a teacher adds a student left out of a scheduled exam, who then finds it', async ({ page, browser }) => {
     await login(page, 'guru.e2e', 'papan-tulis-hijau');
     await page.getByRole('button', { name: 'Buat Ujian' }).first().click();
@@ -47,6 +56,8 @@ test('a teacher adds a student left out of a scheduled exam, who then finds it',
     await expect(card).toContainText('5 peserta');
     await card.getByRole('button', { name: 'Tandai Siap' }).click();
     await expect(card).toContainText('Siap Dibuka');
+    // Five actions on a ready exam card: at every width they stay inside the card.
+    expect(await actionsInside(card)).toBe(true);
 
     // The student left out does not find the exam.
     const studentContext = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC' });

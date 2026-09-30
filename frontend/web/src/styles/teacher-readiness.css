@@ -67,24 +67,6 @@
   color: var(--color-text-primary);
 }
 
-.teacher-status-badge {
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.status-ready {
-  background-color: var(--color-success-bg);
-  color: var(--color-success-text);
-}
-
-.status-not-ready {
-  background-color: var(--color-danger-bg);
-  color: var(--color-error-text);
-}
-
 .teacher-readiness-details {
   display: grid;
   grid-template-columns: 1fr;
@@ -133,28 +115,6 @@
   font-size: 0.75rem;
 }
 
-.teacher-lifecycle-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-  background-color: var(--color-neutral-badge-bg);
-  color: var(--color-neutral-badge-text);
-  white-space: nowrap;
-}
-
-.teacher-lifecycle-badge.lifecycle-ready {
-  background-color: var(--color-info-bg);
-  color: var(--color-info-text);
-}
-
-.teacher-lifecycle-badge.lifecycle-active {
-  background-color: var(--color-success-bg);
-  color: var(--color-success-text);
-}
-
 .teacher-exam-window {
   margin: 0 0 var(--space-3);
   font-size: 0.875rem;
@@ -197,9 +157,15 @@
 }
 
 @media (min-width: 640px) {
+  /* A row that wraps: five actions never overflow the card (768 px once did). */
   .teacher-exam-actions {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
+  }
+
+  .teacher-exam-actions .teacher-action-error {
+    flex-basis: 100%;
   }
 }
 
@@ -207,11 +173,6 @@
   margin: 0;
   font-size: 0.875rem;
   color: var(--color-danger-text);
-}
-
-.teacher-lifecycle-badge.lifecycle-paused {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning-text);
 }
 
 .teacher-exam-note {
@@ -223,9 +184,4 @@
 .teacher-exam-controls {
   padding-top: var(--space-4);
   border-top: var(--border-default);
-}
-
-.teacher-lifecycle-badge.lifecycle-finalized {
-  background-color: var(--color-success-bg);
-  color: var(--color-success-text);
 }

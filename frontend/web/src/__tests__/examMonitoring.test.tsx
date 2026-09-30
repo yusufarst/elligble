@@ -57,13 +57,14 @@ describe('ExamMonitoringView', () => {
     const [a, b, c, d] = screen.getAllByRole('rowheader').map(h => h.closest('tr')!);
     expect(within(a).getByText('Dikumpulkan')).toBeTruthy();
     expect(within(a).getByText('3/3')).toBeTruthy();
-    expect(within(b).getByText('Mengerjakan')).toBeTruthy();
+    expect(within(b).getByText('Mengerjakan').getAttribute('data-tone')).toBe('active');
     expect(within(b).getByText('42 menit')).toBeTruthy();
     expect(within(b).getByText('Pindah perangkat 1 kali')).toBeTruthy();
     expect(within(b).getByText('diterima 08.12 WIB')).toBeTruthy();
     expect(within(c).getByText('Belum mulai')).toBeTruthy();
     expect(within(c).getByText('Belum ada')).toBeTruthy();
     expect(within(d).getAllByText('Waktu habis')).toHaveLength(2);
+    expect(within(d).getAllByText('Waktu habis').filter(e => e.getAttribute('data-tone') === 'danger')).toHaveLength(1);
     expect(document.body.textContent).not.toMatch(/nilai|skor|curang\b/i);
     expect(document.body.textContent).not.toContain('—');
   });

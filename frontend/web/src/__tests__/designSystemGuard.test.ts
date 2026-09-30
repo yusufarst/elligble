@@ -66,6 +66,14 @@ describe('design system guard (§10.1)', () => {
     expect(over).toEqual([]);
   });
 
+  it('status badges come from the shared primitive, never from page stylesheets', () => {
+    // The exam focus shell keeps its save state, timer and legend until UI-SYSTEM-002.
+    const pageBadges = sources
+      .filter(s => s.path.endsWith('.css') && s.path !== 'styles/workstation.css')
+      .flatMap(s => [...s.text.matchAll(/\.([a-z0-9-]*(?:badge|pill|chip)[a-z0-9-]*)\s*[{,.:\s]/g)].map(m => `${s.path}: .${m[1]}`));
+    expect(pageBadges).toEqual([]);
+  });
+
   it('text and action colors of the tokens keep WCAG AA contrast', () => {
     const pairs: Array<[string, string, string]> = [
       ['primary action', '--color-primary-fg', '--color-primary'],
@@ -78,6 +86,7 @@ describe('design system guard (§10.1)', () => {
       ['danger', '--color-danger-text', '--color-danger-bg'],
       ['information', '--color-info-text', '--color-info-bg'],
       ['neutral badge', '--color-neutral-badge-text', '--color-neutral-badge-bg'],
+      ['active badge', '--color-active-text', '--color-active-bg'],
     ];
     const failing = pairs
       .map(([label, fg, bg]) => ({ label, ratio: contrast(tokenValue(fg), tokenValue(bg)) }))

@@ -122,7 +122,8 @@ describe('TeacherResultsView', () => {
     expect(c).toEqual(['Belum ada nilai']);
     expect(d).toEqual(['Belum ada nilai']);
     const [, , working, absent] = screen.getAllByRole('rowheader');
-    expect(within(working).getByText('Sedang mengerjakan')).toBeTruthy();
+    // The same tone as a working participant on monitoring and a running exam.
+    expect(within(working).getByText('Sedang mengerjakan').getAttribute('data-tone')).toBe('active');
     expect(within(absent).getByText('Belum mulai')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sembunyikan Nilai' }).getAttribute('aria-pressed')).toBe('true');
   });
