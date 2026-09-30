@@ -33,6 +33,9 @@ function createMockPool(options?: {
             if (options?.queryThrows && text.includes('SELECT')) {
                 throw new Error('DB query execution failed');
             }
+            if (text.includes('statement_timestamp()')) {
+                return { rows: [{ server_now: new Date('2026-08-01T12:00:00Z') }] };
+            }
             if (text.includes('SELECT')) {
                 return { rows: options?.rows ?? [] };
             }
@@ -120,11 +123,13 @@ test('BU-085 assigned-exams runtime handler tests', async (t) => {
         assert.equal(res.headers['Content-Type'], 'application/json');
         const data = JSON.parse(res.body);
         assert.deepEqual(data, {
+            serverNow: '2026-08-01T12:00:00.000Z',
             assignments: [
                 {
                     examInstanceId: VALID_INSTANCE_ID_1,
                     subjectLabel: 'Matematika',
                     roomLabel: 'Lab 1',
+                    schedule: { lifecycleState: null, windowStartsAt: null, windowEndsAt: null, attemptDurationSeconds: null, change: null },
                     attempts: [
                         {
                             attemptId: VALID_ATTEMPT_ID_1,
@@ -260,7 +265,7 @@ test('BU-085 assigned-exams runtime handler tests', async (t) => {
 
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
-        assert.deepEqual(data, { assignments: [] });
+        assert.deepEqual(data, { serverNow: '2026-08-01T12:00:00.000Z', assignments: [] });
     });
 
     await t.test('7. assignment with zero attempts remains visible with attempts: []', async () => {
@@ -291,11 +296,13 @@ test('BU-085 assigned-exams runtime handler tests', async (t) => {
         assert.equal(res.statusCode, 200);
         const data = JSON.parse(res.body);
         assert.deepEqual(data, {
+            serverNow: '2026-08-01T12:00:00.000Z',
             assignments: [
                 {
                     examInstanceId: VALID_INSTANCE_ID_1,
                     subjectLabel: 'Bahasa Indonesia',
                     roomLabel: null,
+                    schedule: { lifecycleState: null, windowStartsAt: null, windowEndsAt: null, attemptDurationSeconds: null, change: null },
                     attempts: []
                 }
             ]

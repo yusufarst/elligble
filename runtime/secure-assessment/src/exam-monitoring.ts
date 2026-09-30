@@ -1,0 +1,238 @@
+import type * as pg from 'pg';
+import { listElligbleIds } from '../../identity-access/src/directory.ts';
+import type { FinalizationSource } from './submission.ts';
+import { resolveSupervisionScope } from './supervision-scope.ts';
+import { readBroadcastHistory, readScopeRooms, type BroadcastRecord } from './exam-broadcast.ts';
+
+// Participant monitoring list for exam day (D04.6-01/02/03/04/10/11/17/18/61): who is
+// supposed to be here, who has started, who has submitted, whose device or tab changed.
+// Scope follows the governance context: an assigned proctor sees the participants of the
+// rooms assigned to them, or every participant when the exam runs without room operations;
+// the teacher who manages a teacher-managed exam sees its participants (D04.4-26A/C). Only
+// facts the server holds are reported: accepted answers and their time, the server timer,
+// sessions and submissions. Connectivity and unsent answers live on the device and are not
+// claimed here. No scores: supervision is separate from scoring (D04.1-63). The rooms in
+// scope and the broadcast messages that reached the scope come with it (D04.6-49..54).
+// Time added to a participant shows for everyone in scope; who added it and why only for
+// the managing teacher, the one who adds time (participant-time.ts): the reason can concern
+// the student.
+
+export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
+
+export interface MonitoredParticipant {
+    /** Reference for supervisor actions on this participant (lock, unlock). */
+    participantId: string;
+    elligbleId: string | null;
+    roomLabel: string | null;
+    status: MonitoringStatus;
+    finalizationSource: FinalizationSource | null;
+    submittedAt: string | null;
+    /** Server timer; null until the attempt's timer started or after submission. */
+    remainingSeconds: number | null;
+    answeredCount: number;
+    /** When the server last accepted an answer of this attempt. */
+    lastAcceptedAt: string | null;
+    /** An exam session is active for the attempt right now. */
+    sessionActive: boolean;
+    /** How many times the exam session moved to another device or tab. */
+    sessionMoves: number;
+    /** Since when a supervisor has locked the participant's attempt (D04.6-38), or null. */
+    lockedAt: string | null;
+    /** Working time added to the participant's attempt, in seconds (D04.6-41). */
+    addedSeconds: number;
+    /** Each addition, oldest first; only for the managing teacher. */
+    timeAdditions?: TimeAddition[];
+}
+
+export interface TimeAddition {
+    addedAt: string;
+    seconds: number;
+    reason: string;
+    by: { elligbleId: string | null; you: boolean };
+}
+
+export interface ExamMonitoring {
+    /** pausedAt: start of the open pause while the exam is PAUSED (every participant's time is frozen). */
+    exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt: string | null };
+    scope: 'PROCTOR' | 'TEACHER';
+    /** The viewer manages the exam and may add time (participant-time.ts). */
+    canAddTime: boolean;
+    serverTime: string;
+    questionCount: number;
+    summary: { participants: number; notStarted: number; active: number; submitted: number };
+    participants: MonitoredParticipant[];
+    /** Rooms of a room-based exam within the viewer's scope (broadcast targets). */
+    rooms: Array<{ roomId: string; label: string }>;
+    /** Broadcast messages that reached participants in the viewer's scope, newest first. */
+    broadcasts: BroadcastRecord[];
+}
+
+export type ExamMonitoringOutcome = { type: 'ok'; monitoring: ExamMonitoring } | { type: 'forbidden' } | { type: 'unavailable' };
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isoOrNull(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+export async function readExamMonitoring(
+    pool: pg.Pool,
+    actor: { tenantId: string; personId: string },
+    examInstanceId: string
+): Promise<ExamMonitoringOutcome> {
+    if (!UUID_REGEX.test(examInstanceId) || !UUID_REGEX.test(actor.tenantId) || !UUID_REGEX.test(actor.personId)) {
+        return { type: 'forbidden' };
+    }
+    let client: pg.PoolClient;
+    try {
+        client = await pool.connect();
+    } catch {
+        return { type: 'unavailable' };
+    }
+    try {
+        await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+        const supervision = await resolveSupervisionScope(client, actor, examInstanceId);
+        if (!supervision) {
+            await client.query('ROLLBACK');
+            return { type: 'forbidden' };
+        }
+        const { scope, roomFilter } = supervision;
+        const exam = await client.query(
+            `SELECT s.display_label AS subject_label, statement_timestamp() AS db_now,
+                    (SELECT ps.paused_at FROM secure_assessment_exam_pauses ps
+                     WHERE ps.tenant_id = i.tenant_id AND ps.exam_instance_id = i.id AND ps.resumed_at IS NULL) AS paused_at
+             FROM secure_assessment_exam_instances i
+             LEFT JOIN academic_core_teaching_assignments ta ON ta.id = i.teaching_assignment_id AND ta.tenant_id = i.tenant_id
+             LEFT JOIN academic_core_subject_offerings so ON so.id = ta.subject_offering_id AND so.tenant_id = i.tenant_id
+             LEFT JOIN academic_core_subjects s ON s.id = so.subject_id AND s.tenant_id = i.tenant_id
+             WHERE i.id = $1 AND i.tenant_id = $2`,
+            [examInstanceId, actor.tenantId]
+        );
+        const row = exam.rows[0];
+
+        const questions = await client.query(
+            'SELECT count(*)::int AS n FROM secure_assessment_exam_question_snapshots WHERE tenant_id = $1 AND exam_instance_id = $2',
+            [actor.tenantId, examInstanceId]
+        );
+        const participants = await client.query(
+            `SELECT p.id AS participant_id, p.person_id, er.display_label AS room_label, a.id AS attempt_id,
+                    (SELECT l.locked_at FROM secure_assessment_attempt_locks l
+                     WHERE l.tenant_id = p.tenant_id AND l.exam_attempt_id = a.id AND l.unlocked_at IS NULL) AS locked_at,
+                    t.started_at,
+                    GREATEST(0, secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp())) AS remaining_seconds,
+                    sub.submitted_at, sub.finalization_source,
+                    COALESCE(ans.answered, 0) AS answered, ans.last_accepted_at,
+                    COALESCE((SELECT SUM(adj.adjustment_seconds) FROM secure_assessment_timer_adjustments adj
+                              WHERE adj.tenant_id = t.tenant_id AND adj.timer_state_id = t.id), 0)::int AS added_seconds,
+                    EXISTS (SELECT 1 FROM secure_assessment_exam_sessions ss
+                            WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.activated_at IS NOT NULL AND ss.ended_at IS NULL) AS session_active,
+                    (SELECT count(*)::int FROM secure_assessment_exam_sessions ss
+                     WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.superseded_by_session_id IS NOT NULL) AS session_moves
+             FROM secure_assessment_exam_participants p
+             LEFT JOIN secure_assessment_exam_participant_room_assignments pra
+               ON pra.tenant_id = p.tenant_id AND pra.exam_instance_id = p.exam_instance_id AND pra.exam_participant_id = p.id
+             LEFT JOIN secure_assessment_exam_rooms er ON er.id = pra.exam_room_id AND er.tenant_id = p.tenant_id
+             LEFT JOIN LATERAL (
+                 SELECT att.id FROM secure_assessment_exam_attempts att
+                 WHERE att.tenant_id = p.tenant_id AND att.exam_participant_id = p.id
+                 ORDER BY att.created_at ASC, att.id ASC LIMIT 1
+             ) a ON TRUE
+             LEFT JOIN secure_assessment_timer_state t ON t.tenant_id = p.tenant_id AND t.exam_attempt_id = a.id
+             LEFT JOIN secure_assessment_exam_submissions sub ON sub.tenant_id = p.tenant_id AND sub.exam_attempt_id = a.id
+             LEFT JOIN LATERAL (
+                 SELECT count(*)::int AS answered, max(x.updated_at) AS last_accepted_at FROM secure_assessment_exam_answers x
+                 WHERE x.tenant_id = p.tenant_id AND x.exam_attempt_id = a.id
+             ) ans ON TRUE
+             WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
+               AND ($3::uuid IS NULL OR pra.exam_room_id IN (
+                   SELECT epra.exam_room_id FROM secure_assessment_exam_proctor_room_assignments epra
+                   WHERE epra.tenant_id = p.tenant_id AND epra.exam_instance_id = p.exam_instance_id AND epra.proctor_assignment_id = $3
+               ))`,
+            [actor.tenantId, examInstanceId, roomFilter]
+        );
+        // Who added time and why, for the managing teacher only.
+        const additions = new Map<string, Array<{ addedAt: string; seconds: number; reason: string; actor: string | null }>>();
+        if (supervision.managingTeacher) {
+            const res = await client.query(
+                `SELECT a.exam_participant_id, adj.created_at, adj.adjustment_seconds, adj.reason, adj.actor_person_id
+                 FROM secure_assessment_timer_adjustments adj
+                 JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id AND t.tenant_id = adj.tenant_id
+                 JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id AND a.tenant_id = t.tenant_id
+                 JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id AND p.tenant_id = a.tenant_id
+                 WHERE adj.tenant_id = $1 AND p.exam_instance_id = $2
+                 ORDER BY adj.created_at ASC, adj.id ASC`,
+                [actor.tenantId, examInstanceId]
+            );
+            for (const r of res.rows) {
+                const list = additions.get(r.exam_participant_id) ?? [];
+                list.push({ addedAt: new Date(r.created_at).toISOString(), seconds: Number(r.adjustment_seconds), reason: r.reason, actor: r.actor_person_id ?? null });
+                additions.set(r.exam_participant_id, list);
+            }
+        }
+        const actorIds = [...new Set([...additions.values()].flat().map(a => a.actor).filter((id): id is string => id !== null))];
+        const elligbleIds = await listElligbleIds(client, [...participants.rows.map(r => r.person_id as string), ...actorIds]);
+        const rooms = supervision.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
+        const broadcasts = await readBroadcastHistory(client, actor, examInstanceId, roomFilter);
+        await client.query('COMMIT');
+
+        const list: MonitoredParticipant[] = participants.rows.map(r => {
+            const status: MonitoringStatus = r.submitted_at ? 'SUBMITTED'
+                : !r.started_at ? 'NOT_STARTED'
+                : Number(r.remaining_seconds) <= 0 ? 'TIME_UP'
+                : 'ACTIVE';
+            return {
+                participantId: r.participant_id,
+                elligbleId: elligbleIds.get(r.person_id) ?? null,
+                roomLabel: r.room_label ?? null,
+                status,
+                finalizationSource: status === 'SUBMITTED' ? (r.finalization_source ?? null) : null,
+                submittedAt: status === 'SUBMITTED' ? isoOrNull(r.submitted_at) : null,
+                remainingSeconds: status === 'ACTIVE' ? Number(r.remaining_seconds) : status === 'TIME_UP' ? 0 : null,
+                answeredCount: Number(r.answered),
+                lastAcceptedAt: isoOrNull(r.last_accepted_at),
+                sessionActive: status !== 'SUBMITTED' && Boolean(r.session_active),
+                sessionMoves: Number(r.session_moves ?? 0),
+                lockedAt: status === 'SUBMITTED' ? null : isoOrNull(r.locked_at),
+                addedSeconds: Number(r.added_seconds ?? 0),
+                ...(supervision.managingTeacher ? {
+                    timeAdditions: (additions.get(r.participant_id) ?? []).map(a => ({
+                        addedAt: a.addedAt, seconds: a.seconds, reason: a.reason,
+                        by: { elligbleId: a.actor ? elligbleIds.get(a.actor) ?? null : null, you: a.actor === actor.personId },
+                    })),
+                } : {}),
+            };
+        });
+        list.sort((a, b) => {
+            if (a.elligbleId === null || b.elligbleId === null) return a.elligbleId === b.elligbleId ? 0 : a.elligbleId === null ? 1 : -1;
+            return a.elligbleId < b.elligbleId ? -1 : a.elligbleId > b.elligbleId ? 1 : 0;
+        });
+        const count = (status: MonitoringStatus) => list.filter(p => p.status === status).length;
+        return {
+            type: 'ok',
+            monitoring: {
+                exam: {
+                    examInstanceId,
+                    subjectLabel: row.subject_label ?? null,
+                    lifecycleState: supervision.lifecycleState,
+                    roomBased: supervision.roomBased,
+                    pausedAt: supervision.lifecycleState === 'PAUSED' ? isoOrNull(row.paused_at) : null,
+                },
+                scope,
+                canAddTime: supervision.managingTeacher,
+                serverTime: new Date(row.db_now).toISOString(),
+                questionCount: questions.rows[0].n,
+                summary: { participants: list.length, notStarted: count('NOT_STARTED'), active: count('ACTIVE') + count('TIME_UP'), submitted: count('SUBMITTED') },
+                participants: list,
+                rooms,
+                broadcasts,
+            },
+        };
+    } catch {
+        await client.query('ROLLBACK').catch(() => {});
+        return { type: 'unavailable' };
+    } finally {
+        client.release();
+    }
+}

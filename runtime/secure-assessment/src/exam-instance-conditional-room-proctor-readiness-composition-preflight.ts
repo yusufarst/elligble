@@ -5,6 +5,7 @@ import {
 import {
   checkExamInstanceActiveProctorRoomCoverageReadiness
 } from './exam-instance-active-proctor-room-coverage-readiness-preflight.ts';
+import { isReadinessEvaluableState } from './readiness-states.ts';
 
 export type CapabilityContext = {
   tenantId: string;
@@ -121,7 +122,7 @@ export async function checkExamInstanceConditionalRoomProctorReadinessCompositio
     const row = instanceResult.rows[0];
 
     // 3. Lifecycle must be SCHEDULED
-    if (row.lifecycle_state !== 'SCHEDULED') {
+    if (!isReadinessEvaluableState(row.lifecycle_state)) {
       return { type: 'invalid_state' };
     }
 

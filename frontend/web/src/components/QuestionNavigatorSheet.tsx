@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import type { StudentSafeQuestion, SaveState } from '../types/assessment.ts';
+import type { StudentSafeQuestion, SaveState, InboxMessage } from '../types/assessment.ts';
+import { ExamMessageList } from './ExamMessages.tsx';
 
 export interface QuestionNavigatorSheetProps {
   isOpen: boolean;
@@ -8,10 +9,14 @@ export interface QuestionNavigatorSheetProps {
   currentIndex: number;
   selectedOptions: Record<string, string>;
   saveStates: Record<string, SaveState>;
+  /** Questions marked "Ragu-ragu" (D04.5-33/34). */
+  flags?: Record<string, boolean>;
   onSelectQuestion: (index: number) => void;
   onOpenSubmitModal: () => void;
   hasUnresolvedSaves: boolean;
   triggerRef?: React.RefObject<HTMLElement | null>;
+  /** Supervisor messages to reread (D04.1-77G). */
+  messages?: InboxMessage[];
 }
 
 export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
@@ -21,10 +26,12 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
   currentIndex,
   selectedOptions,
   saveStates,
+  flags = {},
   onSelectQuestion,
   onOpenSubmitModal,
   hasUnresolvedSaves,
   triggerRef,
+  messages = [],
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -95,6 +102,7 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
   const totalQuestions = questions.length;
   const answeredCount = questions.filter(q => !!selectedOptions[q.snapshotId]).length;
   const unansweredCount = totalQuestions - answeredCount;
+  const flaggedCount = questions.filter(q => flags[q.snapshotId]).length;
 
   const handleSelect = (idx: number) => {
     onSelectQuestion(idx);
@@ -155,6 +163,7 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
             <span className="legend-chip"><span className="chip-indicator active-dot" /> Aktif</span>
             <span className="legend-chip"><span className="chip-indicator answered-dot" /> Terjawab</span>
             <span className="legend-chip"><span className="chip-indicator unanswered-dot" /> Kosong</span>
+            <span className="legend-chip"><span className="chip-indicator flagged-dot" /> Ragu-ragu</span>
           </div>
 
           <div className="sheet-grid" role="group" aria-label="Pilihan Nomor Soal">
@@ -164,19 +173,23 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
               const qState = saveStates[q.snapshotId];
               const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
 
+              const isFlagged = !!flags[q.snapshotId];
+
               let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
               if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
+              if (isFlagged) statusText += ', ditandai ragu-ragu';
 
               return (
                 <button
                   key={q.snapshotId}
                   type="button"
-                  className={`sheet-nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''}`}
+                  className={`sheet-nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''} ${isFlagged ? 'flagged' : ''}`}
                   onClick={() => handleSelect(idx)}
                   aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
                   aria-current={isCurrent ? 'true' : undefined}
                 >
                   <span className="sheet-btn-num">{idx + 1}</span>
+                  {isFlagged && <span className="flag-corner" aria-hidden="true" />}
                   {isCurrent && <span className="sheet-btn-marker current-marker" aria-hidden="true">•</span>}
                   {isAnswered && !isUnresolved && <span className="sheet-btn-marker answered-marker" aria-hidden="true">✓</span>}
                   {isUnresolved && <span className="sheet-btn-marker unresolved-marker" aria-hidden="true">!</span>}
@@ -184,6 +197,7 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
               );
             })}
           </div>
+          <ExamMessageList messages={messages} />
         </div>
 
         <div className="sheet-bottom-region">
@@ -200,6 +214,12 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
               <span className="summary-label">Belum Dijawab:</span>
               <strong className="summary-val">{unansweredCount}</strong>
             </div>
+            {flaggedCount > 0 && (
+              <div className="sheet-summary-item">
+                <span className="summary-label">Ragu-ragu:</span>
+                <strong className="summary-val">{flaggedCount}</strong>
+              </div>
+            )}
           </div>
 
           <div className="sheet-footer-action">

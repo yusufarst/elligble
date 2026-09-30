@@ -3,6 +3,7 @@ import {
   validateBaselineQuestionSnapshotFrozenContent,
   type BaselineQuestionSnapshotBlocker
 } from './question-snapshot-baseline-frozen-content-contract.ts';
+import { isReadinessEvaluableState } from './readiness-states.ts';
 
 export type CapabilityContext = {
   tenantId: string;
@@ -78,7 +79,7 @@ export async function checkExamInstanceBaselineScoringReadiness(
     }
 
     const state = instanceRes.rows[0].lifecycle_state;
-    if (state !== 'SCHEDULED') {
+    if (!isReadinessEvaluableState(state)) {
       return { type: 'invalid_state' };
     }
 

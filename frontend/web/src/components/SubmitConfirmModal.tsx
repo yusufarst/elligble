@@ -1,141 +1,97 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IconAlertCircle } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Metric, MetricList } from '@/components/ui/metric';
 
 export interface SubmitConfirmModalProps {
   isOpen: boolean;
   totalQuestions: number;
   answeredCount: number;
   unansweredCount: number;
+  /** Questions still marked "Ragu-ragu": a reminder only, submitting stays possible. */
+  flaggedCount?: number;
   isSubmitting: boolean;
+  /** Shown when the last submission request failed; the student can simply try again. */
+  errorMessage?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
+const DECLARATION = 'Saya menyatakan telah memeriksa seluruh jawaban dan siap mengumpulkan ujian ini.';
+
+// The submit confirmation is the shared dialog (UI-SYSTEM-002, audit C2): focus starts on
+// "Batal", Escape cancels unless the answers are being sent, a tap outside does nothing, and
+// sending needs the declaration.
 export const SubmitConfirmModal: React.FC<SubmitConfirmModalProps> = ({
   isOpen,
   totalQuestions,
   answeredCount,
   unansweredCount,
+  flaggedCount = 0,
   isSubmitting,
+  errorMessage,
   onCancel,
   onConfirm,
 }) => {
   const [isChecked, setIsChecked] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Focus management: focus cancel button when modal opens
   useEffect(() => {
-    if (isOpen) {
-      setIsChecked(false);
-      setTimeout(() => {
-        cancelButtonRef.current?.focus();
-      }, 50);
-    }
+    if (isOpen) setIsChecked(false);
   }, [isOpen]);
 
-  // Trap focus and handle Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (!isSubmitting) {
-          onCancel();
-        }
-        return;
-      }
-
-      if (e.key === 'Tab') {
-        if (!modalRef.current) return;
-        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusableElements.length === 0) return;
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
-            lastElement.focus();
-            e.preventDefault();
-          }
-        } else {
-          if (document.activeElement === lastElement) {
-            firstElement.focus();
-            e.preventDefault();
-          }
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isSubmitting, onCancel]);
-
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-backdrop" role="presentation">
-      <div
-        ref={modalRef}
-        className="modal-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
+    <Dialog open={isOpen} onOpenChange={open => { if (!open && !isSubmitting) onCancel(); }}>
+      <DialogContent
+        hideClose
+        aria-describedby={undefined}
+        onOpenAutoFocus={event => {
+          event.preventDefault();
+          cancelButtonRef.current?.focus();
+        }}
+        onInteractOutside={event => event.preventDefault()}
       >
-        <h2 id="modal-title" className="modal-title">
-          Konfirmasi Pengumpulan Ujian
-        </h2>
+        <DialogHeader>
+          <DialogTitle>Konfirmasi Pengumpulan Ujian</DialogTitle>
+        </DialogHeader>
 
-        <div className="modal-summary-box">
-          <div className="summary-row">
-            <span>Total Soal:</span>
-            <strong>{totalQuestions}</strong>
-          </div>
-          <div className="summary-row">
-            <span>Sudah Dijawab:</span>
-            <strong>{answeredCount}</strong>
-          </div>
-          <div className="summary-row">
-            <span>Belum Dijawab:</span>
-            <strong>{unansweredCount}</strong>
-          </div>
-        </div>
+        <MetricList className={flaggedCount > 0 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}>
+          <Metric label="Total Soal" value={totalQuestions} />
+          <Metric label="Sudah Dijawab" value={answeredCount} />
+          <Metric label="Belum Dijawab" value={unansweredCount} />
+          {flaggedCount > 0 && <Metric label="Ditandai Ragu-ragu" value={flaggedCount} />}
+        </MetricList>
 
-        <label className="modal-declaration">
+        <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border bg-muted px-3 py-3 text-sm leading-relaxed">
           <input
             type="checkbox"
+            className="mt-0.5 size-5 shrink-0 accent-primary"
             checked={isChecked}
             onChange={e => setIsChecked(e.target.checked)}
             disabled={isSubmitting}
-            aria-label="Saya menyatakan telah memeriksa seluruh jawaban dan siap mengumpulkan ujian ini."
+            aria-label={DECLARATION}
           />
-          <span>
-            Saya menyatakan telah memeriksa seluruh jawaban dan siap mengumpulkan ujian ini.
-          </span>
+          <span>{DECLARATION}</span>
         </label>
 
-        <div className="modal-actions">
-          <button
-            ref={cancelButtonRef}
-            type="button"
-            className="btn btn-secondary"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
+        {errorMessage && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        <DialogFooter>
+          <Button ref={cancelButtonRef} variant="secondary" onClick={onCancel} disabled={isSubmitting}>
             Batal
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={onConfirm}
-            disabled={!isChecked || isSubmitting}
-          >
+          </Button>
+          <Button onClick={onConfirm} disabled={!isChecked || isSubmitting}>
             {isSubmitting ? 'Mengirimkan...' : 'Kirim Jawaban Sekarang'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

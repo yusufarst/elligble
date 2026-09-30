@@ -1,10 +1,10 @@
 **Status:** LOCKED  
-**Version:** 1.2.2
+**Version:** 1.2.3
 **Canonical:** YES  
-**Supersedes:** 1.2.1
+**Supersedes:** 1.2.2
 **Depends On:** Recovery Freeze 1.0.0, Discovery 01 v1.0.0, Discovery 02 v1.0.1, Discovery 03 v1.0.0, Discovery 04 v1.0.1  
 **Used By:** Every agent execution  
-**Last Reviewed:** 2026-09-18
+**Last Reviewed:** 2026-09-29
 
 # ELLIGBLE — Master Context
 
@@ -256,14 +256,14 @@ PROGRAM 2: OPTIONAL / FUTURE PRODUCT EXPANSION
 (1. OPTIONAL capabilities, 2. FUTURE capabilities)
 ```
 
-Inside each program:
+Inside each program (DEC-042, `00.10_CONTINUOUS_PRODUCTION_COMPLETION.md`):
 ```text
 Active Product Milestone
-→ Bounded Build Unit
-→ Implementation
-→ Verification
-→ DONE
-→ Next Milestone-Shortening BU
+→ Critical-path item in docs/production/PRODUCTION_COMPLETION_PLAN.md
+→ Implementation (coherent vertical result)
+→ Verification (typecheck, unit, real PostgreSQL, browser E2E for critical journeys)
+→ DONE + living plan updated
+→ Next critical-path item
 ```
 
-One Build Unit per agent execution. Terminal verification is required before `DONE`.
+No new Build Units (BU-001..BU-090 are historical construction assets). Verification is required before `DONE`.

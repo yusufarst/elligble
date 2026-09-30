@@ -16,15 +16,33 @@ export interface AssignedExamAttemptProjection {
     submittedAt: string | null;
 }
 
+export interface AssignedExamScheduleProjection {
+    lifecycleState: string | null;
+    windowStartsAt: string | null;
+    windowEndsAt: string | null;
+    attemptDurationSeconds: number | null;
+    /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
+    change: { changedAt: string; previousWindowStartsAt: string | null; previousWindowEndsAt: string | null } | null;
+}
+
 export interface AssignedExamProjection {
     examInstanceId: string;
     subjectLabel: string | null;
     roomLabel: string | null;
+    schedule: AssignedExamScheduleProjection;
     attempts: AssignedExamAttemptProjection[];
 }
 
 export interface AssignedExamsResponse {
+    /** Server time for schedule display; the client never decides eligibility from its own clock. */
+    serverNow: string;
     assignments: AssignedExamProjection[];
+}
+
+function isoOrNull(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function isValidUUID(uuid: string): boolean {
@@ -73,13 +91,27 @@ export async function handleAssignedExamsGet(
             SELECT
                 p.id as participant_id,
                 i.id as exam_instance_id,
+                i.lifecycle_state as lifecycle_state,
+                i.window_starts_at as window_starts_at,
+                i.window_ends_at as window_ends_at,
+                i.configured_attempt_duration_seconds as attempt_duration_seconds,
                 s.display_label as subject_label,
                 r.display_label as room_label,
                 a.id as attempt_id,
-                sub.submitted_at as submitted_at
+                sub.submitted_at as submitted_at,
+                sc.changed_at as schedule_changed_at,
+                sc.previous_window_starts_at as previous_window_starts_at,
+                sc.previous_window_ends_at as previous_window_ends_at
             FROM secure_assessment_exam_participants p
             JOIN secure_assessment_exam_instances i
                 ON i.id = p.exam_instance_id AND i.tenant_id = p.tenant_id
+            LEFT JOIN LATERAL (
+                SELECT c.changed_at, c.previous_window_starts_at, c.previous_window_ends_at
+                FROM secure_assessment_exam_schedule_changes c
+                WHERE c.tenant_id = i.tenant_id AND c.exam_instance_id = i.id
+                ORDER BY c.changed_at DESC, c.id DESC
+                LIMIT 1
+            ) sc ON TRUE
             LEFT JOIN academic_core_teaching_assignments ta
                 ON ta.id = i.teaching_assignment_id AND ta.tenant_id = p.tenant_id
             LEFT JOIN academic_core_subject_offerings so
@@ -95,10 +127,16 @@ export async function handleAssignedExamsGet(
             LEFT JOIN secure_assessment_exam_submissions sub
                 ON sub.exam_attempt_id = a.id AND sub.tenant_id = p.tenant_id
             WHERE p.tenant_id = $1 AND p.person_id = $2
+              -- A cancelled exam is no longer the student's (Owner decision 2026-09-30).
+              AND NOT EXISTS (
+                  SELECT 1 FROM secure_assessment_exam_cancellations c
+                  WHERE c.tenant_id = i.tenant_id AND c.exam_instance_id = i.id
+              )
             ORDER BY p.created_at ASC, i.id ASC, a.created_at ASC, a.id ASC
         `;
 
         const queryResult = await client.query(query, [context.tenantId, context.personId]);
+        const nowResult = await client.query('SELECT statement_timestamp() AS server_now');
         await client.query('COMMIT');
 
         const assignmentsMap = new Map<string, AssignedExamProjection>();
@@ -111,6 +149,18 @@ export async function handleAssignedExamsGet(
                     examInstanceId: row.exam_instance_id,
                     subjectLabel: row.subject_label ?? null,
                     roomLabel: row.room_label ?? null,
+                    schedule: {
+                        lifecycleState: row.lifecycle_state ?? null,
+                        windowStartsAt: isoOrNull(row.window_starts_at),
+                        windowEndsAt: isoOrNull(row.window_ends_at),
+                        attemptDurationSeconds: row.attempt_duration_seconds === null || row.attempt_duration_seconds === undefined
+                            ? null : Number(row.attempt_duration_seconds),
+                        change: row.schedule_changed_at ? {
+                            changedAt: isoOrNull(row.schedule_changed_at)!,
+                            previousWindowStartsAt: isoOrNull(row.previous_window_starts_at),
+                            previousWindowEndsAt: isoOrNull(row.previous_window_ends_at),
+                        } : null,
+                    },
                     attempts: []
                 };
                 assignmentsMap.set(participantKey, item);
@@ -130,6 +180,7 @@ export async function handleAssignedExamsGet(
         }
 
         const responseBody: AssignedExamsResponse = {
+            serverNow: isoOrNull(nowResult.rows[0]?.server_now) ?? new Date().toISOString(),
             assignments: Array.from(assignmentsMap.values())
         };
 

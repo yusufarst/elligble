@@ -209,6 +209,18 @@ test('authenticated context focused contract', async (t) => {
     );
   });
 
+  await t.test('5b. invalid credential without a usable tenant locator -> 401, not 403', async () => {
+    const h = makeHarness(verifier);
+    const wrongSecret = generateSessionSecret().secret;
+    for (const tenant of [undefined, 'not-a-uuid']) {
+      await expectAuthError(
+        () => buildAuthenticatedContext(makeReq(`ELLIGBLE-Session ${SESSION_ID}.${wrongSecret}`, tenant), h.pool),
+        401,
+      );
+    }
+    assert.equal(h.released(), 2);
+  });
+
   await t.test('6. malformed tenant -> 403', async () => {
     const h = makeHarness(verifier);
 

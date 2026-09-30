@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import { 
   type ClientAnswerMutationRecord, 
   type ClientAnswerSyncIdentity 
-} from '../src/client-answer-sync.js';
-import { projectClientAnswerSaveState } from '../src/client-answer-save-state.js';
+} from '../src/client-answer-sync.ts';
+import { projectClientAnswerSaveState } from '../src/client-answer-save-state.ts';
 
 const mockIdentity: ClientAnswerSyncIdentity = {
   tenantId: 'tenant-1',

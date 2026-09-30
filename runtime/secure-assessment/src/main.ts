@@ -2,12 +2,20 @@ import { env } from 'node:process';
 import type * as http from 'node:http';
 import type * as pg from 'pg';
 import { parseConfig, type AppConfig } from './config.ts';
-import { logInfo, logError } from './log.ts';
+import { logInfo, logError, writeLog } from './log.ts';
 import { createDatabasePool, checkDatabaseReadiness } from './db.ts';
 import { createServer } from './server.ts';
+import { createAttemptAuthorizer } from './http/attempt-authorization.ts';
+import { loadStaticSite, type StaticSite } from './http/static-site.ts';
+import { runStartupPreflight } from './ops/preflight.ts';
+import { startExpiryFinalizationSweeper, type ExpiryFinalizationSweeper } from './expiry-finalization.ts';
+import { RuntimeMetrics, countPendingExpiredAttempts, createMetricsServer } from './metrics.ts';
 
 let activeServer: http.Server | undefined;
 let activePool: pg.Pool | undefined;
+let activeSweeper: ExpiryFinalizationSweeper | undefined;
+let activeMetrics: RuntimeMetrics | undefined;
+let activeMetricsServer: http.Server | undefined;
 let isShuttingDown = false;
 
 async function start() {
@@ -20,30 +28,84 @@ async function start() {
         return;
     }
 
-    logInfo('runtime_starting', { host: config.SA_HOST, port: config.SA_PORT, poolMax: config.SA_DB_POOL_MAX });
+    logInfo('runtime_starting', {
+        host: config.SA_HOST,
+        port: config.SA_PORT,
+        poolMax: config.SA_DB_POOL_MAX,
+        env: config.ELLIGBLE_ENV,
+        cookieSecure: config.SA_COOKIE_SECURE,
+        migrationsOnStart: config.SA_MIGRATIONS_ON_START,
+        servesWebClient: config.SA_STATIC_DIR !== null,
+        expirySweepSeconds: config.SA_EXPIRY_SWEEP_SECONDS,
+        metrics: config.SA_METRICS_PORT !== null,
+    });
+
+    let staticSite: StaticSite | undefined;
+    if (config.SA_STATIC_DIR) {
+        try {
+            staticSite = loadStaticSite(config.SA_STATIC_DIR);
+        } catch (err: unknown) {
+            logError('fatal_startup_error', { message: err instanceof Error ? err.message : 'Static site cannot be loaded' });
+            process.exitCode = 1;
+            return;
+        }
+        logInfo('static_site_loaded', { files: staticSite.fileCount, bytes: staticSite.totalBytes });
+    }
 
     activePool = createDatabasePool(config);
 
-    const isReady = await checkDatabaseReadiness(activePool);
-    if (isReady) {
-        logInfo('database_ready');
-    } else {
-        logInfo('database_not_ready');
+    const preflight = await runStartupPreflight({
+        pool: activePool,
+        migrations: config.SA_MIGRATIONS_ON_START,
+        databaseWaitSeconds: config.SA_STARTUP_DB_WAIT_SECONDS,
+        log: writeLog,
+        isCancelled: () => isShuttingDown,
+    });
+    if (isShuttingDown) return;
+    if (!preflight.ok) {
+        // The operator action is in the reason: start the database, or run `npm run migrate`.
+        logError('preflight_failed', { ...preflight });
+        await shutdown(1);
+        return;
     }
+    logInfo('database_ready');
 
+    const cookie = { secure: config.SA_COOKIE_SECURE };
+    const pool = activePool;
+    if (config.SA_METRICS_PORT !== null) activeMetrics = new RuntimeMetrics();
     activeServer = createServer({
         checkReadiness: () => activePool ? checkDatabaseReadiness(activePool) : Promise.resolve(false),
-        pool: activePool!,
-        getAuthorizedContext: (req) => {
-            // Full authentication out of scope. Fail closed by default.
-            // Tests or integration will inject realistic context here.
-            return null;
-        }
+        pool: activePool,
+        security: {
+            cookie,
+            allowedOrigins: config.SA_ALLOWED_ORIGINS,
+            hsts: config.SA_COOKIE_SECURE,
+        },
+        authorizeAttempt: createAttemptAuthorizer(activePool, cookie),
+        staticSite,
+        log: writeLog,
+        metrics: activeMetrics,
     });
 
     activeServer.listen(config.SA_PORT, config.SA_HOST, () => {
         logInfo('runtime_started');
     });
+    const metrics = activeMetrics;
+    activeSweeper = startExpiryFinalizationSweeper(activePool, {
+        intervalMs: config.SA_EXPIRY_SWEEP_SECONDS * 1000,
+        log: writeLog,
+        ...(metrics && { onSweep: report => metrics.observeSweep(report), countPending: () => countPendingExpiredAttempts(pool) }),
+    });
+    if (metrics && config.SA_METRICS_PORT !== null) {
+        activeMetricsServer = createMetricsServer({ metrics, pool, checkReadiness: () => checkDatabaseReadiness(pool) });
+        activeMetricsServer.on('error', (err: Error) => {
+            logError('fatal_startup_error', { message: err.message });
+            shutdown(1);
+        });
+        activeMetricsServer.listen(config.SA_METRICS_PORT, config.SA_METRICS_HOST, () => {
+            logInfo('metrics_listening', { host: config.SA_METRICS_HOST, port: config.SA_METRICS_PORT });
+        });
+    }
 
     activeServer.on('error', (err: Error) => {
         logError('fatal_startup_error', { message: err.message });
@@ -65,6 +127,16 @@ async function shutdown(exitCode = 0) {
         } catch {
             // Ignored
         }
+    }
+
+    if (activeMetricsServer) {
+        const metricsServer = activeMetricsServer;
+        await new Promise<void>(resolve => metricsServer.close(() => resolve()));
+    }
+    activeMetrics?.stop();
+
+    if (activeSweeper) {
+        await activeSweeper.stop();
     }
 
     if (activePool) {

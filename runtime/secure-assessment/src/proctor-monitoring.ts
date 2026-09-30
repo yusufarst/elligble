@@ -21,11 +21,23 @@ export interface ProctorMonitoringRoomProjection {
 export interface ProctorMonitoringExamProjection {
     examInstanceId: string;
     subjectLabel: string | null;
+    windowStartsAt: string | null;
+    windowEndsAt: string | null;
+    /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
+    scheduleChange: { changedAt: string; previousWindowStartsAt: string | null; previousWindowEndsAt: string | null } | null;
+    /** When the exam was cancelled before it opened (Owner decision 2026-09-30), or null. */
+    cancelledAt: string | null;
     rooms: ProctorMonitoringRoomProjection[];
 }
 
 export interface ProctorMonitoringResponse {
     assignments: ProctorMonitoringExamProjection[];
+}
+
+function isoOrNull(value: unknown): string | null {
+    if (value === null || value === undefined) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function isValidUUID(uuid: string): boolean {
@@ -74,6 +86,13 @@ export async function handleProctorMonitoringGet(
             SELECT
                 pa.exam_instance_id,
                 s.display_label as subject_label,
+                i.window_starts_at,
+                i.window_ends_at,
+                sc.changed_at as schedule_changed_at,
+                sc.previous_window_starts_at,
+                sc.previous_window_ends_at,
+                (SELECT ec.cancelled_at FROM secure_assessment_exam_cancellations ec
+                 WHERE ec.tenant_id = i.tenant_id AND ec.exam_instance_id = i.id) AS cancelled_at,
                 er.id as room_id,
                 er.display_label as room_label,
                 COUNT(DISTINCT pra.exam_participant_id) as participant_count,
@@ -81,6 +100,13 @@ export async function handleProctorMonitoringGet(
             FROM secure_assessment_proctor_assignments pa
             JOIN secure_assessment_exam_instances i
                 ON i.id = pa.exam_instance_id AND i.tenant_id = pa.tenant_id
+            LEFT JOIN LATERAL (
+                SELECT c.changed_at, c.previous_window_starts_at, c.previous_window_ends_at
+                FROM secure_assessment_exam_schedule_changes c
+                WHERE c.tenant_id = i.tenant_id AND c.exam_instance_id = i.id
+                ORDER BY c.changed_at DESC, c.id DESC
+                LIMIT 1
+            ) sc ON TRUE
             LEFT JOIN academic_core_teaching_assignments ta
                 ON ta.id = i.teaching_assignment_id AND ta.tenant_id = pa.tenant_id
             LEFT JOIN academic_core_subject_offerings so
@@ -99,7 +125,8 @@ export async function handleProctorMonitoringGet(
                 ON sess.exam_attempt_id = att.id AND sess.tenant_id = pa.tenant_id
                 AND sess.activated_at IS NOT NULL AND sess.ended_at IS NULL
             WHERE pa.tenant_id = $1 AND pa.person_id = $2 AND pa.revoked_at IS NULL
-            GROUP BY pa.exam_instance_id, s.display_label, er.id, er.display_label
+            GROUP BY pa.exam_instance_id, s.display_label, i.window_starts_at, i.window_ends_at,
+                     sc.changed_at, sc.previous_window_starts_at, sc.previous_window_ends_at, i.tenant_id, i.id, er.id, er.display_label
             ORDER BY pa.exam_instance_id ASC, er.id ASC
         `;
 
@@ -115,6 +142,14 @@ export async function handleProctorMonitoringGet(
                 item = {
                     examInstanceId: examInstanceId,
                     subjectLabel: row.subject_label ?? null,
+                    windowStartsAt: isoOrNull(row.window_starts_at),
+                    windowEndsAt: isoOrNull(row.window_ends_at),
+                    scheduleChange: row.schedule_changed_at ? {
+                        changedAt: isoOrNull(row.schedule_changed_at)!,
+                        previousWindowStartsAt: isoOrNull(row.previous_window_starts_at),
+                        previousWindowEndsAt: isoOrNull(row.previous_window_ends_at),
+                    } : null,
+                    cancelledAt: isoOrNull(row.cancelled_at),
                     rooms: []
                 };
                 assignmentsMap.set(examInstanceId, item);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { handleSessionActivate } from '../src/session.ts';
+import { handleSessionActivate, sessionFingerprint } from '../src/session.ts';
 
 const ATTEMPT1 = '11111111-1111-4111-8111-111111111111';
 const ATTEMPT2 = '22222222-2222-4222-8222-222222222222';
@@ -274,7 +274,8 @@ test('Session Activate tests', async (t) => {
         assert.equal(res.getStatusCode(), 409);
         const body = JSON.parse(res.getEndedData());
         assert.equal(body.error, 'active_session_exists');
-        assert.equal(body.activeSessionId, SESS1);
+        assert.equal(body.activeSessionId, undefined, 'the active session id is a write capability and is never disclosed');
+        assert.equal(body.activeSessionFingerprint, sessionFingerprint(SESS1));
         assert.equal(mutations, 0); // 20. zero mutation
     });
 

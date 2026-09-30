@@ -25,8 +25,9 @@ describe('ProctorMonitoringView', () => {
   it('renders loading state initially', () => {
     vi.mocked(assessmentClient.getProctorMonitoring).mockReturnValue(new Promise(() => {}));
     render(<ProctorMonitoringView />);
-    expect(screen.getByText('Memuat data pengawasan...')).toBeDefined();
-    expect(screen.getByText('Harap tunggu sebentar.')).toBeDefined();
+    // The page keeps its heading; loading is an announced line (the shared pattern).
+    expect(screen.getByRole('heading', { level: 1, name: 'Monitoring Ujian' })).toBeDefined();
+    expect(screen.getByRole('status').textContent).toBe('Memuat daftar ujian...');
   });
 
   it('renders forbidden state when ApiError with status 403 is thrown', async () => {
@@ -37,7 +38,9 @@ describe('ProctorMonitoringView', () => {
       expect(screen.getByText('Akses Ditolak')).toBeDefined();
     });
     expect(screen.getByText(/Anda tidak memiliki hak akses untuk memonitoring ruangan/i)).toBeDefined();
-    expect(screen.getByText('Coba Lagi')).toBeDefined();
+    // A refusal offers no retry that cannot help, and no refresh.
+    expect(screen.queryByRole('button', { name: 'Coba Lagi' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Perbarui Data' })).toBeNull();
   });
 
   it('renders API failure state on non-403 error', async () => {
@@ -45,10 +48,11 @@ describe('ProctorMonitoringView', () => {
     render(<ProctorMonitoringView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Terjadi Kesalahan')).toBeDefined();
+      expect(screen.getByText('Gagal Memuat Daftar Ujian')).toBeDefined();
     });
-    expect(screen.getByText('Gagal memuat data pengawasan. Silakan coba lagi.')).toBeDefined();
-    expect(screen.getByText('Coba Lagi')).toBeDefined();
+    expect(screen.getByText('Periksa koneksi internet Anda, lalu coba lagi.')).toBeDefined();
+    expect(screen.getByRole('alert').getAttribute('data-state')).toBe('load-error');
+    expect(screen.getByRole('button', { name: 'Coba Lagi' })).toBeDefined();
   });
 
   it('renders empty state when assignments array is empty (no assignment)', async () => {
@@ -56,9 +60,9 @@ describe('ProctorMonitoringView', () => {
     render(<ProctorMonitoringView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Tidak Ada Ujian')).toBeDefined();
+      expect(screen.getByText('Belum Ada Ujian yang Diawasi')).toBeDefined();
     });
-    expect(screen.getByText(/Anda belum ditugaskan untuk mengawasi ujian apapun saat ini/i)).toBeDefined();
+    expect(screen.getByText(/Anda belum ditugaskan untuk mengawasi ujian apa pun saat ini/i)).toBeDefined();
     expect(screen.getByText('Perbarui Data')).toBeDefined();
   });
 
@@ -111,8 +115,22 @@ describe('ProctorMonitoringView', () => {
     expect(screen.getByText('20')).toBeDefined();
     expect(screen.getByText('0')).toBeDefined(); // Ruang 2 active sessions
 
-    // Check no rooms message for Fisika
-    expect(screen.getByText('Tidak ada ruangan yang ditugaskan untuk ujian ini.')).toBeDefined();
+    // An exam without room operations lists no room cards; its participants open from "Lihat Peserta".
+    expect(screen.queryByText('Tidak ada ruangan yang ditugaskan untuk ujian ini.')).toBeNull();
+  });
+
+  it('keeps the exams on screen and says so when a refresh fails', async () => {
+    vi.mocked(assessmentClient.getProctorMonitoring)
+      .mockResolvedValueOnce({ assignments: [{ examInstanceId: 'inst-1', subjectLabel: 'Kimia', rooms: [] }] })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    render(<ProctorMonitoringView />);
+    await waitFor(() => expect(screen.getByText('Kimia')).toBeDefined());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Perbarui Data' }));
+    });
+    await waitFor(() => expect(screen.getByText('Gagal memperbarui data')).toBeDefined());
+    expect(screen.getByText('Data yang tampil adalah data terakhir.')).toBeDefined();
+    expect(screen.getByText('Kimia')).toBeDefined();
   });
 
   it('handles manual refresh button click and updates data', async () => {
@@ -120,7 +138,7 @@ describe('ProctorMonitoringView', () => {
     render(<ProctorMonitoringView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Tidak Ada Ujian')).toBeDefined();
+      expect(screen.getByText('Belum Ada Ujian yang Diawasi')).toBeDefined();
     });
 
     vi.mocked(assessmentClient.getProctorMonitoring).mockResolvedValueOnce({

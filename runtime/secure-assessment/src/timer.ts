@@ -2,6 +2,22 @@ import * as http from 'node:http';
 import * as pg from 'pg';
 
 import { type AuthorizedAssessmentContext } from './answer.ts';
+import { evaluateStartEligibility } from './attempt-eligibility.ts';
+import { readAttemptExamState, readOpenLock, type AttemptExamState } from './exam-pause.ts';
+import { countAttemptMessages } from './exam-broadcast.ts';
+
+/**
+ * Exam state beside the timer, so the workstation knows whether time is frozen (Owner
+ * decision 2026-09-30) and whether a supervisor locked this attempt (D04.6-38).
+ */
+function examStateFields(state: AttemptExamState | null, lockedAt: Date | null, dbNow: unknown) {
+    return {
+        examState: state?.lifecycleState ?? null,
+        pausedAt: state?.pausedAt ? state.pausedAt.toISOString() : null,
+        lockedAt: lockedAt ? lockedAt.toISOString() : null,
+        serverTime: new Date(dbNow instanceof Date || typeof dbNow === 'string' ? dbNow : Date.now()).toISOString(),
+    };
+}
 
 export interface TimerDependencies {
     pool: pg.Pool;
@@ -61,7 +77,7 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                 await client.query('BEGIN');
 
                 const checkRes = await client.query(
-                    'SELECT id FROM secure_assessment_timer_state WHERE tenant_id = $1 AND exam_attempt_id = $2 FOR UPDATE',
+                    'SELECT id, started_at FROM secure_assessment_timer_state WHERE tenant_id = $1 AND exam_attempt_id = $2 FOR UPDATE',
                     [context.tenantId, attemptId]
                 );
 
@@ -72,11 +88,63 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                     return;
                 }
 
-                await client.query(`
-                    UPDATE secure_assessment_timer_state
-                    SET started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-                    WHERE tenant_id = $1 AND exam_attempt_id = $2 AND started_at IS NULL
-                `, [context.tenantId, attemptId]);
+                if (checkRes.rows[0].started_at === null || checkRes.rows[0].started_at === undefined) {
+                    // The attempt really begins now: re-validate eligibility with server time
+                    // (D04.2-72) and apply the latest-start policy (D04.2-34). An already
+                    // started timer is returned unchanged (idempotent start).
+                    const examRes = await client.query(`
+                        SELECT
+                            i.lifecycle_state, i.window_starts_at, i.window_ends_at,
+                            i.configured_attempt_duration_seconds, i.latest_start_policy,
+                            statement_timestamp() AS db_now,
+                            EXISTS (
+                                SELECT 1 FROM secure_assessment_exam_submissions sub
+                                WHERE sub.tenant_id = a.tenant_id AND sub.exam_attempt_id = a.id
+                            ) AS submitted
+                        FROM secure_assessment_exam_attempts a
+                        JOIN secure_assessment_exam_participants p
+                            ON p.id = a.exam_participant_id AND p.tenant_id = a.tenant_id
+                        JOIN secure_assessment_exam_instances i
+                            ON i.id = p.exam_instance_id AND i.tenant_id = a.tenant_id
+                        WHERE a.tenant_id = $1 AND a.id = $2
+                        FOR KEY SHARE OF i
+                    `, [context.tenantId, attemptId]);
+
+                    if (examRes.rows.length === 0) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(404, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                        return;
+                    }
+                    if (examRes.rows[0].submitted) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_already_submitted' }));
+                        return;
+                    }
+                    const eligibility = evaluateStartEligibility(examRes.rows[0], new Date(examRes.rows[0].db_now));
+                    if (!eligibility.eligible) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: eligibility.reason }));
+                        return;
+                    }
+                    const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+                    if (lockedAt) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_locked', lockedAt: lockedAt.toISOString() }));
+                        return;
+                    }
+
+                    await client.query(`
+                        UPDATE secure_assessment_timer_state
+                        SET started_at = CURRENT_TIMESTAMP,
+                            configured_duration_seconds = LEAST(configured_duration_seconds, $3),
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE tenant_id = $1 AND exam_attempt_id = $2 AND started_at IS NULL
+                    `, [context.tenantId, attemptId, eligibility.effectiveDurationSeconds]);
+                }
 
                 const stateRes = await client.query(`
                     SELECT
@@ -84,10 +152,13 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                         t.started_at,
                         t.configured_duration_seconds,
                         COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                        FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                        secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) as elapsed_seconds,
+                        statement_timestamp() as db_now
                     FROM secure_assessment_timer_state t
                     WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
                 `, [context.tenantId, attemptId]);
+                const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
+                const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
 
                 await client.query('COMMIT');
 
@@ -106,7 +177,8 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                     startedAt: startedAt.toISOString(),
                     configuredDurationSeconds,
                     effectiveDurationSeconds,
-                    effectiveRemainingSeconds
+                    effectiveRemainingSeconds,
+                    ...examStateFields(examState, lockedAt, state.db_now)
                 }));
 
             } catch (err) {
@@ -171,7 +243,8 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
                 t.started_at,
                 t.configured_duration_seconds,
                 COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) as elapsed_seconds,
+                statement_timestamp() as db_now
             FROM secure_assessment_timer_state t
             WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
         `, [context.tenantId, attemptId]);
@@ -199,6 +272,10 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
         const effectiveRemainingSeconds = Math.max(0, effectiveDurationSeconds - elapsedSeconds);
 
         const status = effectiveRemainingSeconds <= 0 ? 'expired' : 'active';
+        const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
+        const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+        // How many supervisor messages the student has: the device fetches them only when this grows.
+        const messageCount = await countAttemptMessages(client, context.tenantId, attemptId);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
@@ -206,7 +283,9 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
             startedAt: startedAt.toISOString(),
             configuredDurationSeconds,
             effectiveDurationSeconds,
-            effectiveRemainingSeconds
+            effectiveRemainingSeconds,
+            ...examStateFields(examState, lockedAt, state.db_now),
+            messageCount
         }));
 
     } catch (err) {

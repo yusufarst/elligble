@@ -45,15 +45,19 @@ function isValidUUID(id: string): boolean {
   return typeof id === 'string' && UUID_REGEX.test(id);
 }
 
-const defaultCapabilityEvaluator: ExamInstanceSchedulingCapabilityEvaluator =
-  async (): Promise<ExamInstanceSchedulingCapabilityDecision> => 'granted';
-
+/**
+ * The caller must decide who may schedule an exam: there is no default evaluator, and a
+ * missing one is denied (fail closed; the Permission Matrix PB05 is not invented here).
+ */
 export async function transitionExamInstanceDraftToScheduled(
   pool: Pool,
   input: TransitionExamInstanceDraftToScheduledInput,
-  evaluateCapability: ExamInstanceSchedulingCapabilityEvaluator = defaultCapabilityEvaluator
+  evaluateCapability: ExamInstanceSchedulingCapabilityEvaluator
 ): Promise<TransitionExamInstanceDraftToScheduledResult> {
   if (!isValidUUID(input?.tenantId) || !isValidUUID(input?.examInstanceId)) {
+    return { type: 'denied' };
+  }
+  if (typeof evaluateCapability !== 'function') {
     return { type: 'denied' };
   }
 
