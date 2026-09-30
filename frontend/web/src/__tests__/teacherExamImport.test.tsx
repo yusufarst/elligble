@@ -199,6 +199,7 @@ describe('TeacherExamImportView', () => {
     vi.mocked(getTeacherExamSetup).mockRejectedValue(new ApiError(403, 'forbidden'));
     render(<TeacherExamImportView onBack={() => {}} onScheduled={() => {}} />);
     expect(await screen.findByText('Akses Ditolak')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Buat Ujian dari Berkas Soal' })).toBeTruthy();
   });
 
   it('every problem code has Indonesian wording without an em dash', () => {

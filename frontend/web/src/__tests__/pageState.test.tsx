@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { EmptyState, LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice } from '@/components/ui/page-state';
 
 // One loading, error, empty and stale-data pattern for every screen (plan §10.1.6, UI-SYSTEM-003
 // part 2; FRONTEND_DESIGN_SYSTEM §31, §33, §34).
@@ -29,6 +29,20 @@ describe('shared page states', () => {
     render(<LoadErrorState kind="refused" title="Akses Ditolak" onRetry={() => {}}>Anda tidak memiliki hak akses.</LoadErrorState>);
     expect(screen.getByText('Akses Ditolak')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('keeps the way back and the page heading above a state (audit M13)', () => {
+    render(
+      <PageStateFrame title="Hasil Ujian" back={<button type="button">Kembali ke Pelaksanaan Ujian</button>}>
+        <LoadingState>Memuat hasil ujian...</LoadingState>
+      </PageStateFrame>,
+    );
+    const page = screen.getByRole('main');
+    const heading = screen.getByRole('heading', { level: 1, name: 'Hasil Ujian' });
+    const order = [screen.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }), heading, screen.getByRole('status')];
+    expect(order.every(el => page.contains(el))).toBe(true);
+    expect(order[0].compareDocumentPosition(order[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(order[1].compareDocumentPosition(order[2]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows an empty page with a heading, one line and an optional action', () => {

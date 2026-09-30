@@ -89,10 +89,12 @@ describe('TeacherExamPreviewView', () => {
     vi.mocked(getTeacherExamPreview).mockRejectedValueOnce(new ApiError(409, 'invalid_state'));
     const { unmount } = render(<TeacherExamPreviewView examInstanceId={EXAM} onBack={() => {}} />);
     expect(await screen.findByText('Pratinjau Tidak Tersedia')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Pratinjau Soal' })).toBeTruthy();
     unmount();
     vi.mocked(getTeacherExamPreview).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     render(<TeacherExamPreviewView examInstanceId={EXAM} onBack={() => {}} />);
     expect(await screen.findByText('Akses Ditolak')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Pratinjau Soal' })).toBeTruthy();
   });
 });
 

@@ -37,6 +37,8 @@ function response(overrides: Partial<TeacherExamResultsResponse> = {}): TeacherE
 }
 
 const rows = () => screen.getAllByRole('row').slice(1);
+// The results are on screen: the heading alone shows in every state (UI consistency audit M13).
+const loaded = () => screen.findByText('Matematika Wajib');
 
 describe('TeacherResultsView', () => {
   beforeEach(() => {
@@ -99,7 +101,8 @@ describe('TeacherResultsView', () => {
   it('lists participants in the server order with scores hidden until the teacher shows them', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response());
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
-    expect(await screen.findByRole('heading', { name: 'Hasil Ujian' })).toBeTruthy();
+    await loaded();
+    expect(screen.getByRole('heading', { level: 1, name: 'Hasil Ujian' })).toBeTruthy();
     expect(getTeacherExamResults).toHaveBeenCalledWith(EXAM);
     expect(screen.getByText('Matematika Wajib')).toBeTruthy();
     expect(screen.getByText('X-1 · Ulangan Harian')).toBeTruthy();
@@ -131,7 +134,7 @@ describe('TeacherResultsView', () => {
   it('tells how each attempt was finalized, including a device that was away at time expiry', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response());
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Hasil Ujian' });
+    await loaded();
     const [a, b] = rows();
     expect(within(a).getByText('Dikumpulkan')).toBeTruthy();
     expect(within(b).getByText('Dikumpulkan otomatis')).toBeTruthy();
@@ -143,19 +146,22 @@ describe('TeacherResultsView', () => {
     vi.mocked(getTeacherExamResults).mockRejectedValueOnce(new ApiError(403, 'forbidden'));
     const { unmount } = render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
     expect(await screen.findByText('Akses Ditolak')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Hasil Ujian' })).toBeTruthy();
     unmount();
 
     vi.mocked(getTeacherExamResults).mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(response());
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
     expect(await screen.findByText('Gagal Memuat Hasil Ujian')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Hasil Ujian' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Coba Lagi' }));
-    expect(await screen.findByRole('heading', { name: 'Hasil Ujian' })).toBeTruthy();
+    await loaded();
+    expect(screen.queryByText('Gagal Memuat Hasil Ujian')).toBeNull();
   });
 
   it('keeps the last data when a refresh fails', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValueOnce(response()).mockRejectedValueOnce(new TypeError('Failed to fetch'));
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Hasil Ujian' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Perbarui Data' }));
     expect(await screen.findByText('Gagal memperbarui data')).toBeTruthy();
     expect(screen.getByText('Data yang tampil adalah data terakhir.')).toBeTruthy();
@@ -176,7 +182,7 @@ describe('TeacherResultsView', () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response());
     const onBack = vi.fn();
     render(<TeacherResultsView examInstanceId={EXAM} onBack={onBack} />);
-    await screen.findByRole('heading', { name: 'Hasil Ujian' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Tampilkan Nilai' }));
     expect(document.body.textContent).not.toContain('—');
     fireEvent.click(screen.getByRole('button', { name: /Kembali ke Pelaksanaan Ujian/ }));

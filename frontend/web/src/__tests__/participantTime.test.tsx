@@ -50,10 +50,13 @@ function monitoring(overrides: Partial<ExamMonitoringResponse> = {}, lifecycleSt
 }
 
 const rows = () => screen.getAllByRole('rowheader').map(h => h.closest('tr')!);
+
+// The data is on screen: the heading alone shows in every state (UI consistency audit M13).
+const loaded = () => screen.findByText(/^Diperbarui \d{2}\.\d{2}\.\d{2} WIB\. Diperbarui otomatis\.$/);
 const confirmButton = (dialog: HTMLElement) => within(dialog).getAllByRole('button').find(b => /^Tambah/.test(b.textContent ?? ''))! as HTMLButtonElement;
 
 async function openDialog() {
-  await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+  await loaded();
   fireEvent.click(screen.getByRole('button', { name: 'Tambah waktu siswa.b' }));
   return screen.findByRole('dialog');
 }
@@ -71,7 +74,7 @@ describe('adding time on the monitoring screen', () => {
       participantId: WORKING, addedSeconds: 600, totalAddedSeconds: 600, remainingSeconds: 3130, addedAt: '2026-09-30T01:15:00.000Z', replayed: false,
     });
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     // Only someone still working: not the submitted, not started or timed-out rows.
     const [a, , c, d] = rows();
     for (const row of [a, c, d]) expect(within(row).queryByRole('button', { name: /Tambah waktu/ })).toBeNull();
@@ -170,7 +173,7 @@ describe('adding time on the monitoring screen', () => {
     teacherView.participants[1] = participant({ addedSeconds: 900, timeAdditions: additions });
     vi.mocked(getExamMonitoring).mockResolvedValue(teacherView);
     const view = render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     expect(within(rows()[1]).getByText('Waktu ditambah 15 menit')).toBeTruthy();
     const dialog = await openDialog();
     expect(within(dialog).getByText('Tambahan sebelumnya')).toBeTruthy();
@@ -184,7 +187,7 @@ describe('adding time on the monitoring screen', () => {
     proctorView.participants[1] = participant({ addedSeconds: 900 });
     vi.mocked(getExamMonitoring).mockResolvedValue(proctorView);
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     expect(within(rows()[1]).getByText('Waktu ditambah 15 menit')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Tambah waktu/ })).toBeNull();
     expect(document.body.textContent).not.toContain('Listrik padam');
@@ -206,7 +209,7 @@ describe('adding time on the monitoring screen', () => {
 
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring({}, 'ENDED'));
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     expect(screen.queryByRole('button', { name: /Tambah waktu/ })).toBeNull();
   });
 });

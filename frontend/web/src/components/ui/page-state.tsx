@@ -73,4 +73,20 @@ function StaleDataNotice({ title = 'Gagal memperbarui data', children }: { title
   );
 }
 
-export { EmptyState, LoadErrorState, LoadingState, StaleDataNotice };
+/**
+ * The page of a screen whose content is not there: its data is loading, or it failed or was
+ * refused, or the screen itself is still downloading (WEB-001). An optional way back, the
+ * screen's level-one heading (the one it shows once loaded), then the state: a page keeps its
+ * heading in every state (UI consistency audit M13).
+ */
+function PageStateFrame({ title, back, children }: { title: string; back?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <main data-slot="page-state-frame" className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
+      {back}
+      <h1 className="m-0 text-2xl font-semibold">{title}</h1>
+      {children}
+    </main>
+  );
+}
+
+export { EmptyState, LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice };

@@ -39,6 +39,9 @@ function monitoring(overrides: Partial<ExamMonitoringResponse> = {}): ExamMonito
 
 const ids = () => screen.getAllByRole('rowheader').map(h => h.firstChild?.textContent);
 
+// The data is on screen: the heading alone shows in every state (UI consistency audit M13).
+const loaded = () => screen.findByText(/^Diperbarui \d{2}\.\d{2}\.\d{2} WIB\. Diperbarui otomatis\.$/);
+
 describe('ExamMonitoringView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,7 +52,8 @@ describe('ExamMonitoringView', () => {
   it('lists who is expected, working, finished or moved, from server facts only', async () => {
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring());
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali ke Monitoring Ujian" onBack={() => {}} />);
-    expect(await screen.findByRole('heading', { name: 'Pemantauan Peserta' })).toBeTruthy();
+    await loaded();
+    expect(screen.getByRole('heading', { level: 1, name: 'Pemantauan Peserta' })).toBeTruthy();
     expect(getExamMonitoring).toHaveBeenCalledWith(EXAM);
     expect(screen.getByText('Diperbarui 08.14.07 WIB. Diperbarui otomatis.')).toBeTruthy();
     expect(ids()).toEqual(['siswa.a', 'siswa.b', 'siswa.c', 'siswa.d']);
@@ -72,7 +76,7 @@ describe('ExamMonitoringView', () => {
   it('filters by status and finds a participant by ELLIGBLE ID', async () => {
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring());
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Mengerjakan' }));
     expect(ids()).toEqual(['siswa.b', 'siswa.d']);
     expect(screen.getByRole('button', { name: 'Mengerjakan' }).getAttribute('aria-pressed')).toBe('true');
@@ -88,7 +92,7 @@ describe('ExamMonitoringView', () => {
       .mockResolvedValueOnce(monitoring())
       .mockRejectedValue(new TypeError('Failed to fetch'));
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} refreshIntervalMs={30} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     expect(await screen.findByText('Pemantauan tertunda')).toBeTruthy();
     expect(screen.getByText(/data terakhir pukul 08\.14\.07 WIB/)).toBeTruthy();
     expect(ids()).toHaveLength(4);
@@ -115,7 +119,7 @@ describe('ExamMonitoringView', () => {
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring());
     vi.mocked(postParticipantLock).mockResolvedValue({ participantId: PARTICIPANT.b, locked: true, changed: true, lockedAt: '2026-09-30T01:20:00.000Z' });
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     // Only someone still working can be locked: not the submitted, not started or timed-out rows.
     const [a, b, c, d] = screen.getAllByRole('rowheader').map(h => h.closest('tr')!);
     for (const row of [a, c, d]) expect(within(row).queryByRole('button')).toBeNull();
@@ -143,7 +147,7 @@ describe('ExamMonitoringView', () => {
     vi.mocked(getExamMonitoring).mockResolvedValue({ ...base, participants: locked });
     vi.mocked(postParticipantLock).mockResolvedValue({ participantId: PARTICIPANT.b, locked: false, changed: true, lockedAt: null });
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     const b = screen.getAllByRole('rowheader')[1].closest('tr')!;
     expect(within(b).getByText('Dikunci')).toBeTruthy();
     expect(within(b).getByText('Dikunci sejak 08.20 WIB')).toBeTruthy();
@@ -159,7 +163,7 @@ describe('ExamMonitoringView', () => {
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring());
     vi.mocked(postParticipantLock).mockRejectedValue(new ApiError(409, 'no_active_attempt'));
     const view = render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Kunci pengerjaan siswa.b' }));
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Kunci Pengerjaan' }));
     expect(await screen.findByText('Peserta ini sudah tidak memiliki pengerjaan yang berjalan. Data ditampilkan ulang.')).toBeTruthy();
@@ -169,7 +173,7 @@ describe('ExamMonitoringView', () => {
       exam: { examInstanceId: EXAM, subjectLabel: 'Matematika Wajib', lifecycleState: 'FINALIZED', roomBased: false, pausedAt: null },
     }));
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     expect(screen.queryByRole('button', { name: /Kunci/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Kirim Pesan' })).toBeNull();
   });
@@ -178,7 +182,7 @@ describe('ExamMonitoringView', () => {
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring({ scope: 'TEACHER' }));
     vi.mocked(postBroadcast).mockResolvedValue({ broadcastId: 'b-1', sentAt: '2026-09-30T01:15:00.000Z', recipients: 3 });
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Kirim Pesan' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('heading', { name: 'Kirim Pesan ke Peserta' })).toBeTruthy();
@@ -202,7 +206,7 @@ describe('ExamMonitoringView', () => {
     }));
     vi.mocked(postBroadcast).mockResolvedValue({ broadcastId: 'b-2', sentAt: '2026-09-30T01:15:00.000Z', recipients: 1 });
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Kirim Pesan' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).queryByRole('radio', { name: 'Semua peserta' })).toBeNull();
@@ -224,7 +228,7 @@ describe('ExamMonitoringView', () => {
     vi.mocked(getExamMonitoring).mockResolvedValue(monitoring({ scope: 'TEACHER' }));
     vi.mocked(postBroadcast).mockRejectedValue(new ApiError(429, 'rate_limited', undefined, { error: 'rate_limited', retryAfterSeconds: 9 }));
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
-    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Kirim Pesan' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('Pesan'), { target: { value: 'Harap tetap di tempat duduk.' } });
@@ -254,6 +258,7 @@ describe('ExamMonitoringView', () => {
     vi.mocked(getExamMonitoring).mockRejectedValue(new ApiError(403, 'forbidden'));
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
     expect(await screen.findByText('Akses Ditolak')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Pemantauan Peserta' })).toBeTruthy();
   });
 
   it('is reachable from the proctor and teacher views', async () => {

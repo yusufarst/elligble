@@ -4,7 +4,7 @@ import type { ParticipantResult, TeacherExamResultsResponse } from '../types/ass
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice } from '@/components/ui/page-state';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
@@ -70,8 +70,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
 
   if (!data) {
     return (
-      <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
-        {back}
+      <PageStateFrame title={SCREEN_TITLE.examResults} back={back}>
         {error === null ? (
           <LoadingState>Memuat hasil ujian...</LoadingState>
         ) : error === 'forbidden' ? (
@@ -81,7 +80,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
             Periksa koneksi internet Anda, lalu coba lagi.
           </LoadErrorState>
         )}
-      </main>
+      </PageStateFrame>
     );
   }
 

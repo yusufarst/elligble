@@ -3,7 +3,7 @@ import { ApiError, getTeacherExamPreview } from '../api/assessment-client.ts';
 import type { TeacherExamPreview } from '../types/assessment.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
+import { LoadErrorState, LoadingState, PageStateFrame } from '@/components/ui/page-state';
 import { IconChevronLeft, IconChevronRight, IconInfo } from '@/components/icons';
 import { formatWindow } from '../lib/format.ts';
 import { formatScore } from '../lib/question-import.ts';
@@ -48,8 +48,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
 
   if (!data) {
     return (
-      <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
-        {back}
+      <PageStateFrame title={SCREEN_TITLE.examPreview} back={back}>
         {error === null ? (
           <LoadingState>Memuat pratinjau soal...</LoadingState>
         ) : error === 'failed' ? (
@@ -61,7 +60,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             Pratinjau tersedia sebelum ujian dibuka, saat ujian masih terjadwal atau siap dibuka.
           </LoadErrorState>
         )}
-      </main>
+      </PageStateFrame>
     );
   }
 

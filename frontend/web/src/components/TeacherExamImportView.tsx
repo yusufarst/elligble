@@ -5,7 +5,7 @@ import type {
 } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
+import { LoadErrorState, LoadingState, PageStateFrame } from '@/components/ui/page-state';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -227,8 +227,7 @@ export const TeacherExamImportView: React.FC<{
 
   if (!setup) {
     return (
-      <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
-        {back}
+      <PageStateFrame title={SCREEN_TITLE.examImport} back={back}>
         {setupError === null ? (
           <LoadingState>Memuat data kelas...</LoadingState>
         ) : setupError === 'forbidden' ? (
@@ -236,7 +235,7 @@ export const TeacherExamImportView: React.FC<{
         ) : (
           <LoadErrorState kind="failed" title="Gagal Memuat Data Kelas" onRetry={load}>Periksa koneksi internet Anda, lalu coba lagi.</LoadErrorState>
         )}
-      </main>
+      </PageStateFrame>
     );
   }
 
