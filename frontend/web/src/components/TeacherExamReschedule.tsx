@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ApiError, postTeacherExamReschedule } from '../api/assessment-client.ts';
 import type { LatestStartPolicy, RescheduleProblemCode, TeacherExamReadinessProjection } from '../types/assessment.ts';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { formatSheetDateTime, formatWindow, zoneLabel } from '../lib/format.ts';
 import { LATEST_START_OPTIONS } from '../lib/question-import.ts';
@@ -181,10 +181,10 @@ export const RescheduleDialog: React.FC<{
         )}
         {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={sending}>Batal</Button>
           <Button onClick={save} disabled={!ready || sending}>{sending ? 'Menyimpan...' : 'Simpan Jadwal'}</Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

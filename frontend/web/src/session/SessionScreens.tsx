@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CenteredPage, StatusPage } from '@/components/ui/status-page';
 import { IconBuilding, IconChevronRight, IconInfo } from '@/components/icons';
 import { LoginForm } from './LoginForm.tsx';
 import { ActivationForm } from './ActivationForm.tsx';
@@ -10,12 +11,6 @@ import type { SessionInfo } from '../api/auth-client.ts';
 function tenantLabel(label: string | null, tenantId: string): string {
   return label ?? `Sekolah (kode ${tenantId.slice(-4).toUpperCase()})`;
 }
-
-const CenteredPage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <main className="flex min-h-dvh items-start justify-center bg-muted px-4 pb-8 pt-[max(2rem,env(safe-area-inset-top))] sm:items-center">
-    <div className="w-full max-w-[540px]">{children}</div>
-  </main>
-);
 
 export const LoginScreen: React.FC<{
   onLogin(username: string, password: string): Promise<void>;
@@ -54,15 +49,9 @@ export const LoginScreen: React.FC<{
 };
 
 export const StatusScreen: React.FC<{ title: string; body?: string; action?: React.ReactNode }> = ({ title, body, action }) => (
-  <CenteredPage>
-    <Card role="status" aria-live="polite">
-      <CardHeader>
-        <CardTitle level="h1">{title}</CardTitle>
-        {body && <CardDescription>{body}</CardDescription>}
-      </CardHeader>
-      {action && <CardContent>{action}</CardContent>}
-    </Card>
-  </CenteredPage>
+  <StatusPage title={title} role="status" live="polite" actions={action}>
+    {body && <p>{body}</p>}
+  </StatusPage>
 );
 
 export const TenantPicker: React.FC<{

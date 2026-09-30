@@ -127,7 +127,7 @@ describe('Ragu-ragu in the exam screen', () => {
     await openExam();
     await userEvent.click(screen.getAllByRole('button', { name: 'Selesaikan Ujian' })[0]);
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('Ditandai Ragu-ragu:').nextSibling?.textContent).toBe('1');
+    expect(within(dialog).getByText('Ditandai Ragu-ragu').nextElementSibling?.textContent).toBe('1');
     await userEvent.click(within(dialog).getByRole('checkbox'));
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ [Q2]: true }));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Kirim Jawaban Sekarang' }));

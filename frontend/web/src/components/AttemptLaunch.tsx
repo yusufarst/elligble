@@ -10,6 +10,10 @@ import {
   storeExamSessionId,
 } from '../exam/exam-session.ts';
 import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IconAlertCircle } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { StatusPage } from '@/components/ui/status-page';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -230,150 +234,99 @@ export const AttemptLaunch: React.FC<AttemptLaunchProps> = ({ onExit }) => {
     );
   }
 
-  const renderContext = () => {
-    if (!resumeContext) return null;
-
-    if (resumeContext.subjectLabel) {
-      return (
-        <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-          <div style={{ fontSize: '1.125rem', fontWeight: 500 }}>{resumeContext.subjectLabel}</div>
-        </div>
-      );
-    }
-
-    if (resumeContext.roomLabel) {
-      return (
-        <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-          <div>{resumeContext.roomLabel}</div>
-        </div>
-      );
-    }
-
-    return null;
-  };
+  // The exam the page is about: its subject, else its room.
+  const context = resumeContext?.subjectLabel || resumeContext?.roomLabel || undefined;
 
   if (phase === 'invalid_attempt') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Tautan Ujian Tidak Valid</h1>
-          <p className="state-card-body">
-            Sesi ujian ini harus dibuka melalui halaman tugas / ujian yang resmi. Silakan kembali ke halaman utama aplikasi dan pilih ujian yang ditugaskan kepada Anda.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Tautan Ujian Tidak Valid" role="alert">
+        <p>
+          Sesi ujian ini harus dibuka melalui halaman tugas / ujian yang resmi. Silakan kembali ke halaman utama aplikasi dan pilih ujian yang ditugaskan kepada Anda.
+        </p>
+      </StatusPage>
     );
   }
 
   if (phase === 'forbidden') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Akses Ditolak</h1>
-          <p className="state-card-body">
-            Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Akses Ditolak" role="alert">
+        <p>Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'not_found') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Data Tidak Ditemukan</h1>
-          <p className="state-card-body">
-            Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Data Tidak Ditemukan" role="alert">
+        <p>Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'inconsistent_state') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Status Ujian Tidak Valid</h1>
-          <p className="state-card-body">
-            {errorMessage || 'Sistem mendeteksi ketidaksesuaian status pada ujian Anda. Harap hubungi pengawas.'}
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Status Ujian Tidak Valid" role="alert">
+        <p>{errorMessage || 'Sistem mendeteksi ketidaksesuaian status pada ujian Anda. Harap hubungi pengawas.'}</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'takeover_required') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Sesi Aktif Ditemukan</h1>
-          {renderContext()}
-          <p className="state-card-body" style={{ marginBottom: '1rem' }}>
-            Sistem mendeteksi Anda sedang mengerjakan ujian ini di perangkat atau jendela lain.
-            Apakah Anda ingin memindahkan sesi pengerjaan ke layar ini?
-          </p>
-          <p className="state-card-body" style={{ marginBottom: '1.5rem' }}>
-            Jawaban yang sudah tersimpan tetap aman. Layar lain akan dinonaktifkan dan tidak dapat lagi menyimpan jawaban.
-          </p>
-          {errorMessage && <p className="state-card-body" style={{ color: 'var(--color-danger-text)', marginBottom: '1rem' }}>{errorMessage}</p>}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => (onExit ? onExit() : attemptId && loadState(attemptId))}
-            >
+      <StatusPage
+        title="Sesi Aktif Ditemukan"
+        subtitle={context}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => (onExit ? onExit() : attemptId && loadState(attemptId))}>
               Batal
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleConfirmTakeover}
-            >
-              Ya, Pindahkan Sesi
-            </button>
-          </div>
-        </div>
-      </main>
+            </Button>
+            <Button onClick={handleConfirmTakeover}>Ya, Pindahkan Sesi</Button>
+          </>
+        }
+      >
+        <p>
+          Sistem mendeteksi Anda sedang mengerjakan ujian ini di perangkat atau jendela lain.
+          Apakah Anda ingin memindahkan sesi pengerjaan ke layar ini?
+        </p>
+        <p>Jawaban yang sudah tersimpan tetap aman. Layar lain akan dinonaktifkan dan tidak dapat lagi menyimpan jawaban.</p>
+        {errorMessage && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+      </StatusPage>
     );
   }
 
   if (phase === 'ready_to_start' || phase === 'launching') {
     const isLaunching = phase === 'launching';
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Siap Memulai Ujian</h1>
-          {renderContext()}
-          <p className="state-card-body" style={{ marginBottom: '1.5rem' }}>
-            Pastikan Anda sudah siap. Waktu akan mulai berjalan segera setelah Anda menekan tombol di bawah.
-          </p>
-          {errorMessage && <p className="state-card-body" role="alert" style={{ color: 'var(--color-danger-text)', marginBottom: '1rem' }}>{errorMessage}</p>}
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleLaunch}
-            disabled={isLaunching}
-            style={{ width: '100%', maxWidth: '300px', margin: '0 auto', display: 'block' }}
-          >
-            {isLaunching ? 'Memulai...' : 'Mulai Ujian Sekarang'}
-          </button>
-          {onExit && !isLaunching && (
-            <button type="button" className="btn btn-secondary" onClick={onExit} style={{ width: '100%', maxWidth: '300px', margin: '0.75rem auto 0', display: 'block' }}>
-              Kembali ke Jadwal Ujian
-            </button>
-          )}
-        </div>
-      </main>
+      <StatusPage
+        title="Siap Memulai Ujian"
+        subtitle={context}
+        actions={
+          <>
+            <Button onClick={handleLaunch} disabled={isLaunching}>
+              {isLaunching ? 'Memulai...' : 'Mulai Ujian Sekarang'}
+            </Button>
+            {onExit && !isLaunching && (
+              <Button variant="secondary" onClick={onExit}>Kembali ke Jadwal Ujian</Button>
+            )}
+          </>
+        }
+      >
+        <p>Pastikan Anda sudah siap. Waktu akan mulai berjalan segera setelah Anda menekan tombol di bawah.</p>
+        {errorMessage && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+      </StatusPage>
     );
   }
 
-  return (
-    <main className="fullscreen-state-container">
-      <div className="state-card">
-        <h1 className="state-card-title">Memuat...</h1>
-      </div>
-    </main>
-  );
+  return <StatusPage title="Memuat..." role="status" live="polite" />;
 };

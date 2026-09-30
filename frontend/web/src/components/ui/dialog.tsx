@@ -51,4 +51,9 @@ function DialogDescription({ className, ...props }: React.ComponentProps<typeof 
   return <DialogPrimitive.Description data-slot="dialog-description" className={cn('m-0 text-sm text-muted-foreground', className)} {...props} />;
 }
 
-export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription };
+/** The dialog's actions: stacked with the main one on top below 640 px, a row at the end above. */
+function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="dialog-footer" className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />;
+}
+
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter };

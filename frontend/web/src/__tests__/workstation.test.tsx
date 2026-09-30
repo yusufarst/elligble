@@ -726,9 +726,9 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     // Modal dialog is open
     expect(await screen.findByText('Konfirmasi Pengumpulan Ujian')).toBeTruthy();
-    expect(screen.getByText('Total Soal:').nextElementSibling?.textContent).toBe('2');
-    expect(screen.getByText('Sudah Dijawab:').nextElementSibling?.textContent).toBe('1');
-    expect(screen.getByText('Belum Dijawab:').nextElementSibling?.textContent).toBe('1');
+    expect(within(screen.getByRole('dialog')).getByText('Total Soal').nextElementSibling?.textContent).toBe('2');
+    expect(within(screen.getByRole('dialog')).getByText('Sudah Dijawab').nextElementSibling?.textContent).toBe('1');
+    expect(within(screen.getByRole('dialog')).getByText('Belum Dijawab').nextElementSibling?.textContent).toBe('1');
 
     const confirmBtn = screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }) as HTMLButtonElement;
     expect(confirmBtn.disabled).toBe(true);

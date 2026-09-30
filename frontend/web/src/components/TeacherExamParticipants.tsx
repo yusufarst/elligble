@@ -6,7 +6,7 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { IconInfo } from '@/components/icons';
 import { formatWindow } from '../lib/format.ts';
 import { newActionKey } from '../lib/action-key.ts';
@@ -211,12 +211,12 @@ export const AddParticipantsDialog: React.FC<{
         )}
         {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={sending}>Batal</Button>
           <Button onClick={confirm} disabled={count === 0 || sending || examProblems.length > 0}>
             {sending ? 'Menambahkan...' : count > 0 ? `Tambahkan ${count} Peserta` : 'Tambahkan Peserta'}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -15,6 +15,10 @@ import type { ExamRunState } from '../exam/answer-sync-engine.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
 import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
 import { ExamMessageList, ExamMessageNotice } from './ExamMessages.tsx';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IconAlertCircle, IconInfo } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { StatusPage } from '@/components/ui/status-page';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -600,147 +604,94 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     }
   }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire, handleExamPausedBySave, handleAttemptLockedBySave]);
 
-  // Render Phase States
+  // Render Phase States: every full-screen state is the shared status page (UI-SYSTEM-002).
   if (phase === 'invalid_attempt') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Tautan Tidak Valid</h1>
-          <p className="state-card-body">
-            Tautan pengerjaan ujian tidak valid atau format sesi tidak dikenali.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Tautan Tidak Valid" role="alert">
+        <p>Tautan pengerjaan ujian tidak valid atau format sesi tidak dikenali.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'access_denied') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Akses Ditolak</h1>
-          <p className="state-card-body">
-            Akses ditolak. Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Akses Ditolak" role="alert">
+        <p>Akses ditolak. Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'not_found') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Data Tidak Ditemukan</h1>
-          <p className="state-card-body">
-            Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Data Tidak Ditemukan" role="alert">
+        <p>Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'session_inactive') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Sesi Ujian Tidak Aktif</h1>
-          <p className="state-card-body">
-            Sesi ujian belum aktif atau tidak dapat diakses. Silakan hubungi pengawas ujian.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Sesi Ujian Tidak Aktif">
+        <p>Sesi ujian belum aktif atau tidak dapat diakses. Silakan hubungi pengawas ujian.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'superseded') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Sesi Dipindahkan</h1>
-          <p className="state-card-body">
-            Sesi ujian Anda telah dibuka di perangkat lain. Sesi pada perangkat ini dinonaktifkan.
-          </p>
-          <p className="state-card-body">
-            Jawaban yang sudah tersimpan tetap aman. Lanjutkan ujian di perangkat yang sedang aktif, atau pindahkan kembali ke perangkat ini.
-          </p>
-          {onRequestTakeover && (
-            <button type="button" className="btn btn-primary" onClick={onRequestTakeover} style={{ width: '100%', maxWidth: '300px', margin: '0.5rem auto 0', display: 'block' }}>
-              Lanjutkan di Perangkat Ini
-            </button>
-          )}
-        </div>
-      </main>
+      <StatusPage
+        title="Sesi Dipindahkan"
+        role="alert"
+        actions={onRequestTakeover && <Button onClick={onRequestTakeover}>Lanjutkan di Perangkat Ini</Button>}
+      >
+        <p>Sesi ujian Anda telah dibuka di perangkat lain. Sesi pada perangkat ini dinonaktifkan.</p>
+        <p>Jawaban yang sudah tersimpan tetap aman. Lanjutkan ujian di perangkat yang sedang aktif, atau pindahkan kembali ke perangkat ini.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'timer_not_started') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Waktu Ujian Belum Dimulai</h1>
-          <p className="state-card-body">
-            Waktu pelaksanaan ujian belum dimulai oleh pengawas ruangan.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Waktu Ujian Belum Dimulai">
+        <p>Waktu pelaksanaan ujian belum dimulai oleh pengawas ruangan.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'submitted') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Ujian Berhasil Dikumpulkan</h1>
-          <p className="state-card-body">
-            Jawaban Anda telah tersimpan resmi pada server sekolah. Anda dapat meninggalkan ruang ujian setelah diizinkan pengawas.
-          </p>
-          {submittedAt && (
-            <p className="state-card-body" style={{ fontSize: '0.875rem', color: 'var(--color-neutral-500)' }}>
-              Waktu Pengumpulan: {formatTime(submittedAt)}
-            </p>
-          )}
-          {unreceivedAtCompletion > 0 && (
-            <p className="state-card-body" role="alert" style={{ color: 'var(--color-danger-text)' }}>
+      <StatusPage
+        title="Ujian Berhasil Dikumpulkan"
+        actions={onExit && <Button variant="secondary" onClick={onExit}>Kembali ke Jadwal Ujian</Button>}
+      >
+        <p>Jawaban Anda telah tersimpan resmi pada server sekolah. Anda dapat meninggalkan ruang ujian setelah diizinkan pengawas.</p>
+        {submittedAt && <p>Waktu Pengumpulan: {formatTime(submittedAt)}</p>}
+        {unreceivedAtCompletion > 0 && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>
               {unreceivedAtCompletion} jawaban terakhir di perangkat ini belum diterima server sebelum ujian berakhir. Laporkan kepada pengawas ruangan.
-            </p>
-          )}
-          {onExit && (
-            <button type="button" className="btn btn-secondary" onClick={onExit} style={{ width: '100%', maxWidth: '300px', margin: '0.5rem auto 0', display: 'block' }}>
-              Kembali ke Jadwal Ujian
-            </button>
-          )}
-        </div>
-      </main>
+            </AlertDescription>
+          </Alert>
+        )}
+      </StatusPage>
     );
   }
 
   if (phase === 'expired') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert" aria-live="assertive">
-          <h1 className="state-card-title">Waktu Ujian Telah Habis</h1>
-          <p className="state-card-body">
-            Sistem sedang mengumpulkan seluruh jawaban Anda secara otomatis. Harap tunggu hingga proses selesai.
-          </p>
-          {!isOnline && (
-            <p className="state-card-body">
-              Koneksi terputus. Pengumpulan dicoba lagi otomatis saat kembali terhubung. Jangan tutup halaman ini.
-            </p>
-          )}
-        </div>
-      </main>
+      <StatusPage title="Waktu Ujian Telah Habis" role="alert" live="assertive">
+        <p>Sistem sedang mengumpulkan seluruh jawaban Anda secara otomatis. Harap tunggu hingga proses selesai.</p>
+        {!isOnline && <p>Koneksi terputus. Pengumpulan dicoba lagi otomatis saat kembali terhubung. Jangan tutup halaman ini.</p>}
+      </StatusPage>
     );
   }
 
   if (phase === 'error') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Terjadi Kendala</h1>
-          <p className="state-card-body">{errorMessage}</p>
-        </div>
-      </main>
+      <StatusPage title="Terjadi Kendala" role="alert">
+        <p>{errorMessage}</p>
+      </StatusPage>
     );
   }
 
@@ -758,33 +709,33 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // the pause gives no extra working time; answers chosen before it keep being sent.
   if (phase === 'active' && examState === 'PAUSED') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card paused-card" role="status" aria-live="polite">
-          <h1 className="state-card-title">Ujian Dijeda</h1>
-          <p className="state-card-body">
-            {pausedAt ? `Guru menjeda ujian sejak ${formatTime(pausedAt)}.` : 'Guru menjeda ujian.'} Sisa waktu Anda berhenti dan berjalan lagi saat ujian dilanjutkan.
-          </p>
-          <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}`}>
-            <span className="paused-remaining-label">Sisa waktu</span>
-            <span className="paused-remaining-value">{formattedTime}</span>
-          </p>
-          {timeAdded && <p className="state-card-body time-added-note">{timeAdded}</p>}
-          <p className="state-card-body">
-            {!answers.ready
-              ? 'Memeriksa jawaban di perangkat ini...'
-              : answers.pendingCount > 0
-                ? (degraded || !isOnline
-                  ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum ujian dijeda akan dikirim otomatis saat kembali terhubung.'
-                  : 'Mengirim jawaban yang Anda pilih sebelum ujian dijeda...')
-                : 'Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.'}
-          </p>
-          {discardedText && (
-            <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
-          )}
-          <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
-          <p className="state-card-body">Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
-        </div>
-      </main>
+      <StatusPage title="Ujian Dijeda" role="status" live="polite">
+        <p>
+          {pausedAt ? `Guru menjeda ujian sejak ${formatTime(pausedAt)}.` : 'Guru menjeda ujian.'} Sisa waktu Anda berhenti dan berjalan lagi saat ujian dilanjutkan.
+        </p>
+        <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}`}>
+          <span className="paused-remaining-label">Sisa waktu</span>
+          <span className="paused-remaining-value">{formattedTime}</span>
+        </p>
+        {timeAdded && <p className="font-semibold text-foreground">{timeAdded}</p>}
+        <p>
+          {!answers.ready
+            ? 'Memeriksa jawaban di perangkat ini...'
+            : answers.pendingCount > 0
+              ? (degraded || !isOnline
+                ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum ujian dijeda akan dikirim otomatis saat kembali terhubung.'
+                : 'Mengirim jawaban yang Anda pilih sebelum ujian dijeda...')
+              : 'Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.'}
+        </p>
+        {discardedText && (
+          <Alert variant="warning">
+            <IconInfo aria-hidden="true" />
+            <AlertDescription>{discardedText}</AlertDescription>
+          </Alert>
+        )}
+        <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
+        <p>Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
+      </StatusPage>
     );
   }
 
@@ -792,33 +743,31 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // answers chosen before the lock keep being sent.
   if (phase === 'active' && lockedAt !== null) {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card paused-card" role="status" aria-live="polite">
-          <h1 className="state-card-title">Pengerjaan Dikunci</h1>
-          <p className="state-card-body">
-            Pengawas mengunci pengerjaan Anda sejak {formatTime(lockedAt)}. Hubungi pengawas ruangan untuk membuka kunci.
-          </p>
-          <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}, tetap berjalan`}>
-            <span className="paused-remaining-label">Sisa waktu, tetap berjalan</span>
-            <span className="paused-remaining-value">{formattedTime}</span>
-          </p>
-          {timeAdded && <p className="state-card-body time-added-note">{timeAdded}</p>}
-          <p className="state-card-body">
-            {!answers.ready
-              ? 'Memeriksa jawaban di perangkat ini...'
-              : answers.pendingCount > 0
-                ? (degraded || !isOnline
-                  ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum pengerjaan dikunci akan dikirim otomatis saat kembali terhubung.'
-                  : 'Mengirim jawaban yang Anda pilih sebelum pengerjaan dikunci...')
-                : 'Semua jawaban yang Anda pilih sebelum pengerjaan dikunci sudah tersimpan.'}
-          </p>
-          {discardedText && (
-            <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
-          )}
-          <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
-          <p className="state-card-body">Soal tampil kembali setelah pengawas membuka kunci.</p>
-        </div>
-      </main>
+      <StatusPage title="Pengerjaan Dikunci" role="status" live="polite">
+        <p>Pengawas mengunci pengerjaan Anda sejak {formatTime(lockedAt)}. Hubungi pengawas ruangan untuk membuka kunci.</p>
+        <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}, tetap berjalan`}>
+          <span className="paused-remaining-label">Sisa waktu, tetap berjalan</span>
+          <span className="paused-remaining-value">{formattedTime}</span>
+        </p>
+        {timeAdded && <p className="font-semibold text-foreground">{timeAdded}</p>}
+        <p>
+          {!answers.ready
+            ? 'Memeriksa jawaban di perangkat ini...'
+            : answers.pendingCount > 0
+              ? (degraded || !isOnline
+                ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum pengerjaan dikunci akan dikirim otomatis saat kembali terhubung.'
+                : 'Mengirim jawaban yang Anda pilih sebelum pengerjaan dikunci...')
+              : 'Semua jawaban yang Anda pilih sebelum pengerjaan dikunci sudah tersimpan.'}
+        </p>
+        {discardedText && (
+          <Alert variant="warning">
+            <IconInfo aria-hidden="true" />
+            <AlertDescription>{discardedText}</AlertDescription>
+          </Alert>
+        )}
+        <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
+        <p>Soal tampil kembali setelah pengawas membuka kunci.</p>
+      </StatusPage>
     );
   }
 
@@ -826,12 +775,9 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // be answered or submitted before the local buffer and the server state are reconciled.
   if (phase === 'loading' || (phase === 'active' && (!answers.ready || questions.length === 0))) {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Memuat Ujian...</h1>
-          <p className="state-card-body">Menyiapkan lembar jawaban dan data soal.</p>
-        </div>
-      </main>
+      <StatusPage title="Memuat Ujian..." role="status" live="polite">
+        <p>Menyiapkan lembar jawaban dan data soal.</p>
+      </StatusPage>
     );
   }
 

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ApiError, postTeacherExamCancel } from '../api/assessment-client.ts';
 import type { TeacherExamReadinessProjection } from '../types/assessment.ts';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatWindow } from '../lib/format.ts';
 import { newActionKey } from '../lib/action-key.ts';
@@ -111,10 +111,10 @@ export const CancelExamDialog: React.FC<{
 
         {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={sending}>Kembali</Button>
           <Button variant="destructive" onClick={confirm} disabled={!ready || sending}>{sending ? 'Membatalkan...' : 'Batalkan Ujian'}</Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

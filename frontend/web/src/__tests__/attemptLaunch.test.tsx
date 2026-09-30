@@ -389,7 +389,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
       expect(screen.getByText('Siap Memulai Ujian')).toBeDefined();
     });
     
-    expect(container.querySelector('.launch-context')).toBeNull();
+    expect(container.querySelector('[data-slot="status-page-subtitle"]')).toBeNull();
   });
   it('18. the active session id is never needed: an exam running elsewhere requires explicit takeover', async () => {
     vi.mocked(getResume).mockResolvedValue(createMockResume({

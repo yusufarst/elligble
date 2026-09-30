@@ -20,7 +20,7 @@ const HARD_CODED_COLOR_CEILING: Record<string, number> = {
   'styles/globals.css': 1,
   // The exam focus workspace still carries its own palette, mostly equal to token values;
   // it converges with the token convergence task (UI-SYSTEM-005).
-  'styles/workstation.css': 160,
+  'styles/workstation.css': 147,
 };
 
 function hardCodedColors(path: string, text: string): number {
@@ -75,9 +75,9 @@ describe('design system guard (§10.1)', () => {
   });
 
   it('loading, error and empty states come from the shared pattern, never from page stylesheets', () => {
-    // The exam focus shell keeps its full-screen states until UI-SYSTEM-002.
+    // The exam focus shell included (UI-SYSTEM-002 part 1): its full-screen states are the shared status page.
     const pageStates = sources
-      .filter(s => s.path.endsWith('.css') && s.path !== 'styles/workstation.css')
+      .filter(s => s.path.endsWith('.css'))
       .flatMap(s => [...s.text.matchAll(/\.([a-z0-9-]*(?:state-card|state-message|state-title|state-body|loading-state|retry-button|empty-state|error-state)[a-z0-9-]*)\s*[{,.:\s]/g)].map(m => `${s.path}: .${m[1]}`));
     expect(pageStates).toEqual([]);
   });

@@ -1217,100 +1217,6 @@
   justify-content: center;
 }
 
-/* ==========================================================================
-   9. Submission Confirmation Modal
-   ========================================================================== */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 16px;
-}
-
-.modal-dialog {
-  background-color: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #ebebeb;
-  max-width: 480px;
-  width: 100%;
-  padding: 24px;
-  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.modal-title {
-  font-size: 1.1875rem;
-  font-weight: 600;
-  margin: 0;
-  color: #09090b;
-  letter-spacing: -0.01em;
-}
-
-.modal-summary-box {
-  background-color: #f7f7f6;
-  border: 1px solid #ebebeb;
-  padding: 14px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  color: #18181b;
-}
-
-.modal-declaration {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: #52525b;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.modal-declaration input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  accent-color: #09090b;
-  cursor: pointer;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.modal-error {
-  margin: 0 0 var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-danger-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger-text);
-  font-size: 0.875rem;
-  line-height: 1.45;
-}
-
 /* Time reminder (D04.5-32): informative only, disappears by itself. */
 .time-reminder-banner {
   padding: var(--space-2) var(--space-4);
@@ -1321,11 +1227,6 @@
   font-weight: 600;
   line-height: 1.45;
   text-align: center;
-}
-
-/* Time added by the teacher, on the paused and locked screens (D04.6-41). */
-.time-added-note {
-  font-weight: 600;
 }
 
 /* Connection trouble notice (D04.5-20): visible, calm, never blocks answering. */
@@ -1501,47 +1402,6 @@
 /* ==========================================================================
    10. Fullscreen Message / Terminal States
    ========================================================================== */
-.fullscreen-state-container {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background-color: #fafaf9;
-  box-sizing: border-box;
-}
-
-.state-card {
-  background-color: #ffffff;
-  border: 1px solid #ebebeb;
-  border-radius: 14px;
-  max-width: 480px;
-  width: 100%;
-  padding: 32px 24px;
-  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.state-card-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #09090b;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.state-card-body {
-  font-size: 0.875rem;
-  color: #52525b;
-  line-height: 1.5;
-  margin: 0;
-}
-
 /* Paused exam: the frozen remaining time is the one figure the student needs. */
 .paused-remaining {
   display: flex;
@@ -1567,14 +1427,6 @@
   font-variant-numeric: tabular-nums;
   color: #09090b;
   letter-spacing: -0.01em;
-}
-
-.paused-discarded {
-  padding: 8px 12px;
-  border: 1px solid var(--color-warning-border);
-  border-radius: 10px;
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning-text);
 }
 
 /* "Ragu-ragu / Tandai" review mark (D04.5-33/34/35): the student's own reminder, never a

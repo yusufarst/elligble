@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ApiError, postParticipantTime } from '../api/assessment-client.ts';
 import type { MonitoredParticipant, TimeAdditionResponse } from '../types/assessment.ts';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatTime } from '../lib/format.ts';
@@ -180,12 +180,12 @@ export const AddTimeDialog: React.FC<{
 
         {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={sending}>Batal</Button>
           <Button onClick={confirm} disabled={!ready || sending}>
             {sending ? 'Memproses...' : amountValid ? `Tambah ${amount} Menit` : 'Tambah Waktu'}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

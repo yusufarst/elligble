@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { LoadErrorState, LoadingState, PageStateFrame } from '@/components/ui/page-state';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatWindow, zoneLabel } from '../lib/format.ts';
@@ -428,10 +428,10 @@ export const TeacherExamImportView: React.FC<{
               </DialogDescription>
             </DialogHeader>
             {saveError && <p role="alert" className="m-0 text-sm text-danger-ink">{saveError}</p>}
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <DialogFooter>
               <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={saving}>Batal</Button>
               <Button onClick={schedule} disabled={saving}>{saving ? 'Menjadwalkan...' : saveError ? 'Coba Lagi' : 'Jadwalkan Ujian'}</Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         )}
       </Dialog>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTeacherReadiness, postTeacherExamTransition, ApiError } from '../api/assessment-client.ts';
 import type { TeacherReadinessResponse, TeacherExamReadinessProjection, TeacherExamAction } from '../types/assessment.ts';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -483,7 +483,7 @@ export const TeacherReadinessView: React.FC<{
               <DialogDescription id="exam-action-description">{CONFIRM_COPY[confirm.action].description}</DialogDescription>
             </DialogHeader>
             <p className="m-0 font-medium">{confirm.exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <DialogFooter>
               <Button variant="secondary" onClick={() => setConfirm(null)}>Batal</Button>
               <Button
                 variant={CONFIRM_COPY[confirm.action].destructive ? 'destructive' : 'default'}
@@ -492,7 +492,7 @@ export const TeacherReadinessView: React.FC<{
               >
                 {CONFIRM_COPY[confirm.action].confirm}
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         )}
       </Dialog>

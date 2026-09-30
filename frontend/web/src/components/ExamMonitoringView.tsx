@@ -3,7 +3,7 @@ import { ApiError, getExamMonitoring, postParticipantLock } from '../api/assessm
 import type { ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus, ParticipantLockAction, ParticipantLockResponse } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice } from '@/components/ui/page-state';
@@ -382,12 +382,12 @@ export const ExamMonitoringView: React.FC<{
               <DialogDescription id="participant-lock-description">{LOCK_COPY[confirmLock.action].description}</DialogDescription>
             </DialogHeader>
             <p className="m-0 font-mono text-sm font-medium [overflow-wrap:anywhere]">{confirmLock.participant.elligbleId ?? 'Tanpa ELLIGBLE ID'}</p>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <DialogFooter>
               <Button variant="secondary" onClick={() => setConfirmLock(null)} disabled={lockPending}>Batal</Button>
               <Button onClick={() => runLockAction(confirmLock.participant, confirmLock.action)} disabled={lockPending}>
                 {lockPending ? 'Memproses...' : LOCK_COPY[confirmLock.action].confirm}
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         )}
       </Dialog>
