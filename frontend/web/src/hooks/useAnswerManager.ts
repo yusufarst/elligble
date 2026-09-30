@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ResumeAnswer, SaveState } from '../types/assessment.ts';
-import { AnswerSyncEngine, type ExamRunState, type SyncApi } from '../exam/answer-sync-engine.ts';
+import { AnswerSyncEngine, type BlockSource, type ExamRunState, type SyncApi } from '../exam/answer-sync-engine.ts';
 import { MemoryAnswerStore, openAnswerStore, type AnswerStore, type PendingAnswerRecord } from '../exam/answer-store.ts';
 import { createAnswerSyncApi, selectedOptionOf, toServerAnswerState } from '../exam/answer-sync-api.ts';
 import { useOptionalSession } from '../session/SessionProvider.tsx';
@@ -47,10 +47,12 @@ export interface AnswerManager {
   pendingCount: number;
   /** Try to send pending choices now (e.g. at timer expiry, D04.5-46). */
   flush: () => void;
-  /** Tells the engine what the server said about the exam (pause stops new choices). */
-  noteExamState: (state: ExamRunState, pausedAt: number | null) => void;
-  /** Tells the engine whether a supervisor has locked this attempt (null: not locked). */
-  noteLockState: (lockedAt: number | null) => void;
+  /** Tells the engine what the server said at server time `at` about the exam (pause stops new choices). */
+  noteExamState: (state: ExamRunState, pausedAt: number | null, at?: number | null) => void;
+  /** Tells the engine whether a supervisor has locked this attempt (null: not locked), as said at `at`. */
+  noteLockState: (lockedAt: number | null, at?: number | null) => void;
+  /** False for an answer about a pause or lock older than one the engine already applied. */
+  isFreshState: (source: BlockSource, at: number | null) => boolean;
 }
 
 /** Lets the engine start immediately while the durable store is still opening. */
@@ -184,13 +186,15 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     engine?.kick();
   }, [engine]);
 
-  const noteExamState = useCallback((state: ExamRunState, pausedAt: number | null) => {
-    if (engine) void engine.noteExamState(state, pausedAt);
+  const noteExamState = useCallback((state: ExamRunState, pausedAt: number | null, at: number | null = null) => {
+    if (engine) void engine.noteExamState(state, pausedAt, at);
   }, [engine]);
 
-  const noteLockState = useCallback((lockedAt: number | null) => {
-    if (engine) void engine.noteLockState(lockedAt);
+  const noteLockState = useCallback((lockedAt: number | null, at: number | null = null) => {
+    if (engine) void engine.noteLockState(lockedAt, at);
   }, [engine]);
+
+  const isFreshState = useCallback((source: BlockSource, at: number | null) => engine?.isFresh(source, at) ?? true, [engine]);
 
   return {
     selectedOptions,
@@ -204,5 +208,6 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     flush,
     noteExamState,
     noteLockState,
+    isFreshState,
   };
 }

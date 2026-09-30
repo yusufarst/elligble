@@ -471,8 +471,13 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // time, questions back) or end (this attempt continues on its own time).
   const noteExamState = answers.noteExamState;
   const noteLockState = answers.noteLockState;
+  const isFreshState = answers.isFreshState;
   const applyRunInfo = useCallback((info: TimerResponse) => {
     if (!mountedRef.current) return;
+    // Answers can arrive out of order: one produced before an answer already applied about
+    // the pause or the lock (such as a refusal that reported it) changes nothing.
+    const at = instantOrNull(info.serverTime);
+    if (!isFreshState('pause', at) || !isFreshState('lock', at)) return;
     const state = runStateOf(info.examState);
     const remaining = info.status === 'expired' ? 0 : info.effectiveRemainingSeconds;
     const wasPaused = examStateRef.current === 'PAUSED';
@@ -483,7 +488,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     }
     examStateRef.current = state;
     setExamState(state);
-    noteExamState(state, state === 'PAUSED' ? instantOrNull(info.pausedAt) : null);
+    noteExamState(state, state === 'PAUSED' ? instantOrNull(info.pausedAt) : null, at);
     const lock = info.lockedAt ?? null;
     const wasLocked = lockedRef.current;
     if (lock !== null) {
@@ -492,13 +497,13 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     }
     lockedRef.current = lock !== null;
     setLockedAt(lock);
-    noteLockState(instantOrNull(lock));
+    noteLockState(instantOrNull(lock), at);
     // The server's value replaces the local countdown (frozen while paused, exact on resume).
     timerControlRef.current?.applyServerRemaining(remaining);
     // Questions are fetched once the exam runs again (also retried by later checks).
     if (state !== 'PAUSED' && lock === null && attemptId && questions.length === 0) void loadQuestions(attemptId);
     if ((wasPaused && state !== 'PAUSED') || (wasLocked && lock === null)) answersRef.current?.flush();
-  }, [noteExamState, noteLockState, attemptId, questions.length, loadQuestions]);
+  }, [noteExamState, noteLockState, isFreshState, attemptId, questions.length, loadQuestions]);
   runInfoRef.current = applyRunInfo;
 
   const checkExamState = useCallback(async () => {

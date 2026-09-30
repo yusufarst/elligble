@@ -47,8 +47,9 @@ export function classifySaveFailure(status: number, code: string, body: Record<s
         return { kind: 'terminal', code };
       case 'exam_paused':
         // The teacher paused the exam (Owner decision 2026-09-30): the engine keeps what
-        // was chosen before the boundary and drops only what was chosen after it.
-        return { kind: 'exam_paused', pausedAt: instantOrNull(body.pausedAt) };
+        // was chosen before the boundary and drops only what was chosen after it. The
+        // server time orders this answer against other answers about the exam state.
+        return { kind: 'exam_paused', pausedAt: instantOrNull(body.pausedAt), serverTime: instantOrNull(body.serverTime) };
       case 'captured_during_pause': {
         const pausedAt = instantOrNull(body.pausedAt);
         if (pausedAt === null) return { kind: 'retry' };
@@ -56,7 +57,7 @@ export function classifySaveFailure(status: number, code: string, body: Record<s
       }
       case 'attempt_locked':
         // A supervisor locked this attempt (D04.6-38): the same boundary rule as a pause.
-        return { kind: 'attempt_locked', lockedAt: instantOrNull(body.lockedAt) };
+        return { kind: 'attempt_locked', lockedAt: instantOrNull(body.lockedAt), serverTime: instantOrNull(body.serverTime) };
       case 'captured_during_lock': {
         const lockedAt = instantOrNull(body.lockedAt);
         if (lockedAt === null) return { kind: 'retry' };

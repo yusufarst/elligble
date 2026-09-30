@@ -287,3 +287,71 @@ describe('the exam screen while a supervisor locks the attempt', () => {
     expect(screen.queryByText('Ujian Berhasil Dikumpulkan')).toBeNull();
   });
 });
+
+// Answers about the exam state can arrive out of order (ASSESS-SYNC-001): a state check that
+// was answered before the pause or lock began must not bring the questions back after a save
+// has already reported it.
+describe('the exam screen with state answers out of order', () => {
+  beforeEach(async () => {
+    window.history.pushState({}, '', `?attemptId=${ATTEMPT}`);
+    window.sessionStorage.clear();
+    storeExamSessionId(ATTEMPT, SESSION);
+    await (await openAnswerStore()).clearAttempt('', ATTEMPT);
+    setDisplayTimeZone('Asia/Jakarta');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setDisplayTimeZone(null);
+    window.history.pushState({}, '', '/');
+  });
+
+  const at = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
+
+  it('stays locked when a state answer produced before the lock arrives after a save reported it', async () => {
+    const lockedAt = at(-60_000);
+    let fresh = false;
+    let unlocked = false;
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json({ ...timer('ACTIVE', null, 2530, fresh && !unlocked ? lockedAt : null), serverTime: fresh ? at(10_000) : at(-120_000) }),
+      '/api/v1/assessment/answer/save': (_url, init) => {
+        const body = JSON.parse(init?.body as string);
+        if (unlocked) return json({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1 });
+        return json({ error: 'attempt_locked', lockedAt, serverTime: at(5_000) }, 409);
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+    expect(await screen.findByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
+    // The check after the refusal is answered with the state from before the lock.
+    await checkNow();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(screen.getByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
+    expect(screen.queryByText(PROMPT)).toBeNull();
+
+    fresh = true;
+    unlocked = true;
+    await checkNow();
+    expect(await screen.findByText(PROMPT)).toBeTruthy();
+  });
+
+  it('stays paused when a state answer produced before the pause arrives after a save reported it', async () => {
+    const pausedAt = at(-60_000);
+    let fresh = false;
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json({ ...timer('ACTIVE'), serverTime: fresh ? at(10_000) : at(-120_000) }),
+      '/api/v1/assessment/answer/save': () => json({ error: 'exam_paused', pausedAt, serverTime: at(5_000) }, 409),
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+    expect(await screen.findByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    await checkNow();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(screen.getByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    expect(screen.queryByText(PROMPT)).toBeNull();
+
+    fresh = true;
+    await checkNow();
+    expect(await screen.findByText(PROMPT)).toBeTruthy();
+  });
+});

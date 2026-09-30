@@ -98,6 +98,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-24 | "Ragu-ragu / Tandai" flag for review (D04.5-34/35) not implemented | **RESOLVED**: migration `0042` stores marks apart from answers; `POST /assessment/review-flag` only for the attempt's active exam session while it is open (not after submission or time expiry); resume returns the marks; the question card has a "Ragu-ragu" checkbox, both navigators show an amber corner and a count, the submit dialog reminds without blocking; unsent marks stay on the device across a reload and retry; teachers, proctors and scoring never read them | RESOLVED |
 | P1-27 | An attempt whose time ran out while the student's device was unreachable stayed open indefinitely: only the device triggered expiry finalization (D04.5-45/47/49) | found while designing results: **RESOLVED**, the runtime finalizes such attempts from the server-accepted answers every `SA_EXPIRY_SWEEP_SECONDS`, skipping attempts held by an in-flight save or submit; every finalization path converges on one submission, which records its source (`STUDENT_SUBMIT`, `EXPIRY_CLIENT`, `EXPIRY_SERVER`, migration `0041`) so the D04.5-48 exception case stays visible | RESOLVED |
 | P1-28 | No scoring or results: after an exam the teacher saw only counts (D04.8) | **RESOLVED (provisional)**: deterministic rule `BASELINE_SINGLE_CHOICE_V1` (correct option earns the question's maximum, otherwise 0, raw ÷ maximum × 100 rounded half up to two decimals, exact integer arithmetic) computed on read from the frozen snapshots and accepted answers of finalized attempts; `GET /assessment/teacher-exams/results` only for the teacher who manages the exam; "Hasil Ujian" screen lists participants by ELLIGBLE ID (never ranked), absent is not zero, shows how each attempt was finalized, keeps scores hidden until shown (FRONTEND_DESIGN_SYSTEM §58). Students see no score. Finalization DONE (RESULT-001: explicit, audited, frozen, absent is not zero); export DONE (RESULT-002); publication (RESULT-003, Owner) and corrections (D04.8-24+) remain | RESOLVED (provisional, finalization and export DONE) |
+| P1-29 | Answers about the exam state arriving out of order could make the answer engine resend a refused choice in a tight loop (a timer answer produced before a pause or lock closed a span the server still held open), or drop a choice made after a resume or unlock (a refusal produced before it arriving late) | found while testing the participant lock: **RESOLVED** (ASSESS-SYNC-001): answers about a pause or lock are ordered by the server time they carry; a stale one changes nothing on the exam screen or in the engine, a newer refusal reopens a span the engine had closed, and a late refusal only proves the span lasted until it was produced | RESOLVED |
 | P1-25 | Time reminders at configured thresholds (D04.5-32) were missing; only warning styling below 5 and 1 minutes | `StudentExamWorkstation`: **RESOLVED** with the decision's default thresholds (30, 15, 5 minutes): a non-blocking status line with the actual remaining minutes, hidden after 10 seconds; school-defined thresholds await tenant settings | RESOLVED |
 
 ## 6. Production task graph
@@ -106,14 +107,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ASSESS-SYNC-001 → ASSESS-PROCTOR-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ASSESS-PROCTOR-002.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | ASSESS-SYNC-001 |
+| IN PROGRESS | none (next: ASSESS-PROCTOR-002) |
 | READY QUEUE (by value) | ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -197,24 +198,22 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Exact scope | lock and unlock of one participant by an assigned proctor within scope or the managing teacher; locked runtime cannot edit; audited |
 | Out of scope | participant pause with frozen time (D04.6-40, separate), step-up authentication, locking someone who has not started |
 | Delivered | migration `0046`: `secure_assessment_attempt_locks` (one row per lock with who and when it was locked and unlocked; at most one open lock per attempt; closed once, never deleted); `POST /assessment/exam-monitoring/participant-lock` (`lock`, `unlock`) for the assigned proctor of the exam, limited to their rooms when the exam runs with rooms, or the managing teacher, while the exam is ACTIVE, PAUSED or ENDED; idempotent; the boundary is taken after the attempt row lock, so a save in flight lands before it. While locked: questions, answer saves, "Ragu-ragu" marks, submission and timer start are refused with `attempt_locked`; the time keeps running and a locked attempt whose time runs out is still finalized by the server; an answer chosen before the lock is accepted even when it arrives during or after the lock, one chosen during a lock is refused (`captured_during_lock`), the same capture-time rule as a pause. Monitoring lists the lock ("Dikunci", since when) and offers "Kunci" for working participants and "Buka Kunci" for locked ones, each with a confirmation that says what the lock means; the student sees "Pengerjaan Dikunci" with the running time, which answers were kept, and the questions again after the unlock (checked every 5 s while locked) |
-| Known limits | the student learns of a lock within about 15 s unless a save meets it first, and of an unlock within about 5 s; a lock does not stop the time, so the supervisor decides when to unlock (a participant-level pause with frozen time is not in scope); found while testing: a stale exam-state answer can make the answer engine resend in a tight loop (pause and lock alike), fixed by ASSESS-SYNC-001 |
-| Commit / PR | this change (see §11); joins [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Known limits | the student learns of a lock within about 15 s unless a save meets it first, and of an unlock within about 5 s; a lock does not stop the time, so the supervisor decides when to unlock (a participant-level pause with frozen time is not in scope); found while testing: a stale exam-state answer could make the answer engine resend in a tight loop (pause and lock alike), fixed by ASSESS-SYNC-001 |
+| Commit / PR | `9243a85`, CI run 23; part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-SYNC-001 · Answer engine settles stale exam-state answers without a resend loop
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-SYNC / P1 / IN_PROGRESS |
+| Workstream / priority / status | ASSESS-SYNC / P1 / DONE |
 | Dependencies / blocks | ASSESS-LIFE-002, ASSESS-PROCTOR-001 / none |
 | Repository evidence | found by a workstation test whose fake server reused a lock boundary: the refused save, the immediate state check and the engine's restart of the queue fed each other until the test process ran out of memory. With the real server the same cycle follows when a timer answer produced before a pause or lock arrives after a save refusal that reported it: the engine closes the pause or lock the server still holds open, keeps a choice the server refuses, and every refusal restarts the send at once |
 | Why | D04.5-05/06/15/16 (answers never lost, queue with backoff); a whole room retrying at once must not overload the server |
-| Exact scope | the engine trusts the server when it reports a pause or lock as still open after the engine closed it (only when that report is newer than the close); an answer saying "not paused" or "not locked" that was produced before a known pause or lock began is ignored by the engine and the exam screen; tests for pause and lock, mutation-checked |
-| Out of scope | server changes |
-| Expected product result | no tight resend loop and no lost or falsely dropped answer when exam-state answers arrive out of order |
-| Surfaces | `answer-sync-engine.ts`, `answer-sync-api.ts`, `useAnswerManager.ts`, `StudentExamWorkstation.tsx` |
-| Verification | engine tests reproducing both orders for pause and lock, workstation test, E2E regression |
-| Owner decision | none |
-| Commit / PR | pending |
+| Exact scope | order answers about a pause or lock by the server time they carry, in the engine and on the exam screen; a refusal newer than the answer that closed a span reopens it; a stale refusal proves only that the span lasted until it was produced; tests for pause and lock, mutation-checked |
+| Out of scope | server changes (every refusal and timer answer already carries the database time) |
+| Delivered | the engine keeps, per kind of span (pause, lock), the server time of the newest answer it applied; an older answer is stale: a timer answer produced before a pause or lock began no longer shows the questions again or closes the span, and a refusal produced before a resume or unlock no longer pauses or locks the screen or drops a choice made afterwards (it only marks the span as lasting until then, so the choice it refused is dropped without asking again); a newer refusal reopens a span the engine had closed by estimate, so the refused choice is dropped and reported instead of being resent; a span whose end came from the server's record never opens again. The exam screen applies a timer answer only when it is fresh for both kinds |
+| Known limits | a timer answer is dated by the database time at the start of its request, so a resume or unlock recorded while that request runs can be taken as stale and is then seen on the next check (about 5 s while paused or locked) |
+| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-PROCTOR-002 · Broadcast messages to participants
 
@@ -329,7 +328,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| ASSESS-PROCTOR-001 | Lock and unlock of one participant by the proctor or the managing teacher, audited; questions hidden while the time runs | this change (§11) |
+| ASSESS-SYNC-001 | Exam-state answers ordered by server time: no resend loop, no choice dropped by a late refusal (P1-29) | this change (§11) |
+| ASSESS-PROCTOR-001 | Lock and unlock of one participant by the proctor or the managing teacher, audited; questions hidden while the time runs | `9243a85`, CI run 23 |
 | RESULT-002 | Teacher result export (CSV with provenance) and print view | `ce86528`, CI run 21 |
 | PR checkpoint | Pull request from `claude/laughing-mendel-p2l9gh` to `main` for the Owner's review | [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 | RESULT-001 | Explicit, audited result finalization with frozen per-participant results | `c5aecdb`, CI run 20 |
@@ -576,6 +576,16 @@ After participant lock and unlock (ASSESS-PROCTOR-001, this branch):
 | web vitest / `vite build` | 216/216 / PASS: "Kunci" only for working participants, both confirmations, outcome and refusal messages, no action after finalization; lock codes read from refusals; the engine keeps a choice made before the lock, drops and reports one made during it, takes no choice while locked and again after the unlock, and a resume of the exam does not lift a lock; the locked screen with running time after a reload and the questions back after the unlock; a save or a submission that meets the lock switches to it and names the dropped question; marks wait while locked. Mutation-checked (engine capture guard, mark retry, lock offer, locked screen, lock refusal parsing): all caught |
 | browser E2E | 16/16 PASS against the production process: an offline student chooses an answer, the proctor locks them from "Lihat Peserta" at 360 px with the confirmation, the student changes another answer still offline; back online the first is saved and the second refused and named on "Pengerjaan Dikunci"; the time keeps running, also after a reload; "Buka Kunci" returns the questions with the kept answer; the database records the proctor as the one who locked and unlocked |
 | rendered check (Chromium, 360 px and 1280 px) | confirmation, monitoring with "Dikunci" and "Buka Kunci", locked student screen: no horizontal overflow, no em dash; DesainPakeAI context revision unchanged (§10) |
+| CI GitHub Actions | run 23 green on `9243a85` |
+
+After ordering exam-state answers by server time (ASSESS-SYNC-001, this branch):
+
+| Check | Result |
+|---|---|
+| reproduction before the fix | engine tests: after an answer closed a span the server still held, one refused choice was sent 21 times (the test stopped the screen's re-checks at 20) instead of once; a refusal produced before a resume or unlock and delivered after it dropped the choice made afterwards; screen tests: a state answer produced before the pause or lock brought the questions back after a save had reported it |
+| web vitest / `vite build` | 228/228 / PASS: for pause and lock, a stale "over" answer is ignored and a fresh one applied; a newer refusal after a wrong close reopens the span: one request, the choice dropped and reported, the span held; a late refusal drops only the choice made inside (no second request), the later choice is saved and nothing is paused or locked; a span the server recorded as ended is never reopened by an older answer, whether the record came first or after the span was known; the screen stays paused or locked on a stale answer and continues on a fresh one; the server time is read from refusals. Mutation-checked (16 mutations: staleness in the engine, both refusal branches and both state notes, the reopen, the late-refusal record for pause and lock, the recorded end in three places, the screen check for each kind, the server time in the classifier): all caught |
+| runtime unit / integration | 899/899 / 107/107 PASS (no runtime change) |
+| browser E2E | 16/16 PASS (no regression: pause, lock, end and finalize journeys) |
 
 ## 12. Friction reducers (automation)
 
@@ -583,6 +593,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-SYNC-001 (the resend loop found while testing the lock), then ASSESS-PROCTOR-002 broadcast; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-PROCTOR-002 (broadcast messages), then OPS-002 metrics and alerting; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

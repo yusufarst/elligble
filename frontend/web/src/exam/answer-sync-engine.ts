@@ -21,6 +21,11 @@ import { serverClock } from './server-clock.ts';
 //   none, the server's answer stays. Such discarded choices are reported, never silently
 //   lost, and no new choice is captured while the exam is known to be paused. A supervisor's
 //   lock of this attempt (D04.6-38) follows the same boundary rule.
+// - Answers about a pause or lock can arrive out of order. Each carries the server time it
+//   was produced at, and one older than an answer already applied about the same kind of
+//   span is stale: it cannot close a span the server still holds open or reopen one that
+//   ended. A stale refusal only shows that the span lasted at least until then, so a choice
+//   made later is left for the server to decide instead of being dropped.
 
 export type SaveOutcome =
   | { kind: 'ack'; writeVersion: number; clientWriteIdentity: string }
@@ -32,11 +37,11 @@ export type SaveOutcome =
   | { kind: 'unauthorized' }
   | { kind: 'retry' }
   /** The exam is paused and the intent was not chosen before the boundary (null: unknown boundary). */
-  | { kind: 'exam_paused'; pausedAt: number | null }
+  | { kind: 'exam_paused'; pausedAt: number | null; serverTime?: number | null }
   /** The intent was chosen inside this pause interval of the exam. */
   | { kind: 'captured_during_pause'; pausedAt: number; resumedAt: number | null }
   /** A supervisor locked this attempt and the intent was not chosen before the lock. */
-  | { kind: 'attempt_locked'; lockedAt: number | null }
+  | { kind: 'attempt_locked'; lockedAt: number | null; serverTime?: number | null }
   /** The intent was chosen while this attempt was locked. */
   | { kind: 'captured_during_lock'; lockedAt: number; unlockedAt: number | null };
 
@@ -111,12 +116,16 @@ const MAX_CONSECUTIVE_STALE = 2;
 const MAX_OWN_IDENTITIES = 20;
 const MAX_HISTORY = 8;
 
+export type BlockSource = 'pause' | 'lock';
+
 /** A time span in which choices are not accepted: an exam pause or a lock of this attempt. */
 interface BlockInterval {
-  source: 'pause' | 'lock';
+  source: BlockSource;
   from: number;
   /** Null while it is open. */
   to: number | null;
+  /** The end is the server's record, not an estimate: such a span never opens again. */
+  exact?: boolean;
 }
 
 interface ServerEntry {
@@ -152,6 +161,8 @@ export class AnswerSyncEngine {
   private readonly blocks: BlockInterval[] = [];
   private examPaused = false;
   private attemptLocked = false;
+  /** Server time of the newest answer applied about a pause and about a lock. */
+  private readonly seenAt: Record<BlockSource, number> = { pause: Number.NEGATIVE_INFINITY, lock: Number.NEGATIVE_INFINITY };
 
   constructor(options: EngineOptions) {
     this.opts = {
@@ -430,6 +441,10 @@ export class AnswerSyncEngine {
         this.scheduleRetry();
         return false;
       case 'exam_paused':
+        if (!this.accept('pause', outcome.serverTime)) {
+          if (outcome.pausedAt !== null) this.noteLasted('pause', outcome.pausedAt, outcome.serverTime!);
+          return this.afterPauseRefusal(snapshotId, sentIdentity);
+        }
         this.examPaused = true;
         this.opts.events.onExamPaused?.(outcome.pausedAt);
         if (outcome.pausedAt === null) {
@@ -437,19 +452,23 @@ export class AnswerSyncEngine {
           this.scheduleRetry();
           return false;
         }
-        this.noteBlock('pause', outcome.pausedAt, null);
+        this.noteOpen('pause', outcome.pausedAt);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
       case 'captured_during_pause':
         this.noteBlock('pause', outcome.pausedAt, outcome.resumedAt);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
       case 'attempt_locked':
+        if (!this.accept('lock', outcome.serverTime)) {
+          if (outcome.lockedAt !== null) this.noteLasted('lock', outcome.lockedAt, outcome.serverTime!);
+          return this.afterPauseRefusal(snapshotId, sentIdentity);
+        }
         this.attemptLocked = true;
         this.opts.events.onAttemptLocked?.(outcome.lockedAt);
         if (outcome.lockedAt === null) {
           this.scheduleRetry();
           return false;
         }
-        this.noteBlock('lock', outcome.lockedAt, null);
+        this.noteOpen('lock', outcome.lockedAt);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
       case 'captured_during_lock':
         this.noteBlock('lock', outcome.lockedAt, outcome.unlockedAt);
@@ -458,14 +477,15 @@ export class AnswerSyncEngine {
   }
 
   /**
-   * The workstation learned whether a supervisor has locked this attempt: a known lock stops
+   * The workstation learned whether a supervisor has locked this attempt, from an answer the
+   * server produced at `at` (null: unknown; a stale answer is ignored): a known lock stops
    * new captures and settles every intent against its boundary; an unlock closes it now.
    */
-  async noteLockState(lockedAt: number | null): Promise<void> {
-    if (this.disposed) return;
+  async noteLockState(lockedAt: number | null, at: number | null = null): Promise<void> {
+    if (this.disposed || !this.accept('lock', at)) return;
     if (lockedAt !== null) {
       this.attemptLocked = true;
-      this.noteBlock('lock', lockedAt, null);
+      this.noteOpen('lock', lockedAt);
       await this.settleAgainstPauses();
       this.opts.events.onChange();
       this.kick();
@@ -486,16 +506,17 @@ export class AnswerSyncEngine {
   }
 
   /**
-   * The workstation learned the exam state (periodic check, resume). A known pause stops
-   * new captures and settles every intent against its boundary at once; when the exam runs
+   * The workstation learned the exam state (periodic check, resume) from an answer the server
+   * produced at `at` (null: unknown; a stale answer is ignored). A known pause stops new
+   * captures and settles every intent against its boundary at once; when the exam runs
    * again, an open pause is closed at the current time (the screen was paused until now).
    */
-  async noteExamState(state: ExamRunState, pausedAt: number | null): Promise<void> {
-    if (this.disposed) return;
+  async noteExamState(state: ExamRunState, pausedAt: number | null, at: number | null = null): Promise<void> {
+    if (this.disposed || !this.accept('pause', at)) return;
     if (state === 'PAUSED') {
       this.examPaused = true;
       if (pausedAt !== null) {
-        this.noteBlock('pause', pausedAt, null);
+        this.noteOpen('pause', pausedAt);
         await this.settleAgainstPauses();
       }
       this.opts.events.onChange();
@@ -516,15 +537,55 @@ export class AnswerSyncEngine {
     return this.examPaused;
   }
 
-  private noteBlock(source: BlockInterval['source'], from: number, to: number | null): void {
+  /**
+   * Whether an answer about a pause or lock produced at server time `at` is not older than
+   * one already applied about the same kind of span (an answer without a time is accepted).
+   */
+  isFresh(source: BlockSource, at: number | null | undefined): boolean {
+    return typeof at !== 'number' || at >= this.seenAt[source];
+  }
+
+  /** Accepts a fresh answer and remembers its time; false for a stale one. */
+  private accept(source: BlockSource, at: number | null | undefined): boolean {
+    if (!this.isFresh(source, at)) return false;
+    if (typeof at === 'number') this.seenAt[source] = at;
+    return true;
+  }
+
+  /**
+   * A fresh answer says the server holds a span open since `from`: open it, also when this
+   * engine had closed it by estimate (a span the server recorded as ended stays ended).
+   */
+  private noteOpen(source: BlockSource, from: number): void {
+    const known = this.blocks.find(b => b.source === source && b.from === from);
+    if (!known) this.noteBlock(source, from, null);
+    else if (!known.exact) known.to = null;
+  }
+
+  /** The server's record of a span that began at `from`: ended at `to`, or open when to is null. */
+  private noteBlock(source: BlockSource, from: number, to: number | null): void {
     const known = this.blocks.find(b => b.source === source && b.from === from);
     if (known) {
-      if (to !== null) known.to = to;
+      if (to !== null) {
+        known.to = to;
+        known.exact = true;
+      }
       return;
     }
-    // A newer open span replaces an older one of the same kind this engine still believed open.
+    // A newer span means an older one of the same kind this engine still believed open had ended.
     for (const block of this.blocks) if (block.source === source && block.to === null && block.from < from) block.to = from;
-    this.blocks.push({ source, from, to });
+    this.blocks.push({ source, from, to, exact: to !== null });
+  }
+
+  /**
+   * A stale refusal: the span that began at `from` still held at server time `at`, but a newer
+   * answer said it was over. Only [from, at) is certain; a later choice is for the server.
+   */
+  private noteLasted(source: BlockSource, from: number, at: number): void {
+    const until = Math.max(from, at);
+    const known = this.blocks.find(b => b.source === source && b.from === from);
+    if (!known) this.blocks.push({ source, from, to: until });
+    else if (!known.exact && known.to !== null && known.to < until) known.to = until;
   }
 
   private insidePause(capturedAt: number): boolean {
