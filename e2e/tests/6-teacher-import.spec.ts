@@ -4,7 +4,8 @@ import { login, shotName, withDatabase } from './helpers.ts';
 // The teacher prepares an exam without platform staff (ASSESS-TEACHER-001; D04.4-26A,
 // D04.3-61..66): upload the question file, see every problem with its line, fix it, check
 // the questions, key and participants, leave one student out, schedule, preview it as
-// students will see it (ASSESS-TEACHER-002, D04.3-38/39), mark ready and open it; an
+// students will see it (ASSESS-TEACHER-002, D04.3-38/39), mark ready, move it (ASSESS-TEACHER-003,
+// D04.2-45: ready again only after a new "Tandai Siap") and open it; an
 // included student then answers the imported questions, and the teacher adds time for that
 // student alone (ASSESS-PROCTOR-004, D04.6-41), which the student's screen shows at once.
 // Runs after the lifecycle suite, when the operator-imported exam of the same class is
@@ -102,6 +103,22 @@ test('a teacher schedules an exam from a question file, and an included student 
     await page.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }).click();
 
     await card.getByRole('button', { name: 'Tandai Siap' }).click();
+    await expect(card).toContainText('Siap Dibuka');
+
+    // Moved before it opens (D04.2-45): a longer window and duration; the ready exam is
+    // scheduled again and has to be marked ready anew (D04.2-25).
+    await card.getByRole('button', { name: 'Ubah Jadwal' }).click();
+    const move = page.getByRole('dialog', { name: 'Ubah Jadwal Ujian' });
+    await expect(move).toContainText('perlu ditandai siap lagi');
+    await move.getByLabel('Selesai (WIB)').fill(wib(150));
+    await move.getByLabel('Durasi pengerjaan (menit)').fill('40');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(shotName('reschedule')), fullPage: true });
+    await move.getByRole('button', { name: 'Simpan Jadwal' }).click();
+    await expect(page.getByRole('status').filter({ hasText: /durasi 40 menit\. Ujian kembali terjadwal; tandai siap lagi sebelum dibuka\.$/ })).toBeVisible();
+    await expect(card).toContainText('Terjadwal');
+    await expect(card).toContainText('Jadwal diubah');
+    await card.getByRole('button', { name: 'Tandai Siap' }).click();
     await card.getByRole('button', { name: 'Buka Ujian' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Buka Ujian' }).click();
     await expect(card).toContainText('Berlangsung');
@@ -121,11 +138,27 @@ test('a teacher schedules an exam from a question file, and an included student 
         source_file_name: 'ulangan-kimia.csv', question_count: 2, hashed: true, lines: [2, 3],
         participants: ['siswa.e2e.01', 'siswa.e2e.02', 'siswa.e2e.03', 'siswa.e2e.04', 'siswa.e2e.05'],
     }]);
+    const moves = await withDatabase(async client => (await client.query(
+        `SELECT sc.previous_lifecycle_state, sc.previous_duration_seconds, sc.new_duration_seconds, c.username AS teacher,
+                (SELECT array_agg(e.from_state || '>' || e.to_state ORDER BY e.occurred_at) FROM secure_assessment_exam_lifecycle_events e
+                 WHERE e.exam_instance_id = sc.exam_instance_id) AS transitions
+         FROM secure_assessment_exam_schedule_changes sc
+         JOIN identity_user_accounts ua ON ua.person_id = sc.changed_by_person_id
+         JOIN identity_account_credentials c ON c.user_account_id = ua.id`
+    )).rows);
+    expect(moves).toEqual([{
+        previous_lifecycle_state: 'READY', previous_duration_seconds: 1800, new_duration_seconds: 2400, teacher: 'guru.e2e',
+        transitions: ['DRAFT>SCHEDULED', 'SCHEDULED>READY', 'READY>SCHEDULED', 'SCHEDULED>READY', 'READY>ACTIVE'],
+    }]);
 
     // An included student starts it and sees the imported questions.
     const studentContext = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC' });
     const student = await studentContext.newPage();
     await login(student, 'siswa.e2e.01', PASSWORD);
+    // The student's card says the schedule was moved, and when it was before.
+    await expect(student.getByText(/^Jadwal diubah oleh guru pada .+\. Jadwal sebelumnya: .+\.$/)).toBeVisible();
+    expect(await student.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await student.screenshot({ path: test.info().outputPath(shotName('student-schedule-changed')), fullPage: true });
     await student.getByRole('button', { name: 'Mulai Ujian' }).click();
     await student.getByRole('button', { name: 'Mulai Ujian Sekarang' }).click();
     await expect(student.getByText('Lambang unsur oksigen adalah')).toBeVisible();

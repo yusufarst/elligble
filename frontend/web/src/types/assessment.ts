@@ -173,6 +173,14 @@ export interface AssignedExamSchedule {
   windowStartsAt: string | null;
   windowEndsAt: string | null;
   attemptDurationSeconds: number | null;
+  /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
+  change?: ScheduleChange | null;
+}
+
+export interface ScheduleChange {
+  changedAt: string;
+  previousWindowStartsAt: string | null;
+  previousWindowEndsAt: string | null;
 }
 
 export interface AssignedExamItem {
@@ -203,6 +211,10 @@ export interface ProctorMonitoringRoomProjection {
 export interface ProctorMonitoringExamProjection {
   examInstanceId: string;
   subjectLabel: string | null;
+  windowStartsAt?: string | null;
+  windowEndsAt?: string | null;
+  /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
+  scheduleChange?: ScheduleChange | null;
   rooms: ProctorMonitoringRoomProjection[];
 }
 
@@ -238,6 +250,11 @@ export interface TeacherExamReadinessProjection {
   lifecycleState?: string | null;
   windowStartsAt?: string | null;
   windowEndsAt?: string | null;
+  /** Working time per attempt and the late-start rule, as scheduled. */
+  durationMinutes?: number | null;
+  latestStartPolicy?: LatestStartPolicy | null;
+  /** When the schedule was last changed before the exam opened, or null. */
+  scheduleChangedAt?: string | null;
   baseline: TeacherExamBaselineProjection;
   roomProctor: TeacherExamRoomProctorProjection;
   progress?: TeacherExamProgressProjection | null;
@@ -248,6 +265,32 @@ export interface TeacherExamReadinessProjection {
 }
 
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
+
+/** A new schedule for a scheduled or ready exam (ASSESS-TEACHER-003, D04.2-45). */
+export interface TeacherExamRescheduleInput {
+  examInstanceId: string;
+  /** Wall-clock date and time in the school's zone, `YYYY-MM-DDTHH:MM`. */
+  windowStartsAt: string;
+  windowEndsAt: string;
+  durationMinutes: number;
+  latestStartPolicy: LatestStartPolicy;
+  /** Chosen by the device once per dialog; a retry reuses it. */
+  actionKey: string;
+}
+
+export type RescheduleProblemCode =
+  | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
+  | 'duration_exceeds_window' | 'schedule_conflict' | 'proctor_schedule_conflict';
+
+export interface TeacherExamRescheduleResult {
+  examInstanceId: string;
+  lifecycleState: string;
+  schedule: { windowStartsAt: string; windowEndsAt: string; durationMinutes: number; latestStartPolicy: LatestStartPolicy };
+  /** False when the exam already had this schedule: nothing was recorded. */
+  changed: boolean;
+  replayed: boolean;
+  changedAt: string | null;
+}
 
 export interface TeacherExamTransitionResponse {
   examInstanceId: string;

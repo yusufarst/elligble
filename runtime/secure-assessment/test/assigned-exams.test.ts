@@ -129,7 +129,7 @@ test('BU-085 assigned-exams runtime handler tests', async (t) => {
                     examInstanceId: VALID_INSTANCE_ID_1,
                     subjectLabel: 'Matematika',
                     roomLabel: 'Lab 1',
-                    schedule: { lifecycleState: null, windowStartsAt: null, windowEndsAt: null, attemptDurationSeconds: null },
+                    schedule: { lifecycleState: null, windowStartsAt: null, windowEndsAt: null, attemptDurationSeconds: null, change: null },
                     attempts: [
                         {
                             attemptId: VALID_ATTEMPT_ID_1,
@@ -302,7 +302,7 @@ test('BU-085 assigned-exams runtime handler tests', async (t) => {
                     examInstanceId: VALID_INSTANCE_ID_1,
                     subjectLabel: 'Bahasa Indonesia',
                     roomLabel: null,
-                    schedule: { lifecycleState: null, windowStartsAt: null, windowEndsAt: null, attemptDurationSeconds: null },
+                    schedule: { lifecycleState: null, windowStartsAt: null, windowEndsAt: null, attemptDurationSeconds: null, change: null },
                     attempts: []
                 }
             ]

@@ -23,6 +23,8 @@ import type {
   TeacherExamImportPreview,
   TeacherExamImportResult,
   TeacherExamPreview,
+  TeacherExamRescheduleInput,
+  TeacherExamRescheduleResult,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -198,6 +200,12 @@ export async function getTeacherExamResults(examInstanceId: string): Promise<Tea
 export async function getTeacherExamSetup(): Promise<TeacherExamSetup> {
   const res = await apiFetch('/api/v1/assessment/teacher-exams/setup', { method: 'GET' });
   return handleResponse<TeacherExamSetup>(res);
+}
+
+/** Moves a scheduled or ready exam before it opens; a retry with the same action key changes nothing twice. */
+export async function postTeacherExamReschedule(input: TeacherExamRescheduleInput): Promise<TeacherExamRescheduleResult> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/reschedule', { method: 'POST', json: input });
+  return handleResponse<TeacherExamRescheduleResult>(res);
 }
 
 /** Checks the question file and the schedule without keeping anything. */

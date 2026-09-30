@@ -413,7 +413,7 @@ export const TeacherExamImportView: React.FC<{
       {ready && (
         <div className="flex flex-col gap-2 border-t border-border pt-4">
           <p className="m-0 text-sm text-muted-foreground">
-            Setelah dijadwalkan, soal dan jadwal tidak dapat diubah di aplikasi. Ujian baru dapat dikerjakan setelah Anda menandainya siap dan membukanya.
+            Setelah dijadwalkan, soal dan peserta tidak dapat diubah di aplikasi; jadwalnya masih dapat diubah sebelum ujian dibuka. Ujian baru dapat dikerjakan setelah Anda menandainya siap dan membukanya.
           </p>
           <Button className="self-start" onClick={openConfirm}>Jadwalkan Ujian</Button>
         </div>
@@ -429,7 +429,7 @@ export const TeacherExamImportView: React.FC<{
                   [assignment ? `${assignment.subjectLabel} · ${assignment.groupLabel}` : null, typeLabel].filter(Boolean).join(' · '),
                   preview.window ? formatWindow(preview.window.startsAt, preview.window.endsAt) : null,
                   `${preview.totals.questions} soal, ${included} peserta`,
-                  'Soal dan jadwal tidak dapat diubah setelah dijadwalkan',
+                  'Soal dan peserta tidak dapat diubah setelah dijadwalkan; jadwalnya masih dapat diubah sebelum ujian dibuka',
                 ].filter(Boolean).join('. ')}.
               </DialogDescription>
             </DialogHeader>

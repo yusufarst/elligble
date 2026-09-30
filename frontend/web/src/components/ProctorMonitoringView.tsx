@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import React, { useState, useEffect, useCallback } from 'react';
 import { getProctorMonitoring, ApiError } from '../api/assessment-client.ts';
 import type { ProctorMonitoringResponse, ProctorMonitoringExamProjection, ProctorMonitoringRoomProjection } from '../types/assessment.ts';
+import { formatDateTime, formatWindow } from '../lib/format.ts';
 import '../styles/proctor-monitoring.css';
 import '../styles/design-tokens.css';
 
@@ -110,6 +111,17 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
       {assignments.map((exam: ProctorMonitoringExamProjection) => (
         <div key={exam.examInstanceId} className="proctor-exam-group">
           <h2 className="proctor-exam-title">{exam.subjectLabel || 'Mata Pelajaran Tidak Diketahui'}</h2>
+          {exam.windowStartsAt && exam.windowEndsAt && (
+            <p className="proctor-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
+          )}
+          {exam.scheduleChange && (
+            <p className="proctor-schedule-change" role="note">
+              Jadwal diubah pada {formatDateTime(exam.scheduleChange.changedAt)}.
+              {exam.scheduleChange.previousWindowStartsAt && exam.scheduleChange.previousWindowEndsAt
+                ? ` Jadwal sebelumnya: ${formatWindow(exam.scheduleChange.previousWindowStartsAt, exam.scheduleChange.previousWindowEndsAt)}.`
+                : ''}
+            </p>
+          )}
           {onOpenExam && (
             <Button variant="secondary" className="mb-3" onClick={() => onOpenExam(exam.examInstanceId)}>Lihat Peserta</Button>
           )}

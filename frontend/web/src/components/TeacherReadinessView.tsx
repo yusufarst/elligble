@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IconInfo } from '@/components/icons';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
+import { RescheduleDialog } from './TeacherExamReschedule.tsx';
 
 const LIFECYCLE_LABELS: Record<string, string> = {
   SCHEDULED: 'Terjadwal',
@@ -115,6 +116,8 @@ export const TeacherReadinessView: React.FC<{
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<{ exam: TeacherExamReadinessProjection; action: ConfirmableAction } | null>(null);
+  const [rescheduleFor, setRescheduleFor] = useState<TeacherExamReadinessProjection | null>(null);
+  const [statusNotice, setStatusNotice] = useState<{ failed: boolean; text: string } | null>(null);
 
   const fetchReadinessData = useCallback(async () => {
     try {
@@ -199,10 +202,11 @@ export const TeacherReadinessView: React.FC<{
 
   const exams = data?.exams || [];
 
-  const noticeBanner = notice ? (
-    <Alert variant="success" role="status" className="mb-4">
+  const shownNotice = statusNotice ?? (notice ? { failed: false, text: notice } : null);
+  const noticeBanner = shownNotice ? (
+    <Alert variant={shownNotice.failed ? 'destructive' : 'success'} role={shownNotice.failed ? 'alert' : 'status'} className="mb-4">
       <IconInfo aria-hidden="true" />
-      <AlertDescription>{notice}</AlertDescription>
+      <AlertDescription>{shownNotice.text}</AlertDescription>
     </Alert>
   ) : null;
 
@@ -304,6 +308,9 @@ export const TeacherReadinessView: React.FC<{
               {exam.windowStartsAt && exam.windowEndsAt && (
                 <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
               )}
+              {exam.scheduleChangedAt && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
+                <p className="teacher-exam-note">Jadwal diubah {formatDateTime(exam.scheduleChangedAt)}.</p>
+              )}
 
               {DELIVERY_STATES.has(lifecycle) && exam.progress ? (
                 <>
@@ -395,6 +402,7 @@ export const TeacherReadinessView: React.FC<{
                   {onOpenPreview && (
                     <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>
                   )}
+                  <Button variant="secondary" onClick={() => setRescheduleFor(exam)} disabled={busy}>Ubah Jadwal</Button>
                   {lifecycle === 'SCHEDULED' && (
                     <Button onClick={() => runTransition(exam.examInstanceId, 'mark_ready')} disabled={!readinessPass || busy}>
                       {busy ? 'Memproses...' : 'Tandai Siap'}
@@ -412,6 +420,16 @@ export const TeacherReadinessView: React.FC<{
           );
         })}
       </div>
+
+      <RescheduleDialog
+        exam={rescheduleFor}
+        onClose={() => setRescheduleFor(null)}
+        onDone={outcome => {
+          setRescheduleFor(null);
+          setStatusNotice(outcome);
+          void fetchReadinessData();
+        }}
+      />
 
       <Dialog open={confirm !== null} onOpenChange={open => { if (!open) setConfirm(null); }}>
         {confirm && (

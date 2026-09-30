@@ -111,7 +111,8 @@ export type TeacherExamImportOutcome =
     | { type: 'unavailable' };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+/** Wall-clock date and time in the school's zone, as the teacher enters it. */
+export const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const SCHEDULING_STATES = ['SCHEDULED', 'READY', 'ACTIVE', 'PAUSED'];
 
@@ -119,7 +120,8 @@ export function sha256Hex(text: string): string {
     return createHash('sha256').update(text, 'utf8').digest('hex');
 }
 
-function isRealLocalDateTime(value: string): boolean {
+/** A `YYYY-MM-DDTHH:MM` value naming a real calendar date and time. */
+export function isRealLocalDateTime(value: string): boolean {
     const m = LOCAL_DATE_TIME.exec(value);
     if (!m) return false;
     const [y, mo, d, h, mi] = m.slice(1).map(Number);

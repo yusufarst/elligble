@@ -41,6 +41,11 @@ export interface TeacherExamReadinessProjection {
     lifecycleState: string | null;
     windowStartsAt: string | null;
     windowEndsAt: string | null;
+    /** Working time per attempt and the late-start rule, as scheduled. */
+    durationMinutes: number | null;
+    latestStartPolicy: string | null;
+    /** When the schedule was last changed before the exam opened (D04.2-45), or null. */
+    scheduleChangedAt: string | null;
     baseline: TeacherExamBaselineProjection;
     roomProctor: TeacherExamRoomProctorProjection;
     progress: TeacherExamProgressProjection | null;
@@ -140,6 +145,10 @@ export async function handleTeacherReadinessGet(
                 i.lifecycle_state AS lifecycle_state,
                 i.window_starts_at AS window_starts_at,
                 i.window_ends_at AS window_ends_at,
+                i.configured_attempt_duration_seconds AS duration_seconds,
+                i.latest_start_policy AS latest_start_policy,
+                (SELECT max(sc.changed_at) FROM secure_assessment_exam_schedule_changes sc
+                 WHERE sc.tenant_id = i.tenant_id AND sc.exam_instance_id = i.id) AS schedule_changed_at,
                 s.display_label AS subject_label,
                 g.display_label AS group_label,
                 t.display_label AS assessment_type_label
@@ -236,6 +245,9 @@ export async function handleTeacherReadinessGet(
                 lifecycleState: row.lifecycle_state ?? null,
                 windowStartsAt: isoOrNull(row.window_starts_at),
                 windowEndsAt: isoOrNull(row.window_ends_at),
+                durationMinutes: row.duration_seconds === null || row.duration_seconds === undefined ? null : Math.round(Number(row.duration_seconds) / 60),
+                latestStartPolicy: row.latest_start_policy ?? null,
+                scheduleChangedAt: isoOrNull(row.schedule_changed_at),
                 baseline,
                 roomProctor,
                 progress,

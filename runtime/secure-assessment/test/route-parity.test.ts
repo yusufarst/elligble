@@ -52,6 +52,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         postBroadcastInbox: m => m.postBroadcastInbox(ID, []),
         getTeacherExamSetup: m => m.getTeacherExamSetup(),
         getTeacherExamPreview: m => m.getTeacherExamPreview(ID),
+        postTeacherExamReschedule: m => m.postTeacherExamReschedule({ examInstanceId: ID, windowStartsAt: '2026-10-05T08:00', windowEndsAt: '2026-10-05T10:00', durationMinutes: 60, latestStartPolicy: 'FULL_DURATION_BEYOND_WINDOW', actionKey: ID }),
         postTeacherExamImportPreview: m => m.postTeacherExamImportPreview(IMPORT_INPUT),
         postTeacherExamImport: m => m.postTeacherExamImport(IMPORT_INPUT, { importKey: ID, expectedSha256: '0'.repeat(64) }),
     },

@@ -230,6 +230,14 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                   )}
                 </dl>
               )}
+              {item.schedule?.change && !hasAttempts && (
+                <p className="discovery-schedule-change" role="note">
+                  Jadwal diubah oleh guru pada {formatDateTime(item.schedule.change.changedAt)}.
+                  {item.schedule.change.previousWindowStartsAt && item.schedule.change.previousWindowEndsAt
+                    ? ` Jadwal sebelumnya: ${formatWindow(item.schedule.change.previousWindowStartsAt, item.schedule.change.previousWindowEndsAt)}.`
+                    : ''}
+                </p>
+              )}
 
               {!hasAttempts ? (
                 (() => {

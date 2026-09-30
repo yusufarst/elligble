@@ -21,6 +21,8 @@ export interface AssignedExamScheduleProjection {
     windowStartsAt: string | null;
     windowEndsAt: string | null;
     attemptDurationSeconds: number | null;
+    /** The latest change of the schedule before the exam opened (D04.2-45), or null. */
+    change: { changedAt: string; previousWindowStartsAt: string | null; previousWindowEndsAt: string | null } | null;
 }
 
 export interface AssignedExamProjection {
@@ -96,10 +98,20 @@ export async function handleAssignedExamsGet(
                 s.display_label as subject_label,
                 r.display_label as room_label,
                 a.id as attempt_id,
-                sub.submitted_at as submitted_at
+                sub.submitted_at as submitted_at,
+                sc.changed_at as schedule_changed_at,
+                sc.previous_window_starts_at as previous_window_starts_at,
+                sc.previous_window_ends_at as previous_window_ends_at
             FROM secure_assessment_exam_participants p
             JOIN secure_assessment_exam_instances i
                 ON i.id = p.exam_instance_id AND i.tenant_id = p.tenant_id
+            LEFT JOIN LATERAL (
+                SELECT c.changed_at, c.previous_window_starts_at, c.previous_window_ends_at
+                FROM secure_assessment_exam_schedule_changes c
+                WHERE c.tenant_id = i.tenant_id AND c.exam_instance_id = i.id
+                ORDER BY c.changed_at DESC, c.id DESC
+                LIMIT 1
+            ) sc ON TRUE
             LEFT JOIN academic_core_teaching_assignments ta
                 ON ta.id = i.teaching_assignment_id AND ta.tenant_id = p.tenant_id
             LEFT JOIN academic_core_subject_offerings so
@@ -138,6 +150,11 @@ export async function handleAssignedExamsGet(
                         windowEndsAt: isoOrNull(row.window_ends_at),
                         attemptDurationSeconds: row.attempt_duration_seconds === null || row.attempt_duration_seconds === undefined
                             ? null : Number(row.attempt_duration_seconds),
+                        change: row.schedule_changed_at ? {
+                            changedAt: isoOrNull(row.schedule_changed_at)!,
+                            previousWindowStartsAt: isoOrNull(row.previous_window_starts_at),
+                            previousWindowEndsAt: isoOrNull(row.previous_window_ends_at),
+                        } : null,
                     },
                     attempts: []
                 };
