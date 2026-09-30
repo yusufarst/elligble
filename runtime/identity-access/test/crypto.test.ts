@@ -54,14 +54,20 @@ test('Password verification - malformed verifier and tampered parameters', () =>
   assert.strictEqual(verifyPassword(password, 'scrypt$v=2$N=16384,r=8,p=1,keylen=64$salt$key'), false); // wrong version
   assert.strictEqual(verifyPassword(password, 'bcrypt$v=1$N=16384,r=8,p=1,keylen=64$salt$key'), false); // wrong algo
 
+  // The last hex digit always changes: overwriting it with a fixed value left the salt or key
+  // unchanged whenever it already ended so (1 in 256 each), and the check then passed.
+  const changeLastDigit = (hex: string) => hex.slice(0, -1) + (hex.endsWith('0') ? '1' : '0');
+
   // Tampered salt
   const parts = validHash.split('$');
-  const tamperedSalt = parts[3].slice(0, -2) + 'aa';
+  const tamperedSalt = changeLastDigit(parts[3]);
+  assert.notStrictEqual(tamperedSalt, parts[3]);
   const tamperedHash = [parts[0], parts[1], parts[2], tamperedSalt, parts[4]].join('$');
   assert.strictEqual(verifyPassword(password, tamperedHash), false);
 
   // Tampered key
-  const tamperedKey = parts[4].slice(0, -2) + '00';
+  const tamperedKey = changeLastDigit(parts[4]);
+  assert.notStrictEqual(tamperedKey, parts[4]);
   const tamperedKeyHash = [parts[0], parts[1], parts[2], parts[3], tamperedKey].join('$');
   assert.strictEqual(verifyPassword(password, tamperedKeyHash), false);
 });
