@@ -118,7 +118,7 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
 
   if (phase === 'loading') {
     return (
-      <div className="discovery-container">
+      <main className="discovery-container">
         <header className="discovery-header">
           <h1 className="discovery-title">Daftar Ujian Siswa</h1>
           <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
@@ -126,13 +126,13 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
         <div className="discovery-loading-state" role="status">
           Memuat daftar ujian...
         </div>
-      </div>
+      </main>
     );
   }
 
   if (phase === 'forbidden') {
     return (
-      <div className="discovery-container">
+      <main className="discovery-container">
         <header className="discovery-header">
           <h1 className="discovery-title">Daftar Ujian Siswa</h1>
           <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
@@ -143,13 +143,13 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
             Sesi Anda tidak memiliki izin untuk mengakses daftar ujian.
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (phase === 'error') {
     return (
-      <div className="discovery-container">
+      <main className="discovery-container">
         <header className="discovery-header">
           <h1 className="discovery-title">Daftar Ujian Siswa</h1>
           <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
@@ -167,13 +167,13 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
             Muat Ulang
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (phase === 'empty') {
     return (
-      <div className="discovery-container">
+      <main className="discovery-container">
         <header className="discovery-header">
           <h1 className="discovery-title">Daftar Ujian Siswa</h1>
           <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
@@ -184,12 +184,12 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
             Belum ada ujian yang ditugaskan kepada Anda saat ini.
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="discovery-container">
+    <main className="discovery-container">
       <header className="discovery-header">
         <h1 className="discovery-title">Daftar Ujian Siswa</h1>
         <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
@@ -201,118 +201,119 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
           const hasAttempts = item.attempts && item.attempts.length > 0;
 
           return (
-            <article
-              key={item.examInstanceId}
-              className="discovery-card"
-              data-testid={`assignment-${item.examInstanceId}`}
-            >
-              <div className="discovery-card-header">
-                <h2 className="discovery-subject-title">{subjectDisplay}</h2>
-                {item.roomLabel && (
-                  <span className="discovery-room-badge">
-                    Ruang: {item.roomLabel}
-                  </span>
-                )}
-              </div>
-
-              {item.schedule && (item.schedule.windowStartsAt || item.schedule.attemptDurationSeconds) && (
-                <dl className="discovery-schedule">
-                  {item.schedule.windowStartsAt && item.schedule.windowEndsAt && (
-                    <div>
-                      <dt>Waktu pelaksanaan</dt>
-                      <dd>{formatWindow(item.schedule.windowStartsAt, item.schedule.windowEndsAt)}</dd>
-                    </div>
+            <div role="listitem" key={item.examInstanceId}>
+              <article
+                className="discovery-card"
+                data-testid={`assignment-${item.examInstanceId}`}
+              >
+                <div className="discovery-card-header">
+                  <h2 className="discovery-subject-title">{subjectDisplay}</h2>
+                  {item.roomLabel && (
+                    <span className="discovery-room-badge">
+                      Ruang: {item.roomLabel}
+                    </span>
                   )}
-                  {item.schedule.attemptDurationSeconds && (
-                    <div>
-                      <dt>Durasi</dt>
-                      <dd>{formatDurationMinutes(item.schedule.attemptDurationSeconds)}</dd>
-                    </div>
-                  )}
-                </dl>
-              )}
-              {item.schedule?.change && !hasAttempts && (
-                <Alert variant="info" role="note" className="mb-4">
-                  <AlertDescription>
-                    Jadwal diubah oleh guru pada {formatDateTime(item.schedule.change.changedAt)}.
-                    {item.schedule.change.previousWindowStartsAt && item.schedule.change.previousWindowEndsAt
-                      ? ` Jadwal sebelumnya: ${formatWindow(item.schedule.change.previousWindowStartsAt, item.schedule.change.previousWindowEndsAt)}.`
-                      : ''}
-                  </AlertDescription>
-                </Alert>
-              )}
+                </div>
 
-              {!hasAttempts ? (
-                (() => {
-                  const state = entryState(item, serverNow);
-                  const error = startErrors[item.examInstanceId];
-                  if (state.kind === 'startable') {
-                    return (
-                      <div className="discovery-entry">
-                        <button
-                          type="button"
-                          className="discovery-launch-button"
-                          data-testid={`start-button-${item.examInstanceId}`}
-                          disabled={startingExamId !== null}
-                          onClick={() => handleStart(item.examInstanceId)}
-                        >
-                          {startingExamId === item.examInstanceId ? 'Menyiapkan...' : 'Mulai Ujian'}
-                        </button>
-                        {error && <p className="discovery-entry-error" role="alert">{error}</p>}
+                {item.schedule && (item.schedule.windowStartsAt || item.schedule.attemptDurationSeconds) && (
+                  <dl className="discovery-schedule">
+                    {item.schedule.windowStartsAt && item.schedule.windowEndsAt && (
+                      <div>
+                        <dt>Waktu pelaksanaan</dt>
+                        <dd>{formatWindow(item.schedule.windowStartsAt, item.schedule.windowEndsAt)}</dd>
                       </div>
-                    );
-                  }
-                  const text =
-                    state.kind === 'not_open' ? `Ujian dibuka ${state.opensAt ? formatDateTime(state.opensAt) : 'sesuai waktu pelaksanaan'}.` :
-                    state.kind === 'waiting_activation' ? (state.opensAt ? `Ujian dibuka ${formatDateTime(state.opensAt)} setelah guru atau pengawas membukanya.` : 'Menunggu guru atau pengawas membuka ujian.') :
-                    state.kind === 'paused' ? 'Ujian sedang dijeda oleh guru atau pengawas.' :
-                    state.kind === 'closed' ? 'Waktu pelaksanaan ujian telah berakhir.' :
-                    'Belum ada sesi pengerjaan yang tersedia.';
-                  return (
-                    <div className="discovery-no-attempts">
-                      {text}
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className="discovery-attempts-list">
-                  {item.attempts.map((attempt) => {
-                    const isSubmitted = Boolean(attempt.submittedAt);
+                    )}
+                    {item.schedule.attemptDurationSeconds && (
+                      <div>
+                        <dt>Durasi</dt>
+                        <dd>{formatDurationMinutes(item.schedule.attemptDurationSeconds)}</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                {item.schedule?.change && !hasAttempts && (
+                  <Alert variant="info" role="note" className="mb-4">
+                    <AlertDescription>
+                      Jadwal diubah oleh guru pada {formatDateTime(item.schedule.change.changedAt)}.
+                      {item.schedule.change.previousWindowStartsAt && item.schedule.change.previousWindowEndsAt
+                        ? ` Jadwal sebelumnya: ${formatWindow(item.schedule.change.previousWindowStartsAt, item.schedule.change.previousWindowEndsAt)}.`
+                        : ''}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                    return (
-                      <div
-                        key={attempt.attemptId}
-                        className="discovery-attempt-item"
-                        data-testid={`attempt-row-${attempt.attemptId}`}
-                      >
-                        <div className="discovery-attempt-info">
-                          {isSubmitted && (
-                            <span className="discovery-status-badge submitted">
-                              Sudah dikumpulkan
-                            </span>
-                          )}
-                        </div>
-
-                        {!isSubmitted && (
+                {!hasAttempts ? (
+                  (() => {
+                    const state = entryState(item, serverNow);
+                    const error = startErrors[item.examInstanceId];
+                    if (state.kind === 'startable') {
+                      return (
+                        <div className="discovery-entry">
                           <button
                             type="button"
                             className="discovery-launch-button"
-                            data-testid={`launch-button-${attempt.attemptId}`}
-                            onClick={() => handleLaunch(attempt.attemptId)}
+                            data-testid={`start-button-${item.examInstanceId}`}
+                            disabled={startingExamId !== null}
+                            onClick={() => handleStart(item.examInstanceId)}
                           >
-                            Mulai Pengerjaan
+                            {startingExamId === item.examInstanceId ? 'Menyiapkan...' : 'Mulai Ujian'}
                           </button>
-                        )}
+                          {error && <p className="discovery-entry-error" role="alert">{error}</p>}
+                        </div>
+                      );
+                    }
+                    const text =
+                      state.kind === 'not_open' ? `Ujian dibuka ${state.opensAt ? formatDateTime(state.opensAt) : 'sesuai waktu pelaksanaan'}.` :
+                      state.kind === 'waiting_activation' ? (state.opensAt ? `Ujian dibuka ${formatDateTime(state.opensAt)} setelah guru atau pengawas membukanya.` : 'Menunggu guru atau pengawas membuka ujian.') :
+                      state.kind === 'paused' ? 'Ujian sedang dijeda oleh guru atau pengawas.' :
+                      state.kind === 'closed' ? 'Waktu pelaksanaan ujian telah berakhir.' :
+                      'Belum ada sesi pengerjaan yang tersedia.';
+                    return (
+                      <div className="discovery-no-attempts">
+                        {text}
                       </div>
                     );
-                  })}
-                </div>
-              )}
-            </article>
+                  })()
+                ) : (
+                  <div className="discovery-attempts-list">
+                    {item.attempts.map((attempt) => {
+                      const isSubmitted = Boolean(attempt.submittedAt);
+
+                      return (
+                        <div
+                          key={attempt.attemptId}
+                          className="discovery-attempt-item"
+                          data-testid={`attempt-row-${attempt.attemptId}`}
+                        >
+                          <div className="discovery-attempt-info">
+                            {isSubmitted && (
+                              <span className="discovery-status-badge submitted">
+                                Sudah dikumpulkan
+                              </span>
+                            )}
+                          </div>
+
+                          {!isSubmitted && (
+                            <button
+                              type="button"
+                              className="discovery-launch-button"
+                              data-testid={`launch-button-${attempt.attemptId}`}
+                              onClick={() => handleLaunch(attempt.attemptId)}
+                            >
+                              Mulai Pengerjaan
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </article>
+            </div>
           );
         })}
       </div>
-    </div>
+    </main>
   );
 };
 

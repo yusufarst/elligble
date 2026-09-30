@@ -47,28 +47,8 @@
   }
 }
 
-.proctor-refresh-btn {
-  background-color: var(--color-primary);
-  color: var(--color-neutral-0);
-  border: none;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-family: inherit;
-  font-size: 0.875rem;
-  white-space: nowrap;
-}
 
-.proctor-refresh-btn:hover {
-  background-color: var(--color-primary-hover);
-}
 
-.proctor-refresh-btn:disabled {
-  background-color: var(--color-neutral-300);
-  cursor: not-allowed;
-}
 
 .proctor-state-message {
   display: flex;

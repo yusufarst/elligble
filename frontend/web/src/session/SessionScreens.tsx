@@ -28,7 +28,7 @@ export const LoginScreen: React.FC<{
       <p className="mb-6 text-center font-mono text-sm font-semibold tracking-[0.2em] text-foreground">ELLIGBLE</p>
       <Card>
         <CardHeader>
-          <CardTitle>{activating ? 'Aktivasi Akun' : 'Masuk ke ELLIGBLE'}</CardTitle>
+          <CardTitle level="h1">{activating ? 'Aktivasi Akun' : 'Masuk ke ELLIGBLE'}</CardTitle>
           <CardDescription>
             {activating
               ? 'Masukkan ELLIGBLE ID dan kode aktivasi dari sekolah, lalu buat kata sandi Anda sendiri.'
@@ -57,7 +57,7 @@ export const StatusScreen: React.FC<{ title: string; body?: string; action?: Rea
   <CenteredPage>
     <Card role="status" aria-live="polite">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle level="h1">{title}</CardTitle>
         {body && <CardDescription>{body}</CardDescription>}
       </CardHeader>
       {action && <CardContent>{action}</CardContent>}
@@ -73,7 +73,7 @@ export const TenantPicker: React.FC<{
   <CenteredPage>
     <Card>
       <CardHeader>
-        <CardTitle>Pilih Sekolah</CardTitle>
+        <CardTitle level="h1">Pilih Sekolah</CardTitle>
         <CardDescription>Akun Anda terdaftar di lebih dari satu sekolah. Pilih sekolah yang ingin Anda buka.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -100,7 +100,7 @@ export const NoMembershipScreen: React.FC<{ onLogout(): void }> = ({ onLogout })
   <CenteredPage>
     <Card>
       <CardHeader>
-        <CardTitle>Akun Belum Terdaftar di Sekolah</CardTitle>
+        <CardTitle level="h1">Akun Belum Terdaftar di Sekolah</CardTitle>
       </CardHeader>
       <CardContent>
         <Alert variant="info">

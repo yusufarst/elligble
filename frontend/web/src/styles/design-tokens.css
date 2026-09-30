@@ -64,7 +64,8 @@
   --color-warning-border: #fde68a;
   --color-warning-text: #92400e;
 
-  --color-danger-base: #ef4444;
+  /* Destructive actions carry white text: 6.6:1 (the DesainPakeAI danger; #ef4444 gave 3.8:1). */
+  --color-danger-base: #b42318;
   --color-danger-bg: #fef2f2;
   --color-danger-border: #fecaca;
   --color-danger-text: #991b1b;

@@ -49,12 +49,12 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
 
   if (loading) {
     return (
-      <div className="proctor-monitoring-container">
+      <main className="proctor-monitoring-container">
         <div className="proctor-state-message">
           <h2 className="proctor-state-title">Memuat data pengawasan...</h2>
           <p>Harap tunggu sebentar.</p>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -68,15 +68,15 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
     }
 
     return (
-      <div className="proctor-monitoring-container">
+      <main className="proctor-monitoring-container">
         <div className="proctor-state-message">
           <h2 className="proctor-state-title">{title}</h2>
           <p>{message}</p>
-          <button className="proctor-refresh-btn" onClick={handleRefresh} disabled={isRefreshing} style={{ marginTop: '16px' }}>
+          <Button variant="secondary" className="mt-4" onClick={handleRefresh} disabled={isRefreshing}>
             Coba Lagi
-          </button>
+          </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -84,29 +84,25 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
 
   if (assignments.length === 0) {
     return (
-      <div className="proctor-monitoring-container">
+      <main className="proctor-monitoring-container">
         <div className="proctor-state-message">
           <h2 className="proctor-state-title">Tidak Ada Ujian</h2>
           <p>Anda belum ditugaskan untuk mengawasi ujian apapun saat ini.</p>
-          <button className="proctor-refresh-btn" onClick={handleRefresh} disabled={isRefreshing} style={{ marginTop: '16px' }}>
+          <Button variant="secondary" className="mt-4" onClick={handleRefresh} disabled={isRefreshing}>
             Perbarui Data
-          </button>
+          </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="proctor-monitoring-container">
+    <main className="proctor-monitoring-container">
       <div className="proctor-monitoring-header">
         <h1 className="proctor-monitoring-title">Monitoring Ujian</h1>
-        <button
-          className="proctor-refresh-btn"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
+        <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
           {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
-        </button>
+        </Button>
       </div>
 
       {assignments.map((exam: ProctorMonitoringExamProjection) => (
@@ -156,6 +152,6 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
           )}
         </div>
       ))}
-    </div>
+    </main>
   );
 };

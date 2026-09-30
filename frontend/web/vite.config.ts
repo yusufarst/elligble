@@ -25,6 +25,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
-    css: false,
+    // Stylesheets stay out of component tests; the design system guard reads them as text.
+    css: { include: [/\.css\?raw$/] },
   },
 });

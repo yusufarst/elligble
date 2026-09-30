@@ -286,7 +286,7 @@
 
 .save-status-badge.saving,
 .dynamic-status-slot.saving {
-  color: #d97706;
+  color: var(--color-warning-text);
 }
 
 .save-status-badge.saving .status-dot,
@@ -296,7 +296,7 @@
 
 .save-status-badge.saved,
 .dynamic-status-slot.saved {
-  color: #059669;
+  color: var(--color-success-text);
   font-weight: 600;
 }
 
@@ -307,7 +307,7 @@
 
 .save-status-badge.failed,
 .dynamic-status-slot.failed {
-  color: #dc2626;
+  color: var(--color-danger-text);
   font-weight: 600;
 }
 
@@ -802,7 +802,7 @@
   }
 
   .navigator-summary-label {
-    color: #71717a;
+    color: var(--color-text-secondary);
     font-weight: 500;
   }
 
@@ -814,7 +814,7 @@
   }
 
   .navigator-summary-val.answered-accent {
-    color: #059669;
+    color: var(--color-success-text);
   }
 
   .question-card {
@@ -1179,7 +1179,7 @@
 }
 
 .sheet-summary-item .summary-label {
-  color: #71717a;
+  color: var(--color-text-secondary);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -1193,7 +1193,7 @@
 }
 
 .sheet-summary-item .summary-val.answered-accent {
-  color: #059669;
+  color: var(--color-success-text);
 }
 
 .sheet-footer-action {

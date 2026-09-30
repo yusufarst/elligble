@@ -175,12 +175,12 @@ export const TeacherReadinessView: React.FC<{
 
   if (loading) {
     return (
-      <div className="teacher-readiness-container">
+      <main className="teacher-readiness-container">
         <div className="teacher-state-message">
           <h2 className="teacher-state-title">Memuat data kesiapan ujian...</h2>
           <p>Harap tunggu sebentar.</p>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -194,15 +194,15 @@ export const TeacherReadinessView: React.FC<{
     }
 
     return (
-      <div className="teacher-readiness-container">
+      <main className="teacher-readiness-container">
         <div className="teacher-state-message">
           <h2 className="teacher-state-title">{title}</h2>
           <p>{message}</p>
-          <button className="teacher-refresh-btn" onClick={handleRefresh} disabled={isRefreshing} style={{ marginTop: '16px' }}>
+          <Button variant="secondary" className="mt-4" onClick={handleRefresh} disabled={isRefreshing}>
             Coba Lagi
-          </button>
+          </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -221,7 +221,7 @@ export const TeacherReadinessView: React.FC<{
 
   if (allExams.length === 0) {
     return (
-      <div className="teacher-readiness-container">
+      <main className="teacher-readiness-container">
         {noticeBanner}
         <div className="teacher-state-message">
           <h2 className="teacher-state-title">Tidak Ada Ujian Terjadwal</h2>
@@ -231,24 +231,20 @@ export const TeacherReadinessView: React.FC<{
             <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>Perbarui Data</Button>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="teacher-readiness-container">
+    <main className="teacher-readiness-container">
       {noticeBanner}
       <div className="teacher-readiness-header">
         <h1 className="teacher-readiness-title">Pelaksanaan Ujian</h1>
         <div className="flex flex-wrap gap-2">
           {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
-          <button
-            className="teacher-refresh-btn"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
+          <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -518,6 +514,6 @@ export const TeacherReadinessView: React.FC<{
           </DialogContent>
         )}
       </Dialog>
-    </div>
+    </main>
   );
 };

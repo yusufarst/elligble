@@ -17,8 +17,9 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="card-header" className={cn('flex flex-col gap-1.5', className)} {...props} />;
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<'h2'>) {
-  return <h2 data-slot="card-title" className={cn('m-0 text-xl font-semibold leading-snug', className)} {...props} />;
+/** A section heading by default; `level="h1"` where the card is the whole page (sign-in). */
+function CardTitle({ className, level: Heading = 'h2', ...props }: React.ComponentProps<'h2'> & { level?: 'h1' | 'h2' | 'h3' }) {
+  return <Heading data-slot="card-title" className={cn('m-0 text-xl font-semibold leading-snug', className)} {...props} />;
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<'p'>) {
