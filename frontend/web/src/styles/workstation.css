@@ -1323,6 +1323,11 @@
   text-align: center;
 }
 
+/* Time added by the teacher, on the paused and locked screens (D04.6-41). */
+.time-added-note {
+  font-weight: 600;
+}
+
 /* Connection trouble notice (D04.5-20): visible, calm, never blocks answering. */
 .connection-banner {
   padding: var(--space-2) var(--space-4);

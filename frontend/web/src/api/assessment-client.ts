@@ -13,6 +13,8 @@ import type {
   ExamMonitoringResponse,
   ParticipantLockAction,
   ParticipantLockResponse,
+  TimeAdditionInput,
+  TimeAdditionResponse,
   BroadcastTarget,
   BroadcastSendResponse,
   BroadcastInboxResponse,
@@ -165,6 +167,12 @@ export async function postParticipantLock(
   const url = '/api/v1/assessment/exam-monitoring/participant-lock';
   const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, participantId, action } });
   return handleResponse<ParticipantLockResponse>(res);
+}
+
+/** Adds working time for one participant; a retry with the same action key adds nothing twice. */
+export async function postParticipantTime(input: TimeAdditionInput): Promise<TimeAdditionResponse> {
+  const res = await apiFetch('/api/v1/assessment/exam-monitoring/add-time', { method: 'POST', json: input });
+  return handleResponse<TimeAdditionResponse>(res);
 }
 
 export async function postBroadcast(examInstanceId: string, target: BroadcastTarget, message: string): Promise<BroadcastSendResponse> {

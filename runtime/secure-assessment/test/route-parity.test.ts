@@ -47,6 +47,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getTeacherExamResults: m => m.getTeacherExamResults(ID),
         getExamMonitoring: m => m.getExamMonitoring(ID),
         postParticipantLock: m => m.postParticipantLock(ID, ID, 'lock'),
+        postParticipantTime: m => m.postParticipantTime({ examInstanceId: ID, participantId: ID, minutes: 5, reason: 'Gangguan listrik', actionKey: ID }),
         postBroadcast: m => m.postBroadcast(ID, { scope: 'EXAM' }, 'Harap tetap di tempat duduk.'),
         postBroadcastInbox: m => m.postBroadcastInbox(ID, []),
         getTeacherExamSetup: m => m.getTeacherExamSetup(),

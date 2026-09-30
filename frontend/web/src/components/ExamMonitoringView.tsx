@@ -9,6 +9,7 @@ import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { formatClockTime, formatTime } from '../lib/format.ts';
 import { BroadcastComposer, BroadcastHistory } from './ExamBroadcast.tsx';
+import { AddTimeDialog, TIME_STATES, timeAddedLabel } from './ParticipantTime.tsx';
 
 // Exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61): who is expected, who has
 // started, who has submitted and whose exam session moved to another device. It shows only
@@ -17,7 +18,8 @@ import { BroadcastComposer, BroadcastHistory } from './ExamBroadcast.tsx';
 // and says how old it is, while the exam itself continues unaffected. The supervisor can
 // lock one participant's work and unlock it again (D04.6-38/39): the lock keeps every
 // answer and does not stop that participant's time (D04.6-40). Messages to participants
-// are sent and reviewed here too (D04.6-49..55).
+// are sent and reviewed here too (D04.6-49..55). The teacher who manages the exam adds time
+// for one working participant (D04.6-41); every supervisor sees that time was added.
 
 const DEFAULT_REFRESH_MS = 20000;
 
@@ -120,6 +122,7 @@ export const ExamMonitoringView: React.FC<{
   const [lockPending, setLockPending] = useState(false);
   const [notice, setNotice] = useState<{ failed: boolean; text: string } | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [addTimeFor, setAddTimeFor] = useState<MonitoredParticipant | null>(null);
   const loadingRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -315,6 +318,8 @@ export const ExamMonitoringView: React.FC<{
                 const badge = statusBadge(p);
                 const remaining = remainingLabel(p);
                 const lockAction = lockActionFor(p, exam.lifecycleState);
+                const canAddTime = Boolean(data.canAddTime) && TIME_STATES.has(exam.lifecycleState) && p.status === 'ACTIVE';
+                const added = timeAddedLabel(p);
                 const shownId = p.elligbleId ?? 'Tanpa ELLIGBLE ID';
                 return (
                   <tr key={p.elligbleId ?? `tanpa-id-${index}`} className="border-t border-border align-top">
@@ -326,21 +331,30 @@ export const ExamMonitoringView: React.FC<{
                         {p.lockedAt && <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', TONE_CLASS.warning)}>Dikunci</span>}
                       </span>
                       {p.lockedAt && <span className="mt-1 block text-xs text-muted-foreground">Dikunci sejak {formatTime(p.lockedAt)}</span>}
+                      {added && <span className="mt-1 block text-xs text-info-ink">{added}</span>}
                       {p.submittedAt && <span className="mt-1 block text-xs text-muted-foreground">{formatTime(p.submittedAt)}</span>}
                       {p.sessionMoves > 0 && (
                         <span className="mt-1 block text-xs text-warning-ink">Pindah perangkat {p.sessionMoves} kali</span>
                       )}
-                      {lockAction && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="mt-2"
-                          aria-label={`${lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'} pengerjaan ${shownId}`}
-                          onClick={() => setConfirmLock({ participant: p, action: lockAction })}
-                          disabled={lockPending}
-                        >
-                          {lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'}
-                        </Button>
+                      {(lockAction || canAddTime) && (
+                        <span className="mt-2 flex flex-wrap gap-2">
+                          {lockAction && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              aria-label={`${lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'} pengerjaan ${shownId}`}
+                              onClick={() => setConfirmLock({ participant: p, action: lockAction })}
+                              disabled={lockPending}
+                            >
+                              {lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'}
+                            </Button>
+                          )}
+                          {canAddTime && (
+                            <Button variant="secondary" size="sm" aria-label={`Tambah waktu ${shownId}`} onClick={() => setAddTimeFor(p)}>
+                              Tambah Waktu
+                            </Button>
+                          )}
+                        </span>
                       )}
                     </th>
                     <td className="px-3 py-3 text-right tabular-nums">
@@ -367,7 +381,7 @@ export const ExamMonitoringView: React.FC<{
       {(data.broadcasts?.length ?? 0) > 0 && <BroadcastHistory broadcasts={data.broadcasts!} />}
 
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-        Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan. "Kunci" menghentikan pengerjaan satu peserta tanpa menghentikan waktunya; jawaban yang sudah dipilih tetap tersimpan.
+        Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan. "Kunci" menghentikan pengerjaan satu peserta tanpa menghentikan waktunya; jawaban yang sudah dipilih tetap tersimpan. "Waktu ditambah" berarti guru yang mengelola ujian menambah waktu pengerjaan peserta itu.
       </p>
 
       <BroadcastComposer
@@ -383,6 +397,18 @@ export const ExamMonitoringView: React.FC<{
           void load();
         }}
         onStale={() => void load()}
+      />
+
+      <AddTimeDialog
+        participant={addTimeFor}
+        examInstanceId={examInstanceId}
+        examState={exam.lifecycleState}
+        onClose={() => setAddTimeFor(null)}
+        onDone={outcome => {
+          setAddTimeFor(null);
+          setNotice(outcome);
+          void load();
+        }}
       />
 
       <Dialog open={confirmLock !== null} onOpenChange={open => { if (!open && !lockPending) setConfirmLock(null); }}>

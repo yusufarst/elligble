@@ -80,8 +80,8 @@ test('server finalization of expired attempts (real PostgreSQL, production wirin
         await expire(extended.attemptId);
         const timerId = (await pool.query('SELECT id FROM secure_assessment_timer_state WHERE tenant_id = $1 AND exam_attempt_id = $2', [tenant, extended.attemptId])).rows[0].id;
         await pool.query(
-            `INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason) VALUES ($1, $2, 600, 'Gangguan listrik')`,
-            [tenant, timerId]
+            `INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason, actor_person_id) VALUES ($1, $2, 600, 'Gangguan listrik', $3)`,
+            [tenant, timerId, randomUUID()]
         );
         const notStarted = await startedStudent({ startTimer: false });
         const submitted = await startedStudent();

@@ -46,6 +46,7 @@ const COMPONENT_BY_PATH: Record<string, Component> = {
     '/api/v1/assessment/proctor-monitoring': 'monitoring',
     '/api/v1/assessment/exam-monitoring': 'monitoring',
     '/api/v1/assessment/exam-monitoring/participant-lock': 'monitoring',
+    '/api/v1/assessment/exam-monitoring/add-time': 'monitoring',
     '/api/v1/assessment/teacher-readiness': 'monitoring',
     '/api/v1/assessment/teacher-exams/transition': 'monitoring',
     '/api/v1/assessment/exam-monitoring/broadcast': 'broadcast',

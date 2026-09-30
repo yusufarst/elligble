@@ -102,7 +102,9 @@ test('exam monitoring (real PostgreSQL, production wiring)', { skip: skipWithout
         assert.deepEqual(byId['peserta.c'], {
             participantId: absent.participantId, elligbleId: 'peserta.c', roomLabel: null, status: 'NOT_STARTED', finalizationSource: null, submittedAt: null,
             remainingSeconds: null, answeredCount: 0, lastAcceptedAt: null, sessionActive: false, sessionMoves: 0, lockedAt: null,
+            addedSeconds: 0, timeAdditions: [],
         });
+        assert.equal(res.body.canAddTime, true, 'the managing teacher adds time');
         assert.equal(byId['peserta.b'].participantId, moved.participantId);
         assert.equal(byId['peserta.b'].lockedAt, null);
         assert.equal(byId['peserta.d'].status, 'TIME_UP', 'time over, waiting for the server to finalize');
@@ -118,6 +120,8 @@ test('exam monitoring (real PostgreSQL, production wiring)', { skip: skipWithout
         const whole = await monitoring(proctorClient);
         assert.equal(whole.status, 200);
         assert.equal(whole.body.scope, 'PROCTOR');
+        assert.equal(whole.body.canAddTime, false, 'an assigned proctor does not add time');
+        assert.equal(whole.body.participants[0].timeAdditions, undefined, 'nor sees who added time and why');
         assert.equal(whole.body.participants.length, 4, 'no room operations: the whole exam');
 
         const roomExam = await createExamInstance(pool, tenant, teaching, { roomBasedOperations: true, proctorPerRoomRequired: true });

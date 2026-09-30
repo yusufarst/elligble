@@ -4,7 +4,8 @@ import type * as pg from 'pg';
 // D04.1-77B): an assigned proctor of the exam, limited to the rooms assigned to them when
 // the exam runs with room operations, or the teacher who manages a teacher-managed exam,
 // over all its participants. The same scope governs the participant list, the participant
-// lock and broadcast messages.
+// lock and broadcast messages. Whether the actor is the managing teacher is reported too:
+// adding time belongs to that authority alone (participant-time.ts).
 
 export interface SupervisionScope {
     lifecycleState: string;
@@ -12,6 +13,8 @@ export interface SupervisionScope {
     scope: 'PROCTOR' | 'TEACHER';
     /** The proctor assignment whose rooms bound the scope, or null for the whole exam. */
     roomFilter: string | null;
+    /** The actor holds the teaching assignment that manages the exam (D04.4-26A). */
+    managingTeacher: boolean;
 }
 
 /**
@@ -52,6 +55,7 @@ export async function resolveSupervisionScope(
         scope,
         // An assigned proctor of an exam with rooms acts only in their rooms.
         roomFilter: scope === 'PROCTOR' && row.room_based ? row.proctor_assignment_id : null,
+        managingTeacher: Boolean(row.is_teacher),
     };
 }
 

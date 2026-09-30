@@ -21,6 +21,7 @@ import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImpo
 import { readTeacherExamPreview } from './teacher-exam-preview.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
+import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
@@ -544,6 +545,59 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'no_active_attempt':
                         sendError(res, 409, 'no_active_attempt');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring/add-time') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseTimeAdditionRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await addParticipantTime(deps.pool, getContext()!, request);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, result.replayed ? 200 : 201, {
+                            participantId: result.participantId,
+                            addedSeconds: result.addedSeconds,
+                            totalAddedSeconds: result.totalAddedSeconds,
+                            remainingSeconds: result.remainingSeconds,
+                            addedAt: result.addedAt,
+                            replayed: result.replayed,
+                        });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'no_active_attempt':
+                    case 'not_started':
+                    case 'time_up':
+                    case 'action_key_reused':
+                        sendError(res, 409, result.type);
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

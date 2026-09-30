@@ -318,6 +318,37 @@ export interface MonitoredParticipant {
   sessionMoves: number;
   /** Since when a supervisor has locked the participant's attempt (D04.6-38), or null. */
   lockedAt: string | null;
+  /** Working time added to the participant's attempt, in seconds (D04.6-41). */
+  addedSeconds?: number;
+  /** Each addition, oldest first; only for the managing teacher. */
+  timeAdditions?: TimeAddition[];
+}
+
+export interface TimeAddition {
+  addedAt: string;
+  seconds: number;
+  reason: string;
+  by: { elligbleId: string | null; you: boolean };
+}
+
+/** One addition of working time for one participant (ASSESS-PROCTOR-004). */
+export interface TimeAdditionInput {
+  examInstanceId: string;
+  participantId: string;
+  minutes: number;
+  reason: string;
+  /** Chosen by the device once per intended addition; a retry reuses it. */
+  actionKey: string;
+}
+
+export interface TimeAdditionResponse {
+  participantId: string;
+  addedSeconds: number;
+  totalAddedSeconds: number;
+  remainingSeconds: number;
+  addedAt: string;
+  /** The key had already added this time: nothing new was recorded. */
+  replayed: boolean;
 }
 
 export type ParticipantLockAction = 'lock' | 'unlock';
@@ -372,6 +403,8 @@ export interface BroadcastInboxResponse {
 export interface ExamMonitoringResponse {
   exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt?: string | null };
   scope: 'PROCTOR' | 'TEACHER';
+  /** The viewer manages the exam and may add time (ASSESS-PROCTOR-004). */
+  canAddTime?: boolean;
   serverTime: string;
   questionCount: number;
   summary: { participants: number; notStarted: number; active: number; submitted: number };

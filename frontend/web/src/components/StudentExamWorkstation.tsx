@@ -9,6 +9,7 @@ import { clearBroadcastSeen, useBroadcastInbox } from '../hooks/useBroadcastInbo
 import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
+import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
 import { formatTime } from '../lib/format.ts';
 import type { ExamRunState } from '../exam/answer-sync-engine.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
@@ -43,6 +44,8 @@ export interface StudentExamWorkstationProps {
 /** Non-blocking reminders (D04.5-32); the server timer stays the only authority. */
 const TIME_REMINDER_THRESHOLDS_SECONDS = [30 * 60, 15 * 60, 5 * 60];
 const TIME_REMINDER_VISIBLE_MS = 10000;
+/** How long the note about time added by the teacher stays (it also shows while paused or locked). */
+const TIME_ADDED_VISIBLE_MS = 20000;
 const FINALIZE_RETRY_INITIAL_MS = 2000;
 const FINALIZE_RETRY_MAX_MS = 30000;
 const EXPIRY_FLUSH_WAIT_MS = 3000;
@@ -167,6 +170,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     await clearLocalAnswers(tenantKey, id);
     clearReviewFlags(id);
     clearBroadcastSeen(id);
+    clearAddedTime(id);
     forgetExamSessionId(id);
     if (!mountedRef.current) return;
     setUnreceivedAtCompletion(unreceived);
@@ -389,6 +393,14 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     return () => clearTimeout(hide);
   }, [timeReminder]);
 
+  // Time added by the teacher (D04.6-41): said once, without the reason.
+  const [timeAdded, setTimeAdded] = useState<string | null>(null);
+  useEffect(() => {
+    if (!timeAdded) return;
+    const hide = setTimeout(() => setTimeAdded(null), TIME_ADDED_VISIBLE_MS);
+    return () => clearTimeout(hide);
+  }, [timeAdded]);
+
   // Re-align with the server clock after a reconnect (D04.5-28).
   useEffect(() => {
     if (phase !== 'active') return;
@@ -485,6 +497,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     const at = instantOrNull(info.serverTime);
     if (!isFreshState('pause', at) || !isFreshState('lock', at)) return;
     noteMessageCount(info.messageCount);
+    if (attemptId) {
+      const added = takeNewlyAddedSeconds(attemptId, info.effectiveDurationSeconds - info.configuredDurationSeconds);
+      if (added > 0) setTimeAdded(timeAddedMessage(added));
+    }
     const state = runStateOf(info.examState);
     const remaining = info.status === 'expired' ? 0 : info.effectiveRemainingSeconds;
     const wasPaused = examStateRef.current === 'PAUSED';
@@ -752,6 +768,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             <span className="paused-remaining-label">Sisa waktu</span>
             <span className="paused-remaining-value">{formattedTime}</span>
           </p>
+          {timeAdded && <p className="state-card-body time-added-note">{timeAdded}</p>}
           <p className="state-card-body">
             {!answers.ready
               ? 'Memeriksa jawaban di perangkat ini...'
@@ -785,6 +802,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             <span className="paused-remaining-label">Sisa waktu, tetap berjalan</span>
             <span className="paused-remaining-value">{formattedTime}</span>
           </p>
+          {timeAdded && <p className="state-card-body time-added-note">{timeAdded}</p>}
           <p className="state-card-body">
             {!answers.ready
               ? 'Memeriksa jawaban di perangkat ini...'
@@ -928,6 +946,11 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         {timeReminder && (
           <div className="time-reminder-banner" role="status" aria-live="polite">
             {timeReminder}
+          </div>
+        )}
+        {timeAdded && (
+          <div className="time-reminder-banner time-added-banner" role="status" aria-live="polite">
+            {timeAdded}
           </div>
         )}
         {inbox.notice && <ExamMessageNotice notice={inbox.notice} onDismiss={inbox.dismiss} />}

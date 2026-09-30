@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatWindow, zoneLabel } from '../lib/format.ts';
 import { downloadTextFile } from '../lib/results-export.ts';
+import { newActionKey } from '../lib/action-key.ts';
 import {
   LATEST_START_OPTIONS, QUESTION_TEMPLATE_CSV, QUESTION_TEMPLATE_FILE_NAME, describeImportProblem, formatScore,
 } from '../lib/question-import.ts';
@@ -28,15 +29,6 @@ type Stage = 'editing' | 'checking' | 'checked';
 const selectClass =
   'flex h-11 w-full min-w-0 rounded-md border border-input bg-background px-3.5 py-2.5 text-base text-foreground shadow-sm ' +
   'focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
-
-function newImportKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  const b = crypto.getRandomValues(new Uint8Array(16));
-  b[6] = (b[6] & 0x0f) | 0x40;
-  b[8] = (b[8] & 0x3f) | 0x80;
-  const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
-  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
-}
 
 /** The file as UTF-8 text (invalid bytes become U+FFFD, which the server reports). */
 function readFileText(file: File): Promise<string> {
@@ -189,7 +181,7 @@ export const TeacherExamImportView: React.FC<{
   };
 
   const openConfirm = () => {
-    importKey.current = newImportKey();
+    importKey.current = newActionKey();
     setSaveError(null);
     setConfirmOpen(true);
   };
@@ -200,7 +192,7 @@ export const TeacherExamImportView: React.FC<{
     setSaveError(null);
     try {
       // The same key on every retry of this confirmation (D04.3-65).
-      const result = await postTeacherExamImport(input, { importKey: importKey.current ?? newImportKey(), expectedSha256: preview.sourceSha256 });
+      const result = await postTeacherExamImport(input, { importKey: importKey.current ?? newActionKey(), expectedSha256: preview.sourceSha256 });
       const assignment = setup?.teachingAssignments.find(a => a.teachingAssignmentId === teachingAssignmentId);
       const label = assignment ? `${assignment.subjectLabel} · ${assignment.groupLabel}` : 'Ujian';
       onScheduled(`${label} dijadwalkan dengan ${result.questionCount} soal dan ${result.participantCount} peserta. Periksa kesiapan, lalu tandai siap sebelum dibuka.`);

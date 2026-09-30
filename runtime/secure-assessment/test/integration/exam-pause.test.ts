@@ -90,7 +90,7 @@ test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: 
              VALUES ($1, $2, 3600, '2026-01-01T10:00:00Z') RETURNING id`,
             [tenant, attempt]
         )).rows[0].id;
-        await pool.query(`INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason) VALUES ($1, $2, 60, 'uji')`, [tenant, timer]);
+        await pool.query(`INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason, actor_person_id) VALUES ($1, $2, 60, 'uji', $3)`, [tenant, timer, randomUUID()]);
         const elapsed = async (at: string) =>
             (await pool.query('SELECT secure_assessment_attempt_elapsed_seconds($1, $2, $3) AS e', [tenant, attempt, at])).rows[0].e;
         const actor = randomUUID();

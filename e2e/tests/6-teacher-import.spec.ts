@@ -5,8 +5,10 @@ import { login, shotName, withDatabase } from './helpers.ts';
 // D04.3-61..66): upload the question file, see every problem with its line, fix it, check
 // the questions, key and participants, leave one student out, schedule, preview it as
 // students will see it (ASSESS-TEACHER-002, D04.3-38/39), mark ready and open it; an
-// included student then answers the imported questions. Runs after the
-// lifecycle suite, when the operator-imported exam of the same class is finalized.
+// included student then answers the imported questions, and the teacher adds time for that
+// student alone (ASSESS-PROCTOR-004, D04.6-41), which the student's screen shows at once.
+// Runs after the lifecycle suite, when the operator-imported exam of the same class is
+// finalized.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -14,6 +16,10 @@ const PASSWORD = 'bintang-kejora-2026';
 const HEADER = 'no;prompt;option_a;option_b;option_c;option_d;option_e;correct;score';
 const BROKEN = [HEADER, '1;Lambang unsur oksigen adalah;O;Os;Ok;Og;Ox;A;1', '2;Rumus air adalah;H2O;HO2;H2O2;OH;H3O;A dan B;1'].join('\r\n');
 const FIXED = [HEADER, '1;Lambang unsur oksigen adalah;O;Os;Ok;Og;Ox;A;1', '2;Rumus air adalah;HO2;H2O;H2O2;OH;H3O;B;1,5'].join('\r\n') + '\r\n';
+
+function seconds(clock: string): number {
+    return clock.split(':').map(Number).reduce((total, part) => total * 60 + part, 0);
+}
 
 /** Wall-clock date and time in WIB, the school's zone, `minutes` from now. */
 function wib(minutes: number): string {
@@ -123,5 +129,41 @@ test('a teacher schedules an exam from a question file, and an included student 
     await student.getByRole('button', { name: 'Mulai Ujian' }).click();
     await student.getByRole('button', { name: 'Mulai Ujian Sekarang' }).click();
     await expect(student.getByText('Lambang unsur oksigen adalah')).toBeVisible();
+
+    // The teacher adds 5 minutes for this student only, with a reason (D04.6-41, D04.2-78).
+    const before = seconds(await student.locator('.timer-value').innerText());
+    await card.getByRole('button', { name: 'Pantau Peserta' }).click();
+    await expect(page.getByRole('heading', { name: 'Pemantauan Peserta' })).toBeVisible();
+    const row = page.getByRole('row').filter({ has: page.getByText('siswa.e2e.01', { exact: true }) });
+    await expect(page.getByRole('row').filter({ has: page.getByText('siswa.e2e.02', { exact: true }) }).getByRole('button', { name: /Tambah waktu/ })).toHaveCount(0);
+    await row.getByRole('button', { name: 'Tambah waktu siswa.e2e.01' }).click();
+    const addTime = page.getByRole('dialog', { name: 'Tambah Waktu Peserta' });
+    await addTime.getByLabel('Tambahan waktu (menit)').fill('5');
+    await addTime.getByLabel('Alasan').fill('Listrik padam di ruang ujian');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(shotName('add-time')), fullPage: true });
+    await addTime.getByRole('button', { name: 'Tambah 5 Menit' }).click();
+    await expect(page.getByText(/^Waktu siswa\.e2e\.01 ditambah 5 menit\. Sisa waktunya sekarang \d+ menit\.$/)).toBeVisible();
+    await expect(row).toContainText('Waktu ditambah 5 menit');
+    await page.screenshot({ path: test.info().outputPath(shotName('monitoring-time-added')), fullPage: true });
+
+    // The student's screen says so at its next check and the time grows; nobody else's does.
+    await expect(student.getByText('Waktu pengerjaan Anda ditambah 5 menit.')).toBeVisible({ timeout: 30_000 });
+    expect(seconds(await student.locator('.timer-value').innerText())).toBeGreaterThan(before + 4 * 60);
+    await expect(student.getByText('Listrik padam di ruang ujian')).toHaveCount(0);
+    expect(await student.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await student.screenshot({ path: test.info().outputPath(shotName('student-time-added')) });
+    const added = await withDatabase(async client => (await client.query(
+        `SELECT adj.adjustment_seconds, adj.reason, c.username AS actor, adj.action_key IS NOT NULL AS keyed, p2.username AS participant
+         FROM secure_assessment_timer_adjustments adj
+         JOIN identity_user_accounts ua ON ua.person_id = adj.actor_person_id
+         JOIN identity_account_credentials c ON c.user_account_id = ua.id
+         JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id
+         JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id
+         JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id
+         JOIN identity_user_accounts ua2 ON ua2.person_id = p.person_id
+         JOIN identity_account_credentials p2 ON p2.user_account_id = ua2.id`
+    )).rows);
+    expect(added).toEqual([{ adjustment_seconds: 300, reason: 'Listrik padam di ruang ujian', actor: 'guru.e2e', keyed: true, participant: 'siswa.e2e.01' }]);
     await studentContext.close();
 });

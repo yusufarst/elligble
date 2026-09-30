@@ -13,6 +13,9 @@ import { readBroadcastHistory, readScopeRooms, type BroadcastRecord } from './ex
 // sessions and submissions. Connectivity and unsent answers live on the device and are not
 // claimed here. No scores: supervision is separate from scoring (D04.1-63). The rooms in
 // scope and the broadcast messages that reached the scope come with it (D04.6-49..54).
+// Time added to a participant shows for everyone in scope; who added it and why only for
+// the managing teacher, the one who adds time (participant-time.ts): the reason can concern
+// the student.
 
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
 
@@ -35,12 +38,25 @@ export interface MonitoredParticipant {
     sessionMoves: number;
     /** Since when a supervisor has locked the participant's attempt (D04.6-38), or null. */
     lockedAt: string | null;
+    /** Working time added to the participant's attempt, in seconds (D04.6-41). */
+    addedSeconds: number;
+    /** Each addition, oldest first; only for the managing teacher. */
+    timeAdditions?: TimeAddition[];
+}
+
+export interface TimeAddition {
+    addedAt: string;
+    seconds: number;
+    reason: string;
+    by: { elligbleId: string | null; you: boolean };
 }
 
 export interface ExamMonitoring {
     /** pausedAt: start of the open pause while the exam is PAUSED (every participant's time is frozen). */
     exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt: string | null };
     scope: 'PROCTOR' | 'TEACHER';
+    /** The viewer manages the exam and may add time (participant-time.ts). */
+    canAddTime: boolean;
     serverTime: string;
     questionCount: number;
     summary: { participants: number; notStarted: number; active: number; submitted: number };
@@ -108,6 +124,8 @@ export async function readExamMonitoring(
                     GREATEST(0, secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp())) AS remaining_seconds,
                     sub.submitted_at, sub.finalization_source,
                     COALESCE(ans.answered, 0) AS answered, ans.last_accepted_at,
+                    COALESCE((SELECT SUM(adj.adjustment_seconds) FROM secure_assessment_timer_adjustments adj
+                              WHERE adj.tenant_id = t.tenant_id AND adj.timer_state_id = t.id), 0)::int AS added_seconds,
                     EXISTS (SELECT 1 FROM secure_assessment_exam_sessions ss
                             WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.activated_at IS NOT NULL AND ss.ended_at IS NULL) AS session_active,
                     (SELECT count(*)::int FROM secure_assessment_exam_sessions ss
@@ -134,7 +152,27 @@ export async function readExamMonitoring(
                ))`,
             [actor.tenantId, examInstanceId, roomFilter]
         );
-        const elligbleIds = await listElligbleIds(client, participants.rows.map(r => r.person_id as string));
+        // Who added time and why, for the managing teacher only.
+        const additions = new Map<string, Array<{ addedAt: string; seconds: number; reason: string; actor: string | null }>>();
+        if (supervision.managingTeacher) {
+            const res = await client.query(
+                `SELECT a.exam_participant_id, adj.created_at, adj.adjustment_seconds, adj.reason, adj.actor_person_id
+                 FROM secure_assessment_timer_adjustments adj
+                 JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id AND t.tenant_id = adj.tenant_id
+                 JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id AND a.tenant_id = t.tenant_id
+                 JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id AND p.tenant_id = a.tenant_id
+                 WHERE adj.tenant_id = $1 AND p.exam_instance_id = $2
+                 ORDER BY adj.created_at ASC, adj.id ASC`,
+                [actor.tenantId, examInstanceId]
+            );
+            for (const r of res.rows) {
+                const list = additions.get(r.exam_participant_id) ?? [];
+                list.push({ addedAt: new Date(r.created_at).toISOString(), seconds: Number(r.adjustment_seconds), reason: r.reason, actor: r.actor_person_id ?? null });
+                additions.set(r.exam_participant_id, list);
+            }
+        }
+        const actorIds = [...new Set([...additions.values()].flat().map(a => a.actor).filter((id): id is string => id !== null))];
+        const elligbleIds = await listElligbleIds(client, [...participants.rows.map(r => r.person_id as string), ...actorIds]);
         const rooms = supervision.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
         const broadcasts = await readBroadcastHistory(client, actor, examInstanceId, roomFilter);
         await client.query('COMMIT');
@@ -157,6 +195,13 @@ export async function readExamMonitoring(
                 sessionActive: status !== 'SUBMITTED' && Boolean(r.session_active),
                 sessionMoves: Number(r.session_moves ?? 0),
                 lockedAt: status === 'SUBMITTED' ? null : isoOrNull(r.locked_at),
+                addedSeconds: Number(r.added_seconds ?? 0),
+                ...(supervision.managingTeacher ? {
+                    timeAdditions: (additions.get(r.participant_id) ?? []).map(a => ({
+                        addedAt: a.addedAt, seconds: a.seconds, reason: a.reason,
+                        by: { elligbleId: a.actor ? elligbleIds.get(a.actor) ?? null : null, you: a.actor === actor.personId },
+                    })),
+                } : {}),
             };
         });
         list.sort((a, b) => {
@@ -175,6 +220,7 @@ export async function readExamMonitoring(
                     pausedAt: supervision.lifecycleState === 'PAUSED' ? isoOrNull(row.paused_at) : null,
                 },
                 scope,
+                canAddTime: supervision.managingTeacher,
                 serverTime: new Date(row.db_now).toISOString(),
                 questionCount: questions.rows[0].n,
                 summary: { participants: list.length, notStarted: count('NOT_STARTED'), active: count('ACTIVE') + count('TIME_UP'), submitted: count('SUBMITTED') },
