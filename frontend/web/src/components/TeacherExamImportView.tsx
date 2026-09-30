@@ -12,6 +12,7 @@ import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatWindow, zoneLabel } from '../lib/format.ts';
 import { downloadTextFile } from '../lib/results-export.ts';
 import { newActionKey } from '../lib/action-key.ts';
+import { ParticipantChoiceList } from './ParticipantChoiceList.tsx';
 import {
   LATEST_START_OPTIONS, QUESTION_TEMPLATE_CSV, QUESTION_TEMPLATE_FILE_NAME, describeImportProblem, formatScore,
 } from '../lib/question-import.ts';
@@ -413,7 +414,7 @@ export const TeacherExamImportView: React.FC<{
       {ready && (
         <div className="flex flex-col gap-2 border-t border-border pt-4">
           <p className="m-0 text-sm text-muted-foreground">
-            Setelah dijadwalkan, soal dan peserta tidak dapat diubah di aplikasi; jadwalnya masih dapat diubah sebelum ujian dibuka. Ujian baru dapat dikerjakan setelah Anda menandainya siap dan membukanya.
+            Setelah dijadwalkan, soal tidak dapat diubah dan peserta tidak dapat dihapus di aplikasi. Sebelum ujian dibuka, jadwalnya masih dapat diubah dan siswa kelas ini masih dapat ditambahkan. Ujian baru dapat dikerjakan setelah Anda menandainya siap dan membukanya.
           </p>
           <Button className="self-start" onClick={openConfirm}>Jadwalkan Ujian</Button>
         </div>
@@ -429,7 +430,7 @@ export const TeacherExamImportView: React.FC<{
                   [assignment ? `${assignment.subjectLabel} · ${assignment.groupLabel}` : null, typeLabel].filter(Boolean).join(' · '),
                   preview.window ? formatWindow(preview.window.startsAt, preview.window.endsAt) : null,
                   `${preview.totals.questions} soal, ${included} peserta`,
-                  'Soal dan peserta tidak dapat diubah setelah dijadwalkan; jadwalnya masih dapat diubah sebelum ujian dibuka',
+                  'Soal tidak dapat diubah dan peserta tidak dapat dihapus setelah dijadwalkan; sebelum ujian dibuka, jadwal masih dapat diubah dan siswa kelas ini masih dapat ditambahkan',
                 ].filter(Boolean).join('. ')}.
               </DialogDescription>
             </DialogHeader>
@@ -497,17 +498,7 @@ const PreviewSection: React.FC<{
         <section aria-labelledby="participants-title" className="flex flex-col gap-2">
           <h3 id="participants-title" className="m-0 text-base font-semibold">Peserta ({included} dari {preview.participants.length})</h3>
           <p className="m-0 text-sm text-muted-foreground">Siswa yang terdaftar di kelas ini pada hari ujian. Hapus centang untuk mengecualikan siswa.</p>
-          <ul className="m-0 grid list-none gap-1 p-0 sm:grid-cols-2">
-            {preview.participants.map(p => (
-              <li key={p.enrollmentId}>
-                <label className="flex min-h-11 items-center gap-3 rounded-md border border-border px-3 py-2 text-sm">
-                  <input type="checkbox" checked={!excluded.has(p.enrollmentId)} onChange={() => onToggle(p.enrollmentId)} className="size-4 shrink-0 accent-primary" />
-                  <span className="min-w-0 font-mono text-[13px] [overflow-wrap:anywhere]">{p.elligbleId}</span>
-                  {p.conflict && <span className="ml-auto shrink-0 text-xs font-medium text-warning-ink">Bentrok jadwal</span>}
-                </label>
-              </li>
-            ))}
-          </ul>
+          <ParticipantChoiceList participants={preview.participants} isChosen={id => !excluded.has(id)} onToggle={onToggle} />
         </section>
       )}
 

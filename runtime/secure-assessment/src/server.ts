@@ -21,6 +21,7 @@ import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImpo
 import { readTeacherExamPreview } from './teacher-exam-preview.ts';
 import { parseRescheduleRequest, rescheduleTeacherExam } from './teacher-exam-schedule.ts';
 import { cancelTeacherExam, parseCancellationRequest } from './teacher-exam-cancel.ts';
+import { addTeacherExamParticipants, parseParticipantAdditionRequest, readParticipantCandidates } from './teacher-exam-participants.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
@@ -565,6 +566,91 @@ export function createServer(deps: ServerDependencies): http.Server {
                             changed: outcome.changed,
                             replayed: outcome.replayed,
                         });
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
+                        return;
+                    case 'action_key_reused':
+                        sendError(res, 409, 'action_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/participants/candidates') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readParticipantCandidates(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.candidates);
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/participants/add') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseParticipantAdditionRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await addTeacherExamParticipants(deps.pool, getContext()!, request);
+                switch (outcome.type) {
+                    case 'added':
+                        sendJson(res, 200, {
+                            examInstanceId: outcome.examInstanceId,
+                            lifecycleState: outcome.lifecycleState,
+                            addedAt: outcome.addedAt,
+                            added: outcome.added,
+                            replayed: outcome.replayed,
+                        });
+                        return;
+                    case 'invalid':
+                        sendJson(res, 422, { error: 'participants_invalid', problems: outcome.problems });
                         return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });

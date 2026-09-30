@@ -257,6 +257,10 @@ export interface TeacherExamReadinessProjection {
   latestStartPolicy?: LatestStartPolicy | null;
   /** When the schedule was last changed before the exam opened, or null. */
   scheduleChangedAt?: string | null;
+  /** How many students take part. */
+  participants?: number;
+  /** When participants were last added after scheduling, or null. */
+  participantsAddedAt?: string | null;
   /** The cancellation of an exam that never opened, or null (shown as "Dibatalkan"). */
   cancellation?: { cancelledAt: string; reason: string; by: { you: boolean; elligbleId: string | null } } | null;
   baseline: TeacherExamBaselineProjection;
@@ -271,6 +275,41 @@ export interface TeacherExamReadinessProjection {
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
 
 /** Cancelling a scheduled or ready exam (ASSESS-TEACHER-003, Owner decision 2026-09-30). */
+export type ExamAdditionProblemCode = 'time_zone_missing' | 'window_missing' | 'rooms_in_use';
+export type ParticipantAdditionProblemCode = ExamAdditionProblemCode | 'not_enrolled' | 'already_participant' | 'schedule_conflict';
+
+/** Students of the exam's class on the exam day who are not participants yet (ASSESS-TEACHER-004). */
+export interface TeacherExamParticipantCandidates {
+  examInstanceId: string;
+  lifecycleState: string;
+  examDay: string | null;
+  participantCount: number;
+  candidates: Array<{
+    enrollmentId: string;
+    elligbleId: string;
+    /** Already expected in another exam at an overlapping time: cannot be added. */
+    conflict: boolean;
+  }>;
+  /** Why nobody can be added to this exam now, or empty. */
+  problems: Array<{ code: ExamAdditionProblemCode }>;
+}
+
+export interface TeacherExamAddParticipantsInput {
+  examInstanceId: string;
+  enrollmentIds: string[];
+  /** Chosen by the device once per dialog; a retry reuses it. */
+  actionKey: string;
+}
+
+export interface TeacherExamAddParticipantsResult {
+  examInstanceId: string;
+  /** SCHEDULED after an addition: a ready exam is marked ready again. */
+  lifecycleState: string;
+  addedAt: string;
+  added: Array<{ enrollmentId: string; elligbleId: string | null }>;
+  replayed: boolean;
+}
+
 export interface TeacherExamCancelInput {
   examInstanceId: string;
   reason: string;

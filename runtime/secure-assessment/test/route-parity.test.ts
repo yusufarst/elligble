@@ -53,6 +53,8 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getTeacherExamSetup: m => m.getTeacherExamSetup(),
         getTeacherExamPreview: m => m.getTeacherExamPreview(ID),
         postTeacherExamCancel: m => m.postTeacherExamCancel({ examInstanceId: ID, reason: 'Jadwal bentrok dengan kegiatan sekolah', actionKey: ID }),
+        getTeacherExamParticipantCandidates: m => m.getTeacherExamParticipantCandidates(ID),
+        postTeacherExamAddParticipants: m => m.postTeacherExamAddParticipants({ examInstanceId: ID, enrollmentIds: [ID], actionKey: ID }),
         postTeacherExamReschedule: m => m.postTeacherExamReschedule({ examInstanceId: ID, windowStartsAt: '2026-10-05T08:00', windowEndsAt: '2026-10-05T10:00', durationMinutes: 60, latestStartPolicy: 'FULL_DURATION_BEYOND_WINDOW', actionKey: ID }),
         postTeacherExamImportPreview: m => m.postTeacherExamImportPreview(IMPORT_INPUT),
         postTeacherExamImport: m => m.postTeacherExamImport(IMPORT_INPUT, { importKey: ID, expectedSha256: '0'.repeat(64) }),

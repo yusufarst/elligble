@@ -47,6 +47,10 @@ export interface TeacherExamReadinessProjection {
     latestStartPolicy: string | null;
     /** When the schedule was last changed before the exam opened (D04.2-45), or null. */
     scheduleChangedAt: string | null;
+    /** How many students take part (a count, as progress counts them). */
+    participants: number;
+    /** When participants were last added after scheduling (D04.2-64), or null. */
+    participantsAddedAt: string | null;
     /** The cancellation of an exam that never opened (Owner decision 2026-09-30), or null. */
     cancellation: { cancelledAt: string; reason: string; by: { you: boolean; elligbleId: string | null } } | null;
     baseline: TeacherExamBaselineProjection;
@@ -152,6 +156,10 @@ export async function handleTeacherReadinessGet(
                 i.latest_start_policy AS latest_start_policy,
                 (SELECT max(sc.changed_at) FROM secure_assessment_exam_schedule_changes sc
                  WHERE sc.tenant_id = i.tenant_id AND sc.exam_instance_id = i.id) AS schedule_changed_at,
+                (SELECT count(*)::int FROM secure_assessment_exam_participants pc
+                 WHERE pc.tenant_id = i.tenant_id AND pc.exam_instance_id = i.id) AS participant_count,
+                (SELECT max(pa.added_at) FROM secure_assessment_exam_participant_additions pa
+                 WHERE pa.tenant_id = i.tenant_id AND pa.exam_instance_id = i.id) AS participants_added_at,
                 ec.cancelled_at, ec.reason AS cancellation_reason, ec.cancelled_by_person_id,
                 s.display_label AS subject_label,
                 g.display_label AS group_label,
@@ -259,6 +267,8 @@ export async function handleTeacherReadinessGet(
                 durationMinutes: row.duration_seconds === null || row.duration_seconds === undefined ? null : Math.round(Number(row.duration_seconds) / 60),
                 latestStartPolicy: row.latest_start_policy ?? null,
                 scheduleChangedAt: isoOrNull(row.schedule_changed_at),
+                participants: Number(row.participant_count ?? 0),
+                participantsAddedAt: isoOrNull(row.participants_added_at),
                 cancellation: row.cancelled_at ? {
                     cancelledAt: isoOrNull(row.cancelled_at)!,
                     reason: row.cancellation_reason,

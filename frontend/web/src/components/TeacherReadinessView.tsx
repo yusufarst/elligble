@@ -8,6 +8,7 @@ import { IconInfo } from '@/components/icons';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { RescheduleDialog } from './TeacherExamReschedule.tsx';
 import { CancelExamDialog } from './TeacherExamCancel.tsx';
+import { AddParticipantsDialog } from './TeacherExamParticipants.tsx';
 
 const LIFECYCLE_LABELS: Record<string, string> = {
   SCHEDULED: 'Terjadwal',
@@ -121,6 +122,7 @@ export const TeacherReadinessView: React.FC<{
   const [confirm, setConfirm] = useState<{ exam: TeacherExamReadinessProjection; action: ConfirmableAction } | null>(null);
   const [rescheduleFor, setRescheduleFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [cancelFor, setCancelFor] = useState<TeacherExamReadinessProjection | null>(null);
+  const [addFor, setAddFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [statusNotice, setStatusNotice] = useState<{ failed: boolean; text: string } | null>(null);
 
   const fetchReadinessData = useCallback(async () => {
@@ -316,8 +318,14 @@ export const TeacherReadinessView: React.FC<{
               {exam.windowStartsAt && exam.windowEndsAt && (
                 <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
               )}
+              {(lifecycle === 'SCHEDULED' || lifecycle === 'READY') && exam.participants !== undefined && (
+                <p className="teacher-exam-window">{exam.participants} peserta</p>
+              )}
               {exam.scheduleChangedAt && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
                 <p className="teacher-exam-note">Jadwal diubah {formatDateTime(exam.scheduleChangedAt)}.</p>
+              )}
+              {exam.participantsAddedAt && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
+                <p className="teacher-exam-note">Peserta ditambahkan {formatDateTime(exam.participantsAddedAt)}.</p>
               )}
 
               {DELIVERY_STATES.has(lifecycle) && exam.progress ? (
@@ -411,6 +419,7 @@ export const TeacherReadinessView: React.FC<{
                     <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>
                   )}
                   <Button variant="secondary" onClick={() => setRescheduleFor(exam)} disabled={busy}>Ubah Jadwal</Button>
+                  <Button variant="secondary" onClick={() => setAddFor(exam)} disabled={busy}>Tambah Peserta</Button>
                   {lifecycle === 'SCHEDULED' && (
                     <Button onClick={() => runTransition(exam.examInstanceId, 'mark_ready')} disabled={!readinessPass || busy}>
                       {busy ? 'Memproses...' : 'Tandai Siap'}
@@ -463,6 +472,16 @@ export const TeacherReadinessView: React.FC<{
         onClose={() => setCancelFor(null)}
         onDone={outcome => {
           setCancelFor(null);
+          setStatusNotice(outcome);
+          void fetchReadinessData();
+        }}
+      />
+
+      <AddParticipantsDialog
+        exam={addFor}
+        onClose={() => setAddFor(null)}
+        onDone={outcome => {
+          setAddFor(null);
           setStatusNotice(outcome);
           void fetchReadinessData();
         }}

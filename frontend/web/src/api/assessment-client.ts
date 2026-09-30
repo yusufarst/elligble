@@ -27,6 +27,9 @@ import type {
   TeacherExamRescheduleResult,
   TeacherExamCancelInput,
   TeacherExamCancelResult,
+  TeacherExamParticipantCandidates,
+  TeacherExamAddParticipantsInput,
+  TeacherExamAddParticipantsResult,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -205,6 +208,17 @@ export async function getTeacherExamSetup(): Promise<TeacherExamSetup> {
 }
 
 /** Cancels a scheduled or ready exam; repeating it is safe (the same key, or an exam already cancelled). */
+export async function getTeacherExamParticipantCandidates(examInstanceId: string): Promise<TeacherExamParticipantCandidates> {
+  const url = `/api/v1/assessment/teacher-exams/participants/candidates?examInstanceId=${encodeURIComponent(examInstanceId)}`;
+  const res = await apiFetch(url, { method: 'GET' });
+  return handleResponse<TeacherExamParticipantCandidates>(res);
+}
+
+export async function postTeacherExamAddParticipants(input: TeacherExamAddParticipantsInput): Promise<TeacherExamAddParticipantsResult> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/participants/add', { method: 'POST', json: input });
+  return handleResponse<TeacherExamAddParticipantsResult>(res);
+}
+
 export async function postTeacherExamCancel(input: TeacherExamCancelInput): Promise<TeacherExamCancelResult> {
   const res = await apiFetch('/api/v1/assessment/teacher-exams/cancel', { method: 'POST', json: input });
   return handleResponse<TeacherExamCancelResult>(res);
