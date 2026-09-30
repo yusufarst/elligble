@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expireAttemptOf, login, withDatabase } from './helpers.ts';
+import { expireAttemptOf, login, shotName, withDatabase } from './helpers.ts';
 
 // Results after the exam (D04.5-47, D04.8): a student whose device was away when the time
 // ran out is finalized by the server from the answers it accepted, and the teacher who
@@ -48,7 +48,7 @@ test('a device away at time expiry is finalized by the server; the teacher sees 
     await expect(row(page, 'siswa.e2e.06')).toContainText('Belum ada nilai');
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('results-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('results')), fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: test.info().outputPath('results-1280.png'), fullPage: true });
 
@@ -90,7 +90,7 @@ test('the proctor sees who is expected, working, finished or moved to another de
     await page.getByLabel('Cari ELLIGBLE ID').fill('');
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('monitoring-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('monitoring')), fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.screenshot({ path: test.info().outputPath('monitoring-1280.png'), fullPage: true });
 });

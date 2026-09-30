@@ -108,12 +108,12 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001 (CI evidence pending) → ASSESS-TEACHER-001.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | none (next: E2E-001) |
-| READY QUEUE (by value) | E2E-001, ASSESS-TEACHER-001 |
+| IN PROGRESS | E2E-001 (VERIFYING: Firefox and WebKit run only in CI) |
+| READY QUEUE (by value) | ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
 | RECENTLY COMPLETED | OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
@@ -285,23 +285,20 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Out of scope | provisioning real infrastructure (OPS-001) |
 | Delivered | `deploy/nginx/elligble.conf` (nginx 1.24 or later): HTTP to HTTPS redirect with the ACME path, TLS 1.2 and 1.3, HTTP/2, one HSTS header on every answer, the original Host forwarded for the runtime's Origin check, `X-Request-ID` for correlation, an access log without query strings, 64 KB body limit, unknown host names closed, sign-in limited to 10 a second per address (burst 200) and the API to 300 a second (burst 2 000), 429 on refusal. `deploy/nginx/smoke-test.sh`: read-only checks of a deployed proxy, with an optional flood test for staging. Runbook §1 |
 | Known limits | nginx only (the same rules translate to other proxies); certificates and their renewal come with the real infrastructure (OPS-001); limits are per address, so a very large school behind one address needs a higher `rate` |
-| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Commit / PR | `72b97f9`, CI run 27; part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### E2E-001 · Browser capability evidence beyond Chromium
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | E2E / P2 / READY (parallelizable) |
+| Workstream / priority / status | E2E / P2 / VERIFYING |
 | Dependencies / blocks | none / PB06 artifact |
-| Repository evidence | E2E runs Chromium at 360 px only |
 | Why | PB06 capability testing, AGENTS split-screen honesty |
 | Exact scope | run the critical journeys in Firefox and WebKit projects in CI and a tablet and desktop viewport; record platform limits honestly |
-| Out of scope | native apps |
-| Expected product result | evidence for the PB06 artifact |
-| Surfaces | `e2e/playwright.config.ts`, CI |
-| Verification | CI |
-| Owner decision | none |
-| Commit / PR | pending |
+| Out of scope | native apps; split-screen and multi-window evidence on real devices (PB06 artifact) |
+| Delivered | five Playwright projects, one per run on its own database and server: `mobile-360`, `tablet-768`, `desktop-1280` (Chromium), `firefox-1280` (Firefox desktop) and `webkit-390` (WebKit with the iPhone 13 profile: mobile, touch); the whole suite (pilot journey, resilience, security, results, pause, lock, messages, end and finalization) runs in each; steps that differ by layout use the question list as it appears (side panel from 1024 px, "Daftar Soal" sheet below); CI runs the five as a matrix |
+| Known limits | Firefox and WebKit cannot be installed in the development container, so their evidence comes from CI only; WebKit runs with the development cookie (it refuses Secure cookies over plain HTTP on 127.0.0.1; production uses HTTPS); browser engines in CI are not real phones or tablets (no real touch keyboards, battery or network) |
+| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### Blocked tasks
 
@@ -320,7 +317,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| OPS-003 | Reference nginx configuration and smoke test: TLS, HSTS, correlation, per-address limits sized for schools | this change (§11) |
+| OPS-003 | Reference nginx configuration and smoke test: TLS, HSTS, correlation, per-address limits sized for schools | `72b97f9`, CI run 27 |
 | OPS-002 | Internal metrics listener per exam-day component and alert rules with first actions | `c45b223`, CI run 26 |
 | ASSESS-PROCTOR-002 | Messages from supervisors to the exam, a room or chosen participants; non-blocking on the exam screen; delivery to devices, never "read" | `cd69126`, CI run 25 |
 | ASSESS-SYNC-001 | Exam-state answers ordered by server time: no resend loop, no choice dropped by a late refusal (P1-29) | `3e28d9b`, CI run 24 |
@@ -367,7 +364,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | PB03 DPIA | OPEN (Owner/legal) | none |
 | PB04 Authentication policy | CLOSED (DEC-041) | implement the policy in HTTP/session transport (step 3) |
 | PB05 Permission Matrix | OPEN | assignment-scoped authorization only; no invented policy |
-| PB06 Assessment Capability Testing | OPEN | browser E2E suite in CI DONE (step 9: pilot journey, resilience and refusals at 360 px, Chromium); capability evidence across devices and browsers, split-screen/multi-window limits and the formal test artifact remain |
+| PB06 Assessment Capability Testing | OPEN | browser E2E suite in CI DONE (step 9: pilot journey, resilience and refusals at 360 px, Chromium); the whole suite now also runs at 768 and 1280 px and in Firefox and WebKit engines (E2E-001, CI matrix); real-device evidence, split-screen/multi-window limits and the formal test artifact remain |
 | PB07 Zero-Lost-Answer Verification | OPEN | local-first answers DONE (step 6); fault-injection E2E in CI DONE (step 9: offline, saves failing across a reload, takeover, session ending mid-exam, each checked against the server's stored answers); the formal verification artifact remains |
 | PB08 Care safeguarding | OPEN (conditional) | none until Care |
 | PB09 Partner moderation | OPEN (conditional) | none until Partner |
@@ -615,6 +612,15 @@ After the reference reverse proxy (OPS-003, this branch):
 | sign-in through TLS | a real sign-in answers 200 with `__Host-elligble_session` marked `Secure`, `HttpOnly`, `SameSite=Strict`; the session is then valid through the proxy; a state change with a foreign Origin answers 403 |
 | D04.9-42 | 1 500 API requests from one address in 5.6 s (about 270 a second, more than 1 000 answering students) all reach the runtime without a single 429; 400 rapid sign-ins from one address are partly refused by the proxy with 429, and sign-in works again after the flood |
 | correlation and privacy | the proxy's access log line carries the path without the query string (no attempt id) and the request id that the runtime logs for the same request |
+
+After browser and width coverage (E2E-001, this branch):
+
+| Check | Result |
+|---|---|
+| typecheck (E2E suite) and actionlint (workflow) | PASS |
+| browser E2E, Chromium, locally | `mobile-360` 17/17, `tablet-768` 17/17, `desktop-1280` 17/17 (the question list checks follow the layout: sheet below 1024 px, side panel from 1024 px) |
+| browser E2E, Firefox and WebKit | CI only (matrix jobs `firefox-1280`, `webkit-390`); result recorded when the run completes |
+| rendered check (Chromium, 1280 px) | question list with the "Ragu-ragu" mark in the side panel, locked screen: readable, no overflow |
 
 ## 12. Friction reducers (automation)
 

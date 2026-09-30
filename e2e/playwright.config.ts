@@ -7,6 +7,21 @@ import { defineConfig, devices } from '@playwright/test';
 
 export const E2E_PORT = Number(process.env['E2E_PORT'] ?? 3400);
 
+// One project per run (E2E_PROJECT, default mobile-360): the suite walks one exam through its
+// whole life, so every browser and width gets its own fresh database and server (CI runs
+// them as a matrix). Firefox and WebKit need their browsers installed
+// (`npx playwright install --with-deps firefox webkit`).
+const PROJECTS = [
+    { name: 'mobile-360', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 780 } } },
+    { name: 'tablet-768', use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } } },
+    { name: 'desktop-1280', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
+    { name: 'firefox-1280', use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 800 } } },
+    { name: 'webkit-390', use: { ...devices['iPhone 13'] } },
+];
+const selected = process.env['E2E_PROJECT'] ?? 'mobile-360';
+const project = PROJECTS.find(p => p.name === selected);
+if (!project) throw new Error(`Unknown E2E_PROJECT ${selected}; one of ${PROJECTS.map(p => p.name).join(', ')}`);
+
 export default defineConfig({
     testDir: './tests',
     timeout: 90_000,
@@ -26,7 +41,5 @@ export default defineConfig({
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
-    projects: [
-        { name: 'mobile-360', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 780 } } },
-    ],
+    projects: [project],
 });

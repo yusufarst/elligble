@@ -73,9 +73,30 @@ jobs:
       - run: npm run build
 
   e2e:
-    name: Browser end-to-end (Playwright, production process)
+    name: Browser end-to-end (${{ matrix.project }})
     runs-on: ubuntu-latest
     needs: [runtime, web]
+    # One job per browser and width, each on its own database and server (E2E-001, PB06).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: mobile-360
+            browser: chromium
+            cookie_secure: 'true'
+          - project: tablet-768
+            browser: chromium
+            cookie_secure: 'true'
+          - project: desktop-1280
+            browser: chromium
+            cookie_secure: 'true'
+          - project: firefox-1280
+            browser: firefox
+            cookie_secure: 'true'
+          - project: webkit-390
+            browser: webkit
+            # WebKit refuses Secure cookies over plain HTTP on 127.0.0.1; see global-setup.ts.
+            cookie_secure: 'false'
     services:
       postgres:
         image: postgres:16
@@ -91,6 +112,8 @@ jobs:
     env:
       ELLIGBLE_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/postgres
       PGPASSWORD: postgres
+      E2E_PROJECT: ${{ matrix.project }}
+      E2E_COOKIE_SECURE: ${{ matrix.cookie_secure }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -106,15 +129,15 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run build
-      - name: Install suite and Chromium
+      - name: Install suite and browser
         working-directory: e2e
         run: |
           npm ci --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps ${{ matrix.browser }}
       - name: Typecheck
         working-directory: e2e
         run: npm run typecheck
-      - name: Pilot journey, resilience and security (360 px)
+      - name: Pilot journey, resilience, security, results and exam lifecycle
         working-directory: e2e
         env:
           E2E_SERVER_LOG: ${{ runner.temp }}/e2e-server.log
@@ -123,7 +146,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-report
+          name: e2e-report-${{ matrix.project }}
           path: |
             e2e/playwright-report
             e2e/test-results

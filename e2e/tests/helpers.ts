@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import pg from 'pg';
 import { readState } from '../state.ts';
 
@@ -43,6 +43,23 @@ export async function continueExam(page: Page): Promise<string> {
 }
 
 export const option = (page: Page, index: number) => page.locator('.options-list label').nth(index);
+
+/** Wide screens (1024 px and more) show the question list beside the question; narrow ones open it as a sheet. */
+export const isWide = (page: Page) => (page.viewportSize()?.width ?? 0) >= 1024;
+
+/** The question list: the side panel on wide screens, the "Daftar Soal" sheet (opened here) otherwise. */
+export async function openQuestionList(page: Page): Promise<Locator> {
+    if (isWide(page)) return page.getByRole('navigation', { name: 'Daftar Soal Ujian' });
+    await page.getByRole('button', { name: 'Daftar Soal' }).click();
+    return page.getByRole('dialog', { name: 'Daftar Soal' });
+}
+
+export async function closeQuestionList(page: Page): Promise<void> {
+    if (!isWide(page)) await page.getByRole('dialog', { name: 'Daftar Soal' }).getByRole('button', { name: 'Tutup daftar soal' }).click();
+}
+
+/** Screenshot name with the project (browser and width) it was taken in. */
+export const shotName = (name: string) => `${name}-${test.info().project.name}.png`;
 export const saveStatus = (page: Page) => page.locator('.save-status-text');
 
 /** Server answers as the signed-in student sees them (same origin, session cookie). */

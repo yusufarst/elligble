@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { activate, continueExam, login, option, saveStatus, serverAnswers, startExam, state } from './helpers.ts';
+import { activate, closeQuestionList, continueExam, login, openQuestionList, option, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
 
 // Answer preservation (D04.5-17..24, PB07): offline answering, reload with unsynced
 // choices, and one active exam session per attempt across tabs (D04.4-32/35/37).
@@ -73,12 +73,11 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     await expect(saveStatus(page)).toHaveText('Tersimpan');
     const flag = page.getByRole('checkbox', { name: 'Ragu-ragu' });
     await flag.check();
-    await page.getByRole('button', { name: 'Daftar Soal' }).click();
-    const sheet = page.getByRole('dialog', { name: 'Daftar Soal' });
-    await expect(sheet.getByRole('button', { name: 'Pindah ke soal nomor 2, status sudah dijawab, ditandai ragu-ragu' })).toBeVisible();
-    await expect(sheet.getByText('Ragu-ragu:')).toBeVisible();
-    await page.screenshot({ path: test.info().outputPath('ragu-ragu-sheet-360.png'), animations: 'disabled' });
-    await sheet.getByRole('button', { name: 'Tutup daftar soal' }).click();
+    const list = await openQuestionList(page);
+    await expect(list.getByRole('button', { name: 'Pindah ke soal nomor 2, status sudah dijawab, ditandai ragu-ragu' })).toBeVisible();
+    await expect(list.getByText(/^Ragu-ragu:?$/)).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath(shotName('ragu-ragu-list')), animations: 'disabled' });
+    await closeQuestionList(page);
 
     const flagsOnServer = () => page.evaluate(async ({ id, tenant }) => {
         const res = await fetch(`/api/v1/assessment/resume?attemptId=${id}`, { headers: { 'X-Tenant-ID': tenant } });
@@ -91,7 +90,7 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
     await expect(page.getByRole('checkbox', { name: 'Ragu-ragu' })).toBeChecked();
     await expect(page.locator('.options-list input[type=radio]').nth(2)).toBeChecked();
-    await page.screenshot({ path: test.info().outputPath('ragu-ragu-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('ragu-ragu')), fullPage: true });
 
     await page.getByRole('checkbox', { name: 'Ragu-ragu' }).uncheck();
     await expect.poll(flagsOnServer).toHaveLength(0);

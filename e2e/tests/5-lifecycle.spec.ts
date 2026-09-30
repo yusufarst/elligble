@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { continueExam, expireAttemptOf, login, option, saveStatus, state, withDatabase } from './helpers.ts';
+import { closeQuestionList, continueExam, expireAttemptOf, login, openQuestionList, option, saveStatus, shotName, state, withDatabase } from './helpers.ts';
 
 // Pause, resume and end on the real production process (Owner decision 2026-09-30). Runs
 // last: it ends the shared exam. A paused exam hides the questions and freezes the time;
@@ -85,7 +85,7 @@ test('a pause freezes the student screen, keeps the answer chosen before it, dro
     await page.waitForTimeout(2100);
     expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBe(frozen);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('paused-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('paused')), fullPage: true });
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Ujian Dijeda' })).toBeVisible();
     expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBe(frozen);
@@ -168,7 +168,7 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     await page.waitForTimeout(2100);
     expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBeLessThan(shown);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('locked-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('locked')), fullPage: true });
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeVisible();
     await proctor.screenshot({ path: test.info().outputPath('monitoring-locked-360.png'), fullPage: true });
@@ -224,11 +224,7 @@ test('a supervisor message reaches the student without interrupting the exam, an
     await expect(banner).toContainText('Ujian tersisa 15 menit.');
     await expect(banner).toContainText(/Pesan pengawas, \d{2}\.\d{2} WIB/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('broadcast-student-360.png') });
-    await page.setViewportSize({ width: 1280, height: 900 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('broadcast-student-1280.png') });
-    await page.setViewportSize({ width: 360, height: 780 });
+    await page.screenshot({ path: test.info().outputPath(shotName('broadcast-student')) });
     // Answering goes on while the message is shown.
     const current = (await answersOf('siswa.e2e.03'))[1];
     const other = await anotherOption(1, current);
@@ -238,9 +234,9 @@ test('a supervisor message reaches the student without interrupting the exam, an
     await banner.getByRole('button', { name: 'Tutup' }).click();
     await expect(banner).toHaveCount(0);
     // It stays available to reread.
-    await page.getByRole('button', { name: 'Daftar Soal' }).click();
-    await expect(page.getByRole('dialog').getByText('Ujian tersisa 15 menit.')).toBeVisible();
-    await page.keyboard.press('Escape');
+    const list = await openQuestionList(page);
+    await expect(list.getByText('Ujian tersisa 15 menit.')).toBeVisible();
+    await closeQuestionList(page);
 
     // The teacher sees that the device received it, never that it was read.
     const history = teacher.getByRole('region', { name: 'Pesan Terkirim' });
@@ -319,7 +315,7 @@ test('the teacher finalizes once every attempt is finished; the results are fina
     await page.getByRole('button', { name: 'Tampilkan Nilai' }).click();
     await expect(row('siswa.e2e.01')).toContainText('66,67');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath('final-results-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('final-results')), fullPage: true });
 
     // Export (D04.8-52/53): one self-describing row per participant, Indonesian spreadsheet form.
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Unduh CSV' }).click()]);
@@ -338,7 +334,7 @@ test('the teacher finalizes once every attempt is finished; the results are fina
     await expect(page.getByRole('button', { name: 'Unduh CSV' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Keluar' })).toBeHidden();
     await expect(row('siswa.e2e.01')).toBeVisible();
-    await page.screenshot({ path: test.info().outputPath('final-results-print-360.png'), fullPage: true });
+    await page.screenshot({ path: test.info().outputPath(shotName('final-results-print')), fullPage: true });
     await page.emulateMedia({ media: 'screen' });
 
     const frozen = await withDatabase(async client => (await client.query(
