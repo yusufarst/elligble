@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import type { StudentSafeQuestion, SaveState } from '../types/assessment.ts';
+import type { StudentSafeQuestion, SaveState, InboxMessage } from '../types/assessment.ts';
+import { ExamMessageList } from './ExamMessages.tsx';
 
 export interface QuestionNavigatorSheetProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ export interface QuestionNavigatorSheetProps {
   onOpenSubmitModal: () => void;
   hasUnresolvedSaves: boolean;
   triggerRef?: React.RefObject<HTMLElement | null>;
+  /** Supervisor messages to reread (D04.1-77G). */
+  messages?: InboxMessage[];
 }
 
 export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
@@ -28,6 +31,7 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
   onOpenSubmitModal,
   hasUnresolvedSaves,
   triggerRef,
+  messages = [],
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -193,6 +197,7 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
               );
             })}
           </div>
+          <ExamMessageList messages={messages} />
         </div>
 
         <div className="sheet-bottom-region">

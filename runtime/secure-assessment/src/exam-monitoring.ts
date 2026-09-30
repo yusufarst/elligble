@@ -1,6 +1,8 @@
 import type * as pg from 'pg';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import type { FinalizationSource } from './submission.ts';
+import { resolveSupervisionScope } from './supervision-scope.ts';
+import { readBroadcastHistory, readScopeRooms, type BroadcastRecord } from './exam-broadcast.ts';
 
 // Participant monitoring list for exam day (D04.6-01/02/03/04/10/11/17/18/61): who is
 // supposed to be here, who has started, who has submitted, whose device or tab changed.
@@ -9,7 +11,8 @@ import type { FinalizationSource } from './submission.ts';
 // the teacher who manages a teacher-managed exam sees its participants (D04.4-26A/C). Only
 // facts the server holds are reported: accepted answers and their time, the server timer,
 // sessions and submissions. Connectivity and unsent answers live on the device and are not
-// claimed here. No scores: supervision is separate from scoring (D04.1-63).
+// claimed here. No scores: supervision is separate from scoring (D04.1-63). The rooms in
+// scope and the broadcast messages that reached the scope come with it (D04.6-49..54).
 
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
 
@@ -42,6 +45,10 @@ export interface ExamMonitoring {
     questionCount: number;
     summary: { participants: number; notStarted: number; active: number; submitted: number };
     participants: MonitoredParticipant[];
+    /** Rooms of a room-based exam within the viewer's scope (broadcast targets). */
+    rooms: Array<{ roomId: string; label: string }>;
+    /** Broadcast messages that reached participants in the viewer's scope, newest first. */
+    broadcasts: BroadcastRecord[];
 }
 
 export type ExamMonitoringOutcome = { type: 'ok'; monitoring: ExamMonitoring } | { type: 'forbidden' } | { type: 'unavailable' };
@@ -70,38 +77,24 @@ export async function readExamMonitoring(
     }
     try {
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+        const supervision = await resolveSupervisionScope(client, actor, examInstanceId);
+        if (!supervision) {
+            await client.query('ROLLBACK');
+            return { type: 'forbidden' };
+        }
+        const { scope, roomFilter } = supervision;
         const exam = await client.query(
-            `SELECT i.lifecycle_state, COALESCE(i.room_based_operations_enabled, FALSE) AS room_based,
-                    s.display_label AS subject_label, statement_timestamp() AS db_now,
+            `SELECT s.display_label AS subject_label, statement_timestamp() AS db_now,
                     (SELECT ps.paused_at FROM secure_assessment_exam_pauses ps
-                     WHERE ps.tenant_id = i.tenant_id AND ps.exam_instance_id = i.id AND ps.resumed_at IS NULL) AS paused_at,
-                    (SELECT pa.id FROM secure_assessment_proctor_assignments pa
-                     WHERE pa.tenant_id = i.tenant_id AND pa.exam_instance_id = i.id AND pa.person_id = $3 AND pa.revoked_at IS NULL
-                     LIMIT 1) AS proctor_assignment_id,
-                    EXISTS (
-                        SELECT 1
-                        FROM academic_core_teaching_assignments ata
-                        JOIN tenant_teacher_assignments tta
-                          ON tta.id = ata.teacher_assignment_id AND tta.tenant_id = ata.tenant_id AND tta.revoked_at IS NULL
-                        JOIN tenant_memberships tm
-                          ON tm.id = tta.membership_id AND tm.tenant_id = tta.tenant_id AND tm.person_id = $3
-                        WHERE ata.id = i.teaching_assignment_id AND ata.tenant_id = i.tenant_id AND ata.revoked_at IS NULL
-                    ) AS is_teacher
+                     WHERE ps.tenant_id = i.tenant_id AND ps.exam_instance_id = i.id AND ps.resumed_at IS NULL) AS paused_at
              FROM secure_assessment_exam_instances i
              LEFT JOIN academic_core_teaching_assignments ta ON ta.id = i.teaching_assignment_id AND ta.tenant_id = i.tenant_id
              LEFT JOIN academic_core_subject_offerings so ON so.id = ta.subject_offering_id AND so.tenant_id = i.tenant_id
              LEFT JOIN academic_core_subjects s ON s.id = so.subject_id AND s.tenant_id = i.tenant_id
              WHERE i.id = $1 AND i.tenant_id = $2`,
-            [examInstanceId, actor.tenantId, actor.personId]
+            [examInstanceId, actor.tenantId]
         );
         const row = exam.rows[0];
-        if (!row || (!row.proctor_assignment_id && !row.is_teacher)) {
-            await client.query('ROLLBACK');
-            return { type: 'forbidden' };
-        }
-        const scope: 'PROCTOR' | 'TEACHER' = row.proctor_assignment_id ? 'PROCTOR' : 'TEACHER';
-        // An assigned proctor of a room-based exam sees only their rooms.
-        const roomFilter: string | null = scope === 'PROCTOR' && row.room_based ? row.proctor_assignment_id : null;
 
         const questions = await client.query(
             'SELECT count(*)::int AS n FROM secure_assessment_exam_question_snapshots WHERE tenant_id = $1 AND exam_instance_id = $2',
@@ -142,6 +135,8 @@ export async function readExamMonitoring(
             [actor.tenantId, examInstanceId, roomFilter]
         );
         const elligbleIds = await listElligbleIds(client, participants.rows.map(r => r.person_id as string));
+        const rooms = supervision.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
+        const broadcasts = await readBroadcastHistory(client, actor, examInstanceId, roomFilter);
         await client.query('COMMIT');
 
         const list: MonitoredParticipant[] = participants.rows.map(r => {
@@ -175,15 +170,17 @@ export async function readExamMonitoring(
                 exam: {
                     examInstanceId,
                     subjectLabel: row.subject_label ?? null,
-                    lifecycleState: row.lifecycle_state,
-                    roomBased: Boolean(row.room_based),
-                    pausedAt: row.lifecycle_state === 'PAUSED' ? isoOrNull(row.paused_at) : null,
+                    lifecycleState: supervision.lifecycleState,
+                    roomBased: supervision.roomBased,
+                    pausedAt: supervision.lifecycleState === 'PAUSED' ? isoOrNull(row.paused_at) : null,
                 },
                 scope,
                 serverTime: new Date(row.db_now).toISOString(),
                 questionCount: questions.rows[0].n,
                 summary: { participants: list.length, notStarted: count('NOT_STARTED'), active: count('ACTIVE') + count('TIME_UP'), submitted: count('SUBMITTED') },
                 participants: list,
+                rooms,
+                broadcasts,
             },
         };
     } catch {

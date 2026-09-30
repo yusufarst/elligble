@@ -1,4 +1,5 @@
 import type * as pg from 'pg';
+import { participantInScope, resolveSupervisionScope } from './supervision-scope.ts';
 
 // Participant lock and unlock (D04.6-38/39 LOCKED, D04.2-76; ASSESS-PROCTOR-001). An
 // authorized supervisor stops one participant's work and releases it again directly from
@@ -40,51 +41,24 @@ export async function performParticipantLockAction(
     try {
         await client.query('BEGIN');
         // Exam row before attempt row, the order every attempt writer uses.
-        const exam = await client.query(
-            `SELECT i.lifecycle_state, COALESCE(i.room_based_operations_enabled, FALSE) AS room_based,
-                    (SELECT pa.id FROM secure_assessment_proctor_assignments pa
-                     WHERE pa.tenant_id = i.tenant_id AND pa.exam_instance_id = i.id AND pa.person_id = $3 AND pa.revoked_at IS NULL
-                     LIMIT 1) AS proctor_assignment_id,
-                    EXISTS (
-                        SELECT 1
-                        FROM academic_core_teaching_assignments ata
-                        JOIN tenant_teacher_assignments tta
-                          ON tta.id = ata.teacher_assignment_id AND tta.tenant_id = ata.tenant_id AND tta.revoked_at IS NULL
-                        JOIN tenant_memberships tm
-                          ON tm.id = tta.membership_id AND tm.tenant_id = tta.tenant_id AND tm.person_id = $3
-                        WHERE ata.id = i.teaching_assignment_id AND ata.tenant_id = i.tenant_id AND ata.revoked_at IS NULL
-                    ) AS is_teacher
-             FROM secure_assessment_exam_instances i
-             WHERE i.id = $1 AND i.tenant_id = $2
-             FOR KEY SHARE OF i`,
-            [examInstanceId, actor.tenantId, actor.personId]
-        );
-        const row = exam.rows[0];
-        if (!row || (!row.proctor_assignment_id && !row.is_teacher)) {
+        const supervision = await resolveSupervisionScope(client, actor, examInstanceId, { lockExam: true });
+        if (!supervision) {
             await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
-        // An assigned proctor of an exam with rooms acts only in their rooms.
-        const roomFilter: string | null = row.proctor_assignment_id && row.room_based ? row.proctor_assignment_id : null;
         const participant = await client.query(
             `SELECT p.id FROM secure_assessment_exam_participants p
              WHERE p.tenant_id = $1 AND p.exam_instance_id = $2 AND p.id = $3
-               AND ($4::uuid IS NULL OR EXISTS (
-                   SELECT 1 FROM secure_assessment_exam_participant_room_assignments pra
-                   JOIN secure_assessment_exam_proctor_room_assignments epra
-                     ON epra.tenant_id = pra.tenant_id AND epra.exam_instance_id = pra.exam_instance_id AND epra.exam_room_id = pra.exam_room_id
-                   WHERE pra.tenant_id = p.tenant_id AND pra.exam_instance_id = p.exam_instance_id AND pra.exam_participant_id = p.id
-                     AND epra.proctor_assignment_id = $4
-               ))`,
-            [actor.tenantId, examInstanceId, participantId, roomFilter]
+               AND ${participantInScope('p', '$4')}`,
+            [actor.tenantId, examInstanceId, participantId, supervision.roomFilter]
         );
         if (participant.rows.length !== 1) {
             await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
-        if (!SUPERVISED_STATES.has(row.lifecycle_state)) {
+        if (!SUPERVISED_STATES.has(supervision.lifecycleState)) {
             await client.query('ROLLBACK');
-            return { type: 'invalid_state', currentState: row.lifecycle_state };
+            return { type: 'invalid_state', currentState: supervision.lifecycleState };
         }
         // The participant's open (first unsubmitted) attempt, locked against its writers.
         const attempt = await client.query(

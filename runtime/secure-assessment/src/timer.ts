@@ -4,6 +4,7 @@ import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
 import { evaluateStartEligibility } from './attempt-eligibility.ts';
 import { readAttemptExamState, readOpenLock, type AttemptExamState } from './exam-pause.ts';
+import { countAttemptMessages } from './exam-broadcast.ts';
 
 /**
  * Exam state beside the timer, so the workstation knows whether time is frozen (Owner
@@ -273,6 +274,8 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
         const status = effectiveRemainingSeconds <= 0 ? 'expired' : 'active';
         const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
         const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+        // How many supervisor messages the student has: the device fetches them only when this grows.
+        const messageCount = await countAttemptMessages(client, context.tenantId, attemptId);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
@@ -281,7 +284,8 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
             configuredDurationSeconds,
             effectiveDurationSeconds,
             effectiveRemainingSeconds,
-            ...examStateFields(examState, lockedAt, state.db_now)
+            ...examStateFields(examState, lockedAt, state.db_now),
+            messageCount
         }));
 
     } catch (err) {

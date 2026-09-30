@@ -5,6 +5,7 @@ import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
 import { useAnswerManager } from '../hooks/useAnswerManager.ts';
 import { clearReviewFlags, useReviewFlags } from '../hooks/useReviewFlags.ts';
+import { clearBroadcastSeen, useBroadcastInbox } from '../hooks/useBroadcastInbox.ts';
 import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
@@ -12,6 +13,7 @@ import { formatTime } from '../lib/format.ts';
 import type { ExamRunState } from '../exam/answer-sync-engine.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
 import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
+import { ExamMessageList, ExamMessageNotice } from './ExamMessages.tsx';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -164,6 +166,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     const unreceived = await countUnreceivedLocalAnswers(tenantKey, id);
     await clearLocalAnswers(tenantKey, id);
     clearReviewFlags(id);
+    clearBroadcastSeen(id);
     forgetExamSessionId(id);
     if (!mountedRef.current) return;
     setUnreceivedAtCompletion(unreceived);
@@ -444,6 +447,9 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   });
   const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
   const review = useReviewFlags({ attemptId: attemptId || '', sessionId, initialFlags, enabled: phase === 'active' });
+  // Supervisor messages (D04.6-49..53): fetched when the timer answer counts more of them.
+  const inbox = useBroadcastInbox({ attemptId: attemptId || '', enabled: phase === 'active' });
+  const noteMessageCount = inbox.noteCount;
   answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, hasUnresolvedSaves };
 
   const loadQuestions = useCallback(async (id: string) => {
@@ -478,6 +484,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     // the pause or the lock (such as a refusal that reported it) changes nothing.
     const at = instantOrNull(info.serverTime);
     if (!isFreshState('pause', at) || !isFreshState('lock', at)) return;
+    noteMessageCount(info.messageCount);
     const state = runStateOf(info.examState);
     const remaining = info.status === 'expired' ? 0 : info.effectiveRemainingSeconds;
     const wasPaused = examStateRef.current === 'PAUSED';
@@ -503,7 +510,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     // Questions are fetched once the exam runs again (also retried by later checks).
     if (state !== 'PAUSED' && lock === null && attemptId && questions.length === 0) void loadQuestions(attemptId);
     if ((wasPaused && state !== 'PAUSED') || (wasLocked && lock === null)) answersRef.current?.flush();
-  }, [noteExamState, noteLockState, isFreshState, attemptId, questions.length, loadQuestions]);
+  }, [noteExamState, noteLockState, isFreshState, noteMessageCount, attemptId, questions.length, loadQuestions]);
   runInfoRef.current = applyRunInfo;
 
   const checkExamState = useCallback(async () => {
@@ -757,6 +764,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
           {discardedText && (
             <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
           )}
+          <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
           <p className="state-card-body">Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
         </div>
       </main>
@@ -789,6 +797,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
           {discardedText && (
             <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
           )}
+          <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
           <p className="state-card-body">Soal tampil kembali setelah pengawas membuka kunci.</p>
         </div>
       </main>
@@ -921,6 +930,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             {timeReminder}
           </div>
         )}
+        {inbox.notice && <ExamMessageNotice notice={inbox.notice} onDismiss={inbox.dismiss} />}
         {examState === 'ENDED' && (
           <div className="exam-ended-banner" role="status">
             Guru telah mengakhiri ujian. Anda tetap dapat menyelesaikan sampai waktu Anda habis.
@@ -1008,6 +1018,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               </div>
             )}
           </div>
+          <ExamMessageList messages={inbox.messages} />
         </nav>
 
         {/* Right Pane: Question Stimulus & Options */}
@@ -1201,6 +1212,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         hasUnresolvedSaves={hasUnresolvedSaves}
         triggerRef={navSheetTriggerRef}
+        messages={inbox.messages}
       />
 
       {/* Submit Confirmation Modal */}

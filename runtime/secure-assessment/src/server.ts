@@ -19,6 +19,7 @@ import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction 
 import { readTeacherExamResults } from './teacher-results.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
+import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
 import type { StaticSite } from './http/static-site.ts';
@@ -62,6 +63,7 @@ type AttemptRoute = { method: 'GET' | 'POST'; source: 'query' | 'body' };
 const ATTEMPT_ROUTES: Record<string, AttemptRoute> = {
     '/api/v1/assessment/answer/save': { method: 'POST', source: 'body' },
     '/api/v1/assessment/review-flag': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/broadcasts/inbox': { method: 'POST', source: 'body' },
     '/api/v1/assessment/timer/start': { method: 'POST', source: 'body' },
     '/api/v1/assessment/submit': { method: 'POST', source: 'body' },
     '/api/v1/assessment/expiry-finalize': { method: 'POST', source: 'body' },
@@ -185,6 +187,8 @@ export function createServer(deps: ServerDependencies): http.Server {
                 return handleSaveAnswer(handlerReq, res, handlerDeps);
             case '/api/v1/assessment/review-flag':
                 return handleReviewFlag(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/broadcasts/inbox':
+                return handleBroadcastInbox(handlerReq, res, handlerDeps);
             case '/api/v1/assessment/timer/start':
                 return handleTimerStart(handlerReq, res, handlerDeps);
             case '/api/v1/assessment/submit':
@@ -419,6 +423,54 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'no_active_attempt':
                         sendError(res, 409, 'no_active_attempt');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring/broadcast') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const examInstanceId = body.examInstanceId;
+                const target = parseBroadcastTarget(body.target);
+                const message = normalizeBroadcastMessage(body.message);
+                if (typeof examInstanceId !== 'string' || !ATTEMPT_ID_REGEX.test(examInstanceId) || !target || !message) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await sendExamBroadcast(deps.pool, getContext()!, examInstanceId, target, message);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, { broadcastId: result.broadcastId, sentAt: result.sentAt, recipients: result.recipients });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'no_recipients':
+                        sendError(res, 409, 'no_recipients');
+                        return;
+                    case 'rate_limited':
+                        sendJson(res, 429, { error: 'rate_limited', retryAfterSeconds: result.retryAfterSeconds }, { 'Retry-After': String(result.retryAfterSeconds) });
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

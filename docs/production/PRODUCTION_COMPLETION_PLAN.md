@@ -32,7 +32,8 @@ Status on this branch (baseline findings in §4-§5). Rows marked E2E are exerci
 | Exam session per device / tab | `AttemptLaunch` takeover screen, "Sesi Dipindahkan" notice | `POST /assessment/session/activate`, `GET /assessment/resume?examSessionId=` | active session id never disclosed; takeover needs the fingerprint and explicit confirmation | **WORKS** (real PostgreSQL + real browser: second tab, duplicated tab; E2E) |
 | Answers (local-first) | `useAnswerManager` on `AnswerSyncEngine` + IndexedDB | `POST /assessment/answer/save` | write needs the active exam session | **WORKS**: offline answering, reload/browser-restart recovery, retry with backoff, honest save states (real browser; E2E) |
 | Proctor monitoring | `ProctorMonitoringView` | `GET /assessment/proctor-monitoring` | session → proctor assignments | **WORKS** (read; E2E) |
-| Exam-day participant monitoring | `ExamMonitoringView` ("Pemantauan Peserta", from "Lihat Peserta" and "Pantau Peserta") | `GET /assessment/exam-monitoring`, `POST /assessment/exam-monitoring/participant-lock` | assigned proctor (their rooms, or the whole exam without room operations) or the managing teacher | **WORKS**: status, accepted answers and time, server time left, device moves, filters and ID search, visible freshness; no scores; "Kunci" and "Buka Kunci" for one working participant (ASSESS-PROCTOR-001) (integration; E2E) |
+| Exam-day participant monitoring | `ExamMonitoringView` ("Pemantauan Peserta", from "Lihat Peserta" and "Pantau Peserta") | `GET /assessment/exam-monitoring`, `POST /assessment/exam-monitoring/participant-lock`, `POST /assessment/exam-monitoring/broadcast` | assigned proctor (their rooms, or the whole exam without room operations) or the managing teacher | **WORKS**: status, accepted answers and time, server time left, device moves, filters and ID search, visible freshness; no scores; "Kunci" and "Buka Kunci" for one working participant (ASSESS-PROCTOR-001); "Kirim Pesan" to the exam, a room or chosen participants and "Pesan Terkirim" with delivery to devices (ASSESS-PROCTOR-002) (integration; E2E) |
+| Supervisor messages on the exam screen | notice in the `StudentExamWorkstation` header, "Pesan Pengawas" in the question list, latest message on the paused and locked screens | `POST /assessment/broadcasts/inbox`; `messageCount` in `GET /assessment/timer` | session → membership → participant → attempt | **WORKS**: fetched when the count grows, receipt confirmed, shown once without taking the focus, kept to reread (integration; E2E) |
 | Teacher operations | `TeacherReadinessView` ("Pelaksanaan Ujian") | `GET /assessment/teacher-readiness`, `POST /assessment/teacher-exams/transition` | session → teaching assignment of the exam | **WORKS**: readiness, "Tandai Siap", "Buka Ujian", aggregate progress (integration + browser; E2E) |
 | Teacher results | `TeacherResultsView` ("Hasil Ujian", from "Lihat Hasil") | `GET /assessment/teacher-exams/results` | session → teaching assignment of the exam (not proctors, other teachers or participants) | **WORKS**: provisional per-participant status and auto-score of submitted attempts until the exam is finalized, then the frozen final results (RESULT-001); scores hidden until shown (integration; E2E) |
 | Deep links / refresh | query-string routes under `/` | client served by the runtime with deep-link fallback | session re-checked on load | **WORKS** (production container, real browser) |
@@ -41,9 +42,9 @@ Status on this branch (baseline findings in §4-§5). Rows marked E2E are exerci
 
 | Role | Works today | Incomplete | Blocks production |
 |---|---|---|---|
-| Student | activation, login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, "Ragu-ragu" marks, timer with reminders, submit and automatic submission, paused screen with frozen time and exact resume, ended note (ASSESS-LIFE-002), locked screen while a supervisor locks the attempt (ASSESS-PROCTOR-001) | seeing results (publication policy, §7) | none in the product (Owner/legal PBs, §8) |
-| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" (ASSESS-LIFE-001), aggregate progress with who is still working, provisional results ("Hasil Ujian"), "Finalisasi Hasil" and final results (RESULT-001), "Unduh CSV" and "Cetak" (RESULT-002); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, publication | none for the pilot; teacher authoring or import for scale |
-| Proctor | monitoring read model and screen; exam-day participant list (who is expected, working, finished or moved); lock and unlock of one participant, audited (ASSESS-PROCTOR-001) | Proctor Feed events, interventions (add time, broadcast) | Feed is P1-11 |
+| Student | activation, login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, "Ragu-ragu" marks, timer with reminders, submit and automatic submission, paused screen with frozen time and exact resume, ended note (ASSESS-LIFE-002), locked screen while a supervisor locks the attempt (ASSESS-PROCTOR-001), supervisor messages without interruption (ASSESS-PROCTOR-002) | seeing results (publication policy, §7) | none in the product (Owner/legal PBs, §8) |
+| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" (ASSESS-LIFE-001), aggregate progress with who is still working, participant lock and messages from "Pantau Peserta", provisional results ("Hasil Ujian"), "Finalisasi Hasil" and final results (RESULT-001), "Unduh CSV" and "Cetak" (RESULT-002); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, publication | none for the pilot; teacher authoring or import for scale |
+| Proctor | monitoring read model and screen; exam-day participant list (who is expected, working, finished or moved); lock and unlock of one participant, audited (ASSESS-PROCTOR-001); messages to the exam, their rooms or chosen participants with delivery to devices (ASSESS-PROCTOR-002) | Proctor Feed events, interventions (add time) | Feed is P1-11 |
 | Platform operations | container release, preflight, logs, CI, runbook, audited provisioning CLI | school-admin self-service, metrics and alerting | PB11 drill on production infrastructure |
 | School / tenant administration | onboarding by the platform operator (audited CLI): people with activation cards, academic setup through `runtime/academic-core` | school-admin self-service import (D02.7), academic management UI | none for the pilot; self-service for scale |
 | Parent / Guardian | nothing | whole domain (schema, runtime, UI) | Milestone 7 |
@@ -81,7 +82,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-8 | No request/error logging, no metrics; startup logs only | `log.ts`: **RESOLVED** for logging: one JSON line per request (request id, method, path without query, status, duration), 5xx at ERROR, unhandled errors by class and code only, `X-Request-ID` correlation; metrics remain open | RESOLVED |
 | P1-9 | Design tokens in code drifted from LOCKED design system v1.1.0 (navy actions/focus, slate neutrals, radii, undefined tokens) | **RESOLVED** in `design-tokens.css` + component CSS; screens still use hand-written CSS (migration to shadcn/ui components is incremental) | RESOLVED |
 | P1-10 | Assigned-exam projection had no lifecycle/window/duration | **RESOLVED**: `schedule` + `serverNow` in the projection; the list explains when and why an exam can or cannot be started (D04.2-73) | RESOLVED |
-| P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes. First part done: the exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61) from server facts, including session moves (D04.6-30). Second part done: lock and unlock of one participant (D04.6-38/39/40, ASSESS-PROCTOR-001). Remaining: device-side signals and their policy (D04.6-19..32, D04.7 presets), incidents, other control actions, broadcast | OPEN (in progress) |
+| P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes. First part done: the exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61) from server facts, including session moves (D04.6-30). Second part done: lock and unlock of one participant (D04.6-38/39/40, ASSESS-PROCTOR-001). Third part done: broadcast messages (D04.1-77A..G, D04.6-49..55, ASSESS-PROCTOR-002). Remaining: device-side signals and their policy (D04.6-19..32, D04.7 presets), incidents, other control actions | OPEN (in progress) |
 | P1-13 | Shared-device hygiene: remembered school choice leaked to the next account; re-authentication could accept another account while keeping the previous context | found in rendered checks — **RESOLVED** (logout clears the choice; re-login locked to the same ELLIGBLE ID) | RESOLVED |
 | P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
 | P1-15 | Question order followed random snapshot UUIDs, not the authored order (D04.3-41, D04.2-57..59) | **RESOLVED**: migration `0038` adds a positive, per-exam unique `display_order` written when the snapshot is created (snapshots stay immutable); delivery orders by it, legacy rows follow by id; real-PostgreSQL test with identifier order opposite to the authored order | RESOLVED |
@@ -107,14 +108,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ASSESS-PROCTOR-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → OPS-002.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | none (next: ASSESS-PROCTOR-002) |
-| READY QUEUE (by value) | ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
+| IN PROGRESS | none (next: OPS-002) |
+| READY QUEUE (by value) | OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -213,23 +214,20 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Out of scope | server changes (every refusal and timer answer already carries the database time) |
 | Delivered | the engine keeps, per kind of span (pause, lock), the server time of the newest answer it applied; an older answer is stale: a timer answer produced before a pause or lock began no longer shows the questions again or closes the span, and a refusal produced before a resume or unlock no longer pauses or locks the screen or drops a choice made afterwards (it only marks the span as lasting until then, so the choice it refused is dropped without asking again); a newer refusal reopens a span the engine had closed by estimate, so the refused choice is dropped and reported instead of being resent; a span whose end came from the server's record never opens again. The exam screen applies a timer answer only when it is fresh for both kinds |
 | Known limits | a timer answer is dated by the database time at the start of its request, so a resume or unlock recorded while that request runs can be taken as stale and is then seen on the next check (about 5 s while paused or locked) |
-| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Commit / PR | `3e28d9b`, CI run 24; part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-PROCTOR-002 · Broadcast messages to participants
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-PROCTOR / P2 / READY |
+| Workstream / priority / status | ASSESS-PROCTOR / P2 / DONE |
 | Dependencies / blocks | none / none |
-| Repository evidence | no broadcast |
-| Why | D04.6-49..55 (scopes, simple composer, templates, non-blocking, delivery state, audit, rate limit) |
-| Exact scope | exam-wide and selected-participant messages from the managing teacher or an assigned proctor within scope; quick templates; non-blocking banner in the workstation; audited; rate limited |
-| Out of scope | room scope until rooms are used in the pilot; push channels |
-| Expected product result | supervisors can inform students without interrupting answering |
-| Surfaces | migration, routes, monitoring screen, workstation banner |
-| Verification | integration, component, E2E |
-| Owner decision | none |
-| Commit / PR | pending |
+| Why | D04.1-77A..G and D04.6-49..55, all LOCKED (scopes, simple composer, quick messages, non-blocking, delivery state without "read", audit, rate limit, reviewable history), D04.5-57/58/59 |
+| Exact scope | messages to the entire exam, one exam room or chosen participants from the managing teacher or an assigned proctor within scope; quick messages; non-blocking notice on the exam screen and a list to reread; audited; rate limited. The room target is included (the plan first deferred it) because D04.6-49 and D04.1-77B make it baseline and rooms already exist in the schema |
+| Out of scope | critical persistent messages (D04.1-77D), push channels, message editing or withdrawal |
+| Delivered | migration `0047`: `secure_assessment_exam_broadcasts` (sender, target, message of 1 to 200 characters, time; append-only) and `secure_assessment_exam_broadcast_recipients` (fixed when sent: participants in the target and in the sender's scope who have not submitted; the delivery time is recorded once, when the device confirms). `POST /assessment/exam-monitoring/broadcast`: a proctor limited to rooms reaches only their rooms or participants in them, never the entire exam; nothing is sent when a chosen participant is outside the scope; allowed while the exam is ACTIVE, PAUSED or ENDED; limited per sender and exam. The shared supervision scope (`supervision-scope.ts`) now serves the participant list, the lock and broadcast alike. Students: the timer answer carries `messageCount`; the device fetches its messages (`POST /assessment/broadcasts/inbox`) only when that count grows, confirms the new ones at once, shows a recent new one as a notice in the header area (to the right on wide screens) that closes after 20 s or with "Tutup", never takes the focus and covers nothing of the question, choices, timer, navigation or save state; every message stays in "Pesan Pengawas" in the question list, and the latest one shows on the paused and locked screens. Supervisors: "Kirim Pesan" with target, message and the four quick messages of D04.6-51, and "Pesan Terkirim" with time, target, sender and "Sampai di perangkat X dari Y peserta", explicitly not "read" |
+| Known limits | a student sees a message at the next state check (about 15 s, 5 s while paused or locked); a device offline at that time receives it on reconnecting; a message older than 5 minutes when it first reaches a device goes to the list without a notice; rate limit and quick messages are implementation defaults (§7) |
+| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-PROCTOR-003 · Device signals and incidents in the Proctor Feed
 
@@ -328,7 +326,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| ASSESS-SYNC-001 | Exam-state answers ordered by server time: no resend loop, no choice dropped by a late refusal (P1-29) | this change (§11) |
+| ASSESS-PROCTOR-002 | Messages from supervisors to the exam, a room or chosen participants; non-blocking on the exam screen; delivery to devices, never "read" | this change (§11) |
+| ASSESS-SYNC-001 | Exam-state answers ordered by server time: no resend loop, no choice dropped by a late refusal (P1-29) | `3e28d9b`, CI run 24 |
 | ASSESS-PROCTOR-001 | Lock and unlock of one participant by the proctor or the managing teacher, audited; questions hidden while the time runs | `9243a85`, CI run 23 |
 | RESULT-002 | Teacher result export (CSV with provenance) and print view | `ce86528`, CI run 21 |
 | PR checkpoint | Pull request from `claude/laughing-mendel-p2l9gh` to `main` for the Owner's review | [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
@@ -359,6 +358,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Activation code validity (D02.3-09 "short-lived") | Activation cards | 7 days by default, operator may choose 1 to 30 days per issue | IMPLEMENTED DEFAULT, adjustable |
 | Student result visibility (D04.8-16/21/22: options exist, "exact school-facing options later") | Showing scores to students | Hidden until the teacher publishes a finalized result, per exam; only the student's own score, no ranking or peer results (D04.8-50/51) | OPEN (students see no scores today; teachers see provisional results) |
 | Who finalizes the results of a teacher-managed exam (D04.8-17/57; D03.6-25/26 keep finalization capability-based and allow maker-checker, PB05 matrix OPEN) | "Finalisasi Hasil" | The teacher who manages the exam (the same assignment-scoped authority that opens, pauses and ends it, D04.4-26A); one step, audited with actor and time; no second approver | IMPLEMENTED DEFAULT, adjustable when PB05 or a maker-checker rule is decided |
+| Broadcast rate limit (D04.1-77F: "exact rate limits remain later implementation policy") | "Kirim Pesan" | One message per sender and exam every 15 s, at most 20 per sender and exam in an hour; the refusal says when to try again | IMPLEMENTED DEFAULT, adjustable |
+| Quick broadcast messages ("exact quick broadcast templates" left open by Discovery 04) | "Pesan cepat" in the composer | The four examples of D04.6-51 | IMPLEMENTED DEFAULT, adjustable |
 | Exam content import by platform operators on behalf of teachers | Pilot exams before a teacher authoring or import screen exists | Audited, case-linked operator import; teachers keep readiness and activation | IMPLEMENTED AS PILOT BRIDGE |
 
 ## 8. Production Blockers (PB01-PB12)
@@ -384,7 +385,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 |---|---|
 | Environment config / validation | every variable validated at startup (`.env.example`): PostgreSQL URL scheme (never echoed), environment, port, pool, cookie security (cannot be off in production), allowed origins, migration mode (cannot be `off` in production), bounded database wait |
 | Secrets | none committed; `.env*` git-ignored and excluded from the image build context |
-| Migrations | 46 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
+| Migrations | 47 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
 | Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
@@ -587,12 +588,23 @@ After ordering exam-state answers by server time (ASSESS-SYNC-001, this branch):
 | runtime unit / integration | 899/899 / 107/107 PASS (no runtime change) |
 | browser E2E | 16/16 PASS (no regression: pause, lock, end and finalize journeys) |
 
+After broadcast messages (ASSESS-PROCTOR-002, this branch):
+
+| Check | Result |
+|---|---|
+| typecheck (4 runtime packages, web, E2E) | PASS |
+| runtime unit | 899/899 PASS incl. route parity with both new client calls |
+| integration (real PostgreSQL 16) | 115/115 PASS. The teacher's message to the exam reaches the working and the waiting participant, not the one who submitted; sender, target, normalized message and time stored; the timer answer counts it; fetching does not confirm it, the device's confirmation does, once; another participant's ids confirm nothing and another student's attempt is refused; a device confirms only the messages it names. Chosen participants only; one outside the scope and nothing is written. One sender waits 15 s (with Retry-After) while another supervisor is not held back; after 20 messages in an hour the next waits until the oldest leaves the hour. A room proctor cannot address the entire exam, another room or a participant elsewhere, and reaches their room only; the teacher reaches every room; each supervisor's history and counts stay within their scope; a room target on an exam without rooms is refused. Another teacher, a participant, another school and an unassigned member are refused; empty, blank, 201-character and malformed targets refused, 200 characters accepted; a scheduled exam and an exam where everyone submitted refused. Broadcasts cannot be changed or deleted, recipients cannot be deleted or have their delivery cleared. Lock and monitoring suites unchanged on the shared scope. Mutation-checked (10: whole-exam address by a room proctor, another room, chosen participants outside the scope, recipients who submitted, interval, hourly cap, confirmation of all by one, delivery on fetch, history beyond the scope, another participant's inbox): all caught |
+| web vitest / `vite build` | 238/238 / PASS: composer with the whole exam for the teacher, only rooms and chosen participants for a room proctor, quick message, counter, no send without a chosen participant, wait time on the rate limit, history with sender, target and "Sampai di perangkat", no composer after finalization; inbox fetched at the start, confirmed at once, a recent message shown once and not after a reload, older ones only listed, fetched again only when the count grows or a confirmation is owed, the notice closes by itself and on "Tutup"; on the exam screen the notice keeps the focus where it was, answers still save, the message stays in the question list, and the paused screen shows the latest one. Mutation-checked (10): all caught |
+| browser E2E | 17/17 PASS against the production process: the teacher sends "Ujian tersisa 15 menit." to the entire exam at 360 px; the student's screen shows it with the time, the student changes an answer and it is saved, closes the notice and finds the message in "Daftar Soal"; the teacher's "Pesan Terkirim" shows it reached one device; the database records the teacher, the target and the message |
+| rendered check (Chromium, 360 px and 1280 px) | composer (the long quick message wraps inside the dialog after the first render showed it cut off, now asserted), student notice at the top and to the right on a wide screen with the list in the question panel, monitoring history: no horizontal overflow, no em dash; DesainPakeAI context revision unchanged (§10) |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-PROCTOR-002 (broadcast messages), then OPS-002 metrics and alerting; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: OPS-002 (metrics and alerting), then OPS-003 (edge rate limiting guidance); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

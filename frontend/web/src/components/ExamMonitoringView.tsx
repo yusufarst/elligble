@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { formatClockTime, formatTime } from '../lib/format.ts';
+import { BroadcastComposer, BroadcastHistory } from './ExamBroadcast.tsx';
 
 // Exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61): who is expected, who has
 // started, who has submitted and whose exam session moved to another device. It shows only
@@ -15,7 +16,8 @@ import { formatClockTime, formatTime } from '../lib/format.ts';
 // connectivity are not claimed. Refreshes by itself; a failed refresh keeps the last data
 // and says how old it is, while the exam itself continues unaffected. The supervisor can
 // lock one participant's work and unlock it again (D04.6-38/39): the lock keeps every
-// answer and does not stop that participant's time (D04.6-40).
+// answer and does not stop that participant's time (D04.6-40). Messages to participants
+// are sent and reviewed here too (D04.6-49..55).
 
 const DEFAULT_REFRESH_MS = 20000;
 
@@ -116,7 +118,8 @@ export const ExamMonitoringView: React.FC<{
   const [query, setQuery] = useState('');
   const [confirmLock, setConfirmLock] = useState<{ participant: MonitoredParticipant; action: ParticipantLockAction } | null>(null);
   const [lockPending, setLockPending] = useState(false);
-  const [lockNotice, setLockNotice] = useState<{ failed: boolean; text: string } | null>(null);
+  const [notice, setNotice] = useState<{ failed: boolean; text: string } | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const loadingRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -156,9 +159,9 @@ export const ExamMonitoringView: React.FC<{
     setLockPending(true);
     try {
       const result = await postParticipantLock(examInstanceId, participant.participantId, action);
-      setLockNotice({ failed: false, text: lockOutcomeMessage(id, result) });
+      setNotice({ failed: false, text: lockOutcomeMessage(id, result) });
     } catch (err) {
-      setLockNotice({ failed: true, text: lockFailureMessage(err) });
+      setNotice({ failed: true, text: lockFailureMessage(err) });
     } finally {
       setLockPending(false);
       setConfirmLock(null);
@@ -205,16 +208,24 @@ export const ExamMonitoringView: React.FC<{
   }
 
   const { exam, summary, questionCount } = data;
+  const supervised = SUPERVISED_STATES.has(exam.lifecycleState);
+  // A proctor limited to rooms addresses only their rooms (D04.1-77B), as on the server.
+  const wholeExam = data.scope === 'TEACHER' || !exam.roomBased;
 
   return (
     <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
       {back}
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">Pemantauan Peserta</h1>
-        <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
-        <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
-          Diperbarui {formatClockTime(data.serverTime)}. Diperbarui otomatis.
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="m-0 text-2xl font-semibold">Pemantauan Peserta</h1>
+          <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
+          <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
+            Diperbarui {formatClockTime(data.serverTime)}. Diperbarui otomatis.
+          </p>
+        </div>
+        {supervised && (
+          <Button className="self-start sm:self-auto" onClick={() => setComposerOpen(true)}>Kirim Pesan</Button>
+        )}
       </header>
 
       {exam.lifecycleState === 'PAUSED' && (
@@ -275,13 +286,13 @@ export const ExamMonitoringView: React.FC<{
         </div>
       </div>
 
-      {lockNotice && (lockNotice.failed ? (
+      {notice && (notice.failed ? (
         <Alert variant="destructive">
           <IconInfo aria-hidden="true" />
-          <AlertDescription>{lockNotice.text}</AlertDescription>
+          <AlertDescription>{notice.text}</AlertDescription>
         </Alert>
       ) : (
-        <p role="status" className="m-0 text-sm font-medium">{lockNotice.text}</p>
+        <p role="status" className="m-0 text-sm font-medium">{notice.text}</p>
       ))}
 
       {visible.length === 0 ? (
@@ -353,9 +364,26 @@ export const ExamMonitoringView: React.FC<{
         </div>
       )}
 
+      {(data.broadcasts?.length ?? 0) > 0 && <BroadcastHistory broadcasts={data.broadcasts!} />}
+
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
         Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan. "Kunci" menghentikan pengerjaan satu peserta tanpa menghentikan waktunya; jawaban yang sudah dipilih tetap tersimpan.
       </p>
+
+      <BroadcastComposer
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        examInstanceId={examInstanceId}
+        wholeExam={wholeExam}
+        rooms={data.rooms ?? []}
+        participants={data.participants}
+        onSent={result => {
+          setComposerOpen(false);
+          setNotice({ failed: false, text: `Pesan terkirim ke ${result.recipients} peserta.` });
+          void load();
+        }}
+        onStale={() => void load()}
+      />
 
       <Dialog open={confirmLock !== null} onOpenChange={open => { if (!open && !lockPending) setConfirmLock(null); }}>
         {confirmLock && (

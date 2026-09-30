@@ -9,6 +9,7 @@ import { continueExam, expireAttemptOf, login, option, saveStatus, state, withDa
 // saved and the student is told; resume continues from the frozen time; end lets a running
 // attempt finish and stops new starts. The proctor's lock of one participant (D04.6-38/39/40)
 // hides that student's questions while their time keeps running, with the same boundary rule.
+// A supervisor's message reaches the student's screen without interrupting it (D04.6-49..53).
 
 const PASSWORD = 'bintang-kejora-2026';
 
@@ -192,6 +193,75 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     )).rows);
     expect(record).toEqual([{ locked_by_proctor: true, unlocked_by_proctor: true, closed: true }]);
     await proctorContext.close();
+});
+
+test('a supervisor message reaches the student without interrupting the exam, and the teacher sees it reached the device', async ({ page, browser }) => {
+    await login(page, 'siswa.e2e.03', PASSWORD);
+    await continueExam(page);
+
+    const teacherContext = await browser.newContext({ viewport: { width: 360, height: 780 }, locale: 'id-ID', timezoneId: 'UTC' });
+    const teacher = await teacherContext.newPage();
+    await login(teacher, 'guru.e2e', 'papan-tulis-hijau');
+    await teacher.getByRole('button', { name: 'Pantau Peserta' }).click();
+    await teacher.getByRole('button', { name: 'Kirim Pesan' }).click();
+    const dialog = teacher.getByRole('dialog');
+    await expect(dialog.getByRole('radio', { name: 'Semua peserta' })).toBeChecked();
+    await dialog.getByRole('button', { name: 'Ujian tersisa 15 menit.' }).click();
+    expect(await teacher.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    // Every quick message fits inside the dialog.
+    const dialogBox = (await dialog.boundingBox())!;
+    for (const quick of await dialog.getByRole('group', { name: 'Pesan cepat' }).getByRole('button').all()) {
+        const box = (await quick.boundingBox())!;
+        expect(box.x + box.width).toBeLessThanOrEqual(dialogBox.x + dialogBox.width);
+    }
+    await teacher.screenshot({ path: test.info().outputPath('broadcast-composer-360.png') });
+    await dialog.getByRole('button', { name: 'Kirim Pesan' }).click();
+    await expect(teacher.getByText(/^Pesan terkirim ke \d+ peserta\.$/)).toBeVisible();
+
+    // The student's screen learns of it at its next state check (here, the connection coming back).
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    const banner = page.locator('.broadcast-banner');
+    await expect(banner).toContainText('Ujian tersisa 15 menit.');
+    await expect(banner).toContainText(/Pesan pengawas, \d{2}\.\d{2} WIB/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('broadcast-student-360.png') });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('broadcast-student-1280.png') });
+    await page.setViewportSize({ width: 360, height: 780 });
+    // Answering goes on while the message is shown.
+    const current = (await answersOf('siswa.e2e.03'))[1];
+    const other = await anotherOption(1, current);
+    await option(page, other).click();
+    await expect(saveStatus(page)).toHaveText('Tersimpan');
+    expect((await answersOf('siswa.e2e.03'))[1]).toBe(await optionId(1, other));
+    await banner.getByRole('button', { name: 'Tutup' }).click();
+    await expect(banner).toHaveCount(0);
+    // It stays available to reread.
+    await page.getByRole('button', { name: 'Daftar Soal' }).click();
+    await expect(page.getByRole('dialog').getByText('Ujian tersisa 15 menit.')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // The teacher sees that the device received it, never that it was read.
+    const history = teacher.getByRole('region', { name: 'Pesan Terkirim' });
+    await expect(async () => {
+        await teacher.getByRole('button', { name: 'Perbarui', exact: true }).click();
+        await expect(history).toContainText(/Sampai di perangkat 1 dari \d+ peserta/, { timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+    await expect(history).toContainText('Semua peserta · Anda');
+    await teacher.screenshot({ path: test.info().outputPath('broadcast-history-360.png'), fullPage: true });
+    await teacher.setViewportSize({ width: 1280, height: 900 });
+    await teacher.screenshot({ path: test.info().outputPath('broadcast-history-1280.png'), fullPage: true });
+    const stored = await withDatabase(async client => (await client.query(
+        `SELECT b.target_scope, b.message, (b.sender_person_id = ua.person_id) AS by_teacher
+         FROM secure_assessment_exam_broadcasts b
+         JOIN identity_user_accounts ua ON TRUE
+         JOIN identity_account_credentials c ON c.user_account_id = ua.id AND c.username = 'guru.e2e'
+         WHERE b.exam_instance_id = $1`,
+        [state.examInstanceId]
+    )).rows);
+    expect(stored).toEqual([{ target_scope: 'EXAM', message: 'Ujian tersisa 15 menit.', by_teacher: true }]);
+    await teacherContext.close();
 });
 
 test('ending the exam stops new starts only: a running attempt keeps working and submits', async ({ page, browser }) => {

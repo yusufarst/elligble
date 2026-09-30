@@ -88,6 +88,8 @@ export interface TimerResponse extends ExamRunInfo {
   configuredDurationSeconds: number;
   effectiveDurationSeconds: number;
   effectiveRemainingSeconds: number;
+  /** How many supervisor messages the student has (the device fetches them when this grows). */
+  messageCount?: number;
 }
 
 export interface SaveAnswerPayload {
@@ -325,6 +327,44 @@ export interface ParticipantLockResponse {
   lockedAt: string | null;
 }
 
+/** Where a supervisor's message goes (D04.6-49): the entire exam, one room or selected participants. */
+export type BroadcastTarget =
+  | { scope: 'EXAM' }
+  | { scope: 'ROOM'; roomId: string }
+  | { scope: 'PARTICIPANTS'; participantIds: string[] };
+
+/** A sent message as supervisors see it: counts within the viewer's scope; delivered is not read (D04.6-53). */
+export interface BroadcastRecord {
+  broadcastId: string;
+  sentAt: string;
+  sender: { elligbleId: string | null; you: boolean };
+  target: { scope: 'EXAM' | 'ROOM' | 'PARTICIPANTS'; roomLabel: string | null };
+  message: string;
+  recipients: number;
+  delivered: number;
+}
+
+export interface BroadcastSendResponse {
+  broadcastId: string;
+  sentAt: string;
+  recipients: number;
+}
+
+/** A supervisor message as the student's device receives it. */
+export interface InboxMessage {
+  id: string;
+  text: string;
+  sentAt: string;
+}
+
+export interface BroadcastInboxResponse {
+  /** Newest first, at most 50. */
+  messages: InboxMessage[];
+  /** How many messages the student has in all. */
+  total: number;
+  serverTime: string;
+}
+
 /** Exam-day participant list for the assigned proctor or the managing teacher (D04.6). */
 export interface ExamMonitoringResponse {
   exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt?: string | null };
@@ -333,4 +373,8 @@ export interface ExamMonitoringResponse {
   questionCount: number;
   summary: { participants: number; notStarted: number; active: number; submitted: number };
   participants: MonitoredParticipant[];
+  /** Rooms of a room-based exam within the viewer's scope. */
+  rooms?: Array<{ roomId: string; label: string }>;
+  /** Messages that reached participants in the viewer's scope, newest first. */
+  broadcasts?: BroadcastRecord[];
 }

@@ -13,6 +13,9 @@ import type {
   ExamMonitoringResponse,
   ParticipantLockAction,
   ParticipantLockResponse,
+  BroadcastTarget,
+  BroadcastSendResponse,
+  BroadcastInboxResponse,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -157,6 +160,19 @@ export async function postParticipantLock(
   const url = '/api/v1/assessment/exam-monitoring/participant-lock';
   const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, participantId, action } });
   return handleResponse<ParticipantLockResponse>(res);
+}
+
+export async function postBroadcast(examInstanceId: string, target: BroadcastTarget, message: string): Promise<BroadcastSendResponse> {
+  const url = '/api/v1/assessment/exam-monitoring/broadcast';
+  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, target, message } });
+  return handleResponse<BroadcastSendResponse>(res);
+}
+
+/** The student's supervisor messages; `received` confirms the ones this device already holds. */
+export async function postBroadcastInbox(attemptId: string, received: string[] = []): Promise<BroadcastInboxResponse> {
+  const url = '/api/v1/assessment/broadcasts/inbox';
+  const res = await apiFetch(url, { method: 'POST', json: { attemptId, received } });
+  return handleResponse<BroadcastInboxResponse>(res);
 }
 
 export async function getTeacherExamResults(examInstanceId: string): Promise<TeacherExamResultsResponse> {

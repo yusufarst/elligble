@@ -43,6 +43,8 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getTeacherExamResults: m => m.getTeacherExamResults(ID),
         getExamMonitoring: m => m.getExamMonitoring(ID),
         postParticipantLock: m => m.postParticipantLock(ID, ID, 'lock'),
+        postBroadcast: m => m.postBroadcast(ID, { scope: 'EXAM' }, 'Harap tetap di tempat duduk.'),
+        postBroadcastInbox: m => m.postBroadcastInbox(ID, []),
     },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),
