@@ -106,12 +106,12 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → PR checkpoint → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | PR checkpoint |
-| READY QUEUE (by value) | ASSESS-PROCTOR-001, ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
+| IN PROGRESS | ASSESS-PROCTOR-001 |
+| READY QUEUE (by value) | ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
 | RECENTLY COMPLETED | RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
@@ -191,7 +191,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-PROCTOR / P2 / READY |
+| Workstream / priority / status | ASSESS-PROCTOR / P2 / IN_PROGRESS |
 | Dependencies / blocks | ASSESS-LIFE-001 (shared time and guard model) / none |
 | Repository evidence | no lock state; monitoring list exists (`exam-monitoring.ts`) |
 | Why | D04.6-38 (lock preserves answers), D04.6-39 LOCKED (direct unlock by the authorized proctor, scoped, audited), D04.2-76 |
@@ -316,8 +316,9 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| RESULT-002 | Teacher result export (CSV with provenance) and print view | this change (§11) |
-| RESULT-001 | Explicit, audited result finalization with frozen per-participant results | `c5aecdb` |
+| RESULT-002 | Teacher result export (CSV with provenance) and print view | `ce86528`, CI run 21 |
+| PR checkpoint | Pull request from `claude/laughing-mendel-p2l9gh` to `main` for the Owner's review | [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| RESULT-001 | Explicit, audited result finalization with frozen per-participant results | `c5aecdb`, CI run 20 |
 | ASSESS-LIFE-002 | Student exam screen under pause and end; answers chosen before a pause are never lost | `1a8e81c`, CI run 19 |
 | ASSESS-LIFE-001 | Exam pause, resume and end on the server with pause-aware time; teacher controls | `a40565e`, CI run 18 |
 | TOOL-001 | DesainPakeAI CLI authenticated at user level (no repository file holds the key), skill installed, project and context verified (§10) | `2459f48` |
@@ -557,6 +558,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: the pull-request checkpoint, then the proctor items. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: the proctor items (ASSESS-PROCTOR-001 lock and unlock, then ASSESS-PROCTOR-002 broadcast); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
