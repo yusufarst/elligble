@@ -1,7 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
-import { readAttemptExamState } from './exam-pause.ts';
+import { readAttemptExamState, readOpenLock } from './exam-pause.ts';
 
 export interface SubmissionDependencies {
     pool: pg.Pool;
@@ -148,7 +148,9 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
 
             // While the exam is paused the exam screen is read-only: no submission, except
             // that a submission already made is still answered (idempotent retry).
+            // The same holds while a supervisor has locked the attempt.
             let pausedAt: string | null | undefined;
+            let lockedAt: Date | null = null;
             try {
                 const existing = await client.query(
                     'SELECT 1 FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
@@ -157,6 +159,7 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
                 if (existing.rows.length === 0 && exam?.lifecycleState === 'PAUSED') {
                     pausedAt = exam.pausedAt ? exam.pausedAt.toISOString() : null;
                 }
+                if (existing.rows.length === 0) lockedAt = await readOpenLock(client, context.tenantId, attemptId);
             } catch (err) {
                 try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
                 res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -167,6 +170,12 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
                 try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
                 res.writeHead(409, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'exam_paused', pausedAt }));
+                return;
+            }
+            if (lockedAt !== null) {
+                try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'attempt_locked', lockedAt: lockedAt.toISOString() }));
                 return;
             }
 

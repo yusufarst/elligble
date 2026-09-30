@@ -1,7 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
-import { readAttemptExamState } from './exam-pause.ts';
+import { readAttemptExamState, readOpenLock } from './exam-pause.ts';
 
 export interface ResumeDependencies {
     pool: pg.Pool;
@@ -67,7 +67,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes, reviewFlagsRes, examState;
+        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes, reviewFlagsRes, examState, lockedAt;
         try {
             await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
@@ -155,6 +155,8 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
 
             // Whether the exam is paused (time frozen) or ended (Owner decision 2026-09-30).
             examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
+            // Whether a supervisor locked this attempt (D04.6-38).
+            lockedAt = await readOpenLock(client, context.tenantId, attemptId);
 
             // "Ragu-ragu" marks: the student's own navigation aid, kept apart from answers (D04.5-35).
             reviewFlagsRes = await client.query(
@@ -241,6 +243,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                     lifecycleState: examState?.lifecycleState ?? null,
                     pausedAt: examState?.pausedAt ? examState.pausedAt.toISOString() : null
                 },
+                lock: { lockedAt: lockedAt ? lockedAt.toISOString() : null },
                 serverTime: new Date(timer.db_now ?? Date.now()).toISOString()
             }));
         } catch (appErr) {

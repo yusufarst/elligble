@@ -196,6 +196,20 @@ describe('useReviewFlags', () => {
     await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull());
   });
 
+  it('keeps a mark while a supervisor locks the attempt and sends it after the unlock', async () => {
+    let locked = true;
+    const send = vi.fn(async () => {
+      if (locked) throw new ApiError(409, 'attempt_locked');
+    });
+    const { result } = renderHook(() => useReviewFlags({ attemptId: ATTEMPT, sessionId: SESSION, initialFlags: [], enabled: true, send, storage: window.localStorage }));
+    act(() => result.current.toggle(Q1));
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY)!)).toEqual({ [Q1]: true });
+    locked = false;
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(2), { timeout: 4000 });
+    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull());
+  });
+
   it('forgets a finished attempt\'s marks on this device', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ [Q1]: true }));
     clearReviewFlags(ATTEMPT, window.localStorage);

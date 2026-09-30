@@ -22,6 +22,8 @@ export interface UseAnswerManagerOptions {
   onTerminalEvent?: (code: string) => void;
   /** A save showed the exam is paused (Owner decision 2026-09-30). */
   onExamPaused?: (pausedAt: number | null) => void;
+  /** A save showed that a supervisor locked this attempt (D04.6-38). */
+  onAttemptLocked?: (lockedAt: number | null) => void;
   /** Choices made during a pause were dropped for these questions. */
   onDiscarded?: (snapshotIds: string[]) => void;
   /** Seams for tests; production uses IndexedDB and the HTTP API. */
@@ -47,6 +49,8 @@ export interface AnswerManager {
   flush: () => void;
   /** Tells the engine what the server said about the exam (pause stops new choices). */
   noteExamState: (state: ExamRunState, pausedAt: number | null) => void;
+  /** Tells the engine whether a supervisor has locked this attempt (null: not locked). */
+  noteLockState: (lockedAt: number | null) => void;
 }
 
 /** Lets the engine start immediately while the durable store is still opening. */
@@ -103,6 +107,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
         // The shared transport already reports 401 to the session layer (re-auth dialog).
         onUnauthorized: () => undefined,
         onExamPaused: pausedAt => callbacksRef.current.onExamPaused?.(pausedAt),
+        onAttemptLocked: lockedAt => callbacksRef.current.onAttemptLocked?.(lockedAt),
         onDiscarded: ids => callbacksRef.current.onDiscarded?.(ids),
       },
     });
@@ -183,6 +188,10 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     if (engine) void engine.noteExamState(state, pausedAt);
   }, [engine]);
 
+  const noteLockState = useCallback((lockedAt: number | null) => {
+    if (engine) void engine.noteLockState(lockedAt);
+  }, [engine]);
+
   return {
     selectedOptions,
     saveStates,
@@ -194,5 +203,6 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     pendingCount: engine?.pendingCount ?? 0,
     flush,
     noteExamState,
+    noteLockState,
   };
 }

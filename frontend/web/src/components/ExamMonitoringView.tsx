@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, getExamMonitoring } from '../api/assessment-client.ts';
-import type { ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus } from '../types/assessment.ts';
+import { ApiError, getExamMonitoring, postParticipantLock } from '../api/assessment-client.ts';
+import type { ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus, ParticipantLockAction, ParticipantLockResponse } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -12,7 +13,9 @@ import { formatClockTime, formatTime } from '../lib/format.ts';
 // started, who has submitted and whose exam session moved to another device. It shows only
 // what the server knows and when it last knew it; answers still on a student's device and
 // connectivity are not claimed. Refreshes by itself; a failed refresh keeps the last data
-// and says how old it is, while the exam itself continues unaffected.
+// and says how old it is, while the exam itself continues unaffected. The supervisor can
+// lock one participant's work and unlock it again (D04.6-38/39): the lock keeps every
+// answer and does not stop that participant's time (D04.6-40).
 
 const DEFAULT_REFRESH_MS = 20000;
 
@@ -52,6 +55,48 @@ const TONE_CLASS: Record<'success' | 'info' | 'warning' | 'neutral', string> = {
   neutral: 'bg-[var(--color-neutral-badge-bg)] text-[var(--color-neutral-badge-text)]',
 };
 
+// Exam states in which a supervisor may lock or unlock a participant (as on the server).
+const SUPERVISED_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
+
+/** The lock action offered for a participant: only someone still working can be locked. */
+function lockActionFor(p: MonitoredParticipant, examState: string): ParticipantLockAction | null {
+  if (!SUPERVISED_STATES.has(examState) || p.status === 'SUBMITTED') return null;
+  if (p.lockedAt) return 'unlock';
+  return p.status === 'ACTIVE' ? 'lock' : null;
+}
+
+const LOCK_COPY: Record<ParticipantLockAction, { title: string; description: string; confirm: string }> = {
+  lock: {
+    title: 'Kunci Pengerjaan Peserta?',
+    description: 'Peserta tidak dapat melihat soal, mengubah jawaban, atau mengumpulkan sampai kunci dibuka. Jawaban yang dipilih sebelum dikunci tetap tersimpan. Waktu ujian peserta tetap berjalan; jika waktunya habis saat dikunci, jawabannya dikumpulkan otomatis.',
+    confirm: 'Kunci Pengerjaan',
+  },
+  unlock: {
+    title: 'Buka Kunci Pengerjaan?',
+    description: 'Peserta dapat kembali melihat soal dan mengerjakan dengan sisa waktunya saat ini. Waktu yang berjalan selama dikunci tidak dikembalikan.',
+    confirm: 'Buka Kunci',
+  },
+};
+
+function lockOutcomeMessage(id: string, result: ParticipantLockResponse): string {
+  if (result.locked) {
+    const since = result.lockedAt ? ` sejak ${formatTime(result.lockedAt)}` : '';
+    return result.changed ? `Pengerjaan ${id} dikunci${since}.` : `Pengerjaan ${id} sudah dikunci${since}.`;
+  }
+  return result.changed ? `Kunci pengerjaan ${id} dibuka.` : `Pengerjaan ${id} tidak sedang dikunci.`;
+}
+
+function lockFailureMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    switch (err.code) {
+      case 'no_active_attempt': return 'Peserta ini sudah tidak memiliki pengerjaan yang berjalan. Data ditampilkan ulang.';
+      case 'invalid_state': return 'Status ujian telah berubah. Data ditampilkan ulang.';
+      case 'forbidden': return 'Anda tidak berwenang mengunci atau membuka kunci peserta ini.';
+    }
+  }
+  return 'Gagal memproses permintaan. Periksa koneksi internet Anda dan coba lagi.';
+}
+
 function remainingLabel(p: MonitoredParticipant): string | null {
   if (p.status === 'TIME_UP') return 'Waktu habis';
   if (p.status !== 'ACTIVE' || p.remainingSeconds === null) return null;
@@ -69,6 +114,9 @@ export const ExamMonitoringView: React.FC<{
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('ALL');
   const [query, setQuery] = useState('');
+  const [confirmLock, setConfirmLock] = useState<{ participant: MonitoredParticipant; action: ParticipantLockAction } | null>(null);
+  const [lockPending, setLockPending] = useState(false);
+  const [lockNotice, setLockNotice] = useState<{ failed: boolean; text: string } | null>(null);
   const loadingRef = useRef(false);
 
   const load = useCallback(async () => {
@@ -101,6 +149,21 @@ export const ExamMonitoringView: React.FC<{
     setRefreshing(true);
     await load();
     setRefreshing(false);
+  };
+
+  const runLockAction = async (participant: MonitoredParticipant, action: ParticipantLockAction) => {
+    const id = participant.elligbleId ?? 'peserta';
+    setLockPending(true);
+    try {
+      const result = await postParticipantLock(examInstanceId, participant.participantId, action);
+      setLockNotice({ failed: false, text: lockOutcomeMessage(id, result) });
+    } catch (err) {
+      setLockNotice({ failed: true, text: lockFailureMessage(err) });
+    } finally {
+      setLockPending(false);
+      setConfirmLock(null);
+      await load();
+    }
   };
 
   const visible = useMemo(() => {
@@ -212,6 +275,15 @@ export const ExamMonitoringView: React.FC<{
         </div>
       </div>
 
+      {lockNotice && (lockNotice.failed ? (
+        <Alert variant="destructive">
+          <IconInfo aria-hidden="true" />
+          <AlertDescription>{lockNotice.text}</AlertDescription>
+        </Alert>
+      ) : (
+        <p role="status" className="m-0 text-sm font-medium">{lockNotice.text}</p>
+      ))}
+
       {visible.length === 0 ? (
         <p className="m-0 text-muted-foreground">
           {data.participants.length === 0 ? 'Tidak ada peserta dalam cakupan pengawasan Anda.' : 'Tidak ada peserta yang cocok.'}
@@ -231,15 +303,33 @@ export const ExamMonitoringView: React.FC<{
               {visible.map((p, index) => {
                 const badge = statusBadge(p);
                 const remaining = remainingLabel(p);
+                const lockAction = lockActionFor(p, exam.lifecycleState);
+                const shownId = p.elligbleId ?? 'Tanpa ELLIGBLE ID';
                 return (
                   <tr key={p.elligbleId ?? `tanpa-id-${index}`} className="border-t border-border align-top">
                     <th scope="row" className="px-3 py-3 text-left font-normal">
-                      <span className="block font-mono text-[13px] [overflow-wrap:anywhere]">{p.elligbleId ?? 'Tanpa ELLIGBLE ID'}</span>
+                      <span className="block font-mono text-[13px] [overflow-wrap:anywhere]">{shownId}</span>
                       {p.roomLabel && <span className="block text-xs text-muted-foreground">{p.roomLabel}</span>}
-                      <span className={cn('mt-1.5 inline-block rounded-md px-2 py-0.5 text-xs font-medium', TONE_CLASS[badge.tone])}>{badge.label}</span>
+                      <span className="mt-1.5 flex flex-wrap gap-1.5">
+                        <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', TONE_CLASS[badge.tone])}>{badge.label}</span>
+                        {p.lockedAt && <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', TONE_CLASS.warning)}>Dikunci</span>}
+                      </span>
+                      {p.lockedAt && <span className="mt-1 block text-xs text-muted-foreground">Dikunci sejak {formatTime(p.lockedAt)}</span>}
                       {p.submittedAt && <span className="mt-1 block text-xs text-muted-foreground">{formatTime(p.submittedAt)}</span>}
                       {p.sessionMoves > 0 && (
                         <span className="mt-1 block text-xs text-warning-ink">Pindah perangkat {p.sessionMoves} kali</span>
+                      )}
+                      {lockAction && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="mt-2"
+                          aria-label={`${lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'} pengerjaan ${shownId}`}
+                          onClick={() => setConfirmLock({ participant: p, action: lockAction })}
+                          disabled={lockPending}
+                        >
+                          {lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'}
+                        </Button>
                       )}
                     </th>
                     <td className="px-3 py-3 text-right tabular-nums">
@@ -264,8 +354,26 @@ export const ExamMonitoringView: React.FC<{
       )}
 
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-        Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan.
+        Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan. "Kunci" menghentikan pengerjaan satu peserta tanpa menghentikan waktunya; jawaban yang sudah dipilih tetap tersimpan.
       </p>
+
+      <Dialog open={confirmLock !== null} onOpenChange={open => { if (!open && !lockPending) setConfirmLock(null); }}>
+        {confirmLock && (
+          <DialogContent aria-describedby="participant-lock-description">
+            <DialogHeader>
+              <DialogTitle>{LOCK_COPY[confirmLock.action].title}</DialogTitle>
+              <DialogDescription id="participant-lock-description">{LOCK_COPY[confirmLock.action].description}</DialogDescription>
+            </DialogHeader>
+            <p className="m-0 font-mono text-sm font-medium [overflow-wrap:anywhere]">{confirmLock.participant.elligbleId ?? 'Tanpa ELLIGBLE ID'}</p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setConfirmLock(null)} disabled={lockPending}>Batal</Button>
+              <Button onClick={() => runLockAction(confirmLock.participant, confirmLock.action)} disabled={lockPending}>
+                {lockPending ? 'Memproses...' : LOCK_COPY[confirmLock.action].confirm}
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </main>
   );
 };

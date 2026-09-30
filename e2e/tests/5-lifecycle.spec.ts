@@ -7,7 +7,8 @@ import { continueExam, expireAttemptOf, login, option, saveStatus, state, withDa
 // an answer chosen before the pause is saved even when it reaches the server during the
 // pause; a choice made during the pause on a device that did not know about it is not
 // saved and the student is told; resume continues from the frozen time; end lets a running
-// attempt finish and stops new starts.
+// attempt finish and stops new starts. The proctor's lock of one participant (D04.6-38/39/40)
+// hides that student's questions while their time keeps running, with the same boundary rule.
 
 const PASSWORD = 'bintang-kejora-2026';
 
@@ -112,6 +113,85 @@ test('a pause freezes the student screen, keeps the answer chosen before it, dro
     await expect(saveStatus(page)).toHaveText('Tersimpan');
     expect((await answersOf('siswa.e2e.03'))[3]).toBe(await optionId(3, 2));
     await teacherContext.close();
+});
+
+/** Index of the first option of question no that differs from the answer the student holds. */
+async function anotherOption(no: number, current: string | undefined): Promise<number> {
+    for (let index = 0; index < 5; index++) if (await optionId(no, index) !== current) return index;
+    throw new Error('no other option');
+}
+
+test('the proctor locks one participant: questions hidden, time running, the answer chosen before the lock kept; unlock returns the questions', async ({ page, context, browser }) => {
+    await login(page, 'siswa.e2e.03', PASSWORD);
+    await continueExam(page);
+    const before = await answersOf('siswa.e2e.03');
+    const firstChoice = await anotherOption(1, before[1]);
+    const secondChoice = await anotherOption(2, before[2]);
+
+    // Chosen before the lock while this device is offline: it waits on the device.
+    await context.setOffline(true);
+    await option(page, firstChoice).click();
+    await expect(saveStatus(page)).toHaveText('Gagal menyimpan');
+
+    const proctorContext = await browser.newContext({ viewport: { width: 360, height: 780 }, locale: 'id-ID', timezoneId: 'UTC' });
+    const proctor = await proctorContext.newPage();
+    await login(proctor, 'pengawas.e2e', 'ruang-ujian-tenang');
+    await proctor.getByRole('button', { name: 'Lihat Peserta' }).click();
+    const proctorRow = proctor.getByRole('row').filter({ has: proctor.getByText('siswa.e2e.03', { exact: true }) });
+    // Only someone still working can be locked.
+    await expect(proctor.getByRole('row').filter({ has: proctor.getByText('siswa.e2e.01', { exact: true }) }).getByRole('button')).toHaveCount(0);
+    await proctorRow.getByRole('button', { name: 'Kunci pengerjaan siswa.e2e.03' }).click();
+    await expect(proctor.getByRole('heading', { name: 'Kunci Pengerjaan Peserta?' })).toBeVisible();
+    await proctor.screenshot({ path: test.info().outputPath('lock-confirm-360.png') });
+    await proctor.getByRole('dialog').getByRole('button', { name: 'Kunci Pengerjaan' }).click();
+    await expect(proctor.getByText(/^Pengerjaan siswa\.e2e\.03 dikunci sejak \d{2}\.\d{2} WIB\.$/)).toBeVisible();
+    await expect(proctorRow).toContainText('Dikunci');
+
+    // Still offline and unaware of the lock, the student changes another answer.
+    await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
+    await expect(page.getByText('Bilangan prima terkecil adalah')).toBeVisible();
+    await option(page, secondChoice).click();
+
+    await context.setOffline(false);
+    await expect(page.getByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeVisible();
+    await expect(page.getByText('Bilangan prima terkecil adalah')).toHaveCount(0);
+    await expect(page.getByText(/^Pengawas mengunci pengerjaan Anda sejak \d{2}\.\d{2} WIB\./)).toBeVisible();
+    await expect(page.getByText('Pilihan jawaban pada soal 2 dibuat setelah pengerjaan dikunci sehingga tidak disimpan. Periksa kembali soal tersebut.')).toBeVisible();
+    await expect(page.getByText('Semua jawaban yang Anda pilih sebelum pengerjaan dikunci sudah tersimpan.')).toBeVisible({ timeout: 30_000 });
+    const during = await answersOf('siswa.e2e.03');
+    expect(during[1]).toBe(await optionId(1, firstChoice));
+    expect(during[2]).toBe(before[2]);
+
+    // Unlike a pause, the time keeps running, also after a reload.
+    const shown = seconds(await page.locator('.paused-remaining-value').innerText());
+    await page.waitForTimeout(2100);
+    expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBeLessThan(shown);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('locked-360.png'), fullPage: true });
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeVisible();
+    await proctor.screenshot({ path: test.info().outputPath('monitoring-locked-360.png'), fullPage: true });
+    await proctor.setViewportSize({ width: 1280, height: 900 });
+    await proctor.screenshot({ path: test.info().outputPath('monitoring-locked-1280.png'), fullPage: true });
+
+    // Direct unlock by the proctor, recorded with who and when.
+    await proctorRow.getByRole('button', { name: 'Buka Kunci pengerjaan siswa.e2e.03' }).click();
+    await proctor.getByRole('dialog').getByRole('button', { name: 'Buka Kunci' }).click();
+    await expect(proctor.getByText('Kunci pengerjaan siswa.e2e.03 dibuka.')).toBeVisible();
+    await expect(proctorRow).not.toContainText('Dikunci');
+    // The reload during the lock starts again at question 1, which shows the answer kept.
+    await expect(page.getByText('Hasil dari 2 + 3 adalah')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Pengerjaan Dikunci' })).toHaveCount(0);
+    await expect(page.locator('.options-list input[type=radio]').nth(firstChoice)).toBeChecked();
+    const record = await withDatabase(async client => (await client.query(
+        `SELECT (l.locked_by_person_id = ua.person_id) AS locked_by_proctor, (l.unlocked_by_person_id = ua.person_id) AS unlocked_by_proctor,
+                l.unlocked_at > l.locked_at AS closed
+         FROM secure_assessment_attempt_locks l
+         JOIN identity_user_accounts ua ON TRUE
+         JOIN identity_account_credentials c ON c.user_account_id = ua.id AND c.username = 'pengawas.e2e'`
+    )).rows);
+    expect(record).toEqual([{ locked_by_proctor: true, unlocked_by_proctor: true, closed: true }]);
+    await proctorContext.close();
 });
 
 test('ending the exam stops new starts only: a running attempt keeps working and submits', async ({ page, browser }) => {

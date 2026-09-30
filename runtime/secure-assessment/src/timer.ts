@@ -3,13 +3,17 @@ import * as pg from 'pg';
 
 import { type AuthorizedAssessmentContext } from './answer.ts';
 import { evaluateStartEligibility } from './attempt-eligibility.ts';
-import { readAttemptExamState, type AttemptExamState } from './exam-pause.ts';
+import { readAttemptExamState, readOpenLock, type AttemptExamState } from './exam-pause.ts';
 
-/** Exam state beside the timer, so the workstation knows whether time is frozen (Owner decision 2026-09-30). */
-function examStateFields(state: AttemptExamState | null, dbNow: unknown) {
+/**
+ * Exam state beside the timer, so the workstation knows whether time is frozen (Owner
+ * decision 2026-09-30) and whether a supervisor locked this attempt (D04.6-38).
+ */
+function examStateFields(state: AttemptExamState | null, lockedAt: Date | null, dbNow: unknown) {
     return {
         examState: state?.lifecycleState ?? null,
         pausedAt: state?.pausedAt ? state.pausedAt.toISOString() : null,
+        lockedAt: lockedAt ? lockedAt.toISOString() : null,
         serverTime: new Date(dbNow instanceof Date || typeof dbNow === 'string' ? dbNow : Date.now()).toISOString(),
     };
 }
@@ -124,6 +128,13 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                         res.end(JSON.stringify({ error: eligibility.reason }));
                         return;
                     }
+                    const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+                    if (lockedAt) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_locked', lockedAt: lockedAt.toISOString() }));
+                        return;
+                    }
 
                     await client.query(`
                         UPDATE secure_assessment_timer_state
@@ -146,6 +157,7 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                     WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
                 `, [context.tenantId, attemptId]);
                 const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
+                const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
 
                 await client.query('COMMIT');
 
@@ -165,7 +177,7 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                     configuredDurationSeconds,
                     effectiveDurationSeconds,
                     effectiveRemainingSeconds,
-                    ...examStateFields(examState, state.db_now)
+                    ...examStateFields(examState, lockedAt, state.db_now)
                 }));
 
             } catch (err) {
@@ -260,6 +272,7 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
 
         const status = effectiveRemainingSeconds <= 0 ? 'expired' : 'active';
         const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
+        const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
@@ -268,7 +281,7 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
             configuredDurationSeconds,
             effectiveDurationSeconds,
             effectiveRemainingSeconds,
-            ...examStateFields(examState, state.db_now)
+            ...examStateFields(examState, lockedAt, state.db_now)
         }));
 
     } catch (err) {

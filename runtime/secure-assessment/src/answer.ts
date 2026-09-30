@@ -1,7 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { isDeepStrictEqual } from 'node:util';
-import { findPauseCovering, parseCapturedAt, readAttemptExamState } from './exam-pause.ts';
+import { findLockCovering, findPauseCovering, parseCapturedAt, readAttemptExamState, readOpenLock } from './exam-pause.ts';
 
 /**
  * The baseline answer contract (MULTIPLE_CHOICE_SINGLE, D04.3-21): exactly
@@ -132,6 +132,9 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     return;
                 }
 
+                // The attempt row is held: a lock or unlock in progress has finished.
+                const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+
                 const activeSessionRes = await client.query(
                     'SELECT id FROM secure_assessment_exam_sessions WHERE tenant_id = $1 AND exam_attempt_id = $2 AND activated_at IS NOT NULL AND ended_at IS NULL',
                     [context.tenantId, attemptId]
@@ -230,6 +233,13 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         }));
                         return true;
                     }
+                    // Locked by a supervisor: only an answer chosen before the lock is accepted.
+                    if (lockedAt !== null && (capturedAt === null || capturedAt.getTime() >= lockedAt.getTime())) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'attempt_locked', lockedAt: lockedAt.toISOString(), serverTime }));
+                        return true;
+                    }
                     if (examState.lifecycleState !== 'ACTIVE' && examState.lifecycleState !== 'PAUSED' && examState.lifecycleState !== 'ENDED') {
                         await client.query('ROLLBACK');
                         res.writeHead(409, { 'Content-Type': 'application/json' });
@@ -246,6 +256,18 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                                 error: 'captured_during_pause',
                                 pausedAt: pause.pausedAt.toISOString(),
                                 resumedAt: pause.resumedAt ? pause.resumedAt.toISOString() : null,
+                                serverTime,
+                            }));
+                            return true;
+                        }
+                        const lock = await findLockCovering(client, context.tenantId, attemptId, capturedAt);
+                        if (lock) {
+                            await client.query('ROLLBACK');
+                            res.writeHead(409, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                error: 'captured_during_lock',
+                                lockedAt: lock.lockedAt.toISOString(),
+                                unlockedAt: lock.unlockedAt ? lock.unlockedAt.toISOString() : null,
                                 serverTime,
                             }));
                             return true;

@@ -1,7 +1,7 @@
 import type * as http from 'node:http';
 import type * as pg from 'pg';
 import type { AnswerDependencies } from './answer.ts';
-import { readAttemptExamState } from './exam-pause.ts';
+import { readAttemptExamState, readOpenLock } from './exam-pause.ts';
 import { HttpError, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 
 // "Ragu-ragu / Tandai" (D04.5-33/34/35): the student marks a question for their own review.
@@ -104,6 +104,12 @@ export async function handleReviewFlag(req: http.IncomingMessage, res: http.Serv
         if (exam?.lifecycleState === 'PAUSED') {
             await client.query('ROLLBACK');
             sendJson(res, 409, { error: 'exam_paused', pausedAt: exam.pausedAt ? exam.pausedAt.toISOString() : null });
+            return;
+        }
+        const lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+        if (lockedAt) {
+            await client.query('ROLLBACK');
+            sendJson(res, 409, { error: 'attempt_locked', lockedAt: lockedAt.toISOString() });
             return;
         }
         await client.query(

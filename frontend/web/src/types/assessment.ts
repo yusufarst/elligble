@@ -68,6 +68,8 @@ export interface ResumeResponse {
   reviewFlags?: string[];
   /** Exam state: PAUSED freezes the time (Owner decision 2026-09-30); absent from older servers. */
   exam?: { lifecycleState: string | null; pausedAt: string | null };
+  /** A supervisor's lock of this attempt (D04.6-38); lockedAt null when not locked. */
+  lock?: { lockedAt: string | null };
   serverTime?: string;
 }
 
@@ -75,6 +77,8 @@ export interface ResumeResponse {
 export interface ExamRunInfo {
   examState?: string | null;
   pausedAt?: string | null;
+  /** Since when a supervisor has locked this attempt, or null. */
+  lockedAt?: string | null;
   serverTime?: string;
 }
 
@@ -295,6 +299,8 @@ export interface TeacherExamResultsResponse {
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
 
 export interface MonitoredParticipant {
+  /** Reference for supervisor actions on this participant (lock, unlock). */
+  participantId: string;
   elligbleId: string | null;
   roomLabel: string | null;
   status: MonitoringStatus;
@@ -305,6 +311,18 @@ export interface MonitoredParticipant {
   lastAcceptedAt: string | null;
   sessionActive: boolean;
   sessionMoves: number;
+  /** Since when a supervisor has locked the participant's attempt (D04.6-38), or null. */
+  lockedAt: string | null;
+}
+
+export type ParticipantLockAction = 'lock' | 'unlock';
+
+/** Outcome of a lock or unlock; repeating an action changes nothing (changed false). */
+export interface ParticipantLockResponse {
+  participantId: string;
+  locked: boolean;
+  changed: boolean;
+  lockedAt: string | null;
 }
 
 /** Exam-day participant list for the assigned proctor or the managing teacher (D04.6). */

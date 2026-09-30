@@ -54,6 +54,14 @@ export function classifySaveFailure(status: number, code: string, body: Record<s
         if (pausedAt === null) return { kind: 'retry' };
         return { kind: 'captured_during_pause', pausedAt, resumedAt: instantOrNull(body.resumedAt) };
       }
+      case 'attempt_locked':
+        // A supervisor locked this attempt (D04.6-38): the same boundary rule as a pause.
+        return { kind: 'attempt_locked', lockedAt: instantOrNull(body.lockedAt) };
+      case 'captured_during_lock': {
+        const lockedAt = instantOrNull(body.lockedAt);
+        if (lockedAt === null) return { kind: 'retry' };
+        return { kind: 'captured_during_lock', lockedAt, unlockedAt: instantOrNull(body.unlockedAt) };
+      }
       default:
         return { kind: 'rejected', code };
     }

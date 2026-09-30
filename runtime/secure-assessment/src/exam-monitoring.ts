@@ -14,6 +14,8 @@ import type { FinalizationSource } from './submission.ts';
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
 
 export interface MonitoredParticipant {
+    /** Reference for supervisor actions on this participant (lock, unlock). */
+    participantId: string;
     elligbleId: string | null;
     roomLabel: string | null;
     status: MonitoringStatus;
@@ -28,6 +30,8 @@ export interface MonitoredParticipant {
     sessionActive: boolean;
     /** How many times the exam session moved to another device or tab. */
     sessionMoves: number;
+    /** Since when a supervisor has locked the participant's attempt (D04.6-38), or null. */
+    lockedAt: string | null;
 }
 
 export interface ExamMonitoring {
@@ -104,7 +108,9 @@ export async function readExamMonitoring(
             [actor.tenantId, examInstanceId]
         );
         const participants = await client.query(
-            `SELECT p.person_id, er.display_label AS room_label, a.id AS attempt_id,
+            `SELECT p.id AS participant_id, p.person_id, er.display_label AS room_label, a.id AS attempt_id,
+                    (SELECT l.locked_at FROM secure_assessment_attempt_locks l
+                     WHERE l.tenant_id = p.tenant_id AND l.exam_attempt_id = a.id AND l.unlocked_at IS NULL) AS locked_at,
                     t.started_at,
                     GREATEST(0, secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp())) AS remaining_seconds,
                     sub.submitted_at, sub.finalization_source,
@@ -144,6 +150,7 @@ export async function readExamMonitoring(
                 : Number(r.remaining_seconds) <= 0 ? 'TIME_UP'
                 : 'ACTIVE';
             return {
+                participantId: r.participant_id,
                 elligbleId: elligbleIds.get(r.person_id) ?? null,
                 roomLabel: r.room_label ?? null,
                 status,
@@ -154,6 +161,7 @@ export async function readExamMonitoring(
                 lastAcceptedAt: isoOrNull(r.last_accepted_at),
                 sessionActive: status !== 'SUBMITTED' && Boolean(r.session_active),
                 sessionMoves: Number(r.session_moves ?? 0),
+                lockedAt: status === 'SUBMITTED' ? null : isoOrNull(r.locked_at),
             };
         });
         list.sort((a, b) => {

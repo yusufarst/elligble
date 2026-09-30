@@ -18,6 +18,7 @@ import { handleAttemptStart } from './attempt-start.ts';
 import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
+import { performParticipantLockAction } from './participant-lock.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 import type { SessionCookieConfig } from './http/session-credentials.ts';
 import type { StaticSite } from './http/static-site.ts';
@@ -373,6 +374,51 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring/participant-lock') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const { examInstanceId, participantId, action } = body;
+                if (typeof examInstanceId !== 'string' || !ATTEMPT_ID_REGEX.test(examInstanceId)
+                    || typeof participantId !== 'string' || !ATTEMPT_ID_REGEX.test(participantId)
+                    || (action !== 'lock' && action !== 'unlock')) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await performParticipantLockAction(deps.pool, getContext()!, examInstanceId, participantId, action);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, { participantId: result.participantId, locked: result.locked, changed: result.changed, lockedAt: result.lockedAt });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'no_active_attempt':
+                        sendError(res, 409, 'no_active_attempt');
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

@@ -114,8 +114,13 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const [examState, setExamState] = useState<ExamRunState>('ACTIVE');
   const [pausedAt, setPausedAt] = useState<string | null>(null);
   const [discardedIds, setDiscardedIds] = useState<string[]>([]);
+  const [discardReason, setDiscardReason] = useState<'pause' | 'lock'>('pause');
   const examStateRef = useRef<ExamRunState>('ACTIVE');
   examStateRef.current = examState;
+  // A supervisor's lock of this attempt (D04.6-38): questions hidden, time keeps running.
+  const [lockedAt, setLockedAt] = useState<string | null>(null);
+  const lockedRef = useRef<boolean>(false);
+  lockedRef.current = lockedAt !== null;
   const questionsLoadingRef = useRef<boolean>(false);
 
   const finalizingRef = useRef<boolean>(false);
@@ -273,9 +278,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         const runState = runStateOf(resume.exam?.lifecycleState);
         setExamState(runState);
         examStateRef.current = runState;
-        if (runState === 'PAUSED') {
-          // No question content while paused; the questions load when the exam continues.
-          setPausedAt(resume.exam?.pausedAt ?? null);
+        const lock = resume.lock?.lockedAt ?? null;
+        setLockedAt(lock);
+        lockedRef.current = lock !== null;
+        if (runState === 'PAUSED' || lock !== null) {
+          // No question content while paused or locked; the questions load afterwards.
+          if (runState === 'PAUSED') setPausedAt(resume.exam?.pausedAt ?? null);
           setPhase('active');
           return;
         }
@@ -318,6 +326,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               // Paused between the resume and the questions: wait on the paused screen.
               setExamState('PAUSED');
               examStateRef.current = 'PAUSED';
+              setPhase('active');
+              return;
+            }
+            if (err.code === 'attempt_locked') {
+              setLockedAt(typeof err.data?.lockedAt === 'string' ? err.data.lockedAt : new Date().toISOString());
+              lockedRef.current = true;
               setPhase('active');
               return;
             }
@@ -404,7 +418,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     // Fetch the frozen remaining time to show it.
     void checkExamStateRef.current?.();
   }, []);
+  const handleAttemptLockedBySave = useCallback((at: number | null) => {
+    setIsSubmitModalOpen(false);
+    setIsNavSheetOpen(false);
+    setLockedAt(at !== null ? new Date(at).toISOString() : new Date().toISOString());
+    lockedRef.current = true;
+    void checkExamStateRef.current?.();
+  }, []);
   const handleDiscarded = useCallback((ids: string[]) => {
+    setDiscardReason(lockedRef.current && examStateRef.current !== 'PAUSED' ? 'lock' : 'pause');
     setDiscardedIds(prev => [...new Set([...prev, ...ids])]);
   }, []);
 
@@ -417,6 +439,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     onSessionInactive: handleSessionInactive,
     onTerminalEvent: handleTerminalEvent,
     onExamPaused: handleExamPausedBySave,
+    onAttemptLocked: handleAttemptLockedBySave,
     onDiscarded: handleDiscarded,
   });
   const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
@@ -434,6 +457,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         setExamState('PAUSED');
         examStateRef.current = 'PAUSED';
       }
+      if (err instanceof ApiError && err.code === 'attempt_locked' && mountedRef.current) {
+        setLockedAt(typeof err.data?.lockedAt === 'string' ? err.data.lockedAt : new Date().toISOString());
+        lockedRef.current = true;
+      }
       // Otherwise the next state check tries again.
     } finally {
       questionsLoadingRef.current = false;
@@ -443,6 +470,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // What the server says about the exam: pause (freeze and hide), resume (exact remaining
   // time, questions back) or end (this attempt continues on its own time).
   const noteExamState = answers.noteExamState;
+  const noteLockState = answers.noteLockState;
   const applyRunInfo = useCallback((info: TimerResponse) => {
     if (!mountedRef.current) return;
     const state = runStateOf(info.examState);
@@ -456,12 +484,21 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     examStateRef.current = state;
     setExamState(state);
     noteExamState(state, state === 'PAUSED' ? instantOrNull(info.pausedAt) : null);
+    const lock = info.lockedAt ?? null;
+    const wasLocked = lockedRef.current;
+    if (lock !== null) {
+      setIsSubmitModalOpen(false);
+      setIsNavSheetOpen(false);
+    }
+    lockedRef.current = lock !== null;
+    setLockedAt(lock);
+    noteLockState(instantOrNull(lock));
     // The server's value replaces the local countdown (frozen while paused, exact on resume).
     timerControlRef.current?.applyServerRemaining(remaining);
     // Questions are fetched once the exam runs again (also retried by later checks).
-    if (state !== 'PAUSED' && attemptId && questions.length === 0) void loadQuestions(attemptId);
-    if (wasPaused && state !== 'PAUSED') answersRef.current?.flush();
-  }, [noteExamState, attemptId, questions.length, loadQuestions]);
+    if (state !== 'PAUSED' && lock === null && attemptId && questions.length === 0) void loadQuestions(attemptId);
+    if ((wasPaused && state !== 'PAUSED') || (wasLocked && lock === null)) answersRef.current?.flush();
+  }, [noteExamState, noteLockState, attemptId, questions.length, loadQuestions]);
   runInfoRef.current = applyRunInfo;
 
   const checkExamState = useCallback(async () => {
@@ -478,7 +515,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // when the tab is visible again or the connection returns.
   useEffect(() => {
     if (phase !== 'active') return;
-    const base = examState === 'PAUSED' ? STATE_CHECK_PAUSED_MS : STATE_CHECK_ACTIVE_MS;
+    const base = examState === 'PAUSED' || lockedAt !== null ? STATE_CHECK_PAUSED_MS : STATE_CHECK_ACTIVE_MS;
     let stopped = false;
     let handle: ReturnType<typeof setTimeout> | undefined;
     const schedule = () => {
@@ -500,7 +537,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
       window.removeEventListener('online', onVisible);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [phase, examState, checkExamState]);
+  }, [phase, examState, lockedAt !== null, checkExamState]);
 
   // Handle final submission (idempotent on the server, D04.5-40/44).
   const handleConfirmSubmit = useCallback(async () => {
@@ -525,11 +562,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         handleExamPausedBySave(instantOrNull(typeof err.data?.pausedAt === 'string' ? err.data.pausedAt : null));
         return;
       }
+      if (err instanceof ApiError && err.code === 'attempt_locked') {
+        handleAttemptLockedBySave(instantOrNull(typeof err.data?.lockedAt === 'string' ? err.data.lockedAt : null));
+        return;
+      }
       setSubmitError('Gagal mengumpulkan ujian. Periksa koneksi internet Anda lalu coba lagi.');
     } finally {
       if (mountedRef.current) setIsSubmitting(false);
     }
-  }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire, handleExamPausedBySave]);
+  }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire, handleExamPausedBySave, handleAttemptLockedBySave]);
 
   // Render Phase States
   if (phase === 'invalid_attempt') {
@@ -678,9 +719,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const discardedText = discardedIds.length > 0
     ? (() => {
       const which = describeQuestions(discardedIds, questions);
+      const when = discardReason === 'lock' ? 'setelah pengerjaan dikunci' : 'setelah ujian dijeda';
       return which
-        ? `Pilihan jawaban pada ${which} dibuat setelah ujian dijeda sehingga tidak disimpan. Periksa kembali soal tersebut.`
-        : 'Beberapa pilihan jawaban dibuat setelah ujian dijeda sehingga tidak disimpan. Periksa kembali jawaban Anda setelah ujian dilanjutkan.';
+        ? `Pilihan jawaban pada ${which} dibuat ${when} sehingga tidak disimpan. Periksa kembali soal tersebut.`
+        : `Beberapa pilihan jawaban dibuat ${when} sehingga tidak disimpan. Periksa kembali jawaban Anda.`;
     })()
     : null;
 
@@ -711,6 +753,38 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
           )}
           <p className="state-card-body">Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Locked by a supervisor (D04.6-38/40): the questions are hidden, the time keeps running,
+  // answers chosen before the lock keep being sent.
+  if (phase === 'active' && lockedAt !== null) {
+    return (
+      <main className="fullscreen-state-container">
+        <div className="state-card paused-card" role="status" aria-live="polite">
+          <h1 className="state-card-title">Pengerjaan Dikunci</h1>
+          <p className="state-card-body">
+            Pengawas mengunci pengerjaan Anda sejak {formatTime(lockedAt)}. Hubungi pengawas ruangan untuk membuka kunci.
+          </p>
+          <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}, tetap berjalan`}>
+            <span className="paused-remaining-label">Sisa waktu, tetap berjalan</span>
+            <span className="paused-remaining-value">{formattedTime}</span>
+          </p>
+          <p className="state-card-body">
+            {!answers.ready
+              ? 'Memeriksa jawaban di perangkat ini...'
+              : answers.pendingCount > 0
+                ? (degraded || !isOnline
+                  ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum pengerjaan dikunci akan dikirim otomatis saat kembali terhubung.'
+                  : 'Mengirim jawaban yang Anda pilih sebelum pengerjaan dikunci...')
+                : 'Semua jawaban yang Anda pilih sebelum pengerjaan dikunci sudah tersimpan.'}
+          </p>
+          {discardedText && (
+            <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
+          )}
+          <p className="state-card-body">Soal tampil kembali setelah pengawas membuka kunci.</p>
         </div>
       </main>
     );

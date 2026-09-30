@@ -110,6 +110,17 @@ export async function handleQuestionDelivery(
                 res.end(JSON.stringify({ error: 'exam_not_active' }));
                 return;
             }
+            // No question content while a supervisor has locked the attempt (D04.6-38).
+            const locked = await client.query(
+                'SELECT locked_at FROM secure_assessment_attempt_locks WHERE tenant_id = $1 AND exam_attempt_id = $2 AND unlocked_at IS NULL',
+                [context.tenantId, attemptId]
+            );
+            if (locked.rows.length > 0) {
+                await client.query('ROLLBACK');
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'attempt_locked', lockedAt: new Date(locked.rows[0].locked_at).toISOString() }));
+                return;
+            }
 
             // 2. Require active Exam Session: activated_at IS NOT NULL and ended_at IS NULL
             sessionRes = await client.query(

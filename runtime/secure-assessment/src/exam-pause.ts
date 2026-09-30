@@ -85,3 +85,39 @@ export function parseCapturedAt(value: unknown): Date | null | 'invalid' {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? 'invalid' : date;
 }
+
+// Participant lock (D04.6-38/39, migration 0046): the same boundary rule for one attempt.
+// While its lock is open no new answer, review mark, submission or question content is
+// accepted, except an answer chosen before the lock; after the unlock an answer chosen
+// during the lock is refused. The lock does not stop the time (D04.6-40).
+
+export interface LockInterval {
+    lockedAt: Date;
+    unlockedAt: Date | null;
+}
+
+/** Start of the attempt's open lock, or null. Read after the attempt row is locked by writers. */
+export async function readOpenLock(client: pg.PoolClient, tenantId: string, attemptId: string): Promise<Date | null> {
+    const res = await client.query(
+        `SELECT locked_at FROM secure_assessment_attempt_locks
+         WHERE tenant_id = $1 AND exam_attempt_id = $2 AND unlocked_at IS NULL`,
+        [tenantId, attemptId]
+    );
+    return res.rows.length === 1 ? new Date(res.rows[0].locked_at) : null;
+}
+
+/** The lock of the attempt that covers the instant, if any. */
+export async function findLockCovering(client: pg.PoolClient, tenantId: string, attemptId: string, at: Date): Promise<LockInterval | null> {
+    const res = await client.query(
+        `SELECT locked_at, unlocked_at FROM secure_assessment_attempt_locks
+         WHERE tenant_id = $1 AND exam_attempt_id = $2
+           AND locked_at <= $3 AND (unlocked_at IS NULL OR unlocked_at > $3)
+         ORDER BY locked_at DESC LIMIT 1`,
+        [tenantId, attemptId, at]
+    );
+    if (res.rows.length === 0) return null;
+    return {
+        lockedAt: new Date(res.rows[0].locked_at),
+        unlockedAt: res.rows[0].unlocked_at ? new Date(res.rows[0].unlocked_at) : null,
+    };
+}

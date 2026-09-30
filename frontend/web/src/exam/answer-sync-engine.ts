@@ -19,7 +19,8 @@ import { serverClock } from './server-clock.ts';
 //   boundary and refuses one chosen during a pause. A refused intent falls back to the
 //   latest earlier choice for that question made outside every known pause; when there is
 //   none, the server's answer stays. Such discarded choices are reported, never silently
-//   lost, and no new choice is captured while the exam is known to be paused.
+//   lost, and no new choice is captured while the exam is known to be paused. A supervisor's
+//   lock of this attempt (D04.6-38) follows the same boundary rule.
 
 export type SaveOutcome =
   | { kind: 'ack'; writeVersion: number; clientWriteIdentity: string }
@@ -33,7 +34,11 @@ export type SaveOutcome =
   /** The exam is paused and the intent was not chosen before the boundary (null: unknown boundary). */
   | { kind: 'exam_paused'; pausedAt: number | null }
   /** The intent was chosen inside this pause interval of the exam. */
-  | { kind: 'captured_during_pause'; pausedAt: number; resumedAt: number | null };
+  | { kind: 'captured_during_pause'; pausedAt: number; resumedAt: number | null }
+  /** A supervisor locked this attempt and the intent was not chosen before the lock. */
+  | { kind: 'attempt_locked'; lockedAt: number | null }
+  /** The intent was chosen while this attempt was locked. */
+  | { kind: 'captured_during_lock'; lockedAt: number; unlockedAt: number | null };
 
 export interface ServerAnswerState {
   snapshotId: string;
@@ -70,6 +75,8 @@ export interface EngineEvents {
   onUnauthorized(): void;
   /** A save showed that the exam is paused (the workstation switches to its paused screen). */
   onExamPaused?(pausedAt: number | null): void;
+  /** A save showed that a supervisor locked this attempt. */
+  onAttemptLocked?(lockedAt: number | null): void;
   /** Choices made during a pause were dropped for these questions (each shows its earlier answer). */
   onDiscarded?(snapshotIds: string[]): void;
 }
@@ -104,9 +111,11 @@ const MAX_CONSECUTIVE_STALE = 2;
 const MAX_OWN_IDENTITIES = 20;
 const MAX_HISTORY = 8;
 
-interface PauseInterval {
+/** A time span in which choices are not accepted: an exam pause or a lock of this attempt. */
+interface BlockInterval {
+  source: 'pause' | 'lock';
   from: number;
-  /** Null while the pause is open. */
+  /** Null while it is open. */
   to: number | null;
 }
 
@@ -140,8 +149,9 @@ export class AnswerSyncEngine {
   private retryTimer: unknown = null;
   private retryDelay = 0;
   private lastSendFailed = false;
-  private readonly pauses: PauseInterval[] = [];
+  private readonly blocks: BlockInterval[] = [];
   private examPaused = false;
+  private attemptLocked = false;
 
   constructor(options: EngineOptions) {
     this.opts = {
@@ -256,7 +266,7 @@ export class AnswerSyncEngine {
     // an older stored intent for the same question.
     if (!this.initialized && this.initialization) await this.initialization;
     // The exam screen is read-only during a pause; a choice made anyway would be refused.
-    if (this.disposed || this.examPaused) return;
+    if (this.disposed || this.examPaused || this.attemptLocked) return;
     const existing = this.pending.get(snapshotId);
     const server = this.server.get(snapshotId);
     if (!existing && server?.optionId === optionId) return;
@@ -427,12 +437,52 @@ export class AnswerSyncEngine {
           this.scheduleRetry();
           return false;
         }
-        this.notePause(outcome.pausedAt, null);
+        this.noteBlock('pause', outcome.pausedAt, null);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
       case 'captured_during_pause':
-        this.notePause(outcome.pausedAt, outcome.resumedAt);
+        this.noteBlock('pause', outcome.pausedAt, outcome.resumedAt);
+        return this.afterPauseRefusal(snapshotId, sentIdentity);
+      case 'attempt_locked':
+        this.attemptLocked = true;
+        this.opts.events.onAttemptLocked?.(outcome.lockedAt);
+        if (outcome.lockedAt === null) {
+          this.scheduleRetry();
+          return false;
+        }
+        this.noteBlock('lock', outcome.lockedAt, null);
+        return this.afterPauseRefusal(snapshotId, sentIdentity);
+      case 'captured_during_lock':
+        this.noteBlock('lock', outcome.lockedAt, outcome.unlockedAt);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
     }
+  }
+
+  /**
+   * The workstation learned whether a supervisor has locked this attempt: a known lock stops
+   * new captures and settles every intent against its boundary; an unlock closes it now.
+   */
+  async noteLockState(lockedAt: number | null): Promise<void> {
+    if (this.disposed) return;
+    if (lockedAt !== null) {
+      this.attemptLocked = true;
+      this.noteBlock('lock', lockedAt, null);
+      await this.settleAgainstPauses();
+      this.opts.events.onChange();
+      this.kick();
+      return;
+    }
+    if (this.attemptLocked || this.blocks.some(b => b.source === 'lock' && b.to === null)) {
+      const now = this.opts.now();
+      for (const block of this.blocks) if (block.source === 'lock' && block.to === null) block.to = Math.max(block.from, now);
+    }
+    this.attemptLocked = false;
+    this.opts.events.onChange();
+    this.kick();
+  }
+
+  /** True while the engine knows this attempt is locked (captures are ignored). */
+  get attemptIsLocked(): boolean {
+    return this.attemptLocked;
   }
 
   /**
@@ -445,16 +495,16 @@ export class AnswerSyncEngine {
     if (state === 'PAUSED') {
       this.examPaused = true;
       if (pausedAt !== null) {
-        this.notePause(pausedAt, null);
+        this.noteBlock('pause', pausedAt, null);
         await this.settleAgainstPauses();
       }
       this.opts.events.onChange();
       this.kick();
       return;
     }
-    if (this.examPaused || this.pauses.some(p => p.to === null)) {
+    if (this.examPaused || this.blocks.some(b => b.source === 'pause' && b.to === null)) {
       const now = this.opts.now();
-      for (const pause of this.pauses) if (pause.to === null) pause.to = Math.max(pause.from, now);
+      for (const block of this.blocks) if (block.source === 'pause' && block.to === null) block.to = Math.max(block.from, now);
     }
     this.examPaused = false;
     this.opts.events.onChange();
@@ -466,19 +516,19 @@ export class AnswerSyncEngine {
     return this.examPaused;
   }
 
-  private notePause(from: number, to: number | null): void {
-    const known = this.pauses.find(p => p.from === from);
+  private noteBlock(source: BlockInterval['source'], from: number, to: number | null): void {
+    const known = this.blocks.find(b => b.source === source && b.from === from);
     if (known) {
       if (to !== null) known.to = to;
       return;
     }
-    // A newer open pause replaces an older one this engine still believed open.
-    for (const pause of this.pauses) if (pause.to === null && pause.from < from) pause.to = from;
-    this.pauses.push({ from, to });
+    // A newer open span replaces an older one of the same kind this engine still believed open.
+    for (const block of this.blocks) if (block.source === source && block.to === null && block.from < from) block.to = from;
+    this.blocks.push({ source, from, to });
   }
 
   private insidePause(capturedAt: number): boolean {
-    return this.pauses.some(p => capturedAt >= p.from && (p.to === null || capturedAt < p.to));
+    return this.blocks.some(b => capturedAt >= b.from && (b.to === null || capturedAt < b.to));
   }
 
   private async afterPauseRefusal(snapshotId: string, sentIdentity: string): Promise<boolean> {

@@ -313,6 +313,14 @@ describe('classifySaveFailure', () => {
     expect(classifySaveFailure(409, 'captured_during_pause', {})).toEqual({ kind: 'retry' });
     expect(classifySaveFailure(409, 'timer_expired')).toEqual({ kind: 'terminal', code: 'timer_expired' });
   });
+
+  it('reads the lock boundary and the lock interval from a refusal', () => {
+    expect(classifySaveFailure(409, 'attempt_locked', { lockedAt: '2026-09-30T01:20:00.000Z' })).toEqual({ kind: 'attempt_locked', lockedAt: Date.parse('2026-09-30T01:20:00.000Z') });
+    expect(classifySaveFailure(409, 'attempt_locked')).toEqual({ kind: 'attempt_locked', lockedAt: null });
+    expect(classifySaveFailure(409, 'captured_during_lock', { lockedAt: '2026-09-30T01:20:00.000Z', unlockedAt: '2026-09-30T01:25:00.000Z' }))
+      .toEqual({ kind: 'captured_during_lock', lockedAt: Date.parse('2026-09-30T01:20:00.000Z'), unlockedAt: Date.parse('2026-09-30T01:25:00.000Z') });
+    expect(classifySaveFailure(409, 'captured_during_lock', {})).toEqual({ kind: 'retry' });
+  });
 });
 
 /** The server's pause rules (answer.ts, Owner decision 2026-09-30) on top of the versioned fake. */
@@ -522,5 +530,126 @@ describe('AnswerSyncEngine under an exam pause (Owner decision 2026-09-30)', () 
     await settle();
     expect(server.answers.get(Q1)?.optionId).toBe('B');
     expect(await store.listForAttempt(TENANT, ATTEMPT)).toEqual([]);
+  });
+});
+
+/** The server's lock rules for one attempt (answer.ts, D04.6-38) on top of the versioned fake. */
+class LockableServer extends FakeServer {
+  locks: Array<{ from: number; to: number | null }> = [];
+
+  override async save(req: Parameters<FakeServer['save']>[0] & { capturedAt?: number }): Promise<SaveOutcome> {
+    if (this.mode !== 'down' && typeof req.capturedAt === 'number') {
+      const at = req.capturedAt;
+      const current = this.answers.get(req.snapshotId);
+      const replay = current && current.cwi === req.clientWriteIdentity && current.optionId === req.optionId;
+      const open = this.locks.find(l => l.to === null);
+      const refuse = (outcome: SaveOutcome) => {
+        this.calls.push({ snapshotId: req.snapshotId, optionId: req.optionId, expected: req.expectedWriteVersion, cwi: req.clientWriteIdentity });
+        return outcome;
+      };
+      if (!replay && open && at >= open.from) return refuse({ kind: 'attempt_locked', lockedAt: open.from });
+      const covering = this.locks.find(l => at >= l.from && (l.to === null || at < l.to));
+      if (!replay && covering) return refuse({ kind: 'captured_during_lock', lockedAt: covering.from, unlockedAt: covering.to });
+    }
+    return super.save(req);
+  }
+}
+
+describe('AnswerSyncEngine when a supervisor locks the attempt (D04.6-38)', () => {
+  beforeEach(() => vi.useRealTimers());
+
+  function lockable(clock: { now: number }) {
+    const server = new LockableServer();
+    const onAttemptLocked = vi.fn();
+    const onDiscarded = vi.fn();
+    const made = makeEngine(server, new MemoryAnswerStore(), { now: () => clock.now });
+    Object.assign(made.events, { onAttemptLocked, onDiscarded });
+    return { server, ...made, onAttemptLocked, onDiscarded };
+  }
+
+  it('saves a choice made before the lock, drops the one made after it and takes no new choice', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onAttemptLocked, onDiscarded } = lockable(clock);
+    await engine.initialize([]);
+    server.mode = 'down';
+    await engine.capture(Q1, 'A');
+    await vi.advanceTimersByTimeAsync(0);
+    server.locks.push({ from: 1500, to: null });
+    clock.now = 2500;
+    await engine.capture(Q1, 'C'); // this device did not know about the lock yet
+    server.mode = 'ok';
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(server.answers.get(Q1)?.optionId).toBe('A');
+    expect(onAttemptLocked).toHaveBeenCalledWith(1500);
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+    expect(engine.view(Q1)).toEqual({ optionId: 'A', status: 'saved' });
+    expect(engine.attemptIsLocked).toBe(true);
+    expect(engine.hasUnresolved).toBe(false);
+
+    await engine.capture(Q2, 'B');
+    expect(engine.view(Q2)).toEqual({ optionId: null, status: 'unanswered' });
+  });
+
+  it('after an unlock, refuses a choice made while locked and sends the earlier one; later choices save', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onDiscarded } = lockable(clock);
+    await engine.initialize([]);
+    server.mode = 'down';
+    await engine.capture(Q1, 'A');
+    clock.now = 2000;
+    await engine.capture(Q1, 'C'); // offline through a lock it never saw
+    await vi.advanceTimersByTimeAsync(0);
+    server.locks.push({ from: 1500, to: 3000 });
+    server.mode = 'ok';
+    clock.now = 3500;
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(server.answers.get(Q1)?.optionId).toBe('A');
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+
+    await engine.capture(Q1, 'D');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(server.answers.get(Q1)?.optionId).toBe('D');
+    expect(engine.view(Q1)).toEqual({ optionId: 'D', status: 'saved' });
+  });
+
+  it('settles waiting choices as soon as the lock is known, and takes choices again after the unlock', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onDiscarded } = lockable(clock);
+    await engine.initialize([]);
+    server.mode = 'down';
+    clock.now = 2000;
+    await engine.capture(Q1, 'C');
+    await vi.advanceTimersByTimeAsync(0);
+    const callsBefore = server.calls.length;
+    await engine.noteLockState(1500);
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+    expect(engine.pendingCount).toBe(0);
+    expect(server.calls.length).toBe(callsBefore);
+    expect(engine.attemptIsLocked).toBe(true);
+    expect(engine.examIsPaused).toBe(false);
+
+    clock.now = 9000;
+    await engine.noteLockState(null);
+    expect(engine.attemptIsLocked).toBe(false);
+    server.mode = 'ok';
+    clock.now = 9001;
+    await engine.capture(Q1, 'E');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(server.answers.get(Q1)?.optionId).toBe('E');
+  });
+
+  it('a resume of the exam does not lift a lock of the attempt', async () => {
+    const clock = { now: 1000 };
+    const { engine } = lockable(clock);
+    await engine.initialize([]);
+    await engine.noteLockState(1500);
+    await engine.noteExamState('ACTIVE', null);
+    expect(engine.attemptIsLocked).toBe(true);
+    await engine.capture(Q1, 'A');
+    expect(engine.view(Q1)).toEqual({ optionId: null, status: 'unanswered' });
   });
 });

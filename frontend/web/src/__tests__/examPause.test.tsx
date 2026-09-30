@@ -10,7 +10,8 @@ import { setDisplayTimeZone } from '../lib/format.ts';
 // The student's exam screen under a teacher's pause or end (Owner decision 2026-09-30): paused
 // means read-only with the questions hidden and the time frozen; an answer chosen before the
 // pause is still saved; a choice made after it is not, and the student is told; resume
-// continues from the frozen time; end lets the attempt finish on its own time.
+// continues from the frozen time; end lets the attempt finish on its own time. A supervisor's
+// lock of one attempt (D04.6-38/40) hides the questions the same way but the time keeps running.
 
 const ATTEMPT = '11111111-1111-4111-8111-111111111111';
 const SESSION = '22222222-2222-4222-8222-222222222222';
@@ -39,8 +40,8 @@ function resume(overrides: Partial<ResumeResponse> = {}): ResumeResponse {
   };
 }
 
-function timer(examState: string, pausedAt: string | null = null, remaining = 2530): TimerResponse {
-  return { status: 'active', startedAt: '2026-09-30T01:00:00.000Z', configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: remaining, examState, pausedAt };
+function timer(examState: string, pausedAt: string | null = null, remaining = 2530, lockedAt: string | null = null): TimerResponse {
+  return { status: 'active', startedAt: '2026-09-30T01:00:00.000Z', configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: remaining, examState, pausedAt, lockedAt };
 }
 
 type Handler = (url: string, init?: RequestInit) => Promise<Response> | Response;
@@ -193,5 +194,96 @@ describe('the exam screen during a pause', () => {
     expect(await screen.findByText('Guru telah mengakhiri ujian. Anda tetap dapat menyelesaikan sampai waktu Anda habis.')).toBeTruthy();
     await userEvent.click(screen.getByLabelText(/Oksigen/));
     expect(await screen.findByText('Tersimpan')).toBeTruthy();
+  });
+});
+
+const LOCKED_AT = '2026-09-30T01:20:00.000Z';
+
+describe('the exam screen while a supervisor locks the attempt', () => {
+  beforeEach(async () => {
+    window.history.pushState({}, '', `?attemptId=${ATTEMPT}`);
+    window.sessionStorage.clear();
+    storeExamSessionId(ATTEMPT, SESSION);
+    await (await openAnswerStore()).clearAttempt('', ATTEMPT);
+    setDisplayTimeZone('Asia/Jakarta');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setDisplayTimeZone(null);
+    window.history.pushState({}, '', '/');
+  });
+
+  it('opens locked after a reload: no question content, the time keeps running, then the questions return on unlock', async () => {
+    let lockedAt: string | null = LOCKED_AT;
+    const fetchSpy = server({
+      '/api/v1/assessment/resume': () => json(resume({ lock: { lockedAt: LOCKED_AT } })),
+      '/api/v1/assessment/timer': () => json(timer('ACTIVE', null, 2530, lockedAt)),
+    });
+    globalThis.fetch = fetchSpy;
+    render(<StudentExamWorkstation />);
+
+    expect(await screen.findByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
+    expect(screen.getByText(/Pengawas mengunci pengerjaan Anda sejak 08\.20 WIB\./)).toBeTruthy();
+    expect(screen.getByText('Sisa waktu, tetap berjalan')).toBeTruthy();
+    expect(await screen.findByText('Semua jawaban yang Anda pilih sebelum pengerjaan dikunci sudah tersimpan.')).toBeTruthy();
+    expect(screen.queryByText(PROMPT)).toBeNull();
+    expect(fetchSpy.mock.calls.some(c => (c[0] as string).includes('/questions'))).toBe(false);
+    // Unlike a pause, the countdown does not stop.
+    await waitFor(() => expect(screen.queryByText('42:10')).toBeNull(), { timeout: 2500 });
+    expect(screen.getByText(/42:0\d/)).toBeTruthy();
+    expect(document.body.textContent).not.toContain('—');
+
+    lockedAt = null;
+    await checkNow();
+    expect(await screen.findByText(PROMPT)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeNull();
+  });
+
+  it('switches to the locked screen when a save shows the lock, and says which choice was not saved', async () => {
+    let lockedAt: string | null = null;
+    let unlocked = false;
+    const boundary = new Date(Date.now() - 60_000).toISOString();
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json(timer('ACTIVE', null, 2530, lockedAt)),
+      '/api/v1/assessment/answer/save': (_url, init) => {
+        const body = JSON.parse(init?.body as string);
+        if (unlocked) return json({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1 });
+        lockedAt = boundary;
+        return json({ error: 'attempt_locked', lockedAt: boundary }, 409);
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+
+    expect(await screen.findByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
+    expect(await screen.findByText('Pilihan jawaban pada soal 1 dibuat setelah pengerjaan dikunci sehingga tidak disimpan. Periksa kembali soal tersebut.')).toBeTruthy();
+    expect(screen.queryByText(PROMPT)).toBeNull();
+
+    lockedAt = null;
+    unlocked = true;
+    await checkNow();
+    expect(await screen.findByText(PROMPT)).toBeTruthy();
+    expect((screen.getByLabelText(/Oksigen/) as HTMLInputElement).checked).toBe(false);
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    expect(await screen.findByText('Tersimpan')).toBeTruthy();
+  });
+
+  it('does not submit while locked', async () => {
+    let lockedAt: string | null = null;
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json(timer('ACTIVE', null, 2530, lockedAt)),
+      '/api/v1/assessment/submit': () => {
+        lockedAt = LOCKED_AT;
+        return json({ error: 'attempt_locked', lockedAt: LOCKED_AT }, 409);
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await screen.findByText(PROMPT);
+    await userEvent.click(screen.getByRole('button', { name: 'Selesaikan Ujian' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
+    expect(await screen.findByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
+    expect(screen.queryByText('Ujian Berhasil Dikumpulkan')).toBeNull();
   });
 });

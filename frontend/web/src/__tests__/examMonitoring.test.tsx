@@ -3,16 +3,22 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { ExamMonitoringView } from '../components/ExamMonitoringView';
 import { ProctorMonitoringView } from '../components/ProctorMonitoringView';
 import { TeacherReadinessView } from '../components/TeacherReadinessView';
-import { ApiError, getExamMonitoring, getProctorMonitoring, getTeacherReadiness } from '../api/assessment-client';
+import { ApiError, getExamMonitoring, getProctorMonitoring, getTeacherReadiness, postParticipantLock } from '../api/assessment-client';
 import { setDisplayTimeZone } from '../lib/format';
 import type { ExamMonitoringResponse } from '../types/assessment';
 
 vi.mock('../api/assessment-client', async () => {
   const actual = await vi.importActual<typeof import('../api/assessment-client')>('../api/assessment-client');
-  return { ...actual, getExamMonitoring: vi.fn(), getProctorMonitoring: vi.fn(), getTeacherReadiness: vi.fn() };
+  return { ...actual, getExamMonitoring: vi.fn(), getProctorMonitoring: vi.fn(), getTeacherReadiness: vi.fn(), postParticipantLock: vi.fn() };
 });
 
 const EXAM = '5f0c7b8e-1d2a-4c3b-8e9f-0a1b2c3d4e5f';
+const PARTICIPANT = {
+  a: '0b8a1c2d-3e4f-4a5b-8c6d-7e8f9a0b1c2d',
+  b: '1c9b2d3e-4f5a-4b6c-9d7e-8f9a0b1c2d3e',
+  c: '2dac3e4f-5a6b-4c7d-8e8f-9a0b1c2d3e4f',
+  d: '3ebd4f5a-6b7c-4d8e-9f9a-0b1c2d3e4f5a',
+};
 
 function monitoring(overrides: Partial<ExamMonitoringResponse> = {}): ExamMonitoringResponse {
   return {
@@ -22,10 +28,10 @@ function monitoring(overrides: Partial<ExamMonitoringResponse> = {}): ExamMonito
     questionCount: 3,
     summary: { participants: 4, notStarted: 1, active: 2, submitted: 1 },
     participants: [
-      { elligbleId: 'siswa.a', roomLabel: null, status: 'SUBMITTED', finalizationSource: 'STUDENT_SUBMIT', submittedAt: '2026-09-30T01:05:00.000Z', remainingSeconds: null, answeredCount: 3, lastAcceptedAt: '2026-09-30T01:04:00.000Z', sessionActive: false, sessionMoves: 0 },
-      { elligbleId: 'siswa.b', roomLabel: null, status: 'ACTIVE', finalizationSource: null, submittedAt: null, remainingSeconds: 2530, answeredCount: 1, lastAcceptedAt: '2026-09-30T01:12:00.000Z', sessionActive: true, sessionMoves: 1 },
-      { elligbleId: 'siswa.c', roomLabel: null, status: 'NOT_STARTED', finalizationSource: null, submittedAt: null, remainingSeconds: null, answeredCount: 0, lastAcceptedAt: null, sessionActive: false, sessionMoves: 0 },
-      { elligbleId: 'siswa.d', roomLabel: null, status: 'TIME_UP', finalizationSource: null, submittedAt: null, remainingSeconds: 0, answeredCount: 2, lastAcceptedAt: '2026-09-30T00:59:00.000Z', sessionActive: true, sessionMoves: 0 },
+      { participantId: PARTICIPANT.a, elligbleId: 'siswa.a', roomLabel: null, status: 'SUBMITTED', finalizationSource: 'STUDENT_SUBMIT', submittedAt: '2026-09-30T01:05:00.000Z', remainingSeconds: null, answeredCount: 3, lastAcceptedAt: '2026-09-30T01:04:00.000Z', sessionActive: false, sessionMoves: 0, lockedAt: null },
+      { participantId: PARTICIPANT.b, elligbleId: 'siswa.b', roomLabel: null, status: 'ACTIVE', finalizationSource: null, submittedAt: null, remainingSeconds: 2530, answeredCount: 1, lastAcceptedAt: '2026-09-30T01:12:00.000Z', sessionActive: true, sessionMoves: 1, lockedAt: null },
+      { participantId: PARTICIPANT.c, elligbleId: 'siswa.c', roomLabel: null, status: 'NOT_STARTED', finalizationSource: null, submittedAt: null, remainingSeconds: null, answeredCount: 0, lastAcceptedAt: null, sessionActive: false, sessionMoves: 0, lockedAt: null },
+      { participantId: PARTICIPANT.d, elligbleId: 'siswa.d', roomLabel: null, status: 'TIME_UP', finalizationSource: null, submittedAt: null, remainingSeconds: 0, answeredCount: 2, lastAcceptedAt: '2026-09-30T00:59:00.000Z', sessionActive: true, sessionMoves: 0, lockedAt: null },
     ],
     ...overrides,
   };
@@ -102,6 +108,68 @@ describe('ExamMonitoringView', () => {
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
     expect(await screen.findByText('Ujian telah diakhiri')).toBeTruthy();
     expect(document.body.textContent).not.toContain('\u2014');
+  });
+
+  it('locks one working participant after confirmation and says what the lock means', async () => {
+    vi.mocked(getExamMonitoring).mockResolvedValue(monitoring());
+    vi.mocked(postParticipantLock).mockResolvedValue({ participantId: PARTICIPANT.b, locked: true, changed: true, lockedAt: '2026-09-30T01:20:00.000Z' });
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
+    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    // Only someone still working can be locked: not the submitted, not started or timed-out rows.
+    const [a, b, c, d] = screen.getAllByRole('rowheader').map(h => h.closest('tr')!);
+    for (const row of [a, c, d]) expect(within(row).queryByRole('button')).toBeNull();
+    fireEvent.click(within(b).getByRole('button', { name: 'Kunci pengerjaan siswa.b' }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Kunci Pengerjaan Peserta?' })).toBeTruthy();
+    expect(within(dialog).getByText(/Jawaban yang dipilih sebelum dikunci tetap tersimpan/)).toBeTruthy();
+    expect(within(dialog).getByText(/Waktu ujian peserta tetap berjalan/)).toBeTruthy();
+    expect(within(dialog).getByText('siswa.b')).toBeTruthy();
+    expect(postParticipantLock).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kunci Pengerjaan' }));
+
+    expect(await screen.findByText('Pengerjaan siswa.b dikunci sejak 08.20 WIB.')).toBeTruthy();
+    expect(postParticipantLock).toHaveBeenCalledWith(EXAM, PARTICIPANT.b, 'lock');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    // The list is read again, so the row shows the server's lock.
+    await waitFor(() => expect(vi.mocked(getExamMonitoring).mock.calls.length).toBeGreaterThanOrEqual(2));
+    expect(document.body.textContent).not.toContain('\u2014');
+  });
+
+  it('shows a locked participant and unlocks them directly', async () => {
+    const base = monitoring();
+    const locked = base.participants.map(p => p.elligbleId === 'siswa.b' ? { ...p, lockedAt: '2026-09-30T01:20:00.000Z' } : p);
+    vi.mocked(getExamMonitoring).mockResolvedValue({ ...base, participants: locked });
+    vi.mocked(postParticipantLock).mockResolvedValue({ participantId: PARTICIPANT.b, locked: false, changed: true, lockedAt: null });
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
+    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    const b = screen.getAllByRole('rowheader')[1].closest('tr')!;
+    expect(within(b).getByText('Dikunci')).toBeTruthy();
+    expect(within(b).getByText('Dikunci sejak 08.20 WIB')).toBeTruthy();
+    fireEvent.click(within(b).getByRole('button', { name: 'Buka Kunci pengerjaan siswa.b' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/Waktu yang berjalan selama dikunci tidak dikembalikan/)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Buka Kunci' }));
+    expect(await screen.findByText('Kunci pengerjaan siswa.b dibuka.')).toBeTruthy();
+    expect(postParticipantLock).toHaveBeenCalledWith(EXAM, PARTICIPANT.b, 'unlock');
+  });
+
+  it('explains a lock the server refused and offers no lock once results are final', async () => {
+    vi.mocked(getExamMonitoring).mockResolvedValue(monitoring());
+    vi.mocked(postParticipantLock).mockRejectedValue(new ApiError(409, 'no_active_attempt'));
+    const view = render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
+    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    fireEvent.click(screen.getByRole('button', { name: 'Kunci pengerjaan siswa.b' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Kunci Pengerjaan' }));
+    expect(await screen.findByText('Peserta ini sudah tidak memiliki pengerjaan yang berjalan. Data ditampilkan ulang.')).toBeTruthy();
+    view.unmount();
+
+    vi.mocked(getExamMonitoring).mockResolvedValue(monitoring({
+      exam: { examInstanceId: EXAM, subjectLabel: 'Matematika Wajib', lifecycleState: 'FINALIZED', roomBased: false, pausedAt: null },
+    }));
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
+    await screen.findByRole('heading', { name: 'Pemantauan Peserta' });
+    expect(screen.queryByRole('button', { name: /Kunci/ })).toBeNull();
   });
 
   it('explains a refusal', async () => {

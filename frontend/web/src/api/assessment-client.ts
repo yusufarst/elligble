@@ -11,6 +11,8 @@ import type {
   TeacherReadinessResponse,
   TeacherExamResultsResponse,
   ExamMonitoringResponse,
+  ParticipantLockAction,
+  ParticipantLockResponse,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -145,6 +147,16 @@ export async function getExamMonitoring(examInstanceId: string): Promise<ExamMon
   const url = `/api/v1/assessment/exam-monitoring?examInstanceId=${encodeURIComponent(examInstanceId)}`;
   const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<ExamMonitoringResponse>(res);
+}
+
+export async function postParticipantLock(
+  examInstanceId: string,
+  participantId: string,
+  action: ParticipantLockAction
+): Promise<ParticipantLockResponse> {
+  const url = '/api/v1/assessment/exam-monitoring/participant-lock';
+  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, participantId, action } });
+  return handleResponse<ParticipantLockResponse>(res);
 }
 
 export async function getTeacherExamResults(examInstanceId: string): Promise<TeacherExamResultsResponse> {

@@ -100,9 +100,11 @@ test('exam monitoring (real PostgreSQL, production wiring)', { skip: skipWithout
         assert.ok(byId['peserta.b'].remainingSeconds > 3500 && byId['peserta.b'].remainingSeconds <= 3600);
 
         assert.deepEqual(byId['peserta.c'], {
-            elligbleId: 'peserta.c', roomLabel: null, status: 'NOT_STARTED', finalizationSource: null, submittedAt: null,
-            remainingSeconds: null, answeredCount: 0, lastAcceptedAt: null, sessionActive: false, sessionMoves: 0,
+            participantId: absent.participantId, elligbleId: 'peserta.c', roomLabel: null, status: 'NOT_STARTED', finalizationSource: null, submittedAt: null,
+            remainingSeconds: null, answeredCount: 0, lastAcceptedAt: null, sessionActive: false, sessionMoves: 0, lockedAt: null,
         });
+        assert.equal(byId['peserta.b'].participantId, moved.participantId);
+        assert.equal(byId['peserta.b'].lockedAt, null);
         assert.equal(byId['peserta.d'].status, 'TIME_UP', 'time over, waiting for the server to finalize');
         assert.equal(byId['peserta.d'].remainingSeconds, 0);
         assert.doesNotMatch(JSON.stringify(res.body), /score|correct/i, 'supervision never carries scores');
