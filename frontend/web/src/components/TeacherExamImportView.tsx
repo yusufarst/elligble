@@ -5,6 +5,7 @@ import type {
 } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -227,20 +228,11 @@ export const TeacherExamImportView: React.FC<{
       <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
         {back}
         {setupError === null ? (
-          <p role="status" className="m-0 text-muted-foreground">Memuat data kelas...</p>
+          <LoadingState>Memuat data kelas...</LoadingState>
+        ) : setupError === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">Ujian hanya dapat dibuat oleh guru yang memiliki penugasan mengajar aktif.</LoadErrorState>
         ) : (
-          <Alert variant={setupError === 'forbidden' ? 'default' : 'destructive'}>
-            <IconInfo aria-hidden="true" />
-            <AlertTitle>{setupError === 'forbidden' ? 'Akses Ditolak' : 'Gagal Memuat Data Kelas'}</AlertTitle>
-            <AlertDescription>
-              {setupError === 'forbidden'
-                ? 'Ujian hanya dapat dibuat oleh guru yang memiliki penugasan mengajar aktif.'
-                : 'Periksa koneksi internet Anda, lalu coba lagi.'}
-            </AlertDescription>
-            {setupError === 'failed' && (
-              <Button variant="secondary" size="sm" className="col-start-2 mt-2 justify-self-start" onClick={load}>Coba Lagi</Button>
-            )}
-          </Alert>
+          <LoadErrorState kind="failed" title="Gagal Memuat Data Kelas" onRetry={load}>Periksa koneksi internet Anda, lalu coba lagi.</LoadErrorState>
         )}
       </main>
     );

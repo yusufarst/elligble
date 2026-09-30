@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { LOCKED_PARTICIPANT_STATUS, participantStatus } from '../lib/status.ts';
 import { formatClockTime, formatTime } from '../lib/format.ts';
@@ -168,22 +169,15 @@ export const ExamMonitoringView: React.FC<{
       <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
         {back}
         {error === null ? (
-          <p role="status" className="m-0 text-muted-foreground">Memuat daftar peserta...</p>
+          <LoadingState>Memuat daftar peserta...</LoadingState>
+        ) : error === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">
+            Daftar peserta hanya dapat dilihat oleh pengawas yang ditugaskan atau guru yang mengelola ujian ini.
+          </LoadErrorState>
         ) : (
-          <Alert variant={error === 'forbidden' ? 'default' : 'destructive'}>
-            <IconInfo aria-hidden="true" />
-            <AlertTitle>{error === 'forbidden' ? 'Akses Ditolak' : 'Gagal Memuat Daftar Peserta'}</AlertTitle>
-            <AlertDescription>
-              {error === 'forbidden'
-                ? 'Daftar peserta hanya dapat dilihat oleh pengawas yang ditugaskan atau guru yang mengelola ujian ini.'
-                : 'Periksa koneksi internet Anda, lalu coba lagi. Ujian peserta tetap berjalan.'}
-            </AlertDescription>
-            {error === 'failed' && (
-              <Button variant="secondary" size="sm" className="col-start-2 mt-2 justify-self-start" onClick={refresh} disabled={refreshing}>
-                Coba Lagi
-              </Button>
-            )}
-          </Alert>
+          <LoadErrorState kind="failed" title="Gagal Memuat Daftar Peserta" onRetry={refresh} retrying={refreshing}>
+            Periksa koneksi internet Anda, lalu coba lagi. Ujian peserta tetap berjalan.
+          </LoadErrorState>
         )}
       </main>
     );
@@ -226,13 +220,9 @@ export const ExamMonitoringView: React.FC<{
       )}
 
       {error === 'failed' && (
-        <Alert variant="warning">
-          <IconInfo aria-hidden="true" />
-          <AlertTitle>Pemantauan tertunda</AlertTitle>
-          <AlertDescription>
-            Data di bawah adalah data terakhir pukul {formatClockTime(data.serverTime)}. Ujian peserta tetap berjalan; pemantauan akan dicoba lagi otomatis.
-          </AlertDescription>
-        </Alert>
+        <StaleDataNotice title="Pemantauan tertunda">
+          Data di bawah adalah data terakhir pukul {formatClockTime(data.serverTime)}. Ujian peserta tetap berjalan; pemantauan akan dicoba lagi otomatis.
+        </StaleDataNotice>
       )}
 
       <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan peserta">

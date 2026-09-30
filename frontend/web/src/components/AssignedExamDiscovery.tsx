@@ -4,6 +4,7 @@ import type { AssignedExamItem } from '../types/assessment.ts';
 import { formatDateTime, formatDurationMinutes, formatWindow } from '../lib/format.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { EmptyState, LoadErrorState, LoadingState } from '@/components/ui/page-state';
 import { SUBMITTED_ATTEMPT_STATUS } from '../lib/status.ts';
 import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
 import '../styles/assigned-exam-discovery.css';
@@ -118,84 +119,37 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
     }
   };
 
-  if (phase === 'loading') {
-    return (
-      <main className="discovery-container">
-        <header className="discovery-header">
-          <h1 className="discovery-title">Daftar Ujian Siswa</h1>
-          <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
-        </header>
-        <div className="discovery-loading-state" role="status">
-          Memuat daftar ujian...
-        </div>
-      </main>
-    );
-  }
+  const header = (
+    <header className="discovery-header">
+      <h1 className="discovery-title">Daftar Ujian Siswa</h1>
+      <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
+    </header>
+  );
 
-  if (phase === 'forbidden') {
+  if (phase !== 'ready') {
     return (
       <main className="discovery-container">
-        <header className="discovery-header">
-          <h1 className="discovery-title">Daftar Ujian Siswa</h1>
-          <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
-        </header>
-        <div className="discovery-state-card error">
-          <h2 className="discovery-state-title">Akses Ditolak</h2>
-          <p className="discovery-state-body">
+        {header}
+        {phase === 'loading' ? (
+          <LoadingState>Memuat daftar ujian...</LoadingState>
+        ) : phase === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">
             Sesi Anda tidak memiliki izin untuk mengakses daftar ujian.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  if (phase === 'error') {
-    return (
-      <main className="discovery-container">
-        <header className="discovery-header">
-          <h1 className="discovery-title">Daftar Ujian Siswa</h1>
-          <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
-        </header>
-        <div className="discovery-state-card error">
-          <h2 className="discovery-state-title">Gagal Memuat Data Ujian</h2>
-          <p className="discovery-state-body">
-            Terjadi gangguan saat memuat daftar ujian. Silakan muat ulang atau hubungi pengawas.
-          </p>
-          <button
-            type="button"
-            className="discovery-retry-button"
-            onClick={fetchAssignedExams}
-          >
-            Muat Ulang
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  if (phase === 'empty') {
-    return (
-      <main className="discovery-container">
-        <header className="discovery-header">
-          <h1 className="discovery-title">Daftar Ujian Siswa</h1>
-          <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
-        </header>
-        <div className="discovery-state-card">
-          <h2 className="discovery-state-title">Belum Ada Ujian yang Ditugaskan</h2>
-          <p className="discovery-state-body">
-            Belum ada ujian yang ditugaskan kepada Anda saat ini.
-          </p>
-        </div>
+          </LoadErrorState>
+        ) : phase === 'error' ? (
+          <LoadErrorState kind="failed" title="Gagal Memuat Daftar Ujian" onRetry={fetchAssignedExams}>
+            Periksa koneksi internet Anda, lalu coba lagi. Hubungi pengawas jika kendala berlanjut.
+          </LoadErrorState>
+        ) : (
+          <EmptyState title="Belum Ada Ujian yang Ditugaskan">Belum ada ujian yang ditugaskan kepada Anda saat ini.</EmptyState>
+        )}
       </main>
     );
   }
 
   return (
     <main className="discovery-container">
-      <header className="discovery-header">
-        <h1 className="discovery-title">Daftar Ujian Siswa</h1>
-        <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
-      </header>
+      {header}
 
       <div className="discovery-list" role="list">
         {assignments.map((item) => {

@@ -179,7 +179,8 @@ describe('adding participants on the teacher screen', () => {
     vi.mocked(getTeacherExamParticipantCandidates).mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(offer());
     render(<TeacherReadinessView />);
     const dialog = await openDialog();
-    expect(await within(dialog).findByText('Gagal memuat daftar siswa. Periksa koneksi internet Anda, lalu coba lagi.')).toBeTruthy();
+    expect(await within(dialog).findByText('Gagal Memuat Daftar Siswa')).toBeTruthy();
+    expect(within(dialog).getByText('Periksa koneksi internet Anda, lalu coba lagi.')).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Coba Lagi' }));
     expect(await within(dialog).findByRole('checkbox', { name: /siswa\.bio\.06/ })).toBeTruthy();
   });

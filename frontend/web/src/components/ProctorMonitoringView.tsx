@@ -4,30 +4,24 @@ import { getProctorMonitoring, ApiError } from '../api/assessment-client.ts';
 import type { ProctorMonitoringResponse, ProctorMonitoringExamProjection, ProctorMonitoringRoomProjection } from '../types/assessment.ts';
 import { formatDateTime, formatWindow } from '../lib/format.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
 import '../styles/proctor-monitoring.css';
 import '../styles/design-tokens.css';
 
 export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: string): void }> = ({ onOpenExam }) => {
   const [data, setData] = useState<ProctorMonitoringResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  // A failed refresh keeps the last data on screen with a notice; a refusal replaces it.
   const fetchMonitoringData = useCallback(async () => {
     try {
       const response = await getProctorMonitoring();
       setData(response);
       setError(null);
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 403) {
-          setError('forbidden');
-        } else {
-          setError('api_error');
-        }
-      } else {
-        setError('network_error');
-      }
+      setError(err instanceof ApiError && err.status === 403 ? 'forbidden' : 'failed');
     }
   }, []);
 
@@ -47,63 +41,53 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
     initialLoad();
   }, [initialLoad]);
 
-  if (loading) {
+  const header = (
+    <div className="proctor-monitoring-header">
+      <h1 className="proctor-monitoring-title">Monitoring Ujian</h1>
+      {data && error !== 'forbidden' && (
+        <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
+          {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
+        </Button>
+      )}
+    </div>
+  );
+
+  if (loading || error === 'forbidden' || !data) {
     return (
       <main className="proctor-monitoring-container">
-        <div className="proctor-state-message">
-          <h2 className="proctor-state-title">Memuat data pengawasan...</h2>
-          <p>Harap tunggu sebentar.</p>
-        </div>
+        {header}
+        {loading ? (
+          <LoadingState>Memuat daftar ujian...</LoadingState>
+        ) : error === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">
+            Anda tidak memiliki hak akses untuk memonitoring ruangan. Pastikan Anda telah ditugaskan sebagai pengawas ujian.
+          </LoadErrorState>
+        ) : (
+          <LoadErrorState kind="failed" title="Gagal Memuat Daftar Ujian" onRetry={handleRefresh} retrying={isRefreshing}>
+            Periksa koneksi internet Anda, lalu coba lagi.
+          </LoadErrorState>
+        )}
       </main>
     );
   }
 
-  if (error) {
-    let title = 'Terjadi Kesalahan';
-    let message = 'Gagal memuat data pengawasan. Silakan coba lagi.';
-
-    if (error === 'forbidden') {
-      title = 'Akses Ditolak';
-      message = 'Anda tidak memiliki hak akses untuk memonitoring ruangan. Pastikan Anda telah ditugaskan sebagai pengawas ujian.';
-    }
-
-    return (
-      <main className="proctor-monitoring-container">
-        <div className="proctor-state-message">
-          <h2 className="proctor-state-title">{title}</h2>
-          <p>{message}</p>
-          <Button variant="secondary" className="mt-4" onClick={handleRefresh} disabled={isRefreshing}>
-            Coba Lagi
-          </Button>
-        </div>
-      </main>
-    );
-  }
-
-  const assignments = data?.assignments || [];
+  const assignments = data.assignments || [];
+  const staleNotice = error === 'failed' ? <div className="mb-4"><StaleDataNotice /></div> : null;
 
   if (assignments.length === 0) {
     return (
       <main className="proctor-monitoring-container">
-        <div className="proctor-state-message">
-          <h2 className="proctor-state-title">Tidak Ada Ujian</h2>
-          <p>Anda belum ditugaskan untuk mengawasi ujian apapun saat ini.</p>
-          <Button variant="secondary" className="mt-4" onClick={handleRefresh} disabled={isRefreshing}>
-            Perbarui Data
-          </Button>
-        </div>
+        {header}
+        {staleNotice}
+        <EmptyState title="Belum Ada Ujian yang Diawasi">Anda belum ditugaskan untuk mengawasi ujian apa pun saat ini.</EmptyState>
       </main>
     );
   }
 
   return (
     <main className="proctor-monitoring-container">
-      <div className="proctor-monitoring-header">
-        <h1 className="proctor-monitoring-title">Monitoring Ujian</h1>
-        <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
-          {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
-        </Button>
-      </div>
+      {header}
+      {staleNotice}
 
       {assignments.map((exam: ProctorMonitoringExamProjection) => (
         <div key={exam.examInstanceId} className="proctor-exam-group">

@@ -74,6 +74,14 @@ describe('design system guard (§10.1)', () => {
     expect(pageBadges).toEqual([]);
   });
 
+  it('loading, error and empty states come from the shared pattern, never from page stylesheets', () => {
+    // The exam focus shell keeps its full-screen states until UI-SYSTEM-002.
+    const pageStates = sources
+      .filter(s => s.path.endsWith('.css') && s.path !== 'styles/workstation.css')
+      .flatMap(s => [...s.text.matchAll(/\.([a-z0-9-]*(?:state-card|state-message|state-title|state-body|loading-state|retry-button|empty-state|error-state)[a-z0-9-]*)\s*[{,.:\s]/g)].map(m => `${s.path}: .${m[1]}`));
+    expect(pageStates).toEqual([]);
+  });
+
   it('text and action colors of the tokens keep WCAG AA contrast', () => {
     const pairs: Array<[string, string, string]> = [
       ['primary action', '--color-primary-fg', '--color-primary'],

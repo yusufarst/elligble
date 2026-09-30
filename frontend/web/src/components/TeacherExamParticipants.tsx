@@ -5,6 +5,7 @@ import type {
 } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IconInfo } from '@/components/icons';
 import { formatWindow } from '../lib/format.ts';
@@ -157,12 +158,11 @@ export const AddParticipantsDialog: React.FC<{
           </Alert>
         )}
 
-        {!data && !loadFailed && <p className="m-0 text-sm text-muted-foreground" role="status">Memuat daftar siswa...</p>}
+        {!data && !loadFailed && <LoadingState>Memuat daftar siswa...</LoadingState>}
         {loadFailed && (
-          <div className="flex flex-col items-start gap-2">
-            <p role="alert" className="m-0 text-sm text-danger-ink">Gagal memuat daftar siswa. Periksa koneksi internet Anda, lalu coba lagi.</p>
-            <Button variant="secondary" onClick={() => void load(true)}>Coba Lagi</Button>
-          </div>
+          <LoadErrorState kind="failed" title="Gagal Memuat Daftar Siswa" onRetry={() => void load(true)}>
+            Periksa koneksi internet Anda, lalu coba lagi.
+          </LoadErrorState>
         )}
 
         {examProblems.length > 0 && (

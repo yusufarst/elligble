@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ApiError, getTeacherExamPreview } from '../api/assessment-client.ts';
 import type { TeacherExamPreview } from '../types/assessment.ts';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
 import { IconChevronLeft, IconChevronRight, IconInfo } from '@/components/icons';
 import { formatWindow } from '../lib/format.ts';
 import { formatScore } from '../lib/question-import.ts';
@@ -49,24 +50,15 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
       <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
         {back}
         {error === null ? (
-          <p role="status" className="m-0 text-muted-foreground">Memuat pratinjau soal...</p>
+          <LoadingState>Memuat pratinjau soal...</LoadingState>
+        ) : error === 'failed' ? (
+          <LoadErrorState kind="failed" title="Gagal Memuat Pratinjau" onRetry={load}>Periksa koneksi internet Anda, lalu coba lagi.</LoadErrorState>
+        ) : error === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">Pratinjau hanya dapat dilihat oleh guru yang mengelola ujian ini.</LoadErrorState>
         ) : (
-          <Alert variant={error === 'failed' ? 'destructive' : 'default'}>
-            <IconInfo aria-hidden="true" />
-            <AlertTitle>
-              {error === 'forbidden' ? 'Akses Ditolak' : error === 'not_available' ? 'Pratinjau Tidak Tersedia' : 'Gagal Memuat Pratinjau'}
-            </AlertTitle>
-            <AlertDescription>
-              {error === 'forbidden'
-                ? 'Pratinjau hanya dapat dilihat oleh guru yang mengelola ujian ini.'
-                : error === 'not_available'
-                  ? 'Pratinjau tersedia sebelum ujian dibuka, saat ujian masih terjadwal atau siap dibuka.'
-                  : 'Periksa koneksi internet Anda, lalu coba lagi.'}
-            </AlertDescription>
-            {error === 'failed' && (
-              <Button variant="secondary" size="sm" className="col-start-2 mt-2 justify-self-start" onClick={load}>Coba Lagi</Button>
-            )}
-          </Alert>
+          <LoadErrorState kind="refused" title="Pratinjau Tidak Tersedia">
+            Pratinjau tersedia sebelum ujian dibuka, saat ujian masih terjadwal atau siap dibuka.
+          </LoadErrorState>
         )}
       </main>
     );

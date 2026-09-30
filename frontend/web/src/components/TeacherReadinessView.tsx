@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
 import { IconInfo } from '@/components/icons';
 import { CANCELLED_EXAM_STATUS, examLifecycleStatus } from '../lib/status.ts';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
@@ -106,7 +107,7 @@ export const TeacherReadinessView: React.FC<{
 }> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, notice }) => {
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
@@ -116,21 +117,14 @@ export const TeacherReadinessView: React.FC<{
   const [addFor, setAddFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [statusNotice, setStatusNotice] = useState<{ failed: boolean; text: string } | null>(null);
 
+  // A failed refresh keeps the last data on screen with a notice; a refusal replaces it.
   const fetchReadinessData = useCallback(async () => {
     try {
       const response = await getTeacherReadiness();
       setData(response);
       setError(null);
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 403) {
-          setError('forbidden');
-        } else {
-          setError('api_error');
-        }
-      } else {
-        setError('network_error');
-      }
+      setError(err instanceof ApiError && err.status === 403 ? 'forbidden' : 'failed');
     }
   }, []);
 
@@ -164,44 +158,6 @@ export const TeacherReadinessView: React.FC<{
     }
   };
 
-  if (loading) {
-    return (
-      <main className="teacher-readiness-container">
-        <div className="teacher-state-message">
-          <h2 className="teacher-state-title">Memuat data kesiapan ujian...</h2>
-          <p>Harap tunggu sebentar.</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    let title = 'Terjadi Kesalahan';
-    let message = 'Gagal memuat data kesiapan ujian. Silakan coba lagi.';
-
-    if (error === 'forbidden') {
-      title = 'Akses Ditolak';
-      message = 'Anda tidak memiliki hak akses. Pastikan Anda ditugaskan sebagai guru.';
-    }
-
-    return (
-      <main className="teacher-readiness-container">
-        <div className="teacher-state-message">
-          <h2 className="teacher-state-title">{title}</h2>
-          <p>{message}</p>
-          <Button variant="secondary" className="mt-4" onClick={handleRefresh} disabled={isRefreshing}>
-            Coba Lagi
-          </Button>
-        </div>
-      </main>
-    );
-  }
-
-  const allExams = data?.exams || [];
-  // Cancelled exams keep their record in a history section, never among the exams to run.
-  const exams = allExams.filter(exam => !exam.cancellation);
-  const cancelledExams = allExams.filter(exam => exam.cancellation);
-
   const shownNotice = statusNotice ?? (notice ? { failed: false, text: notice } : null);
   const noticeBanner = shownNotice ? (
     <Alert variant={shownNotice.failed ? 'destructive' : 'success'} role={shownNotice.failed ? 'alert' : 'status'} className="mb-4">
@@ -210,18 +166,58 @@ export const TeacherReadinessView: React.FC<{
     </Alert>
   ) : null;
 
+  // The notice and the header keep their places in every state, so the header's buttons are
+  // not replaced (nor their focus lost) while the page moves from loading to the list.
+  const header = (
+    <div className="teacher-readiness-header">
+      <h1 className="teacher-readiness-title">Pelaksanaan Ujian</h1>
+      {error !== 'forbidden' && (
+        <div className="flex flex-wrap gap-2">
+          {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
+          {data && (
+            <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
+              {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (loading || error === 'forbidden' || !data) {
+    return (
+      <main className="teacher-readiness-container">
+        {noticeBanner}
+        {header}
+        {loading ? (
+          <LoadingState>Memuat daftar ujian...</LoadingState>
+        ) : error === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">
+            Anda tidak memiliki hak akses. Pastikan Anda ditugaskan sebagai guru.
+          </LoadErrorState>
+        ) : (
+          <LoadErrorState kind="failed" title="Gagal Memuat Daftar Ujian" onRetry={handleRefresh} retrying={isRefreshing}>
+            Periksa koneksi internet Anda, lalu coba lagi.
+          </LoadErrorState>
+        )}
+      </main>
+    );
+  }
+
+  const allExams = data.exams || [];
+  // Cancelled exams keep their record in a history section, never among the exams to run.
+  const exams = allExams.filter(exam => !exam.cancellation);
+  const cancelledExams = allExams.filter(exam => exam.cancellation);
+
+  const staleNotice = error === 'failed' ? <div className="mb-4"><StaleDataNotice /></div> : null;
+
   if (allExams.length === 0) {
     return (
       <main className="teacher-readiness-container">
         {noticeBanner}
-        <div className="teacher-state-message">
-          <h2 className="teacher-state-title">Tidak Ada Ujian Terjadwal</h2>
-          <p>Anda belum memiliki ujian yang dijadwalkan saat ini.</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
-            <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>Perbarui Data</Button>
-          </div>
-        </div>
+        {header}
+        {staleNotice}
+        <EmptyState title="Belum Ada Ujian Terjadwal">Anda belum memiliki ujian yang dijadwalkan saat ini.</EmptyState>
       </main>
     );
   }
@@ -229,15 +225,8 @@ export const TeacherReadinessView: React.FC<{
   return (
     <main className="teacher-readiness-container">
       {noticeBanner}
-      <div className="teacher-readiness-header">
-        <h1 className="teacher-readiness-title">Pelaksanaan Ujian</h1>
-        <div className="flex flex-wrap gap-2">
-          {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
-          <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
-            {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
-          </Button>
-        </div>
-      </div>
+      {header}
+      {staleNotice}
 
       {exams.length === 0 && <p className="m-0 mb-4 text-muted-foreground">Tidak ada ujian yang terjadwal atau berlangsung.</p>}
       <div className="teacher-exams-list">

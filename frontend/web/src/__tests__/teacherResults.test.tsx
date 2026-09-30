@@ -157,7 +157,8 @@ describe('TeacherResultsView', () => {
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
     await screen.findByRole('heading', { name: 'Hasil Ujian' });
     fireEvent.click(screen.getByRole('button', { name: 'Perbarui Data' }));
-    expect(await screen.findByText('Gagal memperbarui data. Data yang tampil adalah data terakhir.')).toBeTruthy();
+    expect(await screen.findByText('Gagal memperbarui data')).toBeTruthy();
+    expect(screen.getByText('Data yang tampil adalah data terakhir.')).toBeTruthy();
     expect(rows()).toHaveLength(4);
   });
 

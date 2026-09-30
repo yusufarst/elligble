@@ -208,9 +208,9 @@ describe('BU-085 AssignedExamDiscovery and App Navigation Test Suite', () => {
     render(<AssignedExamDiscovery />);
 
     await waitFor(() => {
-      expect(screen.getByText('Gagal Memuat Data Ujian')).toBeDefined();
+      expect(screen.getByText('Gagal Memuat Daftar Ujian')).toBeDefined();
     });
-    const retryBtn = screen.getByRole('button', { name: 'Muat Ulang' });
+    const retryBtn = screen.getByRole('button', { name: 'Coba Lagi' });
     expect(retryBtn).toBeDefined();
 
     // Now mock recovery on retry

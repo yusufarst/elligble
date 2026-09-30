@@ -4,6 +4,7 @@ import type { ParticipantResult, TeacherExamResultsResponse } from '../types/ass
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
@@ -71,22 +72,13 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       <main className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
         {back}
         {error === null ? (
-          <p role="status" className="m-0 text-muted-foreground">Memuat hasil ujian...</p>
+          <LoadingState>Memuat hasil ujian...</LoadingState>
+        ) : error === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">Hasil ujian hanya dapat dilihat oleh guru yang mengelola ujian ini.</LoadErrorState>
         ) : (
-          <Alert variant={error === 'forbidden' ? 'default' : 'destructive'}>
-            <IconInfo aria-hidden="true" />
-            <AlertTitle>{error === 'forbidden' ? 'Akses Ditolak' : 'Gagal Memuat Hasil Ujian'}</AlertTitle>
-            <AlertDescription>
-              {error === 'forbidden'
-                ? 'Hasil ujian hanya dapat dilihat oleh guru yang mengelola ujian ini.'
-                : 'Periksa koneksi internet Anda, lalu coba lagi.'}
-            </AlertDescription>
-            {error === 'failed' && (
-              <Button variant="secondary" size="sm" className="col-start-2 mt-2 justify-self-start" onClick={refresh} disabled={refreshing}>
-                Coba Lagi
-              </Button>
-            )}
-          </Alert>
+          <LoadErrorState kind="failed" title="Gagal Memuat Hasil Ujian" onRetry={refresh} retrying={refreshing}>
+            Periksa koneksi internet Anda, lalu coba lagi.
+          </LoadErrorState>
         )}
       </main>
     );
@@ -162,9 +154,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       <p className="m-0 text-xs text-muted-foreground print:hidden">
         Berkas CSV memakai titik koma sebagai pemisah kolom dan koma sebagai tanda desimal, sesuai pengaturan Indonesia pada Excel dan Google Sheets. Berkas berisi nilai; simpan hanya di perangkat sekolah.
       </p>
-      {error === 'failed' && (
-        <p role="alert" className="m-0 text-sm text-danger-ink">Gagal memperbarui data. Data yang tampil adalah data terakhir.</p>
-      )}
+      {error === 'failed' && <StaleDataNotice />}
       {!scoring.available && (
         <Alert variant="warning">
           <IconInfo aria-hidden="true" />
