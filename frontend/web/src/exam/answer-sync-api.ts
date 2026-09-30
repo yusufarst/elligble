@@ -38,6 +38,10 @@ export function classifySaveFailure(status: number, code: string): SaveOutcome {
       case 'attempt_already_submitted':
       case 'timer_expired':
         return { kind: 'terminal', code };
+      case 'exam_paused':
+        // The teacher paused the exam: the intent stays on the device and is sent again
+        // once the exam continues (Owner decision 2026-09-30); nothing is dropped.
+        return { kind: 'retry' };
       default:
         return { kind: 'rejected', code };
     }

@@ -125,7 +125,13 @@ test('student exam journey through HTTP (real PostgreSQL, production wiring)', {
         await pool.query(`UPDATE secure_assessment_exam_instances SET lifecycle_state = 'PAUSED' WHERE id = $1`, [exam]);
         const timer = await client.request('/api/v1/assessment/timer/start', { method: 'POST', body: { attemptId } });
         assert.equal(timer.status, 409);
-        assert.equal(timer.body.error, 'exam_not_active');
+        assert.equal(timer.body.error, 'exam_paused');
+        await pool.query(`UPDATE secure_assessment_exam_instances SET lifecycle_state = 'ENDED' WHERE id = $1`, [exam]);
+        const ended = await client.request('/api/v1/assessment/timer/start', { method: 'POST', body: { attemptId } });
+        assert.equal(ended.status, 409);
+        assert.equal(ended.body.error, 'exam_ended');
+        await pool.query(`UPDATE secure_assessment_exam_instances SET lifecycle_state = 'FINALIZED' WHERE id = $1`, [exam]);
+        assert.equal((await client.request('/api/v1/assessment/timer/start', { method: 'POST', body: { attemptId } })).body.error, 'exam_not_active');
     });
 
     await t.test('concurrent starts create exactly one attempt', async () => {

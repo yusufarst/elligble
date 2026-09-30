@@ -1,6 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
+import { readAttemptExamState } from './exam-pause.ts';
 
 export interface SubmissionDependencies {
     pool: pg.Pool;
@@ -139,6 +140,31 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
                 }
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                return;
+            }
+
+            // While the exam is paused the exam screen is read-only: no submission, except
+            // that a submission already made is still answered (idempotent retry).
+            let pausedAt: string | null | undefined;
+            try {
+                const existing = await client.query(
+                    'SELECT 1 FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
+                    [context.tenantId, attemptId]
+                );
+                if (existing.rows.length === 0) {
+                    const exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
+                    if (exam?.lifecycleState === 'PAUSED') pausedAt = exam.pausedAt ? exam.pausedAt.toISOString() : null;
+                }
+            } catch (err) {
+                try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'persistence_unavailable' }));
+                return;
+            }
+            if (pausedAt !== undefined) {
+                try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'exam_paused', pausedAt }));
                 return;
             }
 
@@ -385,7 +411,7 @@ export async function handleExpiryFinalize(req: http.IncomingMessage, res: http.
                     t.started_at,
                     t.configured_duration_seconds,
                     COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                    FLOOR(EXTRACT(EPOCH FROM (statement_timestamp() - t.started_at)))::integer as elapsed_seconds
+                    secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) as elapsed_seconds
                 FROM secure_assessment_timer_state t
                 WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
             `, [context.tenantId, attemptId]);

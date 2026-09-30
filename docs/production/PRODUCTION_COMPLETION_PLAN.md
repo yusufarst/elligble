@@ -42,7 +42,7 @@ Status on this branch (baseline findings in §4-§5). Rows marked E2E are exerci
 | Role | Works today | Incomplete | Blocks production |
 |---|---|---|---|
 | Student | activation, login, exam list with entry guidance, start, launch/takeover, workstation with local-first answers, "Ragu-ragu" marks, timer with reminders, submit and automatic submission | seeing results (publication policy, §7) | none in the product (Owner/legal PBs, §8) |
-| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", aggregate progress, provisional results ("Hasil Ujian"); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, ENDED/PAUSED (P1-17), result finalization, publication and export | none for the pilot; teacher authoring or import for scale |
+| Teacher (teacher-managed mode, D04.4-26A) | activation, readiness, "Tandai Siap", "Buka Ujian", "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" (ASSESS-LIFE-001), aggregate progress with who is still working, provisional results ("Hasil Ujian"); exams arrive through the audited operator import (pilot bridge) | exam/question authoring or import in the UI, result finalization, publication and export | none for the pilot; teacher authoring or import for scale |
 | Proctor | monitoring read model and screen; exam-day participant list (who is expected, working, finished or moved) | Proctor Feed events, interventions (lock, add time, broadcast) | Feed is P1-11 |
 | Platform operations | container release, preflight, logs, CI, runbook, audited provisioning CLI | school-admin self-service, metrics and alerting | PB11 drill on production infrastructure |
 | School / tenant administration | onboarding by the platform operator (audited CLI): people with activation cards, academic setup through `runtime/academic-core` | school-admin self-service import (D02.7), academic management UI | none for the pilot; self-service for scale |
@@ -86,7 +86,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
 | P1-15 | Question order followed random snapshot UUIDs, not the authored order (D04.3-41, D04.2-57..59) | **RESOLVED**: migration `0038` adds a positive, per-exam unique `display_order` written when the snapshot is created (snapshots stay immutable); delivery orders by it, legacy rows follow by id; real-PostgreSQL test with identifier order opposite to the authored order | RESOLVED |
 | P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | **RESOLVED**: migration `0043` adds an explicit IANA zone per school, required by `school create` and changed only by the audited `school set-time-zone`; `GET /me/context` returns it and the web client formats every date and time in it (WIB, WITA, WIT) whatever the device zone; activation cards use it. Verified with the browser clock in UTC | RESOLVED |
-| P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | lifecycle ops implement READY/ACTIVE only | Owner decision received 2026-09-30 (§7); ASSESS-LIFE-001 and ASSESS-LIFE-002 (§6) |
+| P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | server semantics and teacher controls DONE (ASSESS-LIFE-001); the student exam screen during a pause is ASSESS-LIFE-002 | Owner decision received 2026-09-30 (§7); IN PROGRESS (§6) |
 | P1-18 | Readiness preflights accepted only SCHEDULED, so READY could not be re-evaluated (D04.2-25) or re-checked at activation (D04.2-68) | 10 preflight guards | **RESOLVED**: shared `readiness-states.ts` (SCHEDULED or READY) |
 | P1-12 | Historical one-off verifiers are point-in-time: 14 of 44 fail on current schema by design | **RESOLVED** as a gate: durable suite `npm run test:integration` (disposable databases); historical verifiers are REFERENCE ONLY | RESOLVED |
 | P1-26 | An invalid or expired session without a usable `X-Tenant-ID` was answered 403 instead of 401, so a client could treat an expired session as a permanent refusal (an answer save marked failed instead of prompting re-login) | found by the production-wiring probe in `test/integration/startup.test.ts`: **RESOLVED**, the credential is validated before the tenant locator; the probe asserts 401 on every protected route with and without a tenant locator | RESOLVED |
@@ -106,14 +106,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ASSESS-LIFE-001 → ASSESS-LIFE-002 → RESULT-001 → RESULT-002 → PR checkpoint → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ASSESS-LIFE-002 → RESULT-001 → RESULT-002 → PR checkpoint → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | ASSESS-LIFE-001 |
-| READY QUEUE (by value) | ASSESS-LIFE-002 (after 001), RESULT-001 (after 001), RESULT-002 (after 001), ASSESS-PROCTOR-001, ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
+| IN PROGRESS | ASSESS-LIFE-002 |
+| READY QUEUE (by value) | RESULT-001, RESULT-002 (after RESULT-001), ASSESS-PROCTOR-001, ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -121,25 +121,25 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-LIFE / P1 / IN_PROGRESS |
+| Workstream / priority / status | ASSESS-LIFE / P1 / DONE |
 | Dependencies / blocks | none / ASSESS-LIFE-002, RESULT-001 |
 | Repository evidence | `exam-lifecycle-operations.ts` implements only SCHEDULED→READY→ACTIVE; the schema already allows PAUSED and ENDED (`0025`, `0037`); elapsed time is computed from `started_at` in eight places (answer, submission, timer x2, resume, question delivery, review flag, expiry sweep, monitoring), none aware of pauses |
 | Why | Owner decision 2026-09-30 (§7) on D04.2-77/81; D04.2-74 whole-exam pause, D04.2-80/82, D04.6-48 (whole-exam pause at higher scope, not every room proctor) |
-| Exact scope | PAUSE (ACTIVE→PAUSED), RESUME (PAUSED→ACTIVE), END (ACTIVE→ENDED) by the teacher who manages a teacher-managed exam; idempotent (a repeat returns the current state unchanged); audited in lifecycle events plus exact pause boundaries (new `secure_assessment_exam_pauses`); one database function for elapsed working time that subtracts pause intervals, used by every time computation, so remaining time freezes at the pause boundary and resumes exactly; guards: no new attempt or timer start while PAUSED or ENDED; no answer save, review mark, submission or expiry finalization while PAUSED; answers captured during a pause refused after resume (server-anchored capture time, see ASSESS-LIFE-002); ENDED leaves active attempts running to their own deadline; teacher controls "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" with confirmations |
+| Exact scope | PAUSE (ACTIVE→PAUSED), RESUME (PAUSED→ACTIVE), END (ACTIVE→ENDED) by the teacher who manages a teacher-managed exam; idempotent (a repeat returns `changed: false` and records nothing); audited in lifecycle events plus exact pause boundaries (`secure_assessment_exam_pauses`, closed once by the resume, never deleted); `secure_assessment_attempt_elapsed_seconds` / `_remaining_seconds` subtract pause intervals and are used by every time computation, so remaining time freezes at the boundary and resumes exactly; the boundary is taken under the exam row lock that every attempt write shares, so a write either lands before it or waits and sees the pause; guards: no new attempt or timer start while PAUSED (`exam_paused`) or ENDED (`exam_ended`); while PAUSED no question content, review mark or submission, and an answer is accepted only when its declared capture time is before the boundary (`exam_paused` otherwise, with the boundary); after a resume an answer declared as chosen inside a pause is refused (`captured_during_pause`); expiry follows the frozen time (an attempt whose time ran out before the pause is still finalized); ENDED leaves running attempts to their own deadline (questions, saves and submission keep working); timer and resume report the exam state, pause start and server time; teacher controls "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" with confirmations, readiness and monitoring show the pause and who is still working; the web client keeps answers and review marks queued while paused (nothing dropped) |
 | Out of scope | room-level and participant-level pause (D04.2-75/76, ASSESS-PROCTOR-001); proctor-initiated pause (PB05); forced submission at end (not in the Owner decision); END while PAUSED (resume first: no invented policy) |
 | Expected product result | a teacher can pause, resume and end an exam; server time and all enforcement follow the Owner semantics on every path |
 | Surfaces | migration `0044`, `exam-lifecycle-operations.ts`, `server.ts`, `attempt-eligibility.ts`, `attempt-start.ts`, `timer.ts`, `answer.ts`, `submission.ts`, `review-flag.ts`, `resume.ts`, `question-delivery.ts`, `expiry-finalization.ts`, `exam-monitoring.ts`, `teacher-readiness.ts`, `TeacherReadinessView.tsx` |
 | Verification | focused unit; real-PostgreSQL integration: frozen and exact remaining time across pause and resume, idempotent and audited transitions, every guard, END with running attempts, sweeper never expires a paused attempt, authority refusals; web component tests; E2E in ASSESS-LIFE-002 |
 | Owner decision | resolved (§7) |
-| Commit / PR | pending |
+| Commit / PR | this change (see §11) |
 
 #### ASSESS-LIFE-002 · Student exam screen under pause and end, without losing pre-pause answers
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-LIFE / P1 / READY after ASSESS-LIFE-001 (BLOCKED_BY_TASK) |
-| Dependencies / blocks | ASSESS-LIFE-001 / RESULT-001 E2E |
-| Repository evidence | intents record only a device-clock `capturedAt` (`answer-store.ts`); the engine keeps one latest intent per question and treats unknown 409s as terminal or rejected (`answer-sync-engine.ts`, `answer-sync-api.ts`); the workstation learns server state only on load, focus, visibility and reconnect |
+| Workstream / priority / status | ASSESS-LIFE / P1 / IN_PROGRESS |
+| Dependencies / blocks | ASSESS-LIFE-001 (DONE) / RESULT-001 E2E |
+| Repository evidence | the server contract exists (ASSESS-LIFE-001: optional `capturedAt` on answer save, `exam_paused` with the boundary, `captured_during_pause`, `examState`/`pausedAt`/`serverTime` on timer and resume, `exam_paused` on questions, marks and submit); the client sends no capture time, records only a device-clock `capturedAt` (`answer-store.ts`), keeps one latest intent per question (`answer-sync-engine.ts`) and only retries `exam_paused`; the workstation learns server state only on load, focus, visibility and reconnect |
 | Why | Owner decision points 4, 6, 7, 8 and 9: clearly paused UI, no edits while paused, no loss of answers captured before the boundary, exact resume, safe across reload, reconnect and takeover |
 | Exact scope | server-anchored capture time for every intent (clock offset from server responses); a short per-question intent history so that, when the server refuses an intent captured inside a pause, the latest intent captured before the pause (or after resume) is sent instead; `exam_paused` holds the queue (nothing is dropped) until resume; `captured_during_pause` drops only that intent, with an honest notice; periodic lightweight state check while working; paused screen that hides question content and shows the frozen time; resume restores the workstation with the exact remaining time; ENDED shows a calm note and lets the attempt finish; review marks wait during a pause |
 | Out of scope | answers delivered after the attempt's time expired (D04.5-48, ASSESS-STUDENT-001) |
@@ -153,7 +153,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | RESULT / P1 / READY after ASSESS-LIFE-001 (BLOCKED_BY_TASK) |
+| Workstream / priority / status | RESULT / P1 / READY |
 | Dependencies / blocks | ASSESS-LIFE-001 / RESULT-002, RESULT-003 |
 | Repository evidence | results are provisional and computed on read (`teacher-results.ts`); nothing freezes them; lifecycle has no FINALIZED transition |
 | Why | Owner decision point ENDED-5; D04.8-17/18/19/20/57, D04.2-83 |
@@ -310,7 +310,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| TOOL-001 | DesainPakeAI CLI authenticated at user level (no repository file holds the key), skill installed, project and context verified (§10) | this change |
+| ASSESS-LIFE-001 | Exam pause, resume and end on the server with pause-aware time; teacher controls | this change (§11) |
+| TOOL-001 | DesainPakeAI CLI authenticated at user level (no repository file holds the key), skill installed, project and context verified (§10) | `2459f48` |
 | ASSESS-PROCTOR-000 | Exam-day participant monitoring (P1-11 part 1) | `451c7ed`, CI run 17 |
 | ASSESS-SCHOOL-000 | School time zone (P1-16) | `b24dcd0`, CI run 16 |
 | ASSESS-STUDENT-002 | "Ragu-ragu" review marks (P1-24) | `8a5b711`, CI run 15 |
@@ -358,7 +359,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 |---|---|
 | Environment config / validation | every variable validated at startup (`.env.example`): PostgreSQL URL scheme (never echoed), environment, port, pool, cookie security (cannot be off in production), allowed origins, migration mode (cannot be `off` in production), bounded database wait |
 | Secrets | none committed; `.env*` git-ignored and excluded from the image build context |
-| Migrations | 43 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
+| Migrations | 44 idempotent SQL files; runner with advisory lock and history/unknown checks (`npm run migrate`, `migrate:check`); startup preflight `check` (default) or `apply` |
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
 | Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
@@ -503,12 +504,22 @@ After exam-day participant monitoring (this branch):
 | browser E2E | 12/12 PASS: the proctor opens "Lihat Peserta" at 360 px, sees the six participants in the right states with device moves, filters and searches; no scores appear |
 | rendered check (Chromium, 360 px and 1280 px) | no horizontal overflow; readable at both widths |
 
+After exam pause, resume and end on the server (ASSESS-LIFE-001, this branch):
+
+| Check | Result |
+|---|---|
+| runtime unit | 899/899 PASS incl. `exam_paused` and `exam_ended` start refusals |
+| integration (real PostgreSQL 16) | 97/97 PASS. Working-time rule exact to the second with closed, open and pre-start pauses and adjustments; one open pause per exam; pause rows closed once and never deleted. Through HTTP: time frozen while paused and identical at pause and resume; new starts and timer starts refused; answers without or after the boundary refused, an answer chosen 1 ms before the boundary saved; marks, submission and questions refused while paused; a move to another device still works; END of a paused exam refused; after resume an answer chosen inside the pause refused with the interval, others accepted; pause and resume idempotent, recorded once with the teacher; the sweep does not finalize an attempt whose wall-clock deadline passed during the pause; a write in flight delays the boundary and a write waiting on a pause sees it; concurrent pauses record one boundary and one event; END refuses new starts, force-submits nothing, lets running attempts save and submit and the sweep finalize only the one that ran out; only the managing teacher can act; readiness and monitoring show the pause, the frozen time and who is still working. Mutation-checked: removing the exam row lock and making the sweep ignore pauses are both caught |
+| web vitest / `vite build` | 179/179 / PASS: confirmations for pause, resume and end, pause time in WIB, ended note with who is still working, monitoring notices, marks and answers kept while paused |
+| browser E2E | 12/12 PASS (no regression) |
+| rendered check (Chromium, 360 px and 1280 px) | teacher card while running, paused and ended, both confirmations and the paused monitoring notice: no page errors, no horizontal overflow, no em dash; DesainPakeAI context revision unchanged (§10) |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-LIFE-001 (pause, resume, end on the server), ASSESS-LIFE-002 (student workstation during pause and after resume), RESULT-001 (finalization), RESULT-002 (teacher export), then the pull-request checkpoint, then the proctor items. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-LIFE-002 (student workstation during pause and after resume), RESULT-001 (finalization), RESULT-002 (teacher export), then the pull-request checkpoint, then the proctor items. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

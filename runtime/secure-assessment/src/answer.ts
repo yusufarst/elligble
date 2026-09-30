@@ -1,6 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { isDeepStrictEqual } from 'node:util';
+import { findPauseCovering, parseCapturedAt, readAttemptExamState } from './exam-pause.ts';
 
 /**
  * The baseline answer contract (MULTIPLE_CHOICE_SINGLE, D04.3-21): exactly
@@ -29,6 +30,8 @@ export interface SaveAnswerRequest {
     answerPayload: any;
     clientWriteIdentity: string;
     expectedWriteVersion: number | null;
+    /** Server-anchored time the student chose the answer (ISO-8601); optional. */
+    capturedAt?: string | null;
 }
 
 export interface AnswerDependencies {
@@ -79,6 +82,9 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
             } else {
                 payload.expectedWriteVersion = null;
             }
+
+            const capturedAt = parseCapturedAt(payload.capturedAt);
+            if (capturedAt === 'invalid') throw new Error('invalid capturedAt');
 
             const attemptId = payload.attemptId;
             const sessionId = payload.sessionId;
@@ -156,6 +162,15 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     return;
                 }
 
+                // Waits for a pause or resume in progress (see exam-pause.ts).
+                const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
+                if (!examState) {
+                    await client.query('ROLLBACK');
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'assessment_context_not_found' }));
+                    return;
+                }
+
                 const submissionRes = await client.query(
                     'SELECT id FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
                     [context.tenantId, attemptId]
@@ -168,10 +183,14 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         t.started_at,
                         t.configured_duration_seconds,
                         COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                        FLOOR(EXTRACT(EPOCH FROM (statement_timestamp() - t.started_at)))::integer as elapsed_seconds
+                        secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) as elapsed_seconds,
+                        statement_timestamp() as db_now
                     FROM secure_assessment_timer_state t
                     WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
                 `, [context.tenantId, attemptId]);
+                const serverTime = timerRes.rows.length > 0 && timerRes.rows[0].db_now
+                    ? new Date(timerRes.rows[0].db_now).toISOString()
+                    : new Date().toISOString();
 
                 if (timerRes.rows.length > 0) {
                     const tState = timerRes.rows[0];
@@ -197,6 +216,39 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         res.writeHead(409, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'timer_expired' }));
                         return true;
+                    }
+                    // Paused: only an answer chosen before the pause boundary is accepted.
+                    if (examState.lifecycleState === 'PAUSED'
+                        && (capturedAt === null || examState.pausedAt === null || capturedAt.getTime() >= examState.pausedAt.getTime())) {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            error: 'exam_paused',
+                            pausedAt: examState.pausedAt ? examState.pausedAt.toISOString() : null,
+                            serverTime,
+                        }));
+                        return true;
+                    }
+                    if (examState.lifecycleState !== 'ACTIVE' && examState.lifecycleState !== 'PAUSED' && examState.lifecycleState !== 'ENDED') {
+                        await client.query('ROLLBACK');
+                        res.writeHead(409, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'exam_not_active' }));
+                        return true;
+                    }
+                    // An answer chosen during an earlier pause is not accepted after the resume.
+                    if (capturedAt !== null) {
+                        const pause = await findPauseCovering(client, context.tenantId, examState.examInstanceId, capturedAt);
+                        if (pause) {
+                            await client.query('ROLLBACK');
+                            res.writeHead(409, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                error: 'captured_during_pause',
+                                pausedAt: pause.pausedAt.toISOString(),
+                                resumedAt: pause.resumedAt ? pause.resumedAt.toISOString() : null,
+                                serverTime,
+                            }));
+                            return true;
+                        }
                     }
                     return false;
                 };
@@ -229,7 +281,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                         if (insertRes.rows.length > 0) {
                             await client.query('COMMIT');
                             res.writeHead(200, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity, writeVersion: insertRes.rows[0].write_version }));
+                            res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity, writeVersion: insertRes.rows[0].write_version, serverTime }));
                             return;
                         }
 
@@ -252,7 +304,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                             if (isDeepStrictEqual(current.answer_payload, answerPayload)) {
                                 await client.query('ROLLBACK');
                                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version }));
+                                res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version, serverTime }));
                                 return;
                             } else {
                                 if (await checkTerminalState()) return;
@@ -281,7 +333,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     if (isDeepStrictEqual(current.answer_payload, answerPayload)) {
                         await client.query('ROLLBACK');
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version }));
+                        res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: current.client_write_identity, writeVersion: current.write_version, serverTime }));
                         return;
                     } else {
                         if (await checkTerminalState()) return;
@@ -306,7 +358,7 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
 
                     await client.query('COMMIT');
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity, writeVersion: updateRes.rows[0].write_version }));
+                    res.end(JSON.stringify({ status: 'acknowledged', clientWriteIdentity, writeVersion: updateRes.rows[0].write_version, serverTime }));
                     return;
                 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AnswerSyncEngine, type SaveOutcome, type ServerAnswerState, type SyncApi } from '../exam/answer-sync-engine.ts';
 import { MemoryAnswerStore, answerKey, attemptKey, type PendingAnswerRecord } from '../exam/answer-store.ts';
+import { classifySaveFailure } from '../exam/answer-sync-api.ts';
 
 const TENANT = 't-1';
 const ATTEMPT = 'a-1';
@@ -299,5 +300,12 @@ describe('AnswerSyncEngine', () => {
     expect(engine.view(Q2).status).toBe('failed');
     expect(engine.views()).toEqual({ [Q1]: { optionId: 'A', status: 'failed' }, [Q2]: { optionId: 'B', status: 'failed' } });
     engine.dispose();
+  });
+});
+
+describe('classifySaveFailure', () => {
+  it('keeps an answer when the exam is paused instead of dropping it', () => {
+    expect(classifySaveFailure(409, 'exam_paused')).toEqual({ kind: 'retry' });
+    expect(classifySaveFailure(409, 'timer_expired')).toEqual({ kind: 'terminal', code: 'timer_expired' });
   });
 });

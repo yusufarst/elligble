@@ -6,6 +6,8 @@ export type LatestStartPolicy = 'FULL_DURATION_BEYOND_WINDOW' | 'REMAINING_WINDO
 
 export type StartIneligibility =
     | 'exam_not_active'
+    | 'exam_paused'
+    | 'exam_ended'
     | 'exam_not_ready'
     | 'exam_not_open'
     | 'exam_window_closed'
@@ -33,6 +35,10 @@ function toDate(value: Date | string | null): Date | null {
 
 export function evaluateStartEligibility(row: ExamTimingRow, now: Date): StartEligibility {
     if (row.lifecycle_state !== 'ACTIVE') {
+        // PAUSED and ENDED both stop every new start (Owner decision 2026-09-30); the
+        // student is told which one applies.
+        if (row.lifecycle_state === 'PAUSED') return { eligible: false, reason: 'exam_paused' };
+        if (row.lifecycle_state === 'ENDED') return { eligible: false, reason: 'exam_ended' };
         return { eligible: false, reason: 'exam_not_active' };
     }
     const startsAt = toDate(row.window_starts_at);

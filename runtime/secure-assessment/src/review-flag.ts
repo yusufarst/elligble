@@ -1,13 +1,16 @@
 import type * as http from 'node:http';
 import type * as pg from 'pg';
 import type { AnswerDependencies } from './answer.ts';
+import { readAttemptExamState } from './exam-pause.ts';
 import { HttpError, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
 
 // "Ragu-ragu / Tandai" (D04.5-33/34/35): the student marks a question for their own review.
 // The mark is stored apart from the answer and never changes it. Like an answer it can only
 // be written by the attempt's active exam session while the attempt is open: not after
-// submission and not after the time ran out. The request carries the desired state, so a
-// retry or a repeat is harmless (the last write wins; one active session writes at a time).
+// submission and not after the time ran out, and not while the exam is paused (the exam
+// screen is read-only then; the client keeps the mark and sends it after the resume). The
+// request carries the desired state, so a retry or a repeat is harmless (the last write
+// wins; one active session writes at a time).
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -82,14 +85,7 @@ export async function handleReviewFlag(req: http.IncomingMessage, res: http.Serv
         const state = await client.query(
             `SELECT
                 EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = $1 AND s.exam_attempt_id = $2) AS submitted,
-                COALESCE((
-                    SELECT t.started_at + (t.configured_duration_seconds + COALESCE((
-                        SELECT SUM(adj.adjustment_seconds) FROM secure_assessment_timer_adjustments adj
-                        WHERE adj.tenant_id = t.tenant_id AND adj.timer_state_id = t.id
-                    ), 0)) * interval '1 second' <= statement_timestamp()
-                    FROM secure_assessment_timer_state t
-                    WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2 AND t.started_at IS NOT NULL
-                ), FALSE) AS expired`,
+                COALESCE(secure_assessment_attempt_remaining_seconds($1, $2, statement_timestamp()) <= 0, FALSE) AS expired`,
             [context.tenantId, attemptId]
         );
         if (state.rows[0].submitted) {
@@ -100,6 +96,12 @@ export async function handleReviewFlag(req: http.IncomingMessage, res: http.Serv
         if (state.rows[0].expired) {
             await client.query('ROLLBACK');
             sendError(res, 409, 'timer_expired');
+            return;
+        }
+        const exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
+        if (exam?.lifecycleState === 'PAUSED') {
+            await client.query('ROLLBACK');
+            sendJson(res, 409, { error: 'exam_paused', pausedAt: exam.pausedAt ? exam.pausedAt.toISOString() : null });
             return;
         }
         await client.query(

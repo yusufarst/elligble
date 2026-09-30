@@ -112,8 +112,9 @@ export function useReviewFlags({
             writePending(store, id, pendingRef.current);
           }
         } catch (err) {
-          if (err instanceof ApiError && err.status === 409) {
+          if (err instanceof ApiError && err.status === 409 && err.code !== 'exam_paused') {
             // Submitted, time over or the exam session moved: marks can no longer be written.
+            // A paused exam is different: the mark waits and is sent after the resume.
             closedRef.current = true;
             pendingRef.current = {};
             writePending(store, id, {});

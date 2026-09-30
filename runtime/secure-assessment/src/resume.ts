@@ -1,6 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
+import { readAttemptExamState } from './exam-pause.ts';
 
 export interface ResumeDependencies {
     pool: pg.Pool;
@@ -66,7 +67,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes, reviewFlagsRes;
+        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes, reviewFlagsRes, examState;
         try {
             await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
@@ -112,7 +113,8 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                     t.started_at,
                     t.configured_duration_seconds,
                     COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                    FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                    secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) as elapsed_seconds,
+                    statement_timestamp() as db_now
                 FROM secure_assessment_timer_state t
                 WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
             `, [context.tenantId, attemptId]);
@@ -150,6 +152,9 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                   ON r.id = pra.exam_room_id AND r.tenant_id = a.tenant_id
                 WHERE a.id = $1 AND a.tenant_id = $2
             `, [attemptId, context.tenantId]);
+
+            // Whether the exam is paused (time frozen) or ended (Owner decision 2026-09-30).
+            examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
 
             // "Ragu-ragu" marks: the student's own navigation aid, kept apart from answers (D04.5-35).
             reviewFlagsRes = await client.query(
@@ -231,7 +236,12 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 timer: timerResponse,
                 submission: submissionResponse,
                 context: contextData,
-                reviewFlags: (reviewFlagsRes.rows ?? []).map(row => row.snapshotId as string)
+                reviewFlags: (reviewFlagsRes.rows ?? []).map(row => row.snapshotId as string),
+                exam: {
+                    lifecycleState: examState?.lifecycleState ?? null,
+                    pausedAt: examState?.pausedAt ? examState.pausedAt.toISOString() : null
+                },
+                serverTime: new Date(timer.db_now ?? Date.now()).toISOString()
             }));
         } catch (appErr) {
             res.writeHead(500, { 'Content-Type': 'application/json' });

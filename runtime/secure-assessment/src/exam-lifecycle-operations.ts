@@ -6,10 +6,22 @@ import { checkExamInstanceConditionalRoomProctorReadinessCompositionPreflight } 
 // Teaching Assignment of an Exam Instance may move it SCHEDULED -> READY (all mandatory
 // readiness checks pass, D04.2-06) and READY -> ACTIVE (final re-check, D04.2-68;
 // never before the window opens, D04.2-70). Every transition is recorded with its actor.
-// Institution-managed governance (D04.4-26D/E), pause and end-of-exam handling
-// (D04.2-81, policy OPEN) are intentionally not implemented here.
+//
+// Pause, resume and end follow the Owner decision of 2026-09-30 (D04.2-77/81). A whole-exam
+// pause is not a casual room-proctor action (D04.6-48), so, like activation, it belongs to
+// the managing teacher. PAUSE (ACTIVE -> PAUSED) records the authoritative pause boundary:
+// every active attempt's remaining time freezes there (secure_assessment_attempt_elapsed_
+// seconds, migration 0044). RESUME (PAUSED -> ACTIVE) closes the pause, so each attempt
+// continues from exactly its pre-pause remaining time. END (ACTIVE -> ENDED) only stops new
+// starts: attempts already running keep their own remaining time and finish by submission
+// or automatic submission at their own expiry; nothing is force-submitted and no result
+// becomes visible. The three are idempotent: repeating one that already took effect changes
+// nothing and records nothing. END of a paused exam needs a resume first (not decided).
+// Institution-managed governance (D04.4-26D/E) is intentionally not implemented here.
 
-export type TeacherExamAction = 'mark_ready' | 'activate';
+export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end';
+
+export const TEACHER_EXAM_ACTIONS: readonly TeacherExamAction[] = ['mark_ready', 'activate', 'pause', 'resume', 'end'];
 
 export interface TeacherActor {
     tenantId: string;
@@ -22,7 +34,7 @@ export interface ReadinessSummary {
 }
 
 export type TeacherExamActionResult =
-    | { type: 'transitioned'; examInstanceId: string; lifecycleState: 'READY' | 'ACTIVE' }
+    | { type: 'transitioned'; examInstanceId: string; lifecycleState: string; changed: boolean }
     | { type: 'forbidden' }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'not_ready'; readiness: ReadinessSummary }
@@ -30,9 +42,12 @@ export type TeacherExamActionResult =
     | { type: 'window_closed' }
     | { type: 'unavailable' };
 
-const TRANSITIONS: Record<TeacherExamAction, { from: string; to: 'READY' | 'ACTIVE' }> = {
-    mark_ready: { from: 'SCHEDULED', to: 'READY' },
-    activate: { from: 'READY', to: 'ACTIVE' },
+const TRANSITIONS: Record<TeacherExamAction, { from: string; to: string; idempotent: boolean }> = {
+    mark_ready: { from: 'SCHEDULED', to: 'READY', idempotent: false },
+    activate: { from: 'READY', to: 'ACTIVE', idempotent: false },
+    pause: { from: 'ACTIVE', to: 'PAUSED', idempotent: true },
+    resume: { from: 'PAUSED', to: 'ACTIVE', idempotent: true },
+    end: { from: 'ACTIVE', to: 'ENDED', idempotent: true },
 };
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,7 +74,7 @@ export async function performTeacherExamAction(
     examInstanceId: string,
     action: TeacherExamAction
 ): Promise<TeacherExamActionResult> {
-    if (!UUID_REGEX.test(examInstanceId) || !(action in TRANSITIONS)) {
+    if (!UUID_REGEX.test(examInstanceId) || !Object.hasOwn(TRANSITIONS, action)) {
         return { type: 'forbidden' };
     }
     const transition = TRANSITIONS[action];
@@ -94,9 +109,52 @@ export async function performTeacherExamAction(
             return { type: 'forbidden' };
         }
         const row = exam.rows[0];
+        if (transition.idempotent && row.lifecycle_state === transition.to) {
+            await client.query('ROLLBACK');
+            return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: false };
+        }
         if (row.lifecycle_state !== transition.from) {
             await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: row.lifecycle_state };
+        }
+
+        if (action === 'pause' || action === 'resume' || action === 'end') {
+            const moved = await client.query(
+                `UPDATE secure_assessment_exam_instances SET lifecycle_state = $3
+                 WHERE id = $1 AND tenant_id = $2 AND lifecycle_state = $4`,
+                [examInstanceId, actor.tenantId, transition.to, transition.from]
+            );
+            if (moved.rowCount !== 1) {
+                await client.query('ROLLBACK');
+                return { type: 'invalid_state', currentState: row.lifecycle_state };
+            }
+            // The boundary is taken here, after the exam row lock: every answer save,
+            // submission or timer start that saw the exam running has already committed.
+            if (action === 'pause') {
+                await client.query(
+                    `INSERT INTO secure_assessment_exam_pauses (tenant_id, exam_instance_id, paused_at, paused_by_person_id)
+                     VALUES ($1, $2, statement_timestamp(), $3)`,
+                    [actor.tenantId, examInstanceId, actor.personId]
+                );
+            } else if (action === 'resume') {
+                const closed = await client.query(
+                    `UPDATE secure_assessment_exam_pauses SET resumed_at = statement_timestamp(), resumed_by_person_id = $3
+                     WHERE tenant_id = $1 AND exam_instance_id = $2 AND resumed_at IS NULL`,
+                    [actor.tenantId, examInstanceId, actor.personId]
+                );
+                if (closed.rowCount !== 1) {
+                    // A PAUSED exam without its open pause would lose the boundary; refuse.
+                    await client.query('ROLLBACK');
+                    return { type: 'unavailable' };
+                }
+            }
+            await client.query(
+                `INSERT INTO secure_assessment_exam_lifecycle_events (tenant_id, exam_instance_id, from_state, to_state, actor_person_id)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [actor.tenantId, examInstanceId, transition.from, transition.to, actor.personId]
+            );
+            await client.query('COMMIT');
+            return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
         }
 
         if (action === 'activate') {
@@ -132,7 +190,7 @@ export async function performTeacherExamAction(
             [actor.tenantId, examInstanceId, transition.from, transition.to, actor.personId]
         );
         await client.query('COMMIT');
-        return { type: 'transitioned', examInstanceId, lifecycleState: transition.to };
+        return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
     } catch {
         await client.query('ROLLBACK').catch(() => {});
         return { type: 'unavailable' };

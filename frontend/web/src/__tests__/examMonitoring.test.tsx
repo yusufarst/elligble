@@ -88,6 +88,22 @@ describe('ExamMonitoringView', () => {
     await waitFor(() => expect(vi.mocked(getExamMonitoring).mock.calls.length).toBeGreaterThan(2));
   });
 
+  it('says when the exam is paused or has ended', async () => {
+    vi.mocked(getExamMonitoring).mockResolvedValue(monitoring({
+      exam: { examInstanceId: EXAM, subjectLabel: 'Matematika Wajib', lifecycleState: 'PAUSED', roomBased: false, pausedAt: '2026-09-30T01:10:00.000Z' },
+    }));
+    const paused = render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
+    expect(await screen.findByText('Ujian dijeda sejak 08.10 WIB')).toBeTruthy();
+    expect(screen.getByText(/Sisa waktu peserta berhenti/)).toBeTruthy();
+    paused.unmount();
+    vi.mocked(getExamMonitoring).mockResolvedValue(monitoring({
+      exam: { examInstanceId: EXAM, subjectLabel: 'Matematika Wajib', lifecycleState: 'ENDED', roomBased: false, pausedAt: null },
+    }));
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
+    expect(await screen.findByText('Ujian telah diakhiri')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('\u2014');
+  });
+
   it('explains a refusal', async () => {
     vi.mocked(getExamMonitoring).mockRejectedValue(new ApiError(403, 'forbidden'));
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);

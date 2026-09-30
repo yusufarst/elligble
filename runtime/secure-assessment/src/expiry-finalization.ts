@@ -3,8 +3,9 @@ import type { LogWriter } from './log.ts';
 import { describeError } from './http/request-log.ts';
 
 // Server-side finalization at time expiry (D04.5-45, D04.5-47, D04.5-49). When a started
-// attempt's server deadline (start + configured duration + adjustments, the same rule the
-// answer save and the client expiry finalization use) has passed without a submission, the
+// attempt's server deadline (configured duration + adjustments of working time, where
+// working time excludes exam pauses: the same rule the answer save and the client expiry
+// finalization use, migration 0044) has passed without a submission, the
 // server finalizes it from the last accepted answers, so an unreachable device never leaves
 // an attempt open. Saves are already refused after the deadline, so nothing the server
 // accepted is lost; answers still waiting on the device are the D04.5-48 exception case,
@@ -30,10 +31,7 @@ export async function finalizeExpiredAttempts(pool: pg.Pool, limit = 200): Promi
                    SELECT 1 FROM secure_assessment_exam_submissions s
                    WHERE s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id
                )
-               AND t.started_at + (t.configured_duration_seconds + COALESCE((
-                   SELECT SUM(adj.adjustment_seconds) FROM secure_assessment_timer_adjustments adj
-                   WHERE adj.tenant_id = t.tenant_id AND adj.timer_state_id = t.id
-               ), 0)) * interval '1 second' <= statement_timestamp()
+               AND secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) <= 0
              ORDER BY t.started_at ASC
              LIMIT $1
              FOR UPDATE OF a SKIP LOCKED

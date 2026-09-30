@@ -14,9 +14,13 @@ const row = (over: Partial<ExamTimingRow> = {}): ExamTimingRow => ({
 
 test('start eligibility', async (t) => {
     await t.test('only ACTIVE exams can be started', () => {
-        for (const state of ['DRAFT', 'SCHEDULED', 'READY', 'PAUSED', 'ENDED', 'FINALIZED', 'ARCHIVED']) {
+        for (const state of ['DRAFT', 'SCHEDULED', 'READY', 'FINALIZED', 'ARCHIVED']) {
             assert.deepEqual(evaluateStartEligibility(row({ lifecycle_state: state }), NOW), { eligible: false, reason: 'exam_not_active' });
         }
+    });
+    await t.test('PAUSED and ENDED stop new starts and say which applies', () => {
+        assert.deepEqual(evaluateStartEligibility(row({ lifecycle_state: 'PAUSED' }), NOW), { eligible: false, reason: 'exam_paused' });
+        assert.deepEqual(evaluateStartEligibility(row({ lifecycle_state: 'ENDED' }), NOW), { eligible: false, reason: 'exam_ended' });
     });
     await t.test('incomplete timing configuration is not startable', () => {
         assert.equal((evaluateStartEligibility(row({ window_starts_at: null }), NOW) as any).reason, 'exam_not_ready');

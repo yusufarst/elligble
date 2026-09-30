@@ -15,7 +15,7 @@ import { AuthenticationError, buildAuthenticatedContext } from './http/authentic
 import { handleActivate, handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
 import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
-import { performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
+import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
@@ -314,14 +314,14 @@ export function createServer(deps: ServerDependencies): http.Server {
                 }
                 const examInstanceId = body['examInstanceId'];
                 const action = body['action'];
-                if (typeof examInstanceId !== 'string' || (action !== 'mark_ready' && action !== 'activate')) {
+                if (typeof examInstanceId !== 'string' || typeof action !== 'string' || !TEACHER_EXAM_ACTIONS.includes(action as TeacherExamAction)) {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
                 const result = await performTeacherExamAction(deps.pool, getContext()!, examInstanceId, action as TeacherExamAction);
                 switch (result.type) {
                     case 'transitioned':
-                        sendJson(res, 200, { examInstanceId: result.examInstanceId, lifecycleState: result.lifecycleState });
+                        sendJson(res, 200, { examInstanceId: result.examInstanceId, lifecycleState: result.lifecycleState, changed: result.changed });
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');

@@ -209,6 +209,8 @@ export interface TeacherExamProgressProjection {
   participants: number;
   started: number;
   submitted: number;
+  /** Started, not submitted and with working time left (still running after END too). */
+  running?: number;
 }
 
 export interface TeacherExamReadinessProjection {
@@ -220,13 +222,17 @@ export interface TeacherExamReadinessProjection {
   baseline: TeacherExamBaselineProjection;
   roomProctor: TeacherExamRoomProctorProjection;
   progress?: TeacherExamProgressProjection | null;
+  /** Start of the open pause while the exam is PAUSED. */
+  pausedAt?: string | null;
 }
 
-export type TeacherExamAction = 'mark_ready' | 'activate';
+export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end';
 
 export interface TeacherExamTransitionResponse {
   examInstanceId: string;
-  lifecycleState: 'READY' | 'ACTIVE';
+  lifecycleState: string;
+  /** False when the action had already taken effect (pause, resume and end are idempotent). */
+  changed?: boolean;
 }
 
 export interface TeacherReadinessResponse {
@@ -288,7 +294,7 @@ export interface MonitoredParticipant {
 
 /** Exam-day participant list for the assigned proctor or the managing teacher (D04.6). */
 export interface ExamMonitoringResponse {
-  exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean };
+  exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt?: string | null };
   scope: 'PROCTOR' | 'TEACHER';
   serverTime: string;
   questionCount: number;

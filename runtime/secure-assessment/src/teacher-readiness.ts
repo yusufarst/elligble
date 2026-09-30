@@ -23,11 +23,13 @@ export interface TeacherExamRoomProctorProjection {
     blocker?: string;
 }
 
-/** Aggregate delivery progress of an ACTIVE exam; counts only, no participant identities. */
+/** Aggregate delivery progress of an ACTIVE, PAUSED or ENDED exam; counts only, no participant identities. */
 export interface TeacherExamProgressProjection {
     participants: number;
     started: number;
     submitted: number;
+    /** Started, not submitted and with working time left: still running (after END too). */
+    running: number;
 }
 
 export interface TeacherExamReadinessProjection {
@@ -39,7 +41,11 @@ export interface TeacherExamReadinessProjection {
     baseline: TeacherExamBaselineProjection;
     roomProctor: TeacherExamRoomProctorProjection;
     progress: TeacherExamProgressProjection | null;
+    /** Start of the open pause while the exam is PAUSED. */
+    pausedAt: string | null;
 }
+
+const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
 
 function isoOrNull(value: unknown): string | null {
     if (value === null || value === undefined) return null;
@@ -142,7 +148,7 @@ export async function handleTeacherReadinessGet(
             JOIN secure_assessment_exam_instances i
                 ON i.teaching_assignment_id = ata.id
                AND i.tenant_id = ata.tenant_id
-               AND i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE')
+               AND i.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE', 'PAUSED', 'ENDED')
             LEFT JOIN academic_core_subject_offerings so
                 ON so.id = ata.subject_offering_id AND so.tenant_id = ata.tenant_id
             LEFT JOIN academic_core_subjects s
@@ -161,13 +167,15 @@ export async function handleTeacherReadinessGet(
             let baseline: TeacherExamBaselineProjection = { status: 'not_evaluated' };
             let roomProctor: TeacherExamRoomProctorProjection = { status: 'not_evaluated' };
             let progress: TeacherExamProgressProjection | null = null;
+            let pausedAt: string | null = null;
 
-            if (row.lifecycle_state === 'ACTIVE') {
+            if (DELIVERY_STATES.has(row.lifecycle_state)) {
                 const progressResult = await client.query(`
                     SELECT
                         COUNT(DISTINCT p.id)::int AS participants,
                         COUNT(DISTINCT a.id) FILTER (WHERE t.started_at IS NOT NULL)::int AS started,
-                        COUNT(DISTINCT sub.id)::int AS submitted
+                        COUNT(DISTINCT sub.id)::int AS submitted,
+                        COUNT(DISTINCT a.id) FILTER (WHERE t.started_at IS NOT NULL AND sub.id IS NULL AND rem.seconds > 0)::int AS running
                     FROM secure_assessment_exam_participants p
                     LEFT JOIN secure_assessment_exam_attempts a
                         ON a.exam_participant_id = p.id AND a.tenant_id = p.tenant_id
@@ -175,6 +183,9 @@ export async function handleTeacherReadinessGet(
                         ON t.exam_attempt_id = a.id AND t.tenant_id = a.tenant_id
                     LEFT JOIN secure_assessment_exam_submissions sub
                         ON sub.exam_attempt_id = a.id AND sub.tenant_id = a.tenant_id
+                    LEFT JOIN LATERAL (
+                        SELECT secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) AS seconds
+                    ) rem ON TRUE
                     WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
                 `, [context.tenantId, examInstanceId]);
                 const counts = progressResult.rows[0] ?? {};
@@ -182,7 +193,16 @@ export async function handleTeacherReadinessGet(
                     participants: Number(counts.participants ?? 0),
                     started: Number(counts.started ?? 0),
                     submitted: Number(counts.submitted ?? 0),
+                    running: Number(counts.running ?? 0),
                 };
+                if (row.lifecycle_state === 'PAUSED') {
+                    const open = await client.query(
+                        `SELECT paused_at FROM secure_assessment_exam_pauses
+                         WHERE tenant_id = $1 AND exam_instance_id = $2 AND resumed_at IS NULL`,
+                        [context.tenantId, examInstanceId]
+                    );
+                    pausedAt = isoOrNull(open.rows[0]?.paused_at);
+                }
             } else {
                 const readiness = await evaluateExamReadiness(client as unknown as pg.PoolClient, context.tenantId, examInstanceId);
                 baseline = readiness.baseline as TeacherExamBaselineProjection;
@@ -198,6 +218,7 @@ export async function handleTeacherReadinessGet(
                 baseline,
                 roomProctor,
                 progress,
+                pausedAt,
             });
         }
 

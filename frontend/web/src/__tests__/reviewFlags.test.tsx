@@ -181,6 +181,21 @@ describe('useReviewFlags', () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps a mark while the exam is paused and sends it once the exam continues', async () => {
+    let paused = true;
+    const send = vi.fn(async () => {
+      if (paused) throw new ApiError(409, 'exam_paused');
+    });
+    const { result } = renderHook(() => useReviewFlags({ attemptId: ATTEMPT, sessionId: SESSION, initialFlags: [], enabled: true, send, storage: window.localStorage }));
+    act(() => result.current.toggle(Q1));
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY)!)).toEqual({ [Q1]: true });
+    expect(result.current.flags[Q1]).toBe(true);
+    paused = false;
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(2), { timeout: 4000 });
+    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull());
+  });
+
   it('forgets a finished attempt\'s marks on this device', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ [Q1]: true }));
     clearReviewFlags(ATTEMPT, window.localStorage);

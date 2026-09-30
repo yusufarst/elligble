@@ -94,8 +94,17 @@ export async function handleQuestionDelivery(
                 return;
             }
 
+            // ENDED keeps running attempts going to their own deadline (Owner decision
+            // 2026-09-30); while PAUSED no question content is delivered, so a pause gives
+            // no extra working time. A timer that has not started is refused below.
             const examInstance = attemptRes.rows[0];
-            if (examInstance.lifecycle_state !== 'ACTIVE') {
+            if (examInstance.lifecycle_state === 'PAUSED') {
+                await client.query('ROLLBACK');
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'exam_paused' }));
+                return;
+            }
+            if (examInstance.lifecycle_state !== 'ACTIVE' && examInstance.lifecycle_state !== 'ENDED') {
                 await client.query('ROLLBACK');
                 res.writeHead(409, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'exam_not_active' }));
@@ -146,7 +155,7 @@ export async function handleQuestionDelivery(
                     t.started_at,
                     t.configured_duration_seconds,
                     COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) AS total_adjustment,
-                    FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer AS elapsed_seconds
+                    secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) AS elapsed_seconds
                 FROM secure_assessment_timer_state t
                 WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2`,
                 [context.tenantId, attemptId]

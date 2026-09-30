@@ -154,6 +154,21 @@ export const ExamMonitoringView: React.FC<{
         </p>
       </header>
 
+      {exam.lifecycleState === 'PAUSED' && (
+        <Alert variant="warning">
+          <IconInfo aria-hidden="true" />
+          <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
+          <AlertDescription>Sisa waktu peserta berhenti dan jawaban tidak dapat diubah sampai guru melanjutkan ujian.</AlertDescription>
+        </Alert>
+      )}
+      {exam.lifecycleState === 'ENDED' && (
+        <Alert>
+          <IconInfo aria-hidden="true" />
+          <AlertTitle>Ujian telah diakhiri</AlertTitle>
+          <AlertDescription>Peserta yang belum mulai tidak dapat memulai. Peserta yang sedang mengerjakan dapat menyelesaikan sampai waktunya habis.</AlertDescription>
+        </Alert>
+      )}
+
       {error === 'failed' && (
         <Alert variant="warning">
           <IconInfo aria-hidden="true" />

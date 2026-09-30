@@ -81,7 +81,7 @@ test('exam monitoring (real PostgreSQL, production wiring)', { skip: skipWithout
         assert.equal(res.status, 200);
         assert.equal(res.body.scope, 'TEACHER');
         assert.equal(res.body.questionCount, 3);
-        assert.deepEqual(res.body.exam, { examInstanceId: exam, subjectLabel: 'Matematika Wajib', lifecycleState: 'ACTIVE', roomBased: false });
+        assert.deepEqual(res.body.exam, { examInstanceId: exam, subjectLabel: 'Matematika Wajib', lifecycleState: 'ACTIVE', roomBased: false, pausedAt: null });
         assert.ok(!Number.isNaN(Date.parse(res.body.serverTime)));
         assert.deepEqual(res.body.summary, { participants: 4, notStarted: 1, active: 2, submitted: 1 });
         const byId = Object.fromEntries(res.body.participants.map((p: { elligbleId: string }) => [p.elligbleId, p]));

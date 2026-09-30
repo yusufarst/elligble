@@ -3,6 +3,16 @@ import * as pg from 'pg';
 
 import { type AuthorizedAssessmentContext } from './answer.ts';
 import { evaluateStartEligibility } from './attempt-eligibility.ts';
+import { readAttemptExamState, type AttemptExamState } from './exam-pause.ts';
+
+/** Exam state beside the timer, so the workstation knows whether time is frozen (Owner decision 2026-09-30). */
+function examStateFields(state: AttemptExamState | null, dbNow: unknown) {
+    return {
+        examState: state?.lifecycleState ?? null,
+        pausedAt: state?.pausedAt ? state.pausedAt.toISOString() : null,
+        serverTime: new Date(dbNow instanceof Date || typeof dbNow === 'string' ? dbNow : Date.now()).toISOString(),
+    };
+}
 
 export interface TimerDependencies {
     pool: pg.Pool;
@@ -92,6 +102,7 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                         JOIN secure_assessment_exam_instances i
                             ON i.id = p.exam_instance_id AND i.tenant_id = a.tenant_id
                         WHERE a.tenant_id = $1 AND a.id = $2
+                        FOR KEY SHARE OF i
                     `, [context.tenantId, attemptId]);
 
                     if (examRes.rows.length === 0) {
@@ -129,10 +140,12 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                         t.started_at,
                         t.configured_duration_seconds,
                         COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                        FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                        secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) as elapsed_seconds,
+                        statement_timestamp() as db_now
                     FROM secure_assessment_timer_state t
                     WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
                 `, [context.tenantId, attemptId]);
+                const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
 
                 await client.query('COMMIT');
 
@@ -151,7 +164,8 @@ export async function handleTimerStart(req: http.IncomingMessage, res: http.Serv
                     startedAt: startedAt.toISOString(),
                     configuredDurationSeconds,
                     effectiveDurationSeconds,
-                    effectiveRemainingSeconds
+                    effectiveRemainingSeconds,
+                    ...examStateFields(examState, state.db_now)
                 }));
 
             } catch (err) {
@@ -216,7 +230,8 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
                 t.started_at,
                 t.configured_duration_seconds,
                 COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) as elapsed_seconds,
+                statement_timestamp() as db_now
             FROM secure_assessment_timer_state t
             WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
         `, [context.tenantId, attemptId]);
@@ -244,6 +259,7 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
         const effectiveRemainingSeconds = Math.max(0, effectiveDurationSeconds - elapsedSeconds);
 
         const status = effectiveRemainingSeconds <= 0 ? 'expired' : 'active';
+        const examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
@@ -251,7 +267,8 @@ export async function handleTimerGet(req: http.IncomingMessage, res: http.Server
             startedAt: startedAt.toISOString(),
             configuredDurationSeconds,
             effectiveDurationSeconds,
-            effectiveRemainingSeconds
+            effectiveRemainingSeconds,
+            ...examStateFields(examState, state.db_now)
         }));
 
     } catch (err) {

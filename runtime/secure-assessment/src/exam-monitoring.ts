@@ -31,7 +31,8 @@ export interface MonitoredParticipant {
 }
 
 export interface ExamMonitoring {
-    exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean };
+    /** pausedAt: start of the open pause while the exam is PAUSED (every participant's time is frozen). */
+    exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt: string | null };
     scope: 'PROCTOR' | 'TEACHER';
     serverTime: string;
     questionCount: number;
@@ -68,6 +69,8 @@ export async function readExamMonitoring(
         const exam = await client.query(
             `SELECT i.lifecycle_state, COALESCE(i.room_based_operations_enabled, FALSE) AS room_based,
                     s.display_label AS subject_label, statement_timestamp() AS db_now,
+                    (SELECT ps.paused_at FROM secure_assessment_exam_pauses ps
+                     WHERE ps.tenant_id = i.tenant_id AND ps.exam_instance_id = i.id AND ps.resumed_at IS NULL) AS paused_at,
                     (SELECT pa.id FROM secure_assessment_proctor_assignments pa
                      WHERE pa.tenant_id = i.tenant_id AND pa.exam_instance_id = i.id AND pa.person_id = $3 AND pa.revoked_at IS NULL
                      LIMIT 1) AS proctor_assignment_id,
@@ -103,8 +106,7 @@ export async function readExamMonitoring(
         const participants = await client.query(
             `SELECT p.person_id, er.display_label AS room_label, a.id AS attempt_id,
                     t.started_at,
-                    GREATEST(0, t.configured_duration_seconds + COALESCE(adj.total, 0)
-                        - FLOOR(EXTRACT(EPOCH FROM (statement_timestamp() - t.started_at)))::int) AS remaining_seconds,
+                    GREATEST(0, secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp())) AS remaining_seconds,
                     sub.submitted_at, sub.finalization_source,
                     COALESCE(ans.answered, 0) AS answered, ans.last_accepted_at,
                     EXISTS (SELECT 1 FROM secure_assessment_exam_sessions ss
@@ -121,10 +123,6 @@ export async function readExamMonitoring(
                  ORDER BY att.created_at ASC, att.id ASC LIMIT 1
              ) a ON TRUE
              LEFT JOIN secure_assessment_timer_state t ON t.tenant_id = p.tenant_id AND t.exam_attempt_id = a.id
-             LEFT JOIN LATERAL (
-                 SELECT SUM(x.adjustment_seconds)::int AS total FROM secure_assessment_timer_adjustments x
-                 WHERE x.tenant_id = p.tenant_id AND x.timer_state_id = t.id
-             ) adj ON TRUE
              LEFT JOIN secure_assessment_exam_submissions sub ON sub.tenant_id = p.tenant_id AND sub.exam_attempt_id = a.id
              LEFT JOIN LATERAL (
                  SELECT count(*)::int AS answered, max(x.updated_at) AS last_accepted_at FROM secure_assessment_exam_answers x
@@ -166,7 +164,13 @@ export async function readExamMonitoring(
         return {
             type: 'ok',
             monitoring: {
-                exam: { examInstanceId, subjectLabel: row.subject_label ?? null, lifecycleState: row.lifecycle_state, roomBased: Boolean(row.room_based) },
+                exam: {
+                    examInstanceId,
+                    subjectLabel: row.subject_label ?? null,
+                    lifecycleState: row.lifecycle_state,
+                    roomBased: Boolean(row.room_based),
+                    pausedAt: row.lifecycle_state === 'PAUSED' ? isoOrNull(row.paused_at) : null,
+                },
                 scope,
                 serverTime: new Date(row.db_now).toISOString(),
                 questionCount: questions.rows[0].n,

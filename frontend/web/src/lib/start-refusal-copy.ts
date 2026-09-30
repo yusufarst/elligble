@@ -2,6 +2,8 @@
 // start re-check the same eligibility with server time).
 export const START_REFUSAL_COPY: Record<string, string> = {
   exam_not_active: 'Ujian belum dibuka oleh guru atau pengawas. Silakan tunggu.',
+  exam_paused: 'Ujian sedang dijeda oleh guru. Silakan tunggu sampai ujian dilanjutkan.',
+  exam_ended: 'Ujian ini telah diakhiri oleh guru dan tidak dapat dimulai.',
   exam_not_open: 'Ujian belum dibuka. Silakan tunggu sesuai waktu pelaksanaan.',
   exam_window_closed: 'Waktu pelaksanaan ujian telah berakhir.',
   late_start_blocked: 'Batas waktu untuk memulai ujian ini telah lewat. Hubungi pengawas ruangan.',

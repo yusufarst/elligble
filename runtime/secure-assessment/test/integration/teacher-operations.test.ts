@@ -60,7 +60,7 @@ test('teacher-managed exam operations (real PostgreSQL, production wiring)', { s
 
         const ready = await transition(teacherClient, exam, 'mark_ready');
         assert.equal(ready.status, 200);
-        assert.deepEqual(ready.body, { examInstanceId: exam, lifecycleState: 'READY' });
+        assert.deepEqual(ready.body, { examInstanceId: exam, lifecycleState: 'READY', changed: true });
         const active = await transition(teacherClient, exam, 'activate');
         assert.equal(active.status, 200);
         assert.equal(active.body.lifecycleState, 'ACTIVE');
@@ -84,12 +84,12 @@ test('teacher-managed exam operations (real PostgreSQL, production wiring)', { s
         const monitoring = await teacherClient.request('/api/v1/assessment/teacher-readiness');
         const activeView = monitoring.body.exams.find((e: any) => e.examInstanceId === exam);
         assert.equal(activeView.lifecycleState, 'ACTIVE');
-        assert.deepEqual(activeView.progress, { participants: 1, started: 1, submitted: 0 });
+        assert.deepEqual(activeView.progress, { participants: 1, started: 1, submitted: 0, running: 1 });
         assert.equal(activeView.baseline.status, 'not_evaluated');
 
         await s.request('/api/v1/assessment/submit', { method: 'POST', body: { attemptId } });
         const after = await teacherClient.request('/api/v1/assessment/teacher-readiness');
-        assert.deepEqual(after.body.exams.find((e: any) => e.examInstanceId === exam).progress, { participants: 1, started: 1, submitted: 1 });
+        assert.deepEqual(after.body.exams.find((e: any) => e.examInstanceId === exam).progress, { participants: 1, started: 1, submitted: 1, running: 0 });
     });
 
     await t.test('an exam that fails readiness cannot become READY, and nothing is recorded', async () => {

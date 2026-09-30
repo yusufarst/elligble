@@ -3,12 +3,46 @@ import { getTeacherReadiness, postTeacherExamTransition, ApiError } from '../api
 import type { TeacherReadinessResponse, TeacherExamReadinessProjection, TeacherExamAction } from '../types/assessment.ts';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, formatWindow } from '../lib/format.ts';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { IconInfo } from '@/components/icons';
+import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 
 const LIFECYCLE_LABELS: Record<string, string> = {
   SCHEDULED: 'Terjadwal',
   READY: 'Siap Dibuka',
   ACTIVE: 'Berlangsung',
+  PAUSED: 'Dijeda',
+  ENDED: 'Diakhiri',
+};
+
+// Exams being delivered: progress, monitoring, results and the pause, resume and end
+// controls (Owner decision 2026-09-30).
+const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
+
+type ConfirmableAction = 'activate' | 'pause' | 'resume' | 'end';
+
+const CONFIRM_COPY: Record<ConfirmableAction, { title: string; description: string; confirm: string; destructive?: boolean }> = {
+  activate: {
+    title: 'Buka Ujian untuk Peserta?',
+    description: 'Setelah dibuka, peserta dapat mulai mengerjakan sesuai waktu pelaksanaan. Soal dan pengaturan ujian tidak dapat diubah lagi.',
+    confirm: 'Buka Ujian',
+  },
+  pause: {
+    title: 'Jeda Ujian untuk Semua Peserta?',
+    description: 'Sisa waktu setiap peserta berhenti tepat saat ujian dijeda. Selama dijeda, soal disembunyikan dan jawaban tidak dapat diubah; jawaban yang sudah dipilih tetap tersimpan. Peserta yang belum mulai tidak dapat memulai.',
+    confirm: 'Jeda Ujian',
+  },
+  resume: {
+    title: 'Lanjutkan Ujian?',
+    description: 'Sisa waktu setiap peserta berjalan lagi dari saat ujian dijeda, dan peserta dapat kembali mengerjakan.',
+    confirm: 'Lanjutkan Ujian',
+  },
+  end: {
+    title: 'Akhiri Ujian?',
+    description: 'Peserta yang belum mulai tidak dapat memulai lagi. Peserta yang sedang mengerjakan tetap dapat menyelesaikan sampai waktunya masing-masing habis, lalu jawabannya dikumpulkan otomatis. Nilai tidak otomatis terlihat oleh siswa. Ujian yang diakhiri tidak dapat dibuka kembali.',
+    confirm: 'Akhiri Ujian',
+    destructive: true,
+  },
 };
 
 function transitionFailureMessage(err: unknown): string {
@@ -65,7 +99,7 @@ export const TeacherReadinessView: React.FC<{
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
-  const [confirmActivate, setConfirmActivate] = useState<TeacherExamReadinessProjection | null>(null);
+  const [confirm, setConfirm] = useState<{ exam: TeacherExamReadinessProjection; action: ConfirmableAction } | null>(null);
 
   const fetchReadinessData = useCallback(async () => {
     try {
@@ -110,7 +144,7 @@ export const TeacherReadinessView: React.FC<{
       setActionErrors(prev => ({ ...prev, [examInstanceId]: transitionFailureMessage(err) }));
     } finally {
       setPendingAction(null);
-      setConfirmActivate(null);
+      setConfirm(null);
       await fetchReadinessData();
     }
   };
@@ -240,12 +274,29 @@ export const TeacherReadinessView: React.FC<{
                 <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
               )}
 
-              {lifecycle === 'ACTIVE' && exam.progress ? (
+              {DELIVERY_STATES.has(lifecycle) && exam.progress ? (
                 <>
+                {lifecycle === 'PAUSED' && (
+                  <Alert variant="warning" className="mb-3">
+                    <IconInfo aria-hidden="true" />
+                    <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
+                    <AlertDescription>Sisa waktu setiap peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.</AlertDescription>
+                  </Alert>
+                )}
+                {lifecycle === 'ENDED' && (
+                  <p className="teacher-exam-note">
+                    {exam.progress.running
+                      ? `Ujian telah diakhiri. ${exam.progress.running} peserta masih mengerjakan sampai waktunya masing-masing habis.`
+                      : 'Ujian telah diakhiri. Tidak ada peserta yang masih mengerjakan.'}
+                  </p>
+                )}
                 <dl className="teacher-exam-progress" aria-label="Kemajuan pelaksanaan ujian">
                   <div><dt>Peserta</dt><dd>{exam.progress.participants}</dd></div>
                   <div><dt>Sudah mulai</dt><dd>{exam.progress.started}</dd></div>
                   <div><dt>Dikumpulkan</dt><dd>{exam.progress.submitted}</dd></div>
+                  {exam.progress.running !== undefined && (
+                    <div><dt>Masih mengerjakan</dt><dd>{exam.progress.running}</dd></div>
+                  )}
                 </dl>
                 {(onOpenResults || onOpenMonitoring) && (
                   <div className="teacher-exam-actions">
@@ -255,6 +306,22 @@ export const TeacherReadinessView: React.FC<{
                     {onOpenResults && (
                       <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>
                     )}
+                  </div>
+                )}
+                {(lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && (
+                  <div className="teacher-exam-actions teacher-exam-controls" role="group" aria-label="Kendali ujian">
+                    {lifecycle === 'ACTIVE' && (
+                      <>
+                        <Button variant="secondary" onClick={() => setConfirm({ exam, action: 'pause' })} disabled={busy}>Jeda Ujian</Button>
+                        <Button variant="destructive" onClick={() => setConfirm({ exam, action: 'end' })} disabled={busy}>Akhiri Ujian</Button>
+                      </>
+                    )}
+                    {lifecycle === 'PAUSED' && (
+                      <Button onClick={() => setConfirm({ exam, action: 'resume' })} disabled={busy}>
+                        {busy ? 'Memproses...' : 'Lanjutkan Ujian'}
+                      </Button>
+                    )}
+                    {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
                   </div>
                 )}
                 </>
@@ -284,7 +351,7 @@ export const TeacherReadinessView: React.FC<{
                     </Button>
                   )}
                   {lifecycle === 'READY' && (
-                    <Button onClick={() => setConfirmActivate(exam)} disabled={busy}>
+                    <Button onClick={() => setConfirm({ exam, action: 'activate' })} disabled={busy}>
                       {busy ? 'Memproses...' : 'Buka Ujian'}
                     </Button>
                   )}
@@ -296,27 +363,26 @@ export const TeacherReadinessView: React.FC<{
         })}
       </div>
 
-      <Dialog open={confirmActivate !== null} onOpenChange={open => { if (!open) setConfirmActivate(null); }}>
-        <DialogContent aria-describedby="activate-exam-description">
-          <DialogHeader>
-            <DialogTitle>Buka Ujian untuk Peserta?</DialogTitle>
-            <DialogDescription id="activate-exam-description">
-              Setelah dibuka, peserta dapat mulai mengerjakan sesuai waktu pelaksanaan. Soal dan pengaturan ujian tidak dapat diubah lagi.
-            </DialogDescription>
-          </DialogHeader>
-          {confirmActivate && (
-            <p className="m-0 font-medium">{confirmActivate.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
-          )}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="secondary" onClick={() => setConfirmActivate(null)}>Batal</Button>
-            <Button
-              onClick={() => confirmActivate && runTransition(confirmActivate.examInstanceId, 'activate')}
-              disabled={pendingAction !== null}
-            >
-              Buka Ujian
-            </Button>
-          </div>
-        </DialogContent>
+      <Dialog open={confirm !== null} onOpenChange={open => { if (!open) setConfirm(null); }}>
+        {confirm && (
+          <DialogContent aria-describedby="exam-action-description">
+            <DialogHeader>
+              <DialogTitle>{CONFIRM_COPY[confirm.action].title}</DialogTitle>
+              <DialogDescription id="exam-action-description">{CONFIRM_COPY[confirm.action].description}</DialogDescription>
+            </DialogHeader>
+            <p className="m-0 font-medium">{confirm.exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setConfirm(null)}>Batal</Button>
+              <Button
+                variant={CONFIRM_COPY[confirm.action].destructive ? 'destructive' : 'default'}
+                onClick={() => runTransition(confirm.exam.examInstanceId, confirm.action)}
+                disabled={pendingAction !== null}
+              >
+                {CONFIRM_COPY[confirm.action].confirm}
+              </Button>
+            </div>
+          </DialogContent>
+        )}
       </Dialog>
     </div>
   );

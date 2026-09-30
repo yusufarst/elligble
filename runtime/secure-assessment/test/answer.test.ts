@@ -35,6 +35,15 @@ test('answer save capability tests', async (t) => {
                 return { rows: [] };
             }
 
+            // Exam state of the attempt (exam-pause.ts): the exam is running unless a test says otherwise.
+            if (sqlLower.includes('lifecycle_state') && sqlLower.includes('from secure_assessment_exam_attempts')) {
+                return { rows: [{ exam_instance_id: 'exam-under-test', lifecycle_state: 'ACTIVE' }] };
+            }
+
+            if (sqlLower.includes('from secure_assessment_exam_pauses')) {
+                return { rows: [] };
+            }
+
             if (sqlLower.includes('from secure_assessment_exam_attempts')) {
                 const tenantId = params![1];
                 const id = params![0];
