@@ -1,6 +1,6 @@
 **Status:** LIVING PLAN (DEC-042) — the only live execution tracker
 **Canonical:** YES for current production state, gaps, critical path and next work. Does not override LOCKED decisions.
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-09-30
 **Audit Baseline:** `3a69883544ac3750b17fe5e4bdbd0f41b3608b07` (BU-090 terminal)
 
 # ELLIGBLE Production Completion Plan
@@ -86,7 +86,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-14 | Infrastructure-level login rate limiting (whole schools share one NAT address, so per-IP limits must be generous) | per-account policy exists (DEC-041) | OPEN (configure at the edge) |
 | P1-15 | Question order followed random snapshot UUIDs, not the authored order (D04.3-41, D04.2-57..59) | **RESOLVED**: migration `0038` adds a positive, per-exam unique `display_order` written when the snapshot is created (snapshots stay immutable); delivery orders by it, legacy rows follow by id; real-PostgreSQL test with identifier order opposite to the authored order | RESOLVED |
 | P1-16 | Tenant/school time zone is not configured (D04.2-36); times display in the device zone | **RESOLVED**: migration `0043` adds an explicit IANA zone per school, required by `school create` and changed only by the audited `school set-time-zone`; `GET /me/context` returns it and the web client formats every date and time in it (WIB, WITA, WIT) whatever the device zone; activation cards use it. Verified with the browser clock in UTC | RESOLVED |
-| P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | lifecycle ops implement READY/ACTIVE only | OPEN: Owner decision (§7) |
+| P1-17 | No ENDED / PAUSED transitions: end-of-exam handling of active attempts (D04.2-81) and timer behaviour during pause (D04.2-77) are policy-open; timer expiry already auto-submits each attempt | lifecycle ops implement READY/ACTIVE only | Owner decision received 2026-09-30 (§7); ASSESS-LIFE-001 and ASSESS-LIFE-002 (§6) |
 | P1-18 | Readiness preflights accepted only SCHEDULED, so READY could not be re-evaluated (D04.2-25) or re-checked at activation (D04.2-68) | 10 preflight guards | **RESOLVED**: shared `readiness-states.ts` (SCHEDULED or READY) |
 | P1-12 | Historical one-off verifiers are point-in-time: 14 of 44 fail on current schema by design | **RESOLVED** as a gate: durable suite `npm run test:integration` (disposable databases); historical verifiers are REFERENCE ONLY | RESOLVED |
 | P1-26 | An invalid or expired session without a usable `X-Tenant-ID` was answered 403 instead of 401, so a client could treat an expired session as a permanent refusal (an answer save marked failed instead of prompting re-login) | found by the production-wiring probe in `test/integration/startup.test.ts`: **RESOLVED**, the credential is validated before the tenant locator; the probe asserts 401 on every protected route with and without a tenant locator | RESOLVED |
@@ -100,28 +100,236 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-28 | No scoring or results: after an exam the teacher saw only counts (D04.8) | **RESOLVED (provisional)**: deterministic rule `BASELINE_SINGLE_CHOICE_V1` (correct option earns the question's maximum, otherwise 0, raw ÷ maximum × 100 rounded half up to two decimals, exact integer arithmetic) computed on read from the frozen snapshots and accepted answers of finalized attempts; `GET /assessment/teacher-exams/results` only for the teacher who manages the exam; "Hasil Ujian" screen lists participants by ELLIGBLE ID (never ranked), absent is not zero, shows how each attempt was finalized, keeps scores hidden until shown (FRONTEND_DESIGN_SYSTEM §58). Students see no score. Finalization, publication, export and corrections remain | RESOLVED (provisional) |
 | P1-25 | Time reminders at configured thresholds (D04.5-32) were missing; only warning styling below 5 and 1 minutes | `StudentExamWorkstation`: **RESOLVED** with the decision's default thresholds (30, 15, 5 minutes): a non-blocking status line with the actual remaining minutes, hidden after 10 seconds; school-defined thresholds await tenant settings | RESOLVED |
 
-## 6. Critical path (ordered by dependency and value)
+## 6. Production task graph
 
-1. **Governance and plan** (DEC-042, DEC-043, this plan). DONE in this change.
-2. **Durable test foundation**: full `npm test` gate, fix broken tests, reusable disposable PostgreSQL harness for integration tests (P1-7, P1-12). DONE.
-3. **Authentication and browser session** (P0-1, P0-2, P0-3, P0-4 reads, P1-3, P1-4, P1-5, P1-9, P1-13): DONE. Migration `0036_tenant_display_label`; capability discovery uses explicit assignments only (PB05 untouched).
-4. **Student attempt authorization and start** (P0-3, P0-5, P1-10): DONE. Ownership check, idempotent concurrency-safe start with eligibility (ACTIVE, window, latest-start policy) using database time, policy re-applied at timer start, schedule projection and entry guidance in the list.
-5. **Teacher exam operations** (P0-4, P0-6): DONE for teacher-managed exams. SCHEDULED→READY / READY→ACTIVE with readiness re-checks, window guard, row lock (concurrent activation transitions once), attributed events; teacher UI with lifecycle badges, confirmation dialog and aggregate progress. ENDED/PAUSED await policy (§7).
-6. **Local-first answers and exam-session binding** (P0-8, P1-1, P1-2, P1-19..P1-21): DONE. IndexedDB buffer and sync engine (coalescing, backoff with jitter, version rebase, reload and browser-restart recovery), honest save states and offline banner, per-tab exam session with fingerprint-confirmed takeover and duplicated-tab detection, monotonic countdown, retried automatic submission.
-7. **Production operations** (P0-9, P0-10, P1-8): DONE. Migration runner; startup preflight (bounded wait for the database, schema `check` or `apply`, refuses a database ahead of the release); single process serving API and built client with deep-link fallback; environment validation; structured request logging; container image (non-root) with health check; CI (typecheck, unit, PostgreSQL integration, web build, image build and smoke test); operations runbook with a verified local restore drill.
-8. **Provisioning and content** (P0-11, P0-7, P1-15, P1-23): DONE. Authored question order and answer payload validation; account activation; audited operator CLI for schools, people (activation cards), academic setup (new `runtime/academic-core` module), exams and activation reissue.
-9. **Browser E2E** (PB06, PB07 contribution): DONE. Playwright suite `e2e/` against the real production process on a disposable database provisioned only through the operator CLI, run in CI: pilot journey (activation cards, teacher opens the exam, proctor view, student answers, reload, one submission with idempotent receipts), resilience (offline, reload while saves fail, second-tab takeover, duplicated tab) and security (other school, other student's attempt, session ending mid-exam).
-10. **Milestone 2 hardening** (in progress): server finalization at time expiry (P1-27) DONE; provisional teacher results with deterministic baseline scoring (P1-28) DONE; "Ragu-ragu" review marks (P1-24) DONE; school time zone (P1-16) DONE; exam-day participant monitoring (first part of P1-11) DONE. Remaining: the rest of the Proctor Feed (P1-11), pause/lock and time adjustments, ENDED/PAUSED once the policy is set (P1-17), result finalization, publication and export. Then Academic Core administration UI and the remaining baseline domains.
+Planning aids only: these identifiers are not Build Units and have no lifecycle stages (DEC-042). One coherent, verified product result per task; every active or backlog task carries its scope, dependencies and verification. Status values: BACKLOG, READY, IN_PROGRESS, BLOCKED, VERIFYING, DONE. Priority: P0 blocks safe production or risks data loss or security; P1 blocks a required baseline journey; P2 important reliability, quality or operations; P3 post-baseline. Work-in-progress limit: 3.
+
+### 6.1 Views
+
+**CRITICAL PATH:** ASSESS-LIFE-001 → ASSESS-LIFE-002 → RESULT-001 → RESULT-002 → PR checkpoint → ASSESS-PROCTOR-001 → ASSESS-PROCTOR-002.
+
+| View | Tasks |
+|---|---|
+| IN PROGRESS | ASSESS-LIFE-001 |
+| READY QUEUE (by value) | ASSESS-LIFE-002 (after 001), RESULT-001 (after 001), RESULT-002 (after 001), ASSESS-PROCTOR-001, ASSESS-PROCTOR-002, OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
+| BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
+| RECENTLY COMPLETED | TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+
+### 6.2 Active and backlog tasks
+
+#### ASSESS-LIFE-001 · Exam pause, resume and end on the server, with pause-aware time
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-LIFE / P1 / IN_PROGRESS |
+| Dependencies / blocks | none / ASSESS-LIFE-002, RESULT-001 |
+| Repository evidence | `exam-lifecycle-operations.ts` implements only SCHEDULED→READY→ACTIVE; the schema already allows PAUSED and ENDED (`0025`, `0037`); elapsed time is computed from `started_at` in eight places (answer, submission, timer x2, resume, question delivery, review flag, expiry sweep, monitoring), none aware of pauses |
+| Why | Owner decision 2026-09-30 (§7) on D04.2-77/81; D04.2-74 whole-exam pause, D04.2-80/82, D04.6-48 (whole-exam pause at higher scope, not every room proctor) |
+| Exact scope | PAUSE (ACTIVE→PAUSED), RESUME (PAUSED→ACTIVE), END (ACTIVE→ENDED) by the teacher who manages a teacher-managed exam; idempotent (a repeat returns the current state unchanged); audited in lifecycle events plus exact pause boundaries (new `secure_assessment_exam_pauses`); one database function for elapsed working time that subtracts pause intervals, used by every time computation, so remaining time freezes at the pause boundary and resumes exactly; guards: no new attempt or timer start while PAUSED or ENDED; no answer save, review mark, submission or expiry finalization while PAUSED; answers captured during a pause refused after resume (server-anchored capture time, see ASSESS-LIFE-002); ENDED leaves active attempts running to their own deadline; teacher controls "Jeda Ujian", "Lanjutkan Ujian", "Akhiri Ujian" with confirmations |
+| Out of scope | room-level and participant-level pause (D04.2-75/76, ASSESS-PROCTOR-001); proctor-initiated pause (PB05); forced submission at end (not in the Owner decision); END while PAUSED (resume first: no invented policy) |
+| Expected product result | a teacher can pause, resume and end an exam; server time and all enforcement follow the Owner semantics on every path |
+| Surfaces | migration `0044`, `exam-lifecycle-operations.ts`, `server.ts`, `attempt-eligibility.ts`, `attempt-start.ts`, `timer.ts`, `answer.ts`, `submission.ts`, `review-flag.ts`, `resume.ts`, `question-delivery.ts`, `expiry-finalization.ts`, `exam-monitoring.ts`, `teacher-readiness.ts`, `TeacherReadinessView.tsx` |
+| Verification | focused unit; real-PostgreSQL integration: frozen and exact remaining time across pause and resume, idempotent and audited transitions, every guard, END with running attempts, sweeper never expires a paused attempt, authority refusals; web component tests; E2E in ASSESS-LIFE-002 |
+| Owner decision | resolved (§7) |
+| Commit / PR | pending |
+
+#### ASSESS-LIFE-002 · Student exam screen under pause and end, without losing pre-pause answers
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-LIFE / P1 / READY after ASSESS-LIFE-001 (BLOCKED_BY_TASK) |
+| Dependencies / blocks | ASSESS-LIFE-001 / RESULT-001 E2E |
+| Repository evidence | intents record only a device-clock `capturedAt` (`answer-store.ts`); the engine keeps one latest intent per question and treats unknown 409s as terminal or rejected (`answer-sync-engine.ts`, `answer-sync-api.ts`); the workstation learns server state only on load, focus, visibility and reconnect |
+| Why | Owner decision points 4, 6, 7, 8 and 9: clearly paused UI, no edits while paused, no loss of answers captured before the boundary, exact resume, safe across reload, reconnect and takeover |
+| Exact scope | server-anchored capture time for every intent (clock offset from server responses); a short per-question intent history so that, when the server refuses an intent captured inside a pause, the latest intent captured before the pause (or after resume) is sent instead; `exam_paused` holds the queue (nothing is dropped) until resume; `captured_during_pause` drops only that intent, with an honest notice; periodic lightweight state check while working; paused screen that hides question content and shows the frozen time; resume restores the workstation with the exact remaining time; ENDED shows a calm note and lets the attempt finish; review marks wait during a pause |
+| Out of scope | answers delivered after the attempt's time expired (D04.5-48, ASSESS-STUDENT-001) |
+| Expected product result | students see pause and end correctly on every device; no legitimate answer is lost and no edit made during a pause counts |
+| Surfaces | `answer-store.ts`, `answer-sync-engine.ts`, `answer-sync-api.ts`, `useAnswerManager.ts`, `useAuthoritativeTimer.ts`, `useReviewFlags.ts`, `StudentExamWorkstation.tsx`, `AssignedExamDiscovery.tsx`, `answer.ts` (capture-time check) |
+| Verification | engine unit tests (hold, fallback to pre-pause intent, drop, restart recovery); workstation tests; real-PostgreSQL capture-time refusals; E2E: pause while working, reload while paused, offline device answering through an unannounced pause, resume with identical remaining time, end with a running attempt |
+| Owner decision | resolved (§7); pause screen hides question content so no working time is gained (Owner points 3 and 4) |
+| Commit / PR | pending |
+
+#### RESULT-001 · Result finalization after an ended exam
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | RESULT / P1 / READY after ASSESS-LIFE-001 (BLOCKED_BY_TASK) |
+| Dependencies / blocks | ASSESS-LIFE-001 / RESULT-002, RESULT-003 |
+| Repository evidence | results are provisional and computed on read (`teacher-results.ts`); nothing freezes them; lifecycle has no FINALIZED transition |
+| Why | Owner decision point ENDED-5; D04.8-17/18/19/20/57, D04.2-83 |
+| Exact scope | ENDED→FINALIZED by the managing teacher only when no attempt is still running; results frozen as stored per-attempt scoring records (rule id, raw, maximum, scaled, per-item outcomes) so later edits cannot change them; audited with actor, time, rule version; results screen shows "Final" |
+| Out of scope | publication to students (RESULT-003, Owner); corrections after finalization (D04.8-26+, later) |
+| Expected product result | a teacher closes an exam and gets stable, reproducible results |
+| Surfaces | migration, `exam-lifecycle-operations.ts`, `scoring.ts`, `teacher-results.ts`, `TeacherResultsView.tsx` |
+| Verification | real-PostgreSQL: refused while attempts run, frozen values unchanged by later snapshot or answer edits, idempotent, audited; E2E end to finalize |
+| Owner decision | none (student visibility stays separate) |
+| Commit / PR | pending |
+
+#### RESULT-002 · Teacher result export
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | RESULT / P2 / READY (parallelizable) |
+| Dependencies / blocks | ASSESS-LIFE-001 (for the final flag) / none |
+| Repository evidence | results only on screen (`TeacherResultsView.tsx`) |
+| Why | D04.8-52 (export baseline-useful, formats later), D04.8-53 (provenance) |
+| Exact scope | CSV download for the managing teacher with provenance and state (provisional or final); spreadsheet-safe values; printable view |
+| Out of scope | Academic Core projection (D04.8-54), E-Rapor |
+| Expected product result | a teacher can take results into their own gradebook |
+| Surfaces | `TeacherResultsView.tsx`, a CSV builder, tests |
+| Verification | unit (escaping, provenance), component, E2E download |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### ASSESS-PROCTOR-001 · Participant lock and unlock
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-PROCTOR / P2 / READY |
+| Dependencies / blocks | ASSESS-LIFE-001 (shared time and guard model) / none |
+| Repository evidence | no lock state; monitoring list exists (`exam-monitoring.ts`) |
+| Why | D04.6-38 (lock preserves answers), D04.6-39 LOCKED (direct unlock by the authorized proctor, scoped, audited), D04.2-76 |
+| Exact scope | lock and unlock of one participant by an assigned proctor within scope or the managing teacher; locked runtime cannot edit; audited |
+| Out of scope | participant pause with frozen time (D04.6-40, separate), step-up authentication |
+| Expected product result | a proctor can stop and release one student's work without affecting others |
+| Surfaces | migration, runtime guard, monitoring screen, workstation locked state |
+| Verification | real-PostgreSQL scope and guard tests, E2E |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### ASSESS-PROCTOR-002 · Broadcast messages to participants
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-PROCTOR / P2 / READY |
+| Dependencies / blocks | none / none |
+| Repository evidence | no broadcast |
+| Why | D04.6-49..55 (scopes, simple composer, templates, non-blocking, delivery state, audit, rate limit) |
+| Exact scope | exam-wide and selected-participant messages from the managing teacher or an assigned proctor within scope; quick templates; non-blocking banner in the workstation; audited; rate limited |
+| Out of scope | room scope until rooms are used in the pilot; push channels |
+| Expected product result | supervisors can inform students without interrupting answering |
+| Surfaces | migration, routes, monitoring screen, workstation banner |
+| Verification | integration, component, E2E |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### ASSESS-PROCTOR-003 · Device signals and incidents in the Proctor Feed
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-PROCTOR / P2 / BLOCKED (canonical review) |
+| Dependencies / blocks | review of D04.7 presets, privacy and proportionality / none |
+| Repository evidence | no client event reporting; P1-11 |
+| Why | D04.6-19..37, D04.7 |
+| Exact scope | to be fixed after confirming which signals the canonical preset enables for teacher-managed exams without new policy |
+| Out of scope | camera or screen evidence (D04.7, permission-limited) |
+| Expected product result | proportional, explainable events for supervisors |
+| Surfaces | client reporting, feed tables, monitoring screen |
+| Verification | integration, E2E, privacy review |
+| Owner decision | possibly, if presets need a choice |
+| Commit / PR | pending |
+
+#### ASSESS-TEACHER-001 · Teacher question import in the product
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-TEACHER / P2 / READY |
+| Dependencies / blocks | none / retires the operator exam-import bridge |
+| Repository evidence | exams enter only through the operator CLI (`ops/provisioning/exam.ts`) |
+| Why | D04.4-26A (teacher creates teacher-managed exams), D04.3 import rules |
+| Exact scope | teacher uploads the `elligble-questions-v1` CSV and schedules an exam for their own teaching assignment, reusing the validated import path |
+| Out of scope | question bank authoring UI, media |
+| Expected product result | teachers prepare exams without platform staff |
+| Surfaces | routes, `exam-provisioning.ts`, teacher screens |
+| Verification | integration, E2E |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### OPS-002 · Metrics and alerting
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | OPS / P2 / READY (parallelizable) |
+| Dependencies / blocks | none / none |
+| Repository evidence | JSON logs only (§9) |
+| Why | D04.9 operations, PB12 |
+| Exact scope | an internal metrics endpoint (requests, errors, save latency, pending finalizations) protected from the public, and documented alert rules on logs and metrics; no new vendor |
+| Out of scope | choosing a hosted monitoring vendor |
+| Expected product result | operators see exam-day health |
+| Surfaces | runtime, runbook |
+| Verification | unit, integration, runbook drill |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### OPS-003 · Edge rate limiting guidance and defaults
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | OPS / P2 / READY (parallelizable) |
+| Dependencies / blocks | none / OPS-001 |
+| Repository evidence | P1-14; runtime has per-account login limits only |
+| Why | whole schools share one address, so per-IP limits must be generous |
+| Exact scope | reference reverse-proxy configuration with TLS, HSTS and generous per-IP limits in the runbook, tested against the container |
+| Out of scope | provisioning real infrastructure (OPS-001) |
+| Expected product result | a deployable, reviewed edge configuration |
+| Surfaces | runbook, `deploy/` example |
+| Verification | local proxy smoke test |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### E2E-001 · Browser capability evidence beyond Chromium
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | E2E / P2 / READY (parallelizable) |
+| Dependencies / blocks | none / PB06 artifact |
+| Repository evidence | E2E runs Chromium at 360 px only |
+| Why | PB06 capability testing, AGENTS split-screen honesty |
+| Exact scope | run the critical journeys in Firefox and WebKit projects in CI and a tablet and desktop viewport; record platform limits honestly |
+| Out of scope | native apps |
+| Expected product result | evidence for the PB06 artifact |
+| Surfaces | `e2e/playwright.config.ts`, CI |
+| Verification | CI |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### Blocked tasks
+
+| ID | Title | Priority | Blocked by | What unblocks it |
+|---|---|---|---|---|
+| UI-001 | Align the UI with the DesainPakeAI design direction | P2 | OWNER | The DesainPakeAI project holds no ELLIGBLE screens (its pages are a sales-dashboard sample) and its "Provenance Thread" foundation adds a serif display face, a mint brand accent and a thread device that the LOCKED FRONTEND_DESIGN_SYSTEM v1.1.0 does not have (§10). Owner to confirm which parts supersede the locked system, or to add ELLIGBLE screens to the project |
+| RESULT-003 | Publish results to students | P1 | OWNER | Student result visibility decision (§7) |
+| SEC-001 | Roles beyond explicit assignments | P1 | OWNER | PB05 Permission Matrix |
+| AUTH-001 | Final ELLIGBLE ID format and generation | P2 | OWNER | D02.10-C |
+| ADMIN-001 | School-administrator self-service import | P2 | OWNER | PB05 (who is a school administrator) |
+| ASSESS-STUDENT-001 | Answers delivered after time expiry | P2 | OWNER | D04.5-48 deferred policy (P1-22) |
+| ASSESS-PROCTOR-003 | Device signals and incidents | P2 | canonical review | D04.7 preset scope for teacher-managed exams |
+| OPS-001 | Production infrastructure: TLS, backups, restore drill | P0 for launch | EXTERNAL | A hosting account and database service chosen by the Owner (PB11); legal blockers PB01/02/03/10 for real student data |
+
+### 6.3 Recently completed
+
+| ID | Result | Evidence |
+|---|---|---|
+| TOOL-001 | DesainPakeAI CLI authenticated at user level (no repository file holds the key), skill installed, project and context verified (§10) | this change |
+| ASSESS-PROCTOR-000 | Exam-day participant monitoring (P1-11 part 1) | `451c7ed`, CI run 17 |
+| ASSESS-SCHOOL-000 | School time zone (P1-16) | `b24dcd0`, CI run 16 |
+| ASSESS-STUDENT-002 | "Ragu-ragu" review marks (P1-24) | `8a5b711`, CI run 15 |
+| ASSESS-TEACHER-000 | Provisional teacher results (P1-28) | `d940135`, CI run 14 |
+| ASSESS-TIME-000 | Server finalization at time expiry (P1-27) | `4ded1ba`, CI run 13 |
+| E2E-000 | Browser E2E in CI | `adc6b8a`, `527b969`, CI run 11 |
+| PROV-000 | Audited provisioning, activation, authored order, answer contract | `9af8a16`, `8245bc4`, `1b96c61` |
+| Foundation | Governance, test gate, auth, start, teacher operations, local-first answers, production operations (critical path steps 1 to 8 of the previous plan) | `ed9125e` … `7b022f2` |
 
 ## 7. Owner decisions
 
 | Item | Needed for | Recommended default | Status |
 |---|---|---|---|
-| DesainPakeAI credentials (`DPAI_API_KEY` / `DPAI_API_URL` in the environment) | Verifying UI against project `b5a22aa4-...` | Provide a key via environment secret | **BLOCKED: credential missing** |
+| DesainPakeAI credentials | Verifying UI against project `b5a22aa4-...` | Key supplied by the Owner for this environment | DONE 2026-09-30: CLI authenticated at user level, no key in the repository (§10) |
+| DesainPakeAI design direction versus the LOCKED design system (UI-001) | Aligning screens with the DesainPakeAI project | Keep the LOCKED ELLIGBLE tokens and components until the Owner confirms which parts of the project's "Provenance Thread" foundation supersede them, or adds ELLIGBLE screens to the project | OPEN (§10) |
 | PB05 Permission Matrix | Production launch; roles beyond explicit assignments | Keep assignment-scoped least privilege until the matrix is approved | OPEN |
 | PB01, PB02, PB03, PB10 (legal allocation, retention, DPIA, classification/consent) | Production launch with real student data | Owner/legal artifacts | OPEN |
 | Centralized (institution-managed) exam governance roles (D04.4-26D/E) | Activation of non-teacher-managed exams | Teacher-managed mode first | OPEN (not blocking critical path) |
-| End-of-exam handling (D04.2-81) and pause timer behaviour (D04.2-77) | ENDED / PAUSED operations | Each attempt keeps its own server timer and auto-submits at expiry; ENDED only blocks new starts; pause freezes remaining time | OPEN (policy says "exact policy later") |
+| End-of-exam handling (D04.2-81) and pause timer behaviour (D04.2-77) | ENDED / PAUSED operations | ENDED: no new attempt starts; active attempts are not force-submitted and keep their own server-authoritative remaining time, finishing by normal submission or automatic submission at their own expiry; finalization only when no active attempt remains; ENDED does not publish results. PAUSED: no new starts; every active attempt's remaining time freezes at the authoritative pause boundary; no extra working time; the exam screen becomes paused and read-only; no new answer edits accepted; answers captured before the boundary are not lost because they had not synced yet; RESUME continues from exactly the pre-pause remaining time; PAUSE/RESUME idempotent, audited, safe across reload, reconnect and the session rules | RESOLVED 2026-09-30 by the Owner; implemented by ASSESS-LIFE-001 and ASSESS-LIFE-002 (§6) |
 | ELLIGBLE ID format and generation (D02.10-C) | Account provisioning at scale | Until decided, operators supply IDs in a conservative syntax (3 to 64 lower-case letters, digits, dot, dash, underscore; not e-mail based); the platform only checks uniqueness | OPEN (not blocking the pilot) |
 | Activation code validity (D02.3-09 "short-lived") | Activation cards | 7 days by default, operator may choose 1 to 30 days per issue | IMPLEMENTED DEFAULT, adjustable |
 | Student result visibility (D04.8-16/21/22: options exist, "exact school-facing options later") | Showing scores to students | Hidden until the teacher publishes a finalized result, per exam; only the student's own score, no ranking or peer results (D04.8-50/51) | OPEN (students see no scores today; teachers see provisional results) |
@@ -162,8 +370,9 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 
 ## 10. Design and UI status
 
-- DesainPakeAI CLI 0.2.2 is installed; `dpai auth status`: not authenticated (`DPAI_API_KEY` absent). Live alignment with project `b5a22aa4-7b38-49d2-9448-443eab6e8075` is **not verified**.
-- shadcn/ui: configured once (`frontend/web/components.json`, Tailwind CSS v4 via `@tailwindcss/vite`, `src/components/ui/*`, `src/styles/globals.css`) and themed only with ELLIGBLE tokens (DEC-043). `ui.shadcn.com` is blocked by this environment's network policy, so components were written from the official new-york v4 sources instead of the CLI.
+- DESAINPAKEAI PROJECT: `b5a22aa4-7b38-49d2-9448-443eab6e8075`. CONTEXT REVISION: `sha256-5d0d77796ab574177a840d227a99e7457d623564c9d40160703f32224073c2b8`. CONTEXT VERIFIED: YES (2026-09-30). CLI `dpai` 0.2.2, authenticated at user level against `https://desainpakeai.com` (no repository file, environment file or document holds the key); skill `@desainpakeai/skills` 0.2.0 installed for the `claude-code` harness; MCP not used. Before every substantial UI checkpoint: `dpai auth status --pretty`, `dpai project current --pretty`, `dpai context --pretty`, and compare the revision with the one recorded here.
+- Alignment finding (UI-001, Owner decision in §7): the project's pages are a sales-dashboard sample (Dashboard Penjualan, Transaksi, Leads & kontak, Target penjualan, Laporan penjualan, Tim sales, Pengaturan akun, Masuk), not ELLIGBLE screens. Its design system "Provenance Thread" (alpha) matches the locked Warm Monochrome direction in restraint, near-black primary, warm near-white canvas, Inter for UI text and compact radii, but adds a serif display face (Libre Baskerville), a mint brand accent, a "source-to-decision thread" device and a green focus ring that the LOCKED FRONTEND_DESIGN_SYSTEM v1.1.0 does not have. DesainPakeAI never overrides the locked system silently: new screens keep the locked ELLIGBLE tokens and use the project only for layout, hierarchy and interaction guidance where it does not conflict.
+- shadcn/ui: configured once (`frontend/web/components.json`, Tailwind CSS v4 via `@tailwindcss/vite`, `src/components/ui/*`, `src/styles/globals.css`) and themed only with ELLIGBLE tokens (DEC-043). The first components were written from the official new-york v4 sources while `ui.shadcn.com` was blocked; it is reachable again (2026-09-30), so further components may come from the registry, themed with the same tokens.
 - Tokens aligned to FRONTEND_DESIGN_SYSTEM v1.1.0 (P1-9). New screens (login, school picker, shell, re-login dialog) use shadcn/ui; older screens keep their CSS and migrate incrementally.
 - Rendered checks (Playwright, Chromium, 360 px and 1280 px): login, validation, wrong password, student, school picker, no-workspace, proctor and teacher screens render without horizontal overflow.
 
@@ -300,6 +509,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-Critical path step 10, Milestone 2 hardening, continuing in dependency order: the Proctor Feed (P1-11, events and interventions the proctor needs during a live exam); ENDED and PAUSED operations once the Owner sets the policy (P1-17, §7); result finalization (D04.8-17/57), CSV/printable export for teachers (D04.8-52) and publication to students once the visibility policy is set (§7). Alongside, school items: school-admin self-service import (D02.7) and teacher-facing exam import. Infrastructure: edge rate limits (P1-14), metrics and alerting, and the PB11 drill on the production infrastructure.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-LIFE-001 (pause, resume, end on the server), ASSESS-LIFE-002 (student workstation during pause and after resume), RESULT-001 (finalization), RESULT-002 (teacher export), then the pull-request checkpoint, then the proctor items. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
