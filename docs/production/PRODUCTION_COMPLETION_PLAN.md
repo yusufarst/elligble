@@ -108,14 +108,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → ~~E2E-001~~ (CI run 30, five browser projects) → ~~ASSESS-TEACHER-001~~ (CI run 31) → ~~ASSESS-TEACHER-002~~ (CI run 32) → ~~ASSESS-PROCTOR-004~~ (CI run 33) → ~~ASSESS-TEACHER-003 rescheduling~~ (CI run 34) → ASSESS-TEACHER-003 cancellation (Owner decision 2026-09-30, §7) → ASSESS-TEACHER-004 (adding participants after scheduling, D04.2-64). UI-SYSTEM-001 (consistency audit, §10.1) runs alongside without stopping the path.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → ~~E2E-001~~ (CI run 30, five browser projects) → ~~ASSESS-TEACHER-001~~ (CI run 31) → ~~ASSESS-TEACHER-002~~ (CI run 32) → ~~ASSESS-PROCTOR-004~~ (CI run 33) → ~~ASSESS-TEACHER-003 rescheduling~~ (CI run 34) → ~~ASSESS-TEACHER-003 cancellation~~ (Owner decision 2026-09-30, CI run 37) → ASSESS-TEACHER-004 (adding participants after scheduling, D04.2-64). UI-SYSTEM-001 (consistency audit, §10.1) runs alongside without stopping the path.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | ASSESS-TEACHER-003 cancellation (VERIFYING: all local suites pass; CI pending) |
-| READY QUEUE (by value) | ASSESS-TEACHER-004 (add participants after scheduling, D04.2-64), UI-SYSTEM-001 (existing screen consistency audit, §10.1) |
+| IN PROGRESS | ASSESS-TEACHER-004 (add participants after scheduling, D04.2-64) |
+| READY QUEUE (by value) | UI-SYSTEM-001 (existing screen consistency audit, §10.1) |
 | BLOCKED | RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | ASSESS-TEACHER-003 rescheduling, ASSESS-PROCTOR-004, ASSESS-TEACHER-002, ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | ASSESS-TEACHER-003 cancellation, ASSESS-TEACHER-003 rescheduling, ASSESS-PROCTOR-004, ASSESS-TEACHER-002, ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -291,7 +291,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-TEACHER / P2 / rescheduling DONE; cancellation VERIFYING (Owner decision 2026-09-30, §7) |
+| Workstream / priority / status | ASSESS-TEACHER / P2 / DONE (rescheduling and cancellation; Owner decision 2026-09-30, §7) |
 | Dependencies / blocks | ASSESS-TEACHER-001 / none |
 | Repository evidence | a teacher who scheduled the wrong time, file or participants could not change the exam, and its window kept blocking the same students at that time |
 | Why | D04.2-03 (broad editing before operation), D04.2-25 LOCKED (READY re-evaluated after edits to questions, participants, duration or schedule), D04.2-45 LOCKED (moving a scheduled or ready exam before activation: readiness and conflict re-check, participant and proctor notification, audit), D04.2-46 (an ACTIVE exam is not rescheduled), D04.2-47 LOCKED concept (cancellation before ACTIVE is explicit and never hidden by deletion; "exact cancellation state/action representation later"), D04.2-11/12 LOCKED (archive before any controlled delete) |
@@ -302,13 +302,13 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Known limits | the note reaches students and proctors in the product only (no message outside it); a teacher who wants other questions or another class cancels the exam and imports again; a cancelled exam's record is shown to its teacher and proctors, a school-level history view waits on the school administration surfaces (PB05) |
 | Owner decision | RESOLVED 2026-09-30 (§7): SCHEDULED or READY to ARCHIVED, no CANCELLED state; cancellation semantics kept in append-only lifecycle history (reason, actor, time) so an ARCHIVED exam shows unambiguously whether it was cancelled before opening or archived after completion; never for ACTIVE exams; idempotent or safe against duplicates; participants, attempts, question snapshots and audit evidence preserved; students never see implementation words such as ARCHIVED |
 | Verification required by the Owner | SCHEDULED and READY cancellation, ACTIVE refused, mandatory reason, actor attribution, duplicate requests, student discovery exclusion, attempt start refused, scheduling conflicts after cancellation, the teacher's history view, cross-school and unauthorized refusals, PostgreSQL persistence, browser E2E of the real teacher journey, mutation checks on the guards |
-| Commit / PR | rescheduling: `ec1d67e`, CI run 34 (all eight jobs); cancellation: `dc95783` (CI run 36 red on an unrelated test defect, fixed in the next commit, see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Commit / PR | rescheduling: `ec1d67e`, CI run 34 (all eight jobs); cancellation: `dc95783`, CI run 37 (all eight jobs; run 36 red on an unrelated test defect fixed in `6c5167f`, see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-TEACHER-004 · Add participants after scheduling
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-TEACHER / P2 / READY |
+| Workstream / priority / status | ASSESS-TEACHER / P2 / IN_PROGRESS |
 | Dependencies / blocks | ASSESS-TEACHER-001 / none |
 | Repository evidence | participants are fixed when the exam is scheduled; a student who joins the class later, or one left out by mistake, cannot be added |
 | Why | D04.2-64 LOCKED (adding participants after READY needs authorization, a readiness re-check, room assignment where applicable, snapshot creation and audit), D04.4-03/04/05 (participants from the class, explicit participants), D04.2-66 (a class change after READY does not rewrite the participants) |
@@ -379,6 +379,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
+| ASSESS-TEACHER-003 cancellation | The managing teacher cancels a scheduled or ready exam with a reason (Owner decision 2026-09-30): ARCHIVED with append-only cancellation history, nothing deleted, gone from students' lists and starts, its time free again, "Dibatalkan" for teachers and proctors | `dc95783`, CI run 37 (run 36 stopped by an unrelated test defect, fixed in `6c5167f`) |
 | ASSESS-TEACHER-003 rescheduling | The managing teacher moves a scheduled or ready exam before it opens, checked as "Tandai Siap"; READY falls back to SCHEDULED; students and proctors see the change | `ec1d67e`, CI run 34 |
 | ASSESS-PROCTOR-004 | The managing teacher adds time for one working participant with a reason: attributed, append-only ledger, idempotent, frozen while paused; the list and the student's screen show it | `1215586`, CI run 33 |
 | ASSESS-TEACHER-002 | Teachers preview a scheduled or ready exam as students will see it, key and score on request, nothing written | `4b3969d`, CI run 32 |
@@ -782,6 +783,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-TEACHER-003 cancellation (Owner decision 2026-09-30), then ASSESS-TEACHER-004 (adding participants after scheduling, D04.2-64), with UI-SYSTEM-001 (the consistency audit of §10.1) alongside; every UI change answers the §10.1 question; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-TEACHER-004 (adding participants after scheduling, D04.2-64), with UI-SYSTEM-001 (the consistency audit of §10.1) alongside; every UI change answers the §10.1 question; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
