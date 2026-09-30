@@ -24,6 +24,10 @@ const SERVER_ONLY_ROUTES = new Set([
 ]);
 
 type Module = Record<string, any>;
+const IMPORT_INPUT = {
+    teachingAssignmentId: ID, assessmentTypeId: ID, windowStartsAt: '2026-10-05T08:00', windowEndsAt: '2026-10-05T10:00',
+    durationMinutes: 60, latestStartPolicy: 'FULL_DURATION_BEYOND_WINDOW', questionsCsv: 'no', sourceFileName: null, participantEnrollmentIds: null,
+};
 const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     'api/assessment-client.ts': {
         getResume: m => m.getResume(ID, ID),
@@ -45,6 +49,9 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         postParticipantLock: m => m.postParticipantLock(ID, ID, 'lock'),
         postBroadcast: m => m.postBroadcast(ID, { scope: 'EXAM' }, 'Harap tetap di tempat duduk.'),
         postBroadcastInbox: m => m.postBroadcastInbox(ID, []),
+        getTeacherExamSetup: m => m.getTeacherExamSetup(),
+        postTeacherExamImportPreview: m => m.postTeacherExamImportPreview(IMPORT_INPUT),
+        postTeacherExamImport: m => m.postTeacherExamImport(IMPORT_INPUT, { importKey: ID, expectedSha256: '0'.repeat(64) }),
     },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),

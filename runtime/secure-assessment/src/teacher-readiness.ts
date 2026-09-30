@@ -35,6 +35,9 @@ export interface TeacherExamProgressProjection {
 export interface TeacherExamReadinessProjection {
     examInstanceId: string;
     subjectLabel: string | null;
+    /** Class and assessment type, so exams of one subject stay apart (D04.2-27/28). */
+    groupLabel: string | null;
+    assessmentTypeLabel: string | null;
     lifecycleState: string | null;
     windowStartsAt: string | null;
     windowEndsAt: string | null;
@@ -137,7 +140,9 @@ export async function handleTeacherReadinessGet(
                 i.lifecycle_state AS lifecycle_state,
                 i.window_starts_at AS window_starts_at,
                 i.window_ends_at AS window_ends_at,
-                s.display_label AS subject_label
+                s.display_label AS subject_label,
+                g.display_label AS group_label,
+                t.display_label AS assessment_type_label
             FROM tenant_memberships tm
             JOIN tenant_teacher_assignments tta
                 ON tta.membership_id = tm.id
@@ -155,6 +160,10 @@ export async function handleTeacherReadinessGet(
                 ON so.id = ata.subject_offering_id AND so.tenant_id = ata.tenant_id
             LEFT JOIN academic_core_subjects s
                 ON s.id = so.subject_id AND s.tenant_id = ata.tenant_id
+            LEFT JOIN academic_core_academic_groups g
+                ON g.id = ata.academic_group_id AND g.tenant_id = ata.tenant_id
+            LEFT JOIN secure_assessment_assessment_types t
+                ON t.id = i.assessment_type_id AND t.tenant_id = i.tenant_id
             WHERE tm.tenant_id = $1
               AND tm.person_id = $2
             ORDER BY i.window_starts_at ASC NULLS LAST, i.id ASC
@@ -222,6 +231,8 @@ export async function handleTeacherReadinessGet(
             exams.push({
                 examInstanceId,
                 subjectLabel: row.subject_label ?? null,
+                groupLabel: row.group_label ?? null,
+                assessmentTypeLabel: row.assessment_type_label ?? null,
                 lifecycleState: row.lifecycle_state ?? null,
                 windowStartsAt: isoOrNull(row.window_starts_at),
                 windowEndsAt: isoOrNull(row.window_ends_at),

@@ -1,4 +1,5 @@
-// Minimal RFC 4180 CSV reader for operator templates: comma separated, optional double
+// Minimal RFC 4180 CSV reader for templates: comma separated (or another single-character
+// separator, such as the semicolon spreadsheets set to Indonesian use), optional double
 // quotes with "" escapes, LF or CRLF line ends, optional UTF-8 byte order mark. Blank lines
 // are skipped. Returns rows of raw strings; templates validate their own columns.
 
@@ -17,7 +18,7 @@ export interface CsvRow {
     cells: string[];
 }
 
-export function parseCsv(text: string): CsvRow[] {
+export function parseCsv(text: string, delimiter: ',' | ';' = ','): CsvRow[] {
     const input = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
     const rows: CsvRow[] = [];
     let cells: string[] = [];
@@ -25,6 +26,7 @@ export function parseCsv(text: string): CsvRow[] {
     let quoted = false;
     let line = 1;
     let rowStart = 1;
+    let quoteStart = 1;
     let sawAny = false;
 
     const endRow = () => {
@@ -54,8 +56,9 @@ export function parseCsv(text: string): CsvRow[] {
         if (ch === '"') {
             if (cell.length > 0) throw new CsvError(line, 'a quote must start the cell');
             quoted = true;
+            quoteStart = line;
             sawAny = true;
-        } else if (ch === ',') {
+        } else if (ch === delimiter) {
             cells.push(cell);
             cell = '';
             sawAny = true;
@@ -70,7 +73,8 @@ export function parseCsv(text: string): CsvRow[] {
             sawAny = true;
         }
     }
-    if (quoted) throw new CsvError(line, 'unterminated quoted cell');
+    // Reported where the quoted cell starts: that is the line to fix.
+    if (quoted) throw new CsvError(quoteStart, 'unterminated quoted cell');
     endRow();
     return rows;
 }

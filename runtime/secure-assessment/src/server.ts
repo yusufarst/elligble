@@ -17,6 +17,7 @@ import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
 import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
+import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImport } from './teacher-exam-import.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
@@ -62,6 +63,9 @@ export interface ServerDependencies {
 }
 
 type AttemptRoute = { method: 'GET' | 'POST'; source: 'query' | 'body' };
+
+/** The question file travels inside the import request (at most 512 KB of text, plan §7). */
+const TEACHER_IMPORT_BODY_LIMIT_BYTES = 1024 * 1024;
 
 const ATTEMPT_ROUTES: Record<string, AttemptRoute> = {
     '/api/v1/assessment/answer/save': { method: 'POST', source: 'body' },
@@ -351,6 +355,86 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'scoring_unavailable':
                         sendError(res, 409, 'scoring_unavailable');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/setup') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const result = await readTeacherExamSetup(deps.pool, getContext()!);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.setup);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/import/preview' || pathname === '/api/v1/assessment/teacher-exams/import') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            const confirm = pathname === '/api/v1/assessment/teacher-exams/import';
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req, TEACHER_IMPORT_BODY_LIMIT_BYTES);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseTeacherExamImportRequest(body, confirm);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await runTeacherExamImport(deps.pool, getContext()!, request, confirm ? 'confirm' : 'preview');
+                switch (outcome.type) {
+                    case 'preview':
+                        sendJson(res, 200, outcome.preview);
+                        return;
+                    case 'invalid':
+                        sendJson(res, 422, { error: 'import_invalid', ...outcome.preview });
+                        return;
+                    case 'scheduled':
+                        sendJson(res, outcome.replayed ? 200 : 201, {
+                            examInstanceId: outcome.examInstanceId,
+                            replayed: outcome.replayed,
+                            questionCount: outcome.questionCount,
+                            participantCount: outcome.participantCount,
+                        });
+                        return;
+                    case 'content_changed':
+                        sendError(res, 409, 'content_changed');
+                        return;
+                    case 'import_key_reused':
+                        sendError(res, 409, 'import_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

@@ -175,6 +175,20 @@ test('pilot onboarding through the provisioning CLI (real PostgreSQL)', { skip: 
         await assert.rejects(pool.query('DELETE FROM platform_provisioning_events'), /append-only/);
     });
 
+    await t.test('exam types defines the school\'s assessment types once, audited', async () => {
+        assert.equal(cli('exam', 'types', '--tenant', tenantId, ...audit).code, 1, 'at least one --type');
+        const dry = cli('exam', 'types', '--tenant', tenantId, '--type', 'Penilaian Harian', '--dry-run');
+        assert.equal(dry.code, 0, dry.out);
+        const run = cli('exam', 'types', '--tenant', tenantId, '--type', 'Ulangan Harian', '--type', 'Kuis', '--type', ' Kuis ', ...audit);
+        assert.equal(run.code, 0, run.out);
+        assert.match(run.out, /1 created \(Kuis\), 1 already present \(Ulangan Harian\)/);
+        assert.match(cli('exam', 'types', '--tenant', tenantId, '--type', 'Kuis', ...audit).out, /0 created \(-\), 1 already present \(Kuis\)/);
+        const types = await pool.query('SELECT display_label FROM secure_assessment_assessment_types WHERE tenant_id = $1 ORDER BY display_label', [tenantId]);
+        assert.deepEqual(types.rows.map(r => r.display_label), ['Kuis', 'Ulangan Harian']);
+        const events = await pool.query(`SELECT summary FROM platform_provisioning_events WHERE tenant_id = $1 AND action = 'assessment_types_added' ORDER BY occurred_at`, [tenantId]);
+        assert.deepEqual(events.rows.map(r => r.summary), [{ created: 1, existing: 1 }, { created: 0, existing: 1 }]);
+    });
+
     const signIn = async (id: string, password: string) => {
         const client = new BrowserLikeClient(app.baseUrl);
         const res = await client.request('/api/v1/auth/activate', { method: 'POST', body: { username: id, activationCode: cards.get(id), newPassword: password } });

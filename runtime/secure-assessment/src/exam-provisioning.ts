@@ -2,12 +2,13 @@ import { randomBytes } from 'node:crypto';
 import type { ClientBase } from 'pg';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
 
-// Secure Assessment provisioning for operator exam import (pilot bridge until teachers
-// author or import their own exams): a teacher-managed exam (D04.4-26A) is created with its
-// frozen question snapshots in the authored order (D04.2-49..51, D04.3-21, D04.3-41),
-// explicit participants from Academic Core enrollments (D04.4-02/05/07) and proctors, then
-// scheduled, all inside the caller's transaction. Marking it ready and opening it stay with
-// the teacher, where the readiness checks run.
+// Scheduling a teacher-managed exam (D04.4-26A), shared by the teacher's question import and
+// the operator CLI: the exam is created with its frozen question snapshots in the authored
+// order (D04.2-49..51, D04.3-21, D04.3-41), explicit participants from Academic Core
+// enrollments (D04.4-02/05/07) and proctors, then scheduled, all inside the caller's
+// transaction. A teacher's import also records its batch with each question's source line
+// (D04.3-66) and the teacher as the actor of the scheduling. Marking the exam ready and
+// opening it stay with the teacher, where the readiness checks run.
 
 export type LatestStartPolicy = 'FULL_DURATION_BEYOND_WINDOW' | 'REMAINING_WINDOW_ONLY' | 'LATE_START_BLOCKED';
 export const LATEST_START_POLICIES: readonly LatestStartPolicy[] = ['FULL_DURATION_BEYOND_WINDOW', 'REMAINING_WINDOW_ONLY', 'LATE_START_BLOCKED'];
@@ -72,14 +73,60 @@ export interface ExamProvisioningInput {
     questions: Record<string, unknown>[];
     participants: Array<{ personId: string; academicEnrollmentId: string }>;
     proctorPersonIds: string[];
+    /** A teacher's import: the batch provenance, one source line per question, in order. */
+    importBatch?: QuestionImportBatchInput;
 }
 
-export async function provisionScheduledExam(client: ClientBase, tenantId: string, input: ExamProvisioningInput): Promise<{ examInstanceId: string }> {
+export interface QuestionImportBatchInput {
+    importedByPersonId: string;
+    importKey: string;
+    sourceFileName: string | null;
+    sourceSha256: string;
+    sourceLines: number[];
+}
+
+export interface EnrolledStudent {
+    enrollmentId: string;
+    personId: string;
+    /** The student's ELLIGBLE ID (sign-in name). */
+    elligbleId: string;
+}
+
+/** Students enrolled in the group for the period on the exam day (D04.4-02/05), by ELLIGBLE ID. */
+export async function listEnrolledStudents(
+    client: ClientBase,
+    tenantId: string,
+    scope: { groupId: string; periodId: string; examDay: string }
+): Promise<EnrolledStudent[]> {
+    const res = await client.query(
+        `SELECT e.id AS enrollment_id, m.person_id, c.username
+         FROM academic_core_student_enrollments e
+         JOIN tenant_memberships m ON m.id = e.membership_id AND m.tenant_id = e.tenant_id
+         JOIN identity_user_accounts a ON a.person_id = m.person_id
+         JOIN identity_account_credentials c ON c.user_account_id = a.id
+         WHERE e.tenant_id = $1 AND e.academic_group_id = $2 AND e.academic_period_id = $3
+           AND e.start_date <= $4::date AND (e.end_date IS NULL OR e.end_date >= $4::date)
+         ORDER BY c.username, e.id`,
+        [tenantId, scope.groupId, scope.periodId, scope.examDay]
+    );
+    return res.rows.map(r => ({ enrollmentId: r.enrollment_id, personId: r.person_id, elligbleId: r.username }));
+}
+
+export async function provisionScheduledExam(
+    client: ClientBase,
+    tenantId: string,
+    input: ExamProvisioningInput,
+    /** The person scheduling it, recorded as the actor of DRAFT to SCHEDULED (the operator CLI has none). */
+    scheduledByPersonId: string | null = null
+): Promise<{ examInstanceId: string; importBatchId: string | null }> {
     if (!(input.windowEndsAt.getTime() > input.windowStartsAt.getTime())) throw new Error('The exam window must end after it starts.');
     if (!Number.isInteger(input.durationSeconds) || input.durationSeconds <= 0) throw new Error('The attempt duration must be a positive number of seconds.');
     if (!LATEST_START_POLICIES.includes(input.latestStartPolicy)) throw new Error('Unknown latest start policy.');
     if (input.questions.length === 0) throw new Error('An exam needs at least one question.');
     if (input.participants.length === 0) throw new Error('An exam needs at least one participant.');
+    if (input.importBatch && input.importBatch.sourceLines.length !== input.questions.length) {
+        throw new Error('Every imported question needs its source line.');
+    }
 
     const teaching = await client.query(
         'SELECT id FROM academic_core_teaching_assignments WHERE id = $1 AND tenant_id = $2 AND revoked_at IS NULL',
@@ -97,11 +144,25 @@ export async function provisionScheduledExam(client: ClientBase, tenantId: strin
     );
     const examInstanceId: string = exam.rows[0].id;
 
+    let importBatchId: string | null = null;
+    if (input.importBatch) {
+        const batch = await client.query(
+            `INSERT INTO secure_assessment_question_import_batches (
+                tenant_id, exam_instance_id, imported_by_person_id, import_key, template,
+                source_file_name, source_sha256, question_count
+             ) VALUES ($1, $2, $3, $4, 'elligble-questions-v1', $5, $6, $7) RETURNING id`,
+            [tenantId, examInstanceId, input.importBatch.importedByPersonId, input.importBatch.importKey,
+                input.importBatch.sourceFileName, input.importBatch.sourceSha256, input.questions.length]
+        );
+        importBatchId = batch.rows[0].id;
+    }
+
     for (const [index, content] of input.questions.entries()) {
         await client.query(
-            `INSERT INTO secure_assessment_exam_question_snapshots (tenant_id, exam_instance_id, frozen_content, display_order)
-             VALUES ($1, $2, $3, $4)`,
-            [tenantId, examInstanceId, JSON.stringify(content), index + 1]
+            `INSERT INTO secure_assessment_exam_question_snapshots (
+                tenant_id, exam_instance_id, frozen_content, display_order, import_batch_id, import_source_line
+             ) VALUES ($1, $2, $3, $4, $5, $6)`,
+            [tenantId, examInstanceId, JSON.stringify(content), index + 1, importBatchId, input.importBatch?.sourceLines[index] ?? null]
         );
     }
     for (const participant of input.participants) {
@@ -123,5 +184,12 @@ export async function provisionScheduledExam(client: ClientBase, tenantId: strin
         [examInstanceId, tenantId]
     );
     if (scheduled.rowCount !== 1) throw new Error('The exam could not be scheduled.');
-    return { examInstanceId };
+    if (scheduledByPersonId) {
+        await client.query(
+            `INSERT INTO secure_assessment_exam_lifecycle_events (tenant_id, exam_instance_id, from_state, to_state, actor_person_id)
+             VALUES ($1, $2, 'DRAFT', 'SCHEDULED', $3)`,
+            [tenantId, examInstanceId, scheduledByPersonId]
+        );
+    }
+    return { examInstanceId, importBatchId };
 }

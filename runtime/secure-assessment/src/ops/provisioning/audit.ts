@@ -6,7 +6,7 @@ import type { ClientBase } from 'pg';
 
 export type ProvisioningAction =
     | 'tenant_created' | 'people_imported' | 'activation_reissued' | 'academic_imported' | 'exam_imported'
-    | 'tenant_time_zone_set';
+    | 'tenant_time_zone_set' | 'assessment_types_added';
 
 export interface OperatorContext {
     operator: string;

@@ -80,6 +80,29 @@ export async function createTeachingContext(
     return { teacherAssignmentId, teachingAssignmentId, subjectLabel, academicGroupId: groupId, assessmentTypeId };
 }
 
+/** Enrolls a member in the teaching context's class for its period (Academic Core). */
+export async function enrollInTeachingGroup(
+    pool: pg.Pool,
+    tenantId: string,
+    teaching: TeachingContext,
+    membershipId: string,
+    dates: { startDate?: string; endDate?: string | null } = {}
+): Promise<string> {
+    const res = await pool.query(
+        `INSERT INTO academic_core_student_enrollments (
+            tenant_id, academic_year_id, membership_id, academic_group_id, academic_period_id, start_date, end_date, status, source
+         )
+         SELECT ta.tenant_id, g.academic_year_id, $3, ta.academic_group_id, o.academic_period_id, $4::date, $5::date, 'ACTIVE', 'TEST'
+         FROM academic_core_teaching_assignments ta
+         JOIN academic_core_academic_groups g ON g.id = ta.academic_group_id AND g.tenant_id = ta.tenant_id
+         JOIN academic_core_subject_offerings o ON o.id = ta.subject_offering_id AND o.tenant_id = ta.tenant_id
+         WHERE ta.id = $2 AND ta.tenant_id = $1
+         RETURNING id`,
+        [tenantId, teaching.teachingAssignmentId, membershipId, dates.startDate ?? '2026-07-01', dates.endDate ?? null]
+    );
+    return res.rows[0].id;
+}
+
 export interface ExamInstanceOptions {
     lifecycleState?: string;
     windowStartsAt?: Date;

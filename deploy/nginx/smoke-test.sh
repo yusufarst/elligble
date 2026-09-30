@@ -56,6 +56,12 @@ status=$(curl -s "${INSECURE[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Typ
     --data-binary "@$TMP/large.b" "$BASE/api/v1/auth/login")
 check "bodies over 64 KB refused" "$status" 413
 
+# The question import accepts a larger body; without a session the runtime answers 401.
+head -c 200000 /dev/zero | tr '\0' 'a' | sed 's/^/{"questionsCsv":"/; s/$/"}/' > "$TMP/import.b"
+status=$(curl -s "${INSECURE[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -H "Origin: $ORIGIN" \
+    --data-binary "@$TMP/import.b" "$BASE/api/v1/assessment/teacher-exams/import/preview")
+check "a question file of 200 KB reaches the runtime" "$status" 401
+
 if [ -n "$HTTP_URL" ]; then
     status=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$HTTP_URL/login?x=1")
     check "plain HTTP moves to HTTPS" "${status%% *}" 301

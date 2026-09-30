@@ -16,6 +16,10 @@ import type {
   BroadcastTarget,
   BroadcastSendResponse,
   BroadcastInboxResponse,
+  TeacherExamSetup,
+  TeacherExamImportInput,
+  TeacherExamImportPreview,
+  TeacherExamImportResult,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -179,4 +183,28 @@ export async function getTeacherExamResults(examInstanceId: string): Promise<Tea
   const url = `/api/v1/assessment/teacher-exams/results?examInstanceId=${encodeURIComponent(examInstanceId)}`;
   const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<TeacherExamResultsResponse>(res);
+}
+
+/** The teacher's own classes, the school's assessment types and time zone, for a new exam. */
+export async function getTeacherExamSetup(): Promise<TeacherExamSetup> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/setup', { method: 'GET' });
+  return handleResponse<TeacherExamSetup>(res);
+}
+
+/** Checks the question file and the schedule without keeping anything. */
+export async function postTeacherExamImportPreview(input: TeacherExamImportInput): Promise<TeacherExamImportPreview> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/import/preview', { method: 'POST', json: input });
+  return handleResponse<TeacherExamImportPreview>(res);
+}
+
+/**
+ * Schedules the previewed exam. `importKey` names this confirmation: sending it again (after
+ * a timeout) returns the exam already created. A 422 carries the problems (ApiError.data).
+ */
+export async function postTeacherExamImport(
+  input: TeacherExamImportInput,
+  confirmation: { importKey: string; expectedSha256: string }
+): Promise<TeacherExamImportResult> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/import', { method: 'POST', json: { ...input, ...confirmation } });
+  return handleResponse<TeacherExamImportResult>(res);
 }

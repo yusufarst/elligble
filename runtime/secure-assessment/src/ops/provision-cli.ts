@@ -5,7 +5,7 @@ import pg from 'pg';
 import { importAcademic } from './provisioning/academic.ts';
 import { isValidOperatorContext, type OperatorContext } from './provisioning/audit.ts';
 import { isValidTimeZone } from '../../../tenant-access/src/provisioning.ts';
-import { importExam } from './provisioning/exam.ts';
+import { addAssessmentTypes, importExam } from './provisioning/exam.ts';
 import { importPeople, reissueActivation } from './provisioning/people.ts';
 import { createSchool, setSchoolTimeZone, TIME_ZONE_PROBLEM } from './provisioning/school.ts';
 import { renderActivationSheetHtml, type ActivationCard } from './provisioning/sheet.ts';
@@ -26,6 +26,8 @@ Usage: node runtime/secure-assessment/src/ops/provision-cli.ts <command> [option
                      [--valid-days 1-30] [--app-url <url>] [--time-zone <IANA>]
   academic import    --tenant <id> --file <academic.json> [--dry-run]
   exam import        --tenant <id> --file <exam.json> --questions <questions.csv> [--dry-run]
+  exam types         --tenant <id> --type <label> [--type <label> ...] [--dry-run]
+                     (the school's assessment types, for example "Ulangan Harian"; teachers choose among them)
 
 Every change needs --operator <name> --case <reference> (recorded in the audit trail).
 Time zones are IANA names: Asia/Jakarta (WIB), Asia/Makassar (WITA), Asia/Jayapura (WIT).
@@ -106,7 +108,7 @@ async function run(argv: string[]): Promise<number> {
             label: { type: 'string' }, tenant: { type: 'string' }, file: { type: 'string' }, sheet: { type: 'string' },
             questions: { type: 'string' }, 'elligble-id': { type: 'string' }, 'full-name': { type: 'string' },
             operator: { type: 'string' }, case: { type: 'string' }, 'valid-days': { type: 'string' },
-            'app-url': { type: 'string' }, 'time-zone': { type: 'string' },
+            'app-url': { type: 'string' }, 'time-zone': { type: 'string' }, type: { type: 'string', multiple: true },
             'dry-run': { type: 'boolean', default: false }, 'link-existing': { type: 'boolean', default: false },
             'allow-duplicate-label': { type: 'boolean', default: false },
         },
@@ -115,7 +117,7 @@ async function run(argv: string[]): Promise<number> {
     });
     const dryRun = values['dry-run'] === true;
     const command = `${group} ${action ?? ''}`.trim();
-    const knownCommands = ['school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import'];
+    const knownCommands = ['school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import', 'exam types'];
     if (!knownCommands.includes(command)) throw new UsageError(`unknown command "${command}"`);
     const context = operatorContext(values, dryRun);
     // Validate options that do not need the database before connecting.
@@ -202,6 +204,16 @@ async function run(argv: string[]): Promise<number> {
                 out(`${dryRun ? 'Dry run' : 'Import'} ${result.ok ? 'OK' : 'REFUSED, nothing was changed'}: ${JSON.stringify(result.summary)}`);
                 if (result.ok && !dryRun) out('The exam is SCHEDULED. The teacher marks it ready and opens it in "Pelaksanaan Ujian".');
                 return result.ok ? 0 : 1;
+            }
+            case 'exam types': {
+                const result = await addAssessmentTypes(pool, { tenantId: tenant(values.tenant), labels: (values.type as string[] | undefined) ?? [], context, dryRun });
+                for (const problem of result.problems) out(`problem: ${problem}`);
+                if (!result.ok) {
+                    out('REFUSED, nothing was changed');
+                    return 1;
+                }
+                out(`${dryRun ? 'Dry run' : 'Done'}: ${result.created.length} created (${result.created.join(', ') || '-'}), ${result.existing.length} already present (${result.existing.join(', ') || '-'}).`);
+                return 0;
             }
         }
         return 2;

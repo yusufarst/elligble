@@ -19,6 +19,7 @@ export type Component =
     | 'monitoring'
     | 'broadcast'
     | 'reporting'
+    | 'exam_setup'
     | 'administration'
     | 'static'
     | 'health'
@@ -50,6 +51,9 @@ const COMPONENT_BY_PATH: Record<string, Component> = {
     '/api/v1/assessment/exam-monitoring/broadcast': 'broadcast',
     '/api/v1/assessment/broadcasts/inbox': 'broadcast',
     '/api/v1/assessment/teacher-exams/results': 'reporting',
+    '/api/v1/assessment/teacher-exams/setup': 'exam_setup',
+    '/api/v1/assessment/teacher-exams/import/preview': 'exam_setup',
+    '/api/v1/assessment/teacher-exams/import': 'exam_setup',
 };
 
 export function componentOf(pathname: string): Component {

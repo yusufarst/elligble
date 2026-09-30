@@ -101,7 +101,11 @@ const mapRoomProctorBlocker = (blocker?: string): string => {
 export const TeacherReadinessView: React.FC<{
   onOpenResults?(examInstanceId: string): void;
   onOpenMonitoring?(examInstanceId: string): void;
-}> = ({ onOpenResults, onOpenMonitoring }) => {
+  /** Opens "Buat Ujian dari Berkas Soal" (ASSESS-TEACHER-001). */
+  onCreateExam?(): void;
+  /** Shown once above the list, for example after an exam was scheduled. */
+  notice?: string | null;
+}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, notice }) => {
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -193,15 +197,24 @@ export const TeacherReadinessView: React.FC<{
 
   const exams = data?.exams || [];
 
+  const noticeBanner = notice ? (
+    <Alert variant="success" role="status" className="mb-4">
+      <IconInfo aria-hidden="true" />
+      <AlertDescription>{notice}</AlertDescription>
+    </Alert>
+  ) : null;
+
   if (exams.length === 0) {
     return (
       <div className="teacher-readiness-container">
+        {noticeBanner}
         <div className="teacher-state-message">
           <h2 className="teacher-state-title">Tidak Ada Ujian Terjadwal</h2>
           <p>Anda belum memiliki ujian yang dijadwalkan saat ini.</p>
-          <button className="teacher-refresh-btn" onClick={handleRefresh} disabled={isRefreshing} style={{ marginTop: '16px' }}>
-            Perbarui Data
-          </button>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
+            <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>Perbarui Data</Button>
+          </div>
         </div>
       </div>
     );
@@ -209,15 +222,19 @@ export const TeacherReadinessView: React.FC<{
 
   return (
     <div className="teacher-readiness-container">
+      {noticeBanner}
       <div className="teacher-readiness-header">
         <h1 className="teacher-readiness-title">Pelaksanaan Ujian</h1>
-        <button
-          className="teacher-refresh-btn"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
+          <button
+            className="teacher-refresh-btn"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
+          </button>
+        </div>
       </div>
 
       <div className="teacher-exams-list">
@@ -279,6 +296,9 @@ export const TeacherReadinessView: React.FC<{
                   <span className={`teacher-lifecycle-badge lifecycle-${lifecycle.toLowerCase()}`}>{LIFECYCLE_LABELS[lifecycle] ?? lifecycle}</span>
                 )}
               </div>
+              {(exam.groupLabel || exam.assessmentTypeLabel) && (
+                <p className="teacher-exam-window">{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>
+              )}
               {exam.windowStartsAt && exam.windowEndsAt && (
                 <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
               )}

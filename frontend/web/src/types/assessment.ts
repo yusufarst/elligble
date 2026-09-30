@@ -232,6 +232,9 @@ export interface TeacherExamProgressProjection {
 export interface TeacherExamReadinessProjection {
   examInstanceId: string;
   subjectLabel: string | null;
+  /** Class and assessment type, so exams of one subject stay apart. */
+  groupLabel?: string | null;
+  assessmentTypeLabel?: string | null;
   lifecycleState?: string | null;
   windowStartsAt?: string | null;
   windowEndsAt?: string | null;
@@ -377,4 +380,60 @@ export interface ExamMonitoringResponse {
   rooms?: Array<{ roomId: string; label: string }>;
   /** Messages that reached participants in the viewer's scope, newest first. */
   broadcasts?: BroadcastRecord[];
+}
+
+// Teacher question import and scheduling (ASSESS-TEACHER-001).
+
+export type LatestStartPolicy = 'FULL_DURATION_BEYOND_WINDOW' | 'REMAINING_WINDOW_ONLY' | 'LATE_START_BLOCKED';
+
+export interface TeacherExamSetup {
+  /** The school's time zone; exam times are entered and shown in it. */
+  timeZone: string | null;
+  teachingAssignments: Array<{ teachingAssignmentId: string; subjectLabel: string; groupLabel: string; periodLabel: string }>;
+  assessmentTypes: Array<{ assessmentTypeId: string; label: string }>;
+  limits: { maxQuestions: number; maxQuestionScore: number; maxFileCharacters: number; maxDurationMinutes: number };
+}
+
+export interface TeacherExamImportInput {
+  teachingAssignmentId: string;
+  assessmentTypeId: string;
+  /** Wall-clock date and time in the school's zone, `YYYY-MM-DDTHH:MM`. */
+  windowStartsAt: string;
+  windowEndsAt: string;
+  durationMinutes: number;
+  latestStartPolicy: LatestStartPolicy;
+  questionsCsv: string;
+  sourceFileName: string | null;
+  /** null: everyone enrolled on the exam day. */
+  participantEnrollmentIds: string[] | null;
+}
+
+export type QuestionProblemCode =
+  | 'not_text' | 'encoding_invalid' | 'csv_syntax' | 'header_invalid' | 'file_empty' | 'too_many_questions'
+  | 'column_count' | 'number_out_of_order' | 'prompt_empty' | 'option_empty' | 'options_duplicate'
+  | 'correct_multiple' | 'correct_invalid' | 'score_invalid';
+
+export type SetupProblemCode =
+  | 'file_too_large' | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
+  | 'duration_exceeds_window' | 'assessment_type_unknown' | 'participant_not_enrolled' | 'no_participants'
+  | 'schedule_conflict' | 'not_ready';
+
+export type ImportProblem =
+  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[] }
+  | { source: 'setup'; code: SetupProblemCode; count?: number; blocker?: string };
+
+export interface TeacherExamImportPreview {
+  sourceSha256: string;
+  problems: ImportProblem[];
+  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number }>;
+  participants: Array<{ enrollmentId: string; elligbleId: string; included: boolean; conflict: boolean }>;
+  window: { startsAt: string; endsAt: string } | null;
+  totals: { questions: number; maxScore: number; participants: number };
+}
+
+export interface TeacherExamImportResult {
+  examInstanceId: string;
+  replayed: boolean;
+  questionCount: number;
+  participantCount: number;
 }

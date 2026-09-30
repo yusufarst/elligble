@@ -2,9 +2,9 @@ import type pg from 'pg';
 import { findAccountByElligbleId } from '../../../../identity-access/src/provisioning.ts';
 import { findActiveTeacherAssignment, findMembership, findTenant } from '../../../../tenant-access/src/provisioning.ts';
 import {
-    LATEST_START_POLICIES, buildBaselineFrozenContent, ensureAssessmentType, provisionScheduledExam, type LatestStartPolicy,
+    LATEST_START_POLICIES, buildBaselineFrozenContent, ensureAssessmentType, listEnrolledStudents, provisionScheduledExam, type LatestStartPolicy,
 } from '../../exam-provisioning.ts';
-import { parseCsv, requireHeader } from './csv.ts';
+import { QUESTIONS_HEADER, QUESTIONS_TEMPLATE, describeQuestionProblem, parseQuestionFile } from '../../question-import.ts';
 import { recordProvisioningEvent, sha256, type OperatorContext } from './audit.ts';
 
 // Exam import (templates elligble-exam-v1 JSON + elligble-questions-v1 CSV): a scheduled,
@@ -14,9 +14,7 @@ import { recordProvisioningEvent, sha256, type OperatorContext } from './audit.t
 // files twice is refused (the input hash is recorded in the provisioning audit).
 
 export const EXAM_TEMPLATE = 'elligble-exam-v1';
-export const QUESTIONS_TEMPLATE = 'elligble-questions-v1';
-export const QUESTIONS_HEADER = ['no', 'prompt', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct', 'score'] as const;
-const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+export { QUESTIONS_HEADER, QUESTIONS_TEMPLATE };
 
 export interface ExamSetup {
     template: typeof EXAM_TEMPLATE;
@@ -57,32 +55,15 @@ export function validateExamSetup(value: unknown): { setup: ExamSetup | null; pr
     return { setup: problems.length === 0 ? (v as ExamSetup) : null, problems };
 }
 
+/** The shared question file check (question-import.ts) with the CLI's English wording. */
 export function parseQuestionsCsv(text: string): { questions: Record<string, unknown>[]; problems: string[] } {
-    const problems: string[] = [];
-    const questions: Record<string, unknown>[] = [];
-    const rows = requireHeader(parseCsv(text), QUESTIONS_HEADER, QUESTIONS_TEMPLATE);
-    rows.forEach((row, index) => {
-        const cells = row.cells.map(c => c.trim());
-        if (cells.length !== QUESTIONS_HEADER.length) {
-            problems.push(`line ${row.line}: expected ${QUESTIONS_HEADER.length} columns`);
-            return;
-        }
-        const [no, prompt, a, b, c, d, e, correct, score] = cells;
-        if (no !== String(index + 1)) {
-            problems.push(`line ${row.line}: "no" must be ${index + 1} (questions are numbered 1, 2, 3 in order)`);
-            return;
-        }
-        const correctIndex = LETTERS.indexOf(correct.toUpperCase());
-        const maxScore = Number(score.replace(',', '.'));
-        if (!prompt) problems.push(`line ${row.line}: the question text is empty`);
-        else if ([a, b, c, d, e].some(option => !option)) problems.push(`line ${row.line}: all five options (A to E) are required`);
-        else if (new Set([a, b, c, d, e].map(o => o.toLowerCase())).size !== 5) problems.push(`line ${row.line}: options must be different from each other`);
-        else if (correctIndex < 0) problems.push(`line ${row.line}: "correct" must be one of A, B, C, D, E`);
-        else if (!Number.isFinite(maxScore) || maxScore <= 0) problems.push(`line ${row.line}: "score" must be a positive number`);
-        else questions.push(buildBaselineFrozenContent({ prompt, options: [a, b, c, d, e], correctIndex, maxScore }));
-    });
-    if (rows.length === 0) problems.push('the questions file has no questions');
-    return { questions, problems };
+    const parsed = parseQuestionFile(text);
+    return {
+        questions: parsed.problems.length > 0 ? [] : parsed.questions.map(q => buildBaselineFrozenContent({
+            prompt: q.prompt, options: q.options, correctIndex: q.correctIndex, maxScore: q.maxScore,
+        })),
+        problems: parsed.problems.map(describeQuestionProblem),
+    };
 }
 
 export interface ExamImportResult {
@@ -161,18 +142,9 @@ export async function importExam(
 
         // Students enrolled in the group for the period on the exam day (D04.4-02/05).
         const examDay = setup.window.startsAt.slice(0, 10);
-        const enrolled = await client.query(
-            `SELECT e.id AS enrollment_id, m.person_id, c.username
-             FROM academic_core_student_enrollments e
-             JOIN tenant_memberships m ON m.id = e.membership_id AND m.tenant_id = e.tenant_id
-             JOIN identity_user_accounts a ON a.person_id = m.person_id
-             JOIN identity_account_credentials c ON c.user_account_id = a.id
-             WHERE e.tenant_id = $1 AND e.academic_group_id = $2 AND e.academic_period_id = $3
-               AND e.start_date <= $4::date AND (e.end_date IS NULL OR e.end_date >= $4::date)`,
-            [tenantId, groupId, periodId, examDay]
-        );
-        const byId = new Map(enrolled.rows.map(r => [r.username as string, r]));
-        let chosen = enrolled.rows;
+        const enrolled = await listEnrolledStudents(client, tenantId, { groupId, periodId, examDay });
+        const byId = new Map(enrolled.map(r => [r.elligbleId, r]));
+        let chosen = enrolled;
         if (setup.participants !== 'group') {
             chosen = [];
             for (const id of setup.participants) {
@@ -202,7 +174,7 @@ export async function importExam(
             durationSeconds: setup.durationMinutes * 60,
             latestStartPolicy: setup.latestStartPolicy,
             questions,
-            participants: chosen.map(r => ({ personId: r.person_id, academicEnrollmentId: r.enrollment_id })),
+            participants: chosen.map(r => ({ personId: r.personId, academicEnrollmentId: r.enrollmentId })),
             proctorPersonIds,
         });
         result.examInstanceId = examInstanceId;
@@ -215,6 +187,50 @@ export async function importExam(
         }
         await recordProvisioningEvent(client, { tenantId, action: 'exam_imported', context: input.context, inputSha256, summary: result.summary });
         await client.query('COMMIT');
+        result.ok = true;
+        return result;
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * The school's assessment types (D04.2-26), defined by the operator at onboarding so that
+ * teachers can schedule their own exams; idempotent by label (an existing type is kept).
+ */
+export async function addAssessmentTypes(
+    pool: pg.Pool,
+    input: { tenantId: string; labels: string[]; context: OperatorContext; dryRun: boolean }
+): Promise<{ ok: boolean; problems: string[]; created: string[]; existing: string[] }> {
+    const labels = [...new Set(input.labels.map(l => l.trim()))];
+    const problems = labels.length === 0 ? ['give at least one --type'] : labels.filter(l => l.length === 0 || l.length > 100).map(l => `type label "${l}" must be 1 to 100 characters`);
+    const result = { ok: false, problems, created: [] as string[], existing: [] as string[] };
+    if (problems.length > 0) return result;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        if (!(await findTenant(client, input.tenantId))) {
+            result.problems.push('school (tenant) not found');
+            await client.query('ROLLBACK');
+            return result;
+        }
+        for (const label of labels) {
+            const ensured = await ensureAssessmentType(client, input.tenantId, label);
+            (ensured.created ? result.created : result.existing).push(label);
+        }
+        // Like every operator run, a repeat that changes nothing is still recorded.
+        if (input.dryRun) {
+            await client.query('ROLLBACK');
+        } else {
+            await recordProvisioningEvent(client, {
+                tenantId: input.tenantId, action: 'assessment_types_added', context: input.context, inputSha256: null,
+                summary: { created: result.created.length, existing: result.existing.length },
+            });
+            await client.query('COMMIT');
+        }
         result.ok = true;
         return result;
     } catch (err) {

@@ -7,6 +7,7 @@ import { ProctorMonitoringView } from './components/ProctorMonitoringView.tsx';
 import { TeacherReadinessView } from './components/TeacherReadinessView.tsx';
 import { TeacherResultsView } from './components/TeacherResultsView.tsx';
 import { ExamMonitoringView } from './components/ExamMonitoringView.tsx';
+import { TeacherExamImportView } from './components/TeacherExamImportView.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
 import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './session/SessionScreens.tsx';
 import { ReauthDialog } from './session/ReauthDialog.tsx';
@@ -22,11 +23,19 @@ interface RouteState {
   examResults: string | null;
   /** Proctor or teacher workspace: the exam whose participants are being monitored. */
   monitorExam: string | null;
+  /** Teacher workspace: a new exam from a question file. */
+  newExam: boolean;
 }
 
 function readRoute(): RouteState {
   const params = new URLSearchParams(window.location.search);
-  return { attemptId: params.get('attemptId'), view: params.get('view'), examResults: params.get('examResults'), monitorExam: params.get('monitorExam') };
+  return {
+    attemptId: params.get('attemptId'),
+    view: params.get('view'),
+    examResults: params.get('examResults'),
+    monitorExam: params.get('monitorExam'),
+    newExam: params.get('newExam') === '1',
+  };
 }
 
 function pushRoute(search: string): void {
@@ -42,6 +51,7 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   setDisplayTimeZone(me.tenantTimeZone);
   const session = useSession();
   const [route, setRoute] = useState<RouteState>(readRoute);
+  const [teacherNotice, setTeacherNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const handlePopState = () => setRoute(readRoute());
@@ -49,9 +59,10 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const navigate = useCallback((search: string) => {
+  const navigate = useCallback((search: string, notice: string | null = null) => {
     pushRoute(search);
     setRoute(readRoute());
+    setTeacherNotice(notice);
   }, []);
 
   // Active exam: focus workspace without global navigation (FRONTEND_DESIGN_SYSTEM §50).
@@ -77,6 +88,10 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
     content = (
       <ExamMonitoringView key={route.monitorExam} examInstanceId={route.monitorExam} backLabel="Kembali ke Pelaksanaan Ujian" onBack={() => navigate('?view=teacher')} />
     );
+  } else if (current === 'teacher' && route.newExam) {
+    content = (
+      <TeacherExamImportView onBack={() => navigate('?view=teacher')} onScheduled={notice => navigate('?view=teacher', notice)} />
+    );
   } else if (current === 'teacher') {
     content = route.examResults ? (
       <TeacherResultsView key={route.examResults} examInstanceId={route.examResults} onBack={() => navigate('?view=teacher')} />
@@ -84,6 +99,8 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
       <TeacherReadinessView
         onOpenResults={id => navigate(`?view=teacher&examResults=${encodeURIComponent(id)}`)}
         onOpenMonitoring={id => navigate(`?view=teacher&monitorExam=${encodeURIComponent(id)}`)}
+        onCreateExam={() => navigate('?view=teacher&newExam=1')}
+        notice={teacherNotice}
       />
     );
   } else {
