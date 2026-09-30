@@ -6,6 +6,7 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
+import { Metric, MetricList } from '@/components/ui/metric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -467,24 +468,17 @@ const PreviewSection: React.FC<{
         </Alert>
       )}
 
-      <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan">
-        <div className="rounded-md border border-border px-3 py-2">
-          <dt className="text-xs text-muted-foreground">Soal</dt>
-          <dd className="m-0 text-lg font-semibold tabular-nums">{preview.totals.questions}</dd>
-        </div>
-        <div className="rounded-md border border-border px-3 py-2">
-          <dt className="text-xs text-muted-foreground">Skor maksimum</dt>
-          <dd className="m-0 text-lg font-semibold tabular-nums">{formatScore(preview.totals.maxScore)}</dd>
-        </div>
-        <div className="rounded-md border border-border px-3 py-2">
-          <dt className="text-xs text-muted-foreground">Peserta</dt>
-          <dd className="m-0 text-lg font-semibold tabular-nums">{included}</dd>
-        </div>
-        <div className="col-span-2 rounded-md border border-border px-3 py-2 sm:col-span-1">
-          <dt className="text-xs text-muted-foreground">Waktu pelaksanaan</dt>
-          <dd className="m-0 text-sm font-medium">{preview.window ? formatWindow(preview.window.startsAt, preview.window.endsAt) : 'Belum valid'}</dd>
-        </div>
-      </dl>
+      <MetricList aria-label="Ringkasan">
+        <Metric label="Soal" value={preview.totals.questions} />
+        <Metric label="Skor maksimum" value={formatScore(preview.totals.maxScore)} />
+        <Metric label="Peserta" value={included} />
+        <Metric
+          className="col-span-2 sm:col-span-1"
+          valueClassName="text-sm font-medium"
+          label="Waktu pelaksanaan"
+          value={preview.window ? formatWindow(preview.window.startsAt, preview.window.endsAt) : 'Belum valid'}
+        />
+      </MetricList>
 
       {preview.participants.length > 0 && (
         <section aria-labelledby="participants-title" className="flex flex-col gap-2">

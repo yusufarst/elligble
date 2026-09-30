@@ -2,15 +2,12 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 // shadcn/ui Card themed for ELLIGBLE (§24): white surface, default border, 12px radius,
-// low-opacity shadow, 16px padding on mobile and 24px from md.
+// low-opacity shadow, 16px padding on mobile and 24px from md. The same surface carries the
+// exam list card of every role (`ExamListCard`).
+const cardSurface = 'flex flex-col gap-5 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm md:p-6';
+
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="card"
-      className={cn('flex flex-col gap-5 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm md:p-6', className)}
-      {...props}
-    />
-  );
+  return <div data-slot="card" className={cn(cardSurface, className)} {...props} />;
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
@@ -34,4 +31,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="card-footer" className={cn('flex items-center gap-3', className)} {...props} />;
 }
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+export { cardSurface, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

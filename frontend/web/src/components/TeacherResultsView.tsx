@@ -5,8 +5,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { Metric, MetricList } from '@/components/ui/metric';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
-import { cn } from '@/lib/utils';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { buildResultsCsv, downloadTextFile, resultsCsvFileName } from '../lib/results-export.ts';
 import { resultStatus, type StatusView } from '../lib/status.ts';
@@ -118,25 +118,18 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
         </Alert>
       )}
 
-      <dl className={cn('m-0 grid grid-cols-2 gap-3', final ? 'sm:grid-cols-3' : 'sm:grid-cols-4')} aria-label="Ringkasan peserta">
-        {(final
-          ? [
-            ['Peserta', summary.participants],
-            ['Dikumpulkan', summary.submitted],
-            ['Tidak mengerjakan', summary.notStarted],
-          ]
-          : [
-            ['Peserta', summary.participants],
-            ['Dikumpulkan', summary.submitted],
-            ['Sedang mengerjakan', summary.inProgress],
-            ['Belum mulai', summary.notStarted],
-          ]).map(([label, value]) => (
-          <div key={label} className="rounded-md border border-border bg-background px-3 py-2">
-            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-            <dd className="m-0 text-xl font-semibold tabular-nums">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <MetricList className={final ? 'sm:grid-cols-3' : undefined} aria-label="Ringkasan peserta">
+        <Metric label="Peserta" value={summary.participants} />
+        <Metric label="Dikumpulkan" value={summary.submitted} />
+        {final ? (
+          <Metric label="Tidak mengerjakan" value={summary.notStarted} />
+        ) : (
+          <>
+            <Metric label="Sedang mengerjakan" value={summary.inProgress} />
+            <Metric label="Belum mulai" value={summary.notStarted} />
+          </>
+        )}
+      </MetricList>
 
       <div className="flex flex-wrap gap-2 print:hidden">
         <Button variant="secondary" aria-pressed={showScores} onClick={() => setShowScores(s => !s)} disabled={!scoring.available}>

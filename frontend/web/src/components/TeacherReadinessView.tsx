@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { Metric, MetricList } from '@/components/ui/metric';
+import { ActionGroup } from '@/components/ui/action-group';
+import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import { IconInfo } from '@/components/icons';
 import { CANCELLED_EXAM_STATUS, examLifecycleStatus } from '../lib/status.ts';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
@@ -229,7 +232,7 @@ export const TeacherReadinessView: React.FC<{
       {staleNotice}
 
       {exams.length === 0 && <p className="m-0 mb-4 text-muted-foreground">Tidak ada ujian yang terjadwal atau berlangsung.</p>}
-      <div className="teacher-exams-list">
+      <ExamList>
         {exams.map((exam: TeacherExamReadinessProjection) => {
 
           let baselineMessage = '';
@@ -280,82 +283,75 @@ export const TeacherReadinessView: React.FC<{
           const busy = pendingAction === exam.examInstanceId;
           const actionError = actionErrors[exam.examInstanceId];
 
-          return (
-            <div key={exam.examInstanceId} className="teacher-exam-card" data-testid={`teacher-exam-${exam.examInstanceId}`}>
-              <div className="teacher-exam-card-header">
-                <h2 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h2>
-                {exam.lifecycleState && (
-                  <StatusBadge tone={examLifecycleStatus(lifecycle).tone}>{examLifecycleStatus(lifecycle).label}</StatusBadge>
-                )}
-              </div>
-              {(exam.groupLabel || exam.assessmentTypeLabel) && (
-                <p className="teacher-exam-window">{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>
-              )}
-              {exam.windowStartsAt && exam.windowEndsAt && (
-                <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
-              )}
-              {(lifecycle === 'SCHEDULED' || lifecycle === 'READY') && exam.participants !== undefined && (
-                <p className="teacher-exam-window">{exam.participants} peserta</p>
-              )}
-              {exam.scheduleChangedAt && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
-                <p className="teacher-exam-note">Jadwal diubah {formatDateTime(exam.scheduleChangedAt)}.</p>
-              )}
-              {exam.participantsAddedAt && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
-                <p className="teacher-exam-note">Peserta ditambahkan {formatDateTime(exam.participantsAddedAt)}.</p>
-              )}
+          const beforeOpening = lifecycle === 'SCHEDULED' || lifecycle === 'READY';
 
-              {DELIVERY_STATES.has(lifecycle) && exam.progress ? (
-                <>
-                {lifecycle === 'PAUSED' && (
-                  <Alert variant="warning" className="mb-3">
-                    <IconInfo aria-hidden="true" />
-                    <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
-                    <AlertDescription>Sisa waktu setiap peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.</AlertDescription>
-                  </Alert>
+          return (
+            <li key={exam.examInstanceId}>
+            <ExamListCard
+              className="teacher-exam-card"
+              data-testid={`teacher-exam-${exam.examInstanceId}`}
+              title={exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}
+              status={exam.lifecycleState && (
+                <StatusBadge tone={examLifecycleStatus(lifecycle).tone}>{examLifecycleStatus(lifecycle).label}</StatusBadge>
+              )}
+            >
+              <ExamFacts>
+                {(exam.groupLabel || exam.assessmentTypeLabel) && (
+                  <p>{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>
                 )}
-                {lifecycle === 'ENDED' && (
-                  <p className="teacher-exam-note">
+                {exam.windowStartsAt && exam.windowEndsAt && <p>{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>}
+                {beforeOpening && exam.participants !== undefined && <p>{exam.participants} peserta</p>}
+                {exam.scheduleChangedAt && beforeOpening && <p>Jadwal diubah {formatDateTime(exam.scheduleChangedAt)}.</p>}
+                {exam.participantsAddedAt && beforeOpening && <p>Peserta ditambahkan {formatDateTime(exam.participantsAddedAt)}.</p>}
+                {lifecycle === 'ENDED' && exam.progress && (
+                  <p>
                     {exam.progress.running
                       ? `Ujian telah diakhiri. ${exam.progress.running} peserta masih mengerjakan sampai waktunya masing-masing habis.`
                       : 'Ujian telah diakhiri. Tidak ada peserta yang masih mengerjakan.'}
                   </p>
                 )}
-                {lifecycle === 'FINALIZED' && (
-                  <p className="teacher-exam-note">
-                    {exam.finalizedAt ? `Hasil difinalisasi ${formatDateTime(exam.finalizedAt)}.` : 'Hasil telah difinalisasi.'} Nilai tidak ditampilkan kepada siswa.
-                  </p>
+                {lifecycle === 'FINALIZED' && exam.progress && (
+                  <p>{exam.finalizedAt ? `Hasil difinalisasi ${formatDateTime(exam.finalizedAt)}.` : 'Hasil telah difinalisasi.'} Nilai tidak ditampilkan kepada siswa.</p>
                 )}
-                <dl className="teacher-exam-progress" aria-label="Kemajuan pelaksanaan ujian">
-                  <div><dt>Peserta</dt><dd>{exam.progress.participants}</dd></div>
-                  <div><dt>Sudah mulai</dt><dd>{exam.progress.started}</dd></div>
-                  <div><dt>Dikumpulkan</dt><dd>{exam.progress.submitted}</dd></div>
-                  {exam.progress.running !== undefined && (
-                    <div><dt>Masih mengerjakan</dt><dd>{exam.progress.running}</dd></div>
-                  )}
-                </dl>
+              </ExamFacts>
+
+              {DELIVERY_STATES.has(lifecycle) && exam.progress ? (
+                <>
+                {lifecycle === 'PAUSED' && (
+                  <Alert variant="warning">
+                    <IconInfo aria-hidden="true" />
+                    <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
+                    <AlertDescription>Sisa waktu setiap peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.</AlertDescription>
+                  </Alert>
+                )}
+                <MetricList aria-label="Kemajuan pelaksanaan ujian">
+                  <Metric label="Peserta" value={exam.progress.participants} />
+                  <Metric label="Sudah mulai" value={exam.progress.started} />
+                  <Metric label="Dikumpulkan" value={exam.progress.submitted} />
+                  {exam.progress.running !== undefined && <Metric label="Masih mengerjakan" value={exam.progress.running} />}
+                </MetricList>
                 {(onOpenResults || onOpenMonitoring) && (
-                  <div className="teacher-exam-actions">
+                  <ActionGroup>
                     {onOpenMonitoring && (
                       <Button variant="secondary" onClick={() => onOpenMonitoring(exam.examInstanceId)}>Pantau Peserta</Button>
                     )}
                     {onOpenResults && (
                       <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>
                     )}
-                  </div>
+                  </ActionGroup>
                 )}
                 {lifecycle === 'ENDED' && (
-                  <div className="teacher-exam-actions teacher-exam-controls" role="group" aria-label="Kendali ujian">
+                  <ActionGroup className="border-t border-border pt-4" role="group" aria-label="Kendali ujian">
                     <Button onClick={() => setConfirm({ exam, action: 'finalize' })} disabled={busy || (exam.progress.running ?? 0) > 0}>
                       {busy ? 'Memproses...' : 'Finalisasi Hasil'}
                     </Button>
                     {(exam.progress.running ?? 0) > 0 && (
-                      <p className="teacher-exam-note m-0">Finalisasi dapat dilakukan setelah semua peserta selesai.</p>
+                      <p className="m-0 text-sm text-muted-foreground">Finalisasi dapat dilakukan setelah semua peserta selesai.</p>
                     )}
-                    {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
-                  </div>
+                  </ActionGroup>
                 )}
                 {(lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && (
-                  <div className="teacher-exam-actions teacher-exam-controls" role="group" aria-label="Kendali ujian">
+                  <ActionGroup className="border-t border-border pt-4" role="group" aria-label="Kendali ujian">
                     {lifecycle === 'ACTIVE' && (
                       <>
                         <Button variant="secondary" onClick={() => setConfirm({ exam, action: 'pause' })} disabled={busy}>Jeda Ujian</Button>
@@ -367,8 +363,10 @@ export const TeacherReadinessView: React.FC<{
                         {busy ? 'Memproses...' : 'Lanjutkan Ujian'}
                       </Button>
                     )}
-                    {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
-                  </div>
+                  </ActionGroup>
+                )}
+                {actionError && (lifecycle === 'ENDED' || lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && (
+                  <p className="m-0 text-sm text-danger-ink" role="alert">{actionError}</p>
                 )}
                 </>
               ) : (
@@ -389,8 +387,8 @@ export const TeacherReadinessView: React.FC<{
               </div>
               )}
 
-              {exam.lifecycleState && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
-                <div className="teacher-exam-actions">
+              {exam.lifecycleState && beforeOpening && (
+                <ActionGroup>
                   {onOpenPreview && (
                     <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>
                   )}
@@ -407,39 +405,44 @@ export const TeacherReadinessView: React.FC<{
                     </Button>
                   )}
                   <Button variant="destructive" onClick={() => setCancelFor(exam)} disabled={busy}>Batalkan Ujian</Button>
-                  {actionError && <p className="teacher-action-error" role="alert">{actionError}</p>}
-                </div>
+                </ActionGroup>
               )}
-            </div>
+              {actionError && exam.lifecycleState && beforeOpening && (
+                <p className="m-0 text-sm text-danger-ink" role="alert">{actionError}</p>
+              )}
+            </ExamListCard>
+            </li>
           );
         })}
-      </div>
+      </ExamList>
 
       {cancelledExams.length > 0 && (
         <section aria-labelledby="cancelled-exams-title" className="mt-8 flex flex-col gap-3">
           <h2 id="cancelled-exams-title" className="m-0 text-lg font-semibold">Ujian Dibatalkan</h2>
-          <div className="teacher-exams-list">
+          <ExamList>
             {cancelledExams.map(exam => {
               const cancellation = exam.cancellation!;
               return (
-                <div key={exam.examInstanceId} className="teacher-exam-card" data-testid={`teacher-exam-${exam.examInstanceId}`}>
-                  <div className="teacher-exam-card-header">
-                    <h3 className="teacher-exam-subject">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</h3>
-                    <StatusBadge tone={CANCELLED_EXAM_STATUS.tone}>{CANCELLED_EXAM_STATUS.label}</StatusBadge>
-                  </div>
-                  {(exam.groupLabel || exam.assessmentTypeLabel) && (
-                    <p className="teacher-exam-window">{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>
-                  )}
-                  {exam.windowStartsAt && exam.windowEndsAt && (
-                    <p className="teacher-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
-                  )}
-                  <p className="teacher-exam-note [overflow-wrap:anywhere]">
-                    Dibatalkan {formatDateTime(cancellation.cancelledAt)} oleh {cancellation.by.you ? 'Anda' : (cancellation.by.elligbleId ?? 'guru lain')}. Alasan: {cancellation.reason}
-                  </p>
-                </div>
+                <li key={exam.examInstanceId}>
+                  <ExamListCard
+                    className="teacher-exam-card"
+                    data-testid={`teacher-exam-${exam.examInstanceId}`}
+                    headingLevel="h3"
+                    title={exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}
+                    status={<StatusBadge tone={CANCELLED_EXAM_STATUS.tone}>{CANCELLED_EXAM_STATUS.label}</StatusBadge>}
+                  >
+                    <ExamFacts>
+                      {(exam.groupLabel || exam.assessmentTypeLabel) && <p>{[exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>}
+                      {exam.windowStartsAt && exam.windowEndsAt && <p>{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>}
+                      <p className="[overflow-wrap:anywhere]">
+                        Dibatalkan {formatDateTime(cancellation.cancelledAt)} oleh {cancellation.by.you ? 'Anda' : (cancellation.by.elligbleId ?? 'guru lain')}. Alasan: {cancellation.reason}
+                      </p>
+                    </ExamFacts>
+                  </ExamListCard>
+                </li>
               );
             })}
-          </div>
+          </ExamList>
         </section>
       )}
 

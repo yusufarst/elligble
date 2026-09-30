@@ -1,5 +1,5 @@
 **Status:** ACTIVE (working record)
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Canonical:** WORKING RECORD of UI-SYSTEM-001 (production task graph, `docs/production/PRODUCTION_COMPLETION_PLAN.md` §6.2)
 **Depends On:** Global UI/UX consistency contract (plan §10.1, Owner 2026-09-30), DesainPakeAI project `b5a22aa4-7b38-49d2-9448-443eab6e8075` context revision `sha256-5d0d77796ab574177a840d227a99e7457d623564c9d40160703f32224073c2b8` ("Provenance Thread" alpha.1), FRONTEND_DESIGN_SYSTEM.md, UI_CONTENT_AND_COPY_STYLE.md
 **Last Reviewed:** 2026-09-30
@@ -32,12 +32,12 @@ Every implemented screen checked against the contract of plan §10.1: does it lo
 | M9 | status badges | three implementations: the teacher lifecycle badge (page CSS), the student status pill (page CSS, fully rounded) and the monitoring and results tone classes; a working participant is blue on monitoring while a running exam is green on the teacher card | §10.1.2, §10.1.7 | MATERIAL | FIXED (UI-SYSTEM-003 part 1): one `StatusBadge` primitive and one vocabulary of words and tones (`lib/status.ts`, §6) |
 | M10 | loading, error and empty states | the older screens (student list, teacher list, proctor list, launch, exam workspace) use page-local state cards with generic titles ("Terjadi Kesalahan"); the newer screens use the shared Alert and a status line | §10.1.2, §10.1.6 | MATERIAL | FIXED for the lists and the newer screens (UI-SYSTEM-003 part 2): one page state pattern (`components/ui/page-state.tsx`); the full-screen states of the exam focus shell (launch, exam workspace) move with the shell to UI-SYSTEM-002 |
 | M12 | teacher exam card at 768 px (found while verifying M9) | the five actions of a scheduled or ready exam run out of the card (by 7 px at 1280 px) | §10.1.9 | MATERIAL | FIXED (UI-SYSTEM-003 part 1): the action row wraps from 640 px; an E2E check keeps every action inside the card |
-| M11 | exam lists across roles | the student and teacher lists use two page-local card styles (12 px radius with border; 8 px radius with shadow only); the proctor list shows its exams without cards at full width | §10.1.6 | MATERIAL | UI-SYSTEM-003: one exam list card for every role |
+| M11 | exam lists across roles | the student and teacher lists use two page-local card styles (12 px radius with border; 8 px radius with shadow only); the proctor list shows its exams without cards at full width | §10.1.6 | MATERIAL | FIXED (UI-SYSTEM-003 part 3): one `ExamListCard` for the student, teacher and proctor lists |
 | C1 | exam workspace stylesheet | 160 hard-coded colors, most equal to token values | §10.1.3 | COSMETIC / SAFE TO CONVERGE | UI-SYSTEM-005; the guard (§3) keeps the count from growing |
 | C2 | launch screen, exam workspace, submit confirmation | page-local `.btn` buttons (bold) and a page-local modal instead of the shared Button and Dialog | §10.1.5 (the focus shell keeps the same controls) | COSMETIC / SAFE TO CONVERGE | UI-SYSTEM-002 (focus shell convergence), with the whole exam journey verified again |
 | C3 | content width | 688, 752 and 960 px and full width on different pages | §10.1.5 | COSMETIC | UI-SYSTEM-002: width variants of the shell |
-| C4 | metric cards | grey filled boxes on the teacher card, white bordered boxes on monitoring and results | §10.1.6 | COSMETIC | UI-SYSTEM-003 |
-| C5 | scheduled exam card at 360 px | five stacked full-width actions | §10.1.9 | COSMETIC | UI-SYSTEM-003: one action group pattern |
+| C4 | metric cards | grey filled boxes on the teacher card, white bordered boxes on monitoring and results | §10.1.6 | COSMETIC | FIXED (UI-SYSTEM-003 part 3): one `Metric` box everywhere |
+| C5 | scheduled exam card at 360 px | five stacked full-width actions | §10.1.9 | COSMETIC | FIXED (UI-SYSTEM-003 part 3): one `ActionGroup`, stacked below 640 px as the DesainPakeAI direction, a wrapping row above |
 | C6 | typography | system font stack; the DesainPakeAI direction uses Inter, Geist Mono and Libre Baskerville | §10.1.8 | COSMETIC | UI-SYSTEM-005 (§4) |
 | C7 | semantic palette and focus ring | success, warning, information and the focus ring differ from the DesainPakeAI values | §10.1.1 | COSMETIC | UI-SYSTEM-005 (§4) |
 
@@ -53,7 +53,8 @@ After the fixes, axe reports no color-contrast, landmark, list or heading findin
 2. hard-coded colors outside `styles/design-tokens.css` never grow: `styles/globals.css` 1 (the destructive foreground), `styles/workstation.css` 160, every other file 0; lower a ceiling when a file moves to tokens;
 3. the text and action color pairs of the tokens keep 4.5:1 (primary and destructive actions, body and secondary text on the background and on the muted surface, and the success, warning, danger, information, neutral and active badge pairs);
 4. no page stylesheet defines a badge, pill or chip class: statuses use the shared `StatusBadge` (the exam focus shell keeps its save state, timer and legend until UI-SYSTEM-002);
-5. no page stylesheet defines state cards, state titles, loading lines or retry buttons: loading, failed, refused, empty and stale-data states use the shared page states (the exam focus shell keeps its full-screen states until UI-SYSTEM-002).
+5. no page stylesheet defines state cards, state titles, loading lines or retry buttons: loading, failed, refused, empty and stale-data states use the shared page states (the exam focus shell keeps its full-screen states until UI-SYSTEM-002);
+6. no page stylesheet defines a card, stat, metric, progress or actions class: exam cards, metric boxes and action groups use the shared primitives (the exam focus shell keeps its own until UI-SYSTEM-002).
 
 Mutation-checked against a passing baseline: an undefined token, a new hard-coded color in a stylesheet and in a component, the old destructive red, a weaker secondary text and a workspace color moved back to a hard-coded value: each caught.
 

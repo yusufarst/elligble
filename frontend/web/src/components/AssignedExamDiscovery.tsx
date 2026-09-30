@@ -5,6 +5,9 @@ import { formatDateTime, formatDurationMinutes, formatWindow } from '../lib/form
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState, LoadErrorState, LoadingState } from '@/components/ui/page-state';
+import { Button } from '@/components/ui/button';
+import { ActionGroup } from '@/components/ui/action-group';
+import { ExamFact, ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import { SUBMITTED_ATTEMPT_STATUS } from '../lib/status.ts';
 import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
 import '../styles/assigned-exam-discovery.css';
@@ -151,42 +154,31 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
     <main className="discovery-container">
       {header}
 
-      <div className="discovery-list" role="list">
+      <ExamList>
         {assignments.map((item) => {
           const subjectDisplay = item.subjectLabel || 'Penilaian Akademik';
           const hasAttempts = item.attempts && item.attempts.length > 0;
 
           return (
-            <div role="listitem" key={item.examInstanceId}>
-              <article
+            <li key={item.examInstanceId}>
+              <ExamListCard
                 className="discovery-card"
                 data-testid={`assignment-${item.examInstanceId}`}
+                title={subjectDisplay}
+                status={item.roomLabel && <StatusBadge tone="neutral">Ruang: {item.roomLabel}</StatusBadge>}
               >
-                <div className="discovery-card-header">
-                  <h2 className="discovery-subject-title">{subjectDisplay}</h2>
-                  {item.roomLabel && (
-                    <StatusBadge tone="neutral">Ruang: {item.roomLabel}</StatusBadge>
-                  )}
-                </div>
-
                 {item.schedule && (item.schedule.windowStartsAt || item.schedule.attemptDurationSeconds) && (
-                  <dl className="discovery-schedule">
+                  <ExamFacts>
                     {item.schedule.windowStartsAt && item.schedule.windowEndsAt && (
-                      <div>
-                        <dt>Waktu pelaksanaan</dt>
-                        <dd>{formatWindow(item.schedule.windowStartsAt, item.schedule.windowEndsAt)}</dd>
-                      </div>
+                      <ExamFact label="Waktu pelaksanaan">{formatWindow(item.schedule.windowStartsAt, item.schedule.windowEndsAt)}</ExamFact>
                     )}
                     {item.schedule.attemptDurationSeconds && (
-                      <div>
-                        <dt>Durasi</dt>
-                        <dd>{formatDurationMinutes(item.schedule.attemptDurationSeconds)}</dd>
-                      </div>
+                      <ExamFact label="Durasi">{formatDurationMinutes(item.schedule.attemptDurationSeconds)}</ExamFact>
                     )}
-                  </dl>
+                  </ExamFacts>
                 )}
                 {item.schedule?.change && !hasAttempts && (
-                  <Alert variant="info" role="note" className="mb-4">
+                  <Alert variant="info" role="note">
                     <AlertDescription>
                       Jadwal diubah oleh guru pada {formatDateTime(item.schedule.change.changedAt)}.
                       {item.schedule.change.previousWindowStartsAt && item.schedule.change.previousWindowEndsAt
@@ -202,18 +194,22 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                     const error = startErrors[item.examInstanceId];
                     if (state.kind === 'startable') {
                       return (
-                        <div className="discovery-entry">
-                          <button
-                            type="button"
-                            className="discovery-launch-button"
-                            data-testid={`start-button-${item.examInstanceId}`}
-                            disabled={startingExamId !== null}
-                            onClick={() => handleStart(item.examInstanceId)}
-                          >
-                            {startingExamId === item.examInstanceId ? 'Menyiapkan...' : 'Mulai Ujian'}
-                          </button>
-                          {error && <p className="discovery-entry-error" role="alert">{error}</p>}
-                        </div>
+                        <>
+                          <ActionGroup>
+                            <Button
+                              data-testid={`start-button-${item.examInstanceId}`}
+                              disabled={startingExamId !== null}
+                              onClick={() => handleStart(item.examInstanceId)}
+                            >
+                              {startingExamId === item.examInstanceId ? 'Menyiapkan...' : 'Mulai Ujian'}
+                            </Button>
+                          </ActionGroup>
+                          {error && (
+                            <Alert variant="destructive">
+                              <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                          )}
+                        </>
                       );
                     }
                     const text =
@@ -222,49 +218,40 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                       state.kind === 'paused' ? 'Ujian sedang dijeda oleh guru atau pengawas.' :
                       state.kind === 'closed' ? 'Waktu pelaksanaan ujian telah berakhir.' :
                       'Belum ada sesi pengerjaan yang tersedia.';
-                    return (
-                      <div className="discovery-no-attempts">
-                        {text}
-                      </div>
-                    );
+                    return <p className="m-0 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">{text}</p>;
                   })()
                 ) : (
-                  <div className="discovery-attempts-list">
+                  <div className="flex flex-col gap-3">
                     {item.attempts.map((attempt) => {
                       const isSubmitted = Boolean(attempt.submittedAt);
 
                       return (
                         <div
                           key={attempt.attemptId}
-                          className="discovery-attempt-item"
+                          className="flex flex-col gap-3 rounded-md border border-border bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                           data-testid={`attempt-row-${attempt.attemptId}`}
                         >
-                          <div className="discovery-attempt-info">
+                          <div className="flex items-center gap-2">
                             {isSubmitted && (
                               <StatusBadge tone={SUBMITTED_ATTEMPT_STATUS.tone}>{SUBMITTED_ATTEMPT_STATUS.label}</StatusBadge>
                             )}
                           </div>
 
                           {!isSubmitted && (
-                            <button
-                              type="button"
-                              className="discovery-launch-button"
-                              data-testid={`launch-button-${attempt.attemptId}`}
-                              onClick={() => handleLaunch(attempt.attemptId)}
-                            >
+                            <Button data-testid={`launch-button-${attempt.attemptId}`} onClick={() => handleLaunch(attempt.attemptId)}>
                               Mulai Pengerjaan
-                            </button>
+                            </Button>
                           )}
                         </div>
                       );
                     })}
                   </div>
                 )}
-              </article>
-            </div>
+              </ExamListCard>
+            </li>
           );
         })}
-      </div>
+      </ExamList>
     </main>
   );
 };

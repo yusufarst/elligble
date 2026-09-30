@@ -82,6 +82,14 @@ describe('design system guard (§10.1)', () => {
     expect(pageStates).toEqual([]);
   });
 
+  it('exam cards, metric boxes and action groups come from the shared primitives, never from page stylesheets', () => {
+    // The exam focus shell keeps its own until UI-SYSTEM-002.
+    const pageCards = sources
+      .filter(s => s.path.endsWith('.css') && s.path !== 'styles/workstation.css')
+      .flatMap(s => [...s.text.matchAll(/\.([a-z0-9-]*(?:-card|-stat|-metric|-progress|-actions)[a-z0-9-]*)\s*[{,.:>\s]/g)].map(m => `${s.path}: .${m[1]}`));
+    expect(pageCards).toEqual([]);
+  });
+
   it('text and action colors of the tokens keep WCAG AA contrast', () => {
     const pairs: Array<[string, string, string]> = [
       ['primary action', '--color-primary-fg', '--color-primary'],

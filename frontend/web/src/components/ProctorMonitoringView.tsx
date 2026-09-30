@@ -5,6 +5,11 @@ import type { ProctorMonitoringResponse, ProctorMonitoringExamProjection, Procto
 import { formatDateTime, formatWindow } from '../lib/format.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Metric, MetricList } from '@/components/ui/metric';
+import { ActionGroup } from '@/components/ui/action-group';
+import { CANCELLED_EXAM_STATUS } from '../lib/status.ts';
+import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import '../styles/proctor-monitoring.css';
 import '../styles/design-tokens.css';
 
@@ -89,53 +94,55 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
       {header}
       {staleNotice}
 
-      {assignments.map((exam: ProctorMonitoringExamProjection) => (
-        <div key={exam.examInstanceId} className="proctor-exam-group">
-          <h2 className="proctor-exam-title">{exam.subjectLabel || 'Mata Pelajaran Tidak Diketahui'}</h2>
-          {exam.windowStartsAt && exam.windowEndsAt && (
-            <p className="proctor-exam-window">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
-          )}
-          {exam.cancelledAt ? (
-            <Alert role="note" className="mb-3">
-              <AlertDescription>Ujian ini dibatalkan oleh guru pada {formatDateTime(exam.cancelledAt)} dan tidak akan dibuka.</AlertDescription>
-            </Alert>
-          ) : exam.scheduleChange && (
-            <Alert variant="info" role="note" className="mb-3">
-              <AlertDescription>
-                Jadwal diubah pada {formatDateTime(exam.scheduleChange.changedAt)}.
-                {exam.scheduleChange.previousWindowStartsAt && exam.scheduleChange.previousWindowEndsAt
-                  ? ` Jadwal sebelumnya: ${formatWindow(exam.scheduleChange.previousWindowStartsAt, exam.scheduleChange.previousWindowEndsAt)}.`
-                  : ''}
-              </AlertDescription>
-            </Alert>
-          )}
-          {onOpenExam && !exam.cancelledAt && (
-            <Button variant="secondary" className="mb-3" onClick={() => onOpenExam(exam.examInstanceId)}>Lihat Peserta</Button>
-          )}
+      <ExamList>
+        {assignments.map((exam: ProctorMonitoringExamProjection) => (
+          <li key={exam.examInstanceId}>
+            <ExamListCard
+              title={exam.subjectLabel || 'Mata Pelajaran Tidak Diketahui'}
+              status={exam.cancelledAt ? <StatusBadge tone={CANCELLED_EXAM_STATUS.tone}>{CANCELLED_EXAM_STATUS.label}</StatusBadge> : undefined}
+            >
+              {exam.windowStartsAt && exam.windowEndsAt && (
+                <ExamFacts>
+                  <p>{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
+                </ExamFacts>
+              )}
+              {exam.cancelledAt ? (
+                <Alert role="note">
+                  <AlertDescription>Ujian ini dibatalkan oleh guru pada {formatDateTime(exam.cancelledAt)} dan tidak akan dibuka.</AlertDescription>
+                </Alert>
+              ) : exam.scheduleChange && (
+                <Alert variant="info" role="note">
+                  <AlertDescription>
+                    Jadwal diubah pada {formatDateTime(exam.scheduleChange.changedAt)}.
+                    {exam.scheduleChange.previousWindowStartsAt && exam.scheduleChange.previousWindowEndsAt
+                      ? ` Jadwal sebelumnya: ${formatWindow(exam.scheduleChange.previousWindowStartsAt, exam.scheduleChange.previousWindowEndsAt)}.`
+                      : ''}
+                  </AlertDescription>
+                </Alert>
+              )}
+              {onOpenExam && !exam.cancelledAt && (
+                <ActionGroup>
+                  <Button variant="secondary" onClick={() => onOpenExam(exam.examInstanceId)}>Lihat Peserta</Button>
+                </ActionGroup>
+              )}
 
-          {exam.rooms.length === 0 ? null : (
-            <div className="proctor-rooms-grid">
-              {exam.rooms.map((room: ProctorMonitoringRoomProjection) => (
-                <div key={room.roomId} className="proctor-room-card">
-                  <h3 className="proctor-room-header">{room.roomLabel || 'Ruangan Tanpa Nama'}</h3>
-                  <div className="proctor-room-stats">
-                    <div className="proctor-stat-row">
-                      <span className="proctor-stat-label">Total Peserta Ujian</span>
-                      <span className="proctor-stat-value">{room.participantCount}</span>
-                    </div>
-                    <div className="proctor-stat-row">
-                      <span className="proctor-stat-label">Sesi Aktif</span>
-                      <span className={`proctor-stat-value ${room.activeSessionCount > 0 ? 'proctor-stat-active' : ''}`}>
-                        {room.activeSessionCount}
-                      </span>
-                    </div>
-                  </div>
+              {exam.rooms.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {exam.rooms.map((room: ProctorMonitoringRoomProjection) => (
+                    <section key={room.roomId} className="flex flex-col gap-2">
+                      <h3 className="m-0 text-base font-semibold">{room.roomLabel || 'Ruangan Tanpa Nama'}</h3>
+                      <MetricList className="sm:grid-cols-2">
+                        <Metric label="Total Peserta Ujian" value={room.participantCount} />
+                        <Metric label="Sesi Aktif" value={room.activeSessionCount} />
+                      </MetricList>
+                    </section>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+              )}
+            </ExamListCard>
+          </li>
+        ))}
+      </ExamList>
     </main>
   );
 };

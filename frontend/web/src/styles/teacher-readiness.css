@@ -20,38 +20,6 @@
   margin: 0;
 }
 
-
-
-
-.teacher-exams-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.teacher-exam-card {
-  background-color: var(--color-surface);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-}
-
-.teacher-exam-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.teacher-exam-subject {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
 .teacher-readiness-details {
   display: grid;
   grid-template-columns: 1fr;
@@ -67,7 +35,7 @@
 .readiness-section {
   background-color: var(--color-surface-muted);
   padding: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 .readiness-section-title {
@@ -88,85 +56,4 @@
   font-size: 0.875rem;
   color: var(--color-error-text);
   margin: 0;
-}
-
-.readiness-fail code {
-  display: block;
-  margin-top: 4px;
-  padding: 4px 8px;
-  background-color: var(--color-danger-bg);
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.75rem;
-}
-
-.teacher-exam-window {
-  margin: 0 0 var(--space-3);
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.teacher-exam-progress {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: var(--space-3);
-  margin: 0;
-}
-
-.teacher-exam-progress > div {
-  padding: var(--space-3);
-  border: var(--border-default);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface-muted);
-}
-
-.teacher-exam-progress dt {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  overflow-wrap: anywhere;
-}
-
-.teacher-exam-progress dd {
-  margin: var(--space-1) 0 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-primary);
-}
-
-.teacher-exam-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-@media (min-width: 640px) {
-  /* A row that wraps: five actions never overflow the card (768 px once did). */
-  .teacher-exam-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .teacher-exam-actions .teacher-action-error {
-    flex-basis: 100%;
-  }
-}
-
-.teacher-action-error {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-danger-text);
-}
-
-.teacher-exam-note {
-  margin: 0 0 var(--space-3);
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.teacher-exam-controls {
-  padding-top: var(--space-4);
-  border-top: var(--border-default);
 }

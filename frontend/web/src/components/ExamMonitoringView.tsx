@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { Metric, MetricList } from '@/components/ui/metric';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { LOCKED_PARTICIPANT_STATUS, participantStatus } from '../lib/status.ts';
 import { formatClockTime, formatTime } from '../lib/format.ts';
@@ -225,19 +226,12 @@ export const ExamMonitoringView: React.FC<{
         </StaleDataNotice>
       )}
 
-      <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan peserta">
-        {[
-          ['Peserta', summary.participants],
-          ['Belum mulai', summary.notStarted],
-          ['Mengerjakan', summary.active],
-          ['Dikumpulkan', summary.submitted],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-md border border-border bg-background px-3 py-2">
-            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-            <dd className="m-0 text-xl font-semibold tabular-nums">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <MetricList aria-label="Ringkasan peserta">
+        <Metric label="Peserta" value={summary.participants} />
+        <Metric label="Belum mulai" value={summary.notStarted} />
+        <Metric label="Mengerjakan" value={summary.active} />
+        <Metric label="Dikumpulkan" value={summary.submitted} />
+      </MetricList>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Saring status peserta">
