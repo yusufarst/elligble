@@ -45,8 +45,10 @@ export interface AnswerManager {
   storageDurable: boolean;
   /** Choices captured on this device that the server has not acknowledged yet. */
   pendingCount: number;
-  /** Try to send pending choices now (e.g. at timer expiry, D04.5-46). */
+  /** Try to send pending choices now (a choice held after a pause or lock refusal waits for its backoff). */
   flush: () => void;
+  /** The time ran out: send every pending choice now, a held one included (D04.5-46). */
+  flushBeforeFinalization: () => void;
   /** Tells the engine what the server said at server time `at` about the exam (pause stops new choices). */
   noteExamState: (state: ExamRunState, pausedAt: number | null, at?: number | null) => void;
   /** Tells the engine whether a supervisor has locked this attempt (null: not locked), as said at `at`. */
@@ -186,6 +188,10 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     engine?.kick();
   }, [engine]);
 
+  const flushBeforeFinalization = useCallback(() => {
+    engine?.flushBeforeFinalization();
+  }, [engine]);
+
   const noteExamState = useCallback((state: ExamRunState, pausedAt: number | null, at: number | null = null) => {
     if (engine) void engine.noteExamState(state, pausedAt, at);
   }, [engine]);
@@ -206,6 +212,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     storageDurable: engine?.storageDurable ?? false,
     pendingCount: engine?.pendingCount ?? 0,
     flush,
+    flushBeforeFinalization,
     noteExamState,
     noteLockState,
     isFreshState,

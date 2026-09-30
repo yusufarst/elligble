@@ -180,7 +180,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   }, [tenantKey]);
 
   const timerControlRef = useRef<{ applyServerRemaining: (seconds: number) => void } | null>(null);
-  const answersRef = useRef<{ pendingCount: number; flush: () => void; hasUnresolvedSaves: boolean } | null>(null);
+  const answersRef = useRef<{ pendingCount: number; flush: () => void; flushBeforeFinalization: () => void; hasUnresolvedSaves: boolean } | null>(null);
   const runInfoRef = useRef<((timer: TimerResponse) => void) | null>(null);
 
   // Timer expiry: flush what can still be sent (D04.5-46), then ask the server to finalize
@@ -192,7 +192,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     try {
       const answers = answersRef.current;
       if (answers && answers.pendingCount > 0) {
-        answers.flush();
+        answers.flushBeforeFinalization();
         const deadline = Date.now() + EXPIRY_FLUSH_WAIT_MS;
         while (Date.now() < deadline && (answersRef.current?.pendingCount ?? 0) > 0 && mountedRef.current) {
           await sleep(200);
@@ -462,7 +462,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // Supervisor messages (D04.6-49..53): fetched when the timer answer counts more of them.
   const inbox = useBroadcastInbox({ attemptId: attemptId || '', enabled: phase === 'active' });
   const noteMessageCount = inbox.noteCount;
-  answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, hasUnresolvedSaves };
+  answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, flushBeforeFinalization: answers.flushBeforeFinalization, hasUnresolvedSaves };
 
   const loadQuestions = useCallback(async (id: string) => {
     if (questionsLoadingRef.current) return;

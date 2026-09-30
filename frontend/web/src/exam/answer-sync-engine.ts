@@ -26,6 +26,12 @@ import { serverClock } from './server-clock.ts';
 //   span is stale: it cannot close a span the server still holds open or reopen one that
 //   ended. A stale refusal only shows that the span lasted at least until then, so a choice
 //   made later is left for the server to decide instead of being dropped.
+// - An intent the server refused because of a pause or lock but this engine keeps (it cannot
+//   place the choice inside a known span) is held: it is not sent again until its backoff
+//   elapses, whatever else asks to send now (the state check each refusal triggers, a
+//   reconnect), so the two can never feed each other in a loop; the other intents go on. When
+//   the pause or lock ends, a held intent is tried again after the shortest backoff, and when
+//   the time runs out, at once.
 
 export type SaveOutcome =
   | { kind: 'ack'; writeVersion: number; clientWriteIdentity: string }
@@ -147,6 +153,8 @@ export class AnswerSyncEngine {
   private readonly failedAttempts = new Map<string, number>();
   private readonly rejected = new Map<string, string>();
   private readonly staleCount = new Map<string, number>();
+  /** Refused intents this engine keeps, by question: not sent again before the backoff releases them. */
+  private readonly held = new Map<string, string>();
   private sequence = 0;
   private running = false;
   private rerunRequested = false;
@@ -313,7 +321,9 @@ export class AnswerSyncEngine {
   /** Try now (new input, connectivity regained, tab visible, re-authenticated). */
   kick(): void {
     if (this.disposed || this.stopped || this.paused) return;
-    if (this.retryTimer !== null) {
+    // Trying now cuts a transient backoff short; the timer stays while it is what releases a
+    // held intent, so a refused intent is never sent again before its backoff.
+    if (this.retryTimer !== null && !this.holdsRefused()) {
       this.opts.clearTimer(this.retryTimer);
       this.retryTimer = null;
     }
@@ -323,6 +333,15 @@ export class AnswerSyncEngine {
       return;
     }
     void this.run();
+  }
+
+  /**
+   * The attempt is about to be finalized (its time ran out, D04.5-46): a held intent is tried
+   * once more at once instead of after its backoff, since there is no later.
+   */
+  flushBeforeFinalization(): void {
+    this.held.clear();
+    this.kick();
   }
 
   /** Resume after the caller re-authenticated following an unauthorized response. */
@@ -350,7 +369,7 @@ export class AnswerSyncEngine {
   private nextCandidate(): PendingAnswerRecord | null {
     let next: PendingAnswerRecord | null = null;
     for (const record of this.pending.values()) {
-      if (this.inFlight.has(record.snapshotId) || this.rejected.has(record.snapshotId)) continue;
+      if (this.inFlight.has(record.snapshotId) || this.rejected.has(record.snapshotId) || this.isHeld(record)) continue;
       if (!next || record.localSequence < next.localSequence) next = record;
     }
     return next;
@@ -449,8 +468,8 @@ export class AnswerSyncEngine {
         this.opts.events.onExamPaused?.(outcome.pausedAt);
         if (outcome.pausedAt === null) {
           // No boundary to decide by: keep every intent and ask again later.
-          this.scheduleRetry();
-          return false;
+          this.hold(snapshotId, sentIdentity);
+          return true;
         }
         this.noteOpen('pause', outcome.pausedAt);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
@@ -465,8 +484,8 @@ export class AnswerSyncEngine {
         this.attemptLocked = true;
         this.opts.events.onAttemptLocked?.(outcome.lockedAt);
         if (outcome.lockedAt === null) {
-          this.scheduleRetry();
-          return false;
+          this.hold(snapshotId, sentIdentity);
+          return true;
         }
         this.noteOpen('lock', outcome.lockedAt);
         return this.afterPauseRefusal(snapshotId, sentIdentity);
@@ -494,6 +513,7 @@ export class AnswerSyncEngine {
     if (this.attemptLocked || this.blocks.some(b => b.source === 'lock' && b.to === null)) {
       const now = this.opts.now();
       for (const block of this.blocks) if (block.source === 'lock' && block.to === null) block.to = Math.max(block.from, now);
+      this.retryHeldSoon();
     }
     this.attemptLocked = false;
     this.opts.events.onChange();
@@ -526,6 +546,7 @@ export class AnswerSyncEngine {
     if (this.examPaused || this.blocks.some(b => b.source === 'pause' && b.to === null)) {
       const now = this.opts.now();
       for (const block of this.blocks) if (block.source === 'pause' && block.to === null) block.to = Math.max(block.from, now);
+      this.retryHeldSoon();
     }
     this.examPaused = false;
     this.opts.events.onChange();
@@ -594,15 +615,47 @@ export class AnswerSyncEngine {
 
   private async afterPauseRefusal(snapshotId: string, sentIdentity: string): Promise<boolean> {
     await this.settleAgainstPauses();
-    const current = this.pending.get(snapshotId);
-    if (current && current.clientWriteIdentity === sentIdentity) {
-      // The server refused an intent this engine would keep: never loop, back off.
-      this.failedAttempts.set(snapshotId, (this.failedAttempts.get(snapshotId) ?? 0) + 1);
-      this.opts.events.onChange();
-      this.scheduleRetry();
-      return false;
-    }
+    // The server refused an intent this engine would keep: never loop, back off.
+    this.hold(snapshotId, sentIdentity);
     return true;
+  }
+
+  /**
+   * Holds a refused intent that is still the question's latest (a newer choice is not held)
+   * until the backoff releases it; the other intents go on, so one the server would accept
+   * is never stuck behind it.
+   */
+  private hold(snapshotId: string, sentIdentity: string): void {
+    if (this.pending.get(snapshotId)?.clientWriteIdentity !== sentIdentity) return;
+    this.held.set(snapshotId, sentIdentity);
+    this.failedAttempts.set(snapshotId, (this.failedAttempts.get(snapshotId) ?? 0) + 1);
+    this.opts.events.onChange();
+    this.scheduleRetry();
+  }
+
+  private isHeld(record: PendingAnswerRecord): boolean {
+    return this.held.get(record.snapshotId) === record.clientWriteIdentity;
+  }
+
+  /** True while a held intent is still waiting (one replaced or settled since is no longer held). */
+  private holdsRefused(): boolean {
+    for (const [snapshotId, identity] of this.held) {
+      if (this.pending.get(snapshotId)?.clientWriteIdentity === identity) return true;
+      this.held.delete(snapshotId);
+    }
+    return false;
+  }
+
+  /**
+   * A pause or lock ended: a held intent is tried again after the shortest backoff, not at
+   * once, so even answers that contradict each other cannot make it loop.
+   */
+  private retryHeldSoon(): void {
+    if (this.disposed || !this.holdsRefused()) return;
+    if (this.retryTimer !== null) this.opts.clearTimer(this.retryTimer);
+    this.retryTimer = null;
+    this.retryDelay = 0;
+    this.scheduleRetry();
   }
 
   /** Applies every known pause to every waiting intent; reports the questions whose latest choice was dropped. */
@@ -730,6 +783,7 @@ export class AnswerSyncEngine {
     const delay = Math.min(policy.maxDelayMs, this.retryDelay + this.retryDelay * policy.jitterRatio * this.opts.random());
     this.retryTimer = this.opts.setTimer(() => {
       this.retryTimer = null;
+      this.held.clear();
       this.kick();
     }, delay);
   }

@@ -5,6 +5,8 @@ import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx
 import type { ResumeResponse, StudentSafeQuestion, TimerResponse } from '../types/assessment.ts';
 import { openAnswerStore } from '../exam/answer-store.ts';
 import { storeExamSessionId } from '../exam/exam-session.ts';
+import { serverClock } from '../exam/server-clock.ts';
+import { AnswerSyncEngine } from '../exam/answer-sync-engine.ts';
 import { setDisplayTimeZone } from '../lib/format.ts';
 
 // The student's exam screen under a teacher's pause or end (Owner decision 2026-09-30): paused
@@ -68,6 +70,15 @@ const checkNow = () => act(async () => {
   window.dispatchEvent(new Event('online'));
 });
 
+/**
+ * The fake server of these tests speaks in device time. The page-wide server clock would
+ * otherwise keep the offset an earlier test taught it (the out-of-order answers below carry
+ * server times minutes off, with instant round trips) and stamp this test's choices minutes
+ * away from the boundaries it sets, so whether a choice fell before a lock depended on the
+ * order the tests ran in.
+ */
+const pinServerClockToDevice = () => vi.spyOn(serverClock, 'now').mockImplementation(() => Date.now());
+
 describe('the exam screen during a pause', () => {
   beforeEach(async () => {
     window.history.pushState({}, '', `?attemptId=${ATTEMPT}`);
@@ -75,6 +86,7 @@ describe('the exam screen during a pause', () => {
     storeExamSessionId(ATTEMPT, SESSION);
     await (await openAnswerStore()).clearAttempt('', ATTEMPT);
     setDisplayTimeZone('Asia/Jakarta');
+    pinServerClockToDevice();
   });
 
   afterEach(() => {
@@ -206,6 +218,7 @@ describe('the exam screen while a supervisor locks the attempt', () => {
     storeExamSessionId(ATTEMPT, SESSION);
     await (await openAnswerStore()).clearAttempt('', ATTEMPT);
     setDisplayTimeZone('Asia/Jakarta');
+    pinServerClockToDevice();
   });
 
   afterEach(() => {
@@ -286,6 +299,81 @@ describe('the exam screen while a supervisor locks the attempt', () => {
     expect(await screen.findByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
     expect(screen.queryByText('Ujian Berhasil Dikumpulkan')).toBeNull();
   });
+
+  it('keeps a choice the server refuses although this device places it before the lock, without sending it again in a loop', async () => {
+    // The device places its choice a minute before the lock the server reports (its clock
+    // estimate is behind), and the server refuses it anyway. Each refusal makes the screen
+    // check the state, and that answer used to cancel the backoff and resend at once, in a loop.
+    const lockedAt = new Date(Date.now() + 60_000).toISOString();
+    let locked = false;
+    let checksWhileLocked = 0;
+    const saves: number[] = [];
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => {
+        if (locked) checksWhileLocked++;
+        return json(timer('ACTIVE', null, 2530, locked ? lockedAt : null));
+      },
+      '/api/v1/assessment/answer/save': (_url, init) => {
+        const body = JSON.parse(init?.body as string);
+        saves.push(Date.now());
+        // Capped so a regression fails below instead of exhausting the test worker.
+        if (saves.length > 30) return json({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1 });
+        locked = true;
+        return json({ error: 'attempt_locked', lockedAt }, 409);
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+    expect(await screen.findByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeTruthy();
+    // The check the refusal triggered has been answered; a reconnect asks to send now as well.
+    await waitFor(() => expect(checksWhileLocked).toBeGreaterThan(0));
+    await checkNow();
+    await waitFor(() => expect(checksWhileLocked).toBeGreaterThan(1));
+
+    // Never sent again before its backoff (one second at first), whatever asked to send now.
+    expect(saves.length).toBeLessThanOrEqual(30);
+    for (let i = 1; i < saves.length; i++) expect(saves[i] - saves[i - 1]).toBeGreaterThanOrEqual(900);
+    // Kept on the device for the server to decide later, not reported as discarded.
+    expect(screen.queryByText(/sehingga tidak disimpan/)).toBeNull();
+  });
+
+  it('sends a choice held after a lock refusal at once when the time runs out, before the attempt is finalized', async () => {
+    const lockedAt = new Date(Date.now() + 60_000).toISOString();
+    let refused = false;
+    let lockOver = false;
+    const calls: string[] = [];
+    const finalFlush = AnswerSyncEngine.prototype.flushBeforeFinalization;
+    // The lock ends as the time runs out: from the last flush on, the server accepts the choice.
+    vi.spyOn(AnswerSyncEngine.prototype, 'flushBeforeFinalization').mockImplementation(function (this: AnswerSyncEngine) {
+      lockOver = true;
+      return finalFlush.call(this);
+    });
+    globalThis.fetch = server({
+      '/api/v1/assessment/resume': () => json(resume({ timer: { status: 'active', startedAt: '2026-09-30T01:00:00.000Z', configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 5 } })),
+      // The time has run out when the state check after the refusal answers.
+      '/api/v1/assessment/timer': () => json(timer('ACTIVE', null, refused ? 0 : 5, refused && !lockOver ? lockedAt : null)),
+      '/api/v1/assessment/answer/save': (_url, init) => {
+        const body = JSON.parse(init?.body as string);
+        calls.push(lockOver ? 'save-accepted' : 'save-refused');
+        if (lockOver) return json({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1 });
+        refused = true;
+        return json({ error: 'attempt_locked', lockedAt }, 409);
+      },
+      '/api/v1/assessment/expiry-finalize': () => {
+        calls.push('finalize');
+        return json({ status: 'submitted', submissionId: 'sub-1', submittedAt: '2026-09-30T02:00:00.000Z' });
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+
+    // Finalization follows the flush at the latest after the screen's wait for it (3 s).
+    await waitFor(() => expect(calls).toContain('finalize'), { timeout: 5000 });
+    expect(calls[0]).toBe('save-refused');
+    expect(calls.indexOf('save-accepted')).toBeGreaterThan(0);
+    expect(calls.indexOf('save-accepted')).toBeLessThan(calls.indexOf('finalize'));
+    expect(await screen.findByText('Ujian Berhasil Dikumpulkan')).toBeTruthy();
+  });
 });
 
 // Answers about the exam state can arrive out of order (ASSESS-SYNC-001): a state check that
@@ -298,6 +386,7 @@ describe('the exam screen with state answers out of order', () => {
     storeExamSessionId(ATTEMPT, SESSION);
     await (await openAnswerStore()).clearAttempt('', ATTEMPT);
     setDisplayTimeZone('Asia/Jakarta');
+    pinServerClockToDevice();
   });
 
   afterEach(() => {

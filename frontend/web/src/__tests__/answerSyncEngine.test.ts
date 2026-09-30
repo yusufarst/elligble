@@ -469,7 +469,9 @@ describe('AnswerSyncEngine under an exam pause (Owner decision 2026-09-30)', () 
     const server = new PausableServer();
     let refusals = 0;
     const api: SyncApi = {
-      save: async () => {
+      save: async req => {
+        // Capped so a resend loop fails the assertions below instead of never ending.
+        if (refusals >= 50) return { kind: 'ack', writeVersion: 1, clientWriteIdentity: req.clientWriteIdentity };
         refusals++;
         return { kind: 'exam_paused', pausedAt: null };
       },
@@ -823,6 +825,126 @@ describe('AnswerSyncEngine with exam-state answers out of order', () => {
       expect(onDiscarded.mock.calls.flat(2)).not.toContain(Q2);
       expect(reported).not.toHaveBeenCalled();
       expect(holds()).toBe(false);
+    });
+
+    it(`${kind}: holds a refused choice this device places before it, without a resend loop, and lets the others save`, async () => {
+      vi.useFakeTimers();
+      const clock = { now: 1000 };
+      let refuseA = true;
+      let refusals = 0;
+      // The server refuses the first choice although this device places it before the span
+      // (its server-clock estimate moved since, for example); it accepts the others.
+      const { server, engine, note, reported } = setup(kind, clock, s => ({
+        save: async req => {
+          // Capped so a resend loop fails the assertions below instead of never ending.
+          if (refuseA && req.optionId === 'A' && refusals < 50) {
+            refusals++;
+            return kind === 'pause'
+              ? { kind: 'exam_paused', pausedAt: 1500, serverTime: clock.now + 50 }
+              : { kind: 'attempt_locked', lockedAt: 1500, serverTime: clock.now + 50 };
+          }
+          return s.save(req);
+        },
+        fetchServerAnswers: async () => s.state(),
+      }));
+      let checks = 0;
+      // The exam screen checks the state again after every refusal that reports it (capped so
+      // a regression fails here instead of exhausting the test worker).
+      reported.mockImplementation(() => {
+        if (++checks <= 20) void note(1500, clock.now + 50);
+      });
+      await engine.initialize([]);
+      // Both chosen before the span; the first one reaches the server first.
+      await Promise.all([engine.capture(Q1, 'A'), engine.capture(Q2, 'B')]);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(refusals).toBe(1);
+      expect(server.answers.get(Q2)?.optionId).toBe('B');
+      expect(engine.view(Q1)).toEqual({ optionId: 'A', status: 'failed' });
+
+      // Neither the state checks nor a reconnect send it again before its backoff.
+      engine.kick();
+      await vi.advanceTimersByTimeAsync(999);
+      expect(refusals).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(refusals).toBe(2);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(refusals).toBe(3); // the next wait is 2 s
+
+      // Once the span is over, it is tried again after the shortest backoff and saved.
+      refuseA = false;
+      clock.now = 3000;
+      await note(null, 3050);
+      engine.kick();
+      await vi.advanceTimersByTimeAsync(999);
+      expect(server.answers.get(Q1)).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(refusals).toBe(3);
+      expect(server.answers.get(Q1)?.optionId).toBe('A');
+      expect(engine.view(Q1)).toEqual({ optionId: 'A', status: 'saved' });
+      expect(engine.hasUnresolved).toBe(false);
+    });
+
+    it(`${kind}: tries a held choice at once when the time runs out`, async () => {
+      vi.useFakeTimers();
+      const clock = { now: 1000 };
+      let refuse = true;
+      let refusals = 0;
+      const { server, engine } = setup(kind, clock, s => ({
+        save: async req => {
+          if (refuse && refusals < 50) {
+            refusals++;
+            return kind === 'pause'
+              ? { kind: 'exam_paused', pausedAt: 1500, serverTime: clock.now + 50 }
+              : { kind: 'attempt_locked', lockedAt: 1500, serverTime: clock.now + 50 };
+          }
+          return s.save(req);
+        },
+        fetchServerAnswers: async () => s.state(),
+      }));
+      await engine.initialize([]);
+      await engine.capture(Q1, 'A'); // before the span as this device sees it: held after the refusal
+      await vi.advanceTimersByTimeAsync(0);
+      expect(refusals).toBe(1);
+      refuse = false;
+      engine.kick();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(server.answers.get(Q1)).toBeUndefined();
+      // The last chance before finalization does not wait for the backoff.
+      engine.flushBeforeFinalization();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(server.answers.get(Q1)?.optionId).toBe('A');
+      expect(engine.hasUnresolved).toBe(false);
+    });
+
+    it(`${kind}: backs off without a resend loop when a refusal gives no boundary and each one triggers a state check`, async () => {
+      vi.useFakeTimers();
+      const clock = { now: 1000 };
+      let refusals = 0;
+      const { engine, reported } = setup(kind, clock, s => ({
+        save: async req => {
+          if (refusals >= 50) return { kind: 'ack', writeVersion: 1, clientWriteIdentity: req.clientWriteIdentity };
+          refusals++;
+          return kind === 'pause'
+            ? { kind: 'exam_paused', pausedAt: null, serverTime: clock.now + 50 }
+            : { kind: 'attempt_locked', lockedAt: null, serverTime: clock.now + 50 };
+        },
+        fetchServerAnswers: async () => s.state(),
+      }));
+      let checks = 0;
+      reported.mockImplementation(() => {
+        if (++checks > 20) return;
+        void (kind === 'pause' ? engine.noteExamState('PAUSED', null, clock.now + 50) : engine.noteLockState(1500, clock.now + 50));
+      });
+      await engine.initialize([]);
+      await engine.capture(Q1, 'A');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(refusals).toBe(1);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(refusals).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(refusals).toBe(2);
+      expect(engine.view(Q1).optionId).toBe('A');
+      expect(engine.pendingCount).toBe(1);
     });
   }
 });
