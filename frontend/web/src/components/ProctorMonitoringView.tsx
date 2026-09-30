@@ -9,9 +9,9 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { ActionGroup } from '@/components/ui/action-group';
 import { CANCELLED_EXAM_STATUS } from '../lib/status.ts';
+import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import '../styles/proctor-monitoring.css';
-import '../styles/design-tokens.css';
 
 export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: string): void }> = ({ onOpenExam }) => {
   const [data, setData] = useState<ProctorMonitoringResponse | null>(null);
@@ -48,7 +48,7 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
 
   const header = (
     <div className="proctor-monitoring-header">
-      <h1 className="proctor-monitoring-title">Monitoring Ujian</h1>
+      <h1 className="proctor-monitoring-title">{SCREEN_TITLE.proctorExams}</h1>
       {data && error !== 'forbidden' && (
         <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
           {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}

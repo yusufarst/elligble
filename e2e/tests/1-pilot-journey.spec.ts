@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { activate, option, saveStatus, startExam, state } from './helpers.ts';
+import { STAFF_SCREEN_FILE, activate, option, requestedPaths, saveStatus, startExam, state } from './helpers.ts';
 
 // The pilot journey: provisioning CLI -> activation cards -> teacher opens the exam ->
 // proctor monitors -> a student answers, reloads, submits once.
@@ -7,8 +7,12 @@ import { activate, option, saveStatus, startExam, state } from './helpers.ts';
 test.describe.configure({ mode: 'serial' });
 
 test('the teacher activates their account and opens the imported exam', async ({ page }) => {
+    const requested = requestedPaths(page);
     await activate(page, 'guru.e2e', 'papan-tulis-hijau');
     await expect(page.getByRole('heading', { name: 'Pelaksanaan Ujian' })).toBeVisible();
+    // The teacher's screen is downloaded when it is first shown (WEB-001). Its heading shows
+    // while the file downloads, so wait for the request itself rather than for the heading.
+    await expect.poll(() => requested.some(path => STAFF_SCREEN_FILE.test(path) && path.startsWith('/assets/TeacherReadinessView-'))).toBe(true);
     await expect(page.getByText('Terjadwal')).toBeVisible();
     await page.getByRole('button', { name: 'Tandai Siap' }).click();
     await page.getByRole('button', { name: 'Buka Ujian' }).first().click();
@@ -22,6 +26,7 @@ test('the proctor sees the running exam', async ({ page }) => {
 });
 
 test('a student answers, the answers survive a reload, and the exam is submitted once', async ({ page }) => {
+    const requested = requestedPaths(page);
     await activate(page, 'siswa.e2e.01', 'bintang-kejora-2026');
     await expect(page.getByText('Daftar Ujian Siswa')).toBeVisible();
     // The browser runs in UTC; the schedule is shown in the school's zone.
@@ -59,4 +64,8 @@ test('a student answers, the answers survive a reload, and the exam is submitted
 
     await page.getByRole('button', { name: 'Kembali ke Jadwal Ujian' }).click();
     await expect(page.getByText('Sudah dikumpulkan')).toBeVisible();
+
+    // The whole student journey downloaded no teacher or proctor screen (WEB-001).
+    expect(requested.some(path => /^\/assets\/index-[\w-]+\.js$/.test(path))).toBe(true);
+    expect(requested.filter(path => STAFF_SCREEN_FILE.test(path))).toEqual([]);
 });

@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { activate, closeQuestionList, continueExam, login, open, openQuestionList, option, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
+import { STAFF_SCREEN_FILE, activate, closeQuestionList, continueExam, login, open, openQuestionList, option, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
 
 // Answer preservation (D04.5-17..24, PB07): offline answering, reload with unsynced
-// choices, and one active exam session per attempt across tabs (D04.4-32/35/37).
+// choices, and one active exam session per attempt across tabs (D04.4-32/35/37). Last, a
+// screen downloaded on demand whose file cannot be fetched (WEB-001).
 
 test('answers given offline are kept honestly and delivered when the connection returns', async ({ page, context }) => {
     await activate(page, 'siswa.e2e.02', 'bintang-kejora-2026');
@@ -95,4 +96,17 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     await page.getByRole('checkbox', { name: 'Ragu-ragu' }).uncheck();
     await expect.poll(flagsOnServer).toHaveLength(0);
     expect(await serverAnswers(page, attemptId)).toHaveLength(2);
+});
+
+test('a proctor screen that cannot be downloaded says so, and "Coba Lagi" loads it', async ({ page }) => {
+    const staffScreen = (url: URL) => STAFF_SCREEN_FILE.test(url.pathname);
+    await page.route(staffScreen, route => route.abort());
+    await login(page, 'pengawas.e2e', 'ruang-ujian-tenang');
+    await expect(page.getByText('Gagal Memuat Halaman')).toBeVisible();
+    await expect(page.getByText('Periksa koneksi internet Anda, lalu coba lagi.')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Monitoring Ujian' })).toBeVisible();
+    await page.unroute(staffScreen);
+    await page.getByRole('button', { name: 'Coba Lagi' }).click();
+    await expect(page.getByText('Matematika Wajib').first()).toBeVisible();
+    await expect(page.getByText('Gagal Memuat Halaman')).toHaveCount(0);
 });

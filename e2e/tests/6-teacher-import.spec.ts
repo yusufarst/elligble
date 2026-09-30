@@ -160,8 +160,13 @@ test('a teacher schedules an exam from a question file, and an included student 
     await card.getByRole('button', { name: 'Pantau Peserta' }).click();
     await expect(page.getByRole('heading', { name: 'Pemantauan Peserta' })).toBeVisible();
     const row = page.getByRole('row').filter({ has: page.getByText('siswa.e2e.01', { exact: true }) });
-    await expect(page.getByRole('row').filter({ has: page.getByText('siswa.e2e.02', { exact: true }) }).getByRole('button', { name: /Tambah waktu/ })).toHaveCount(0);
-    await row.getByRole('button', { name: 'Tambah waktu siswa.e2e.01' }).click();
+    const addTimeFor01 = row.getByRole('button', { name: 'Tambah waktu siswa.e2e.01' });
+    await expect(addTimeFor01).toBeVisible();
+    // Checked once the participants are on screen: the heading shows before them.
+    const notStarted = page.getByRole('row').filter({ has: page.getByText('siswa.e2e.02', { exact: true }) });
+    await expect(notStarted).toHaveCount(1);
+    await expect(notStarted.getByRole('button', { name: /Tambah waktu/ })).toHaveCount(0);
+    await addTimeFor01.click();
     const addTime = page.getByRole('dialog', { name: 'Tambah Waktu Peserta' });
     await addTime.getByLabel('Tambahan waktu (menit)').fill('5');
     await addTime.getByLabel('Alasan').fill('Listrik padam di ruang ujian');

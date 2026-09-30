@@ -7,6 +7,7 @@ import { LoadErrorState, LoadingState } from '@/components/ui/page-state';
 import { IconChevronLeft, IconChevronRight, IconInfo } from '@/components/icons';
 import { formatWindow } from '../lib/format.ts';
 import { formatScore } from '../lib/question-import.ts';
+import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 
 // The teacher previews a scheduled or ready exam before opening it (ASSESS-TEACHER-002;
 // D04.3-38 LOCKED): one question at a time as the exam screen shows it (the same question
@@ -72,7 +73,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
     <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
       {back}
       <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">Pratinjau Soal</h1>
+        <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examPreview}</h1>
         <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
         {context && <p className="m-0 text-sm text-muted-foreground">{context}</p>}
         {exam.windowStartsAt && exam.windowEndsAt && (

@@ -14,6 +14,7 @@ import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatWindow, zoneLabel } from '../lib/format.ts';
 import { downloadTextFile } from '../lib/results-export.ts';
 import { newActionKey } from '../lib/action-key.ts';
+import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 import { ParticipantChoiceList } from './ParticipantChoiceList.tsx';
 import {
   LATEST_START_OPTIONS, QUESTION_TEMPLATE_CSV, QUESTION_TEMPLATE_FILE_NAME, describeImportProblem, formatScore,
@@ -250,7 +251,7 @@ export const TeacherExamImportView: React.FC<{
     <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
       {back}
       <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">Buat Ujian dari Berkas Soal</h1>
+        <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examImport}</h1>
         <p className="m-0 text-muted-foreground">
           Pilih kelas dan jadwal, unggah soal pilihan ganda (A sampai E) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
         </p>

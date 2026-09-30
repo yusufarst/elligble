@@ -139,9 +139,13 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     await login(proctor, 'pengawas.e2e', 'ruang-ujian-tenang');
     await proctor.getByRole('button', { name: 'Lihat Peserta' }).click();
     const proctorRow = proctor.getByRole('row').filter({ has: proctor.getByText('siswa.e2e.03', { exact: true }) });
-    // Only someone still working can be locked.
-    await expect(proctor.getByRole('row').filter({ has: proctor.getByText('siswa.e2e.01', { exact: true }) }).getByRole('button')).toHaveCount(0);
-    await proctorRow.getByRole('button', { name: 'Kunci pengerjaan siswa.e2e.03' }).click();
+    const lock = proctorRow.getByRole('button', { name: 'Kunci pengerjaan siswa.e2e.03' });
+    await expect(lock).toBeVisible();
+    // Only someone still working can be locked (checked once the participants are on screen).
+    const submittedRow = proctor.getByRole('row').filter({ has: proctor.getByText('siswa.e2e.01', { exact: true }) });
+    await expect(submittedRow).toHaveCount(1);
+    await expect(submittedRow.getByRole('button')).toHaveCount(0);
+    await lock.click();
     await expect(proctor.getByRole('heading', { name: 'Kunci Pengerjaan Peserta?' })).toBeVisible();
     await proctor.screenshot({ path: test.info().outputPath('lock-confirm-360.png') });
     await proctor.getByRole('dialog').getByRole('button', { name: 'Kunci Pengerjaan' }).click();

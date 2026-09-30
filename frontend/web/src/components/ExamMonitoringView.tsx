@@ -13,6 +13,7 @@ import { LOCKED_PARTICIPANT_STATUS, participantStatus } from '../lib/status.ts';
 import { formatClockTime, formatTime } from '../lib/format.ts';
 import { BroadcastComposer, BroadcastHistory } from './ExamBroadcast.tsx';
 import { AddTimeDialog, TIME_STATES, timeAddedLabel } from './ParticipantTime.tsx';
+import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 
 // Exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61): who is expected, who has
 // started, who has submitted and whose exam session moved to another device. It shows only
@@ -194,7 +195,7 @@ export const ExamMonitoringView: React.FC<{
       {back}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-2xl font-semibold">Pemantauan Peserta</h1>
+          <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examMonitoring}</h1>
           <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
           <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
             Diperbarui {formatClockTime(data.serverTime)}. Diperbarui otomatis.

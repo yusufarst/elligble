@@ -60,6 +60,16 @@ export async function continueExam(page: Page): Promise<string> {
     return new URL(page.url()).searchParams.get('attemptId')!;
 }
 
+/** The paths of every file the page requests from now on (WEB-001: what each role downloads). */
+export function requestedPaths(page: Page): string[] {
+    const paths: string[] = [];
+    page.on('request', request => paths.push(new URL(request.url()).pathname));
+    return paths;
+}
+
+/** The built file of a teacher or proctor screen, which a student never downloads (WEB-001). */
+export const STAFF_SCREEN_FILE = /^\/assets\/(Teacher|Proctor|ExamMonitoring)\w*-[\w-]+\.js$/;
+
 export const option = (page: Page, index: number) => page.locator('.options-list label').nth(index);
 
 /** Wide screens (1024 px and more) show the question list beside the question; narrow ones open it as a sheet. */

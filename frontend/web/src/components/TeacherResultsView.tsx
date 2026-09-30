@@ -10,6 +10,7 @@ import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/ico
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { buildResultsCsv, downloadTextFile, resultsCsvFileName } from '../lib/results-export.ts';
 import { resultStatus, type StatusView } from '../lib/status.ts';
+import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 
 // Results for the teacher who manages the exam (D04.8): provisional until the exam is
 // finalized, then the frozen final results (D04.8-17/20). Scores come only from submitted
@@ -92,7 +93,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
     <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
       {back}
       <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">Hasil Ujian</h1>
+        <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examResults}</h1>
         <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
         {context && <p className="m-0 text-sm text-muted-foreground">{context}</p>}
         {exam.windowStartsAt && exam.windowEndsAt && (

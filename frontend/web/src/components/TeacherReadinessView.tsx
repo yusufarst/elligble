@@ -15,6 +15,7 @@ import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { RescheduleDialog } from './TeacherExamReschedule.tsx';
 import { CancelExamDialog } from './TeacherExamCancel.tsx';
 import { AddParticipantsDialog } from './TeacherExamParticipants.tsx';
+import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 
 // Exams being delivered: progress, monitoring, results and the pause, resume and end
 // controls (Owner decision 2026-09-30); an ended exam is finalized once nobody is still
@@ -69,7 +70,6 @@ function transitionFailureMessage(err: unknown): string {
   return 'Gagal memproses permintaan. Periksa koneksi internet Anda dan coba lagi.';
 }
 import '../styles/teacher-readiness.css';
-import '../styles/design-tokens.css';
 
 const mapBaselineBlocker = (blocker?: string): string => {
   switch (blocker) {
@@ -173,7 +173,7 @@ export const TeacherReadinessView: React.FC<{
   // not replaced (nor their focus lost) while the page moves from loading to the list.
   const header = (
     <div className="teacher-readiness-header">
-      <h1 className="teacher-readiness-title">Pelaksanaan Ujian</h1>
+      <h1 className="teacher-readiness-title">{SCREEN_TITLE.teacherExams}</h1>
       {error !== 'forbidden' && (
         <div className="flex flex-wrap gap-2">
           {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}

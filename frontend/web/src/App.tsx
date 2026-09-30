@@ -1,14 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import './styles/globals.css';
 import './styles/workstation.css';
 import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
-import { ProctorMonitoringView } from './components/ProctorMonitoringView.tsx';
-import { TeacherReadinessView } from './components/TeacherReadinessView.tsx';
-import { TeacherResultsView } from './components/TeacherResultsView.tsx';
-import { ExamMonitoringView } from './components/ExamMonitoringView.tsx';
-import { TeacherExamImportView } from './components/TeacherExamImportView.tsx';
-import { TeacherExamPreviewView } from './components/TeacherExamPreviewView.tsx';
+import { ScreenLoadBoundary, ScreenLoading, onDemand } from './components/ScreenLoadBoundary.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
 import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './session/SessionScreens.tsx';
 import { ReauthDialog } from './session/ReauthDialog.tsx';
@@ -16,6 +11,18 @@ import { AppShell, availableWorkspaces, type Workspace } from './session/AppShel
 import { Button } from '@/components/ui/button';
 import type { MeContext } from './api/auth-client.ts';
 import { setDisplayTimeZone } from './lib/format.ts';
+import { SCREEN_TITLE } from './lib/screen-titles.ts';
+
+// The student's screens (exam list, launch, exam workspace) are in the first download, so an
+// exam never waits for, or depends on, another file once it is open (WEB-001). The teacher and
+// proctor screens load on demand: a student's phone on a slow connection fetches only what a
+// student uses.
+const ProctorMonitoringView = onDemand(() => import('./components/ProctorMonitoringView.tsx').then(m => m.ProctorMonitoringView));
+const TeacherReadinessView = onDemand(() => import('./components/TeacherReadinessView.tsx').then(m => m.TeacherReadinessView));
+const TeacherResultsView = onDemand(() => import('./components/TeacherResultsView.tsx').then(m => m.TeacherResultsView));
+const ExamMonitoringView = onDemand(() => import('./components/ExamMonitoringView.tsx').then(m => m.ExamMonitoringView));
+const TeacherExamImportView = onDemand(() => import('./components/TeacherExamImportView.tsx').then(m => m.TeacherExamImportView));
+const TeacherExamPreviewView = onDemand(() => import('./components/TeacherExamPreviewView.tsx').then(m => m.TeacherExamPreviewView));
 
 interface RouteState {
   attemptId: string | null;
@@ -78,29 +85,38 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   const requested = route.view as Workspace | null;
   const current: Workspace | null = requested && workspaces.includes(requested) ? requested : workspaces[0] ?? null;
   const requestedUnavailable = requested !== null && !workspaces.includes(requested);
+  // A screen that could not be downloaded is left behind by any navigation, the back button included.
+  const screenKey = [current, route.monitorExam, route.previewExam, route.newExam, route.examResults].join('|');
 
+  // The heading of a screen downloaded on demand, shown while it downloads or when it cannot be.
+  let title = '';
   let content: React.ReactNode;
   if (current === 'student') {
     content = <AssignedExamDiscovery onSelectAttempt={attemptId => navigate(`?attemptId=${encodeURIComponent(attemptId)}`)} />;
   } else if (current === 'proctor') {
+    title = route.monitorExam ? SCREEN_TITLE.examMonitoring : SCREEN_TITLE.proctorExams;
     content = route.monitorExam ? (
       <ExamMonitoringView key={route.monitorExam} examInstanceId={route.monitorExam} backLabel="Kembali ke Monitoring Ujian" onBack={() => navigate('?view=proctor')} />
     ) : (
       <ProctorMonitoringView onOpenExam={id => navigate(`?view=proctor&monitorExam=${encodeURIComponent(id)}`)} />
     );
   } else if (current === 'teacher' && route.monitorExam) {
+    title = SCREEN_TITLE.examMonitoring;
     content = (
       <ExamMonitoringView key={route.monitorExam} examInstanceId={route.monitorExam} backLabel="Kembali ke Pelaksanaan Ujian" onBack={() => navigate('?view=teacher')} />
     );
   } else if (current === 'teacher' && route.previewExam) {
+    title = SCREEN_TITLE.examPreview;
     content = (
       <TeacherExamPreviewView key={route.previewExam} examInstanceId={route.previewExam} onBack={() => navigate('?view=teacher')} />
     );
   } else if (current === 'teacher' && route.newExam) {
+    title = SCREEN_TITLE.examImport;
     content = (
       <TeacherExamImportView onBack={() => navigate('?view=teacher')} onScheduled={notice => navigate('?view=teacher', notice)} />
     );
   } else if (current === 'teacher') {
+    title = route.examResults ? SCREEN_TITLE.examResults : SCREEN_TITLE.teacherExams;
     content = route.examResults ? (
       <TeacherResultsView key={route.examResults} examInstanceId={route.examResults} onBack={() => navigate('?view=teacher')} />
     ) : (
@@ -139,7 +155,11 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
           Halaman yang diminta tidak tersedia untuk akun Anda. Menampilkan ruang kerja yang tersedia.
         </p>
       )}
-      {content}
+      <ScreenLoadBoundary key={screenKey} title={title}>
+        <Suspense fallback={<ScreenLoading title={title} />}>
+          {content}
+        </Suspense>
+      </ScreenLoadBoundary>
     </AppShell>
   );
 };

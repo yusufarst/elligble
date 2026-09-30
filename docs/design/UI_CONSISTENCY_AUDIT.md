@@ -1,5 +1,5 @@
 **Status:** ACTIVE (working record)
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Canonical:** WORKING RECORD of UI-SYSTEM-001 (production task graph, `docs/production/PRODUCTION_COMPLETION_PLAN.md` §6.2)
 **Depends On:** Global UI/UX consistency contract (plan §10.1, Owner 2026-09-30), DesainPakeAI project `b5a22aa4-7b38-49d2-9448-443eab6e8075` context revision `sha256-5d0d77796ab574177a840d227a99e7457d623564c9d40160703f32224073c2b8` ("Provenance Thread" alpha.1), FRONTEND_DESIGN_SYSTEM.md, UI_CONTENT_AND_COPY_STYLE.md
 **Last Reviewed:** 2026-09-30
@@ -33,6 +33,7 @@ Every implemented screen checked against the contract of plan §10.1: does it lo
 | M10 | loading, error and empty states | the older screens (student list, teacher list, proctor list, launch, exam workspace) use page-local state cards with generic titles ("Terjadi Kesalahan"); the newer screens use the shared Alert and a status line | §10.1.2, §10.1.6 | MATERIAL | FIXED for the lists and the newer screens (UI-SYSTEM-003 part 2): one page state pattern (`components/ui/page-state.tsx`); the full-screen states of the exam focus shell (launch, exam workspace) move with the shell to UI-SYSTEM-002 |
 | M12 | teacher exam card at 768 px (found while verifying M9) | the five actions of a scheduled or ready exam run out of the card (by 7 px at 1280 px) | §10.1.9 | MATERIAL | FIXED (UI-SYSTEM-003 part 1): the action row wraps from 640 px; an E2E check keeps every action inside the card |
 | M11 | exam lists across roles | the student and teacher lists use two page-local card styles (12 px radius with border; 8 px radius with shadow only); the proctor list shows its exams without cards at full width | §10.1.6 | MATERIAL | FIXED (UI-SYSTEM-003 part 3): one `ExamListCard` for the student, teacher and proctor lists |
+| M13 | monitoring, results, import and preview while their data loads or fails (found while verifying WEB-001) | the page shows its back link and the state but no level-one heading, while the lists keep theirs in every state (UI-SYSTEM-003 part 2) and a screen still downloading shows it (WEB-001) | WCAG 1.3.1, 2.4.6, §10.1.6 | MATERIAL | OPEN: the change after WEB-001 |
 | C1 | exam workspace stylesheet | 160 hard-coded colors, most equal to token values | §10.1.3 | COSMETIC / SAFE TO CONVERGE | UI-SYSTEM-005; the guard (§3) keeps the count from growing |
 | C2 | launch screen, exam workspace, submit confirmation | page-local `.btn` buttons (bold) and a page-local modal instead of the shared Button and Dialog | §10.1.5 (the focus shell keeps the same controls) | COSMETIC / SAFE TO CONVERGE | UI-SYSTEM-002 (focus shell convergence), with the whole exam journey verified again |
 | C3 | content width | 688, 752 and 960 px and full width on different pages | §10.1.5 | COSMETIC | UI-SYSTEM-002: width variants of the shell |
@@ -41,7 +42,7 @@ Every implemented screen checked against the contract of plan §10.1: does it lo
 | C6 | typography | system font stack; the DesainPakeAI direction uses Inter, Geist Mono and Libre Baskerville | §10.1.8 | COSMETIC | UI-SYSTEM-005 (§4) |
 | C7 | semantic palette and focus ring | success, warning, information and the focus ring differ from the DesainPakeAI values | §10.1.1 | COSMETIC | UI-SYSTEM-005 (§4) |
 
-Clean in the audit: question import, question preview, participant monitoring and results (no axe finding), and the shared dialogs apart from M1.
+Clean in the audit: question import, question preview, participant monitoring and results once loaded (no axe finding; their loading and failed states are M13), and the shared dialogs apart from M1.
 
 After the fixes, axe reports no color-contrast, landmark, list or heading finding on the audited screens (see §5).
 
@@ -90,6 +91,7 @@ Implementation order: tokens and fonts together behind the guard, then the exam 
 | axe-core 4.13 before the fixes (1280 and 360 px) | color contrast on the teacher list and its dialogs (every destructive button), the exam workspace and the submit confirmation; no main landmark and content outside landmarks on the student, teacher and proctor lists; a second banner and an invalid list on the student list; no level-one heading on sign-in |
 | axe-core 4.13 after the fixes (1280, 768 and 360 px) | no violation on any of the 14 audited screens at any of the three widths, each checked once the screen had settled (plan §11) |
 | guard | 3 checks, 6 of 6 mutations caught; the fourth check (UI-SYSTEM-003 part 1) with 9 of 9 mutations of the badge work caught; the fifth (part 2) with 8 of 8 mutations of the page states caught |
+| screens downloaded on demand (WEB-001) | the frame of a screen still downloading and of one that could not be downloaded: the first state audit found no level-one heading on either, fixed before the commit (the requested screen's heading, `lib/screen-titles.ts`); then no violation at 360, 768 and 1280 px |
 
 ## 6. Status words and tones (UI-SYSTEM-003)
 
