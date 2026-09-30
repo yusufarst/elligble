@@ -103,9 +103,11 @@ export const TeacherReadinessView: React.FC<{
   onOpenMonitoring?(examInstanceId: string): void;
   /** Opens "Buat Ujian dari Berkas Soal" (ASSESS-TEACHER-001). */
   onCreateExam?(): void;
+  /** Opens "Pratinjau Soal" of a scheduled or ready exam (ASSESS-TEACHER-002, D04.3-38). */
+  onOpenPreview?(examInstanceId: string): void;
   /** Shown once above the list, for example after an exam was scheduled. */
   notice?: string | null;
-}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, notice }) => {
+}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, notice }) => {
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -390,6 +392,9 @@ export const TeacherReadinessView: React.FC<{
 
               {exam.lifecycleState && (lifecycle === 'SCHEDULED' || lifecycle === 'READY') && (
                 <div className="teacher-exam-actions">
+                  {onOpenPreview && (
+                    <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>
+                  )}
                   {lifecycle === 'SCHEDULED' && (
                     <Button onClick={() => runTransition(exam.examInstanceId, 'mark_ready')} disabled={!readinessPass || busy}>
                       {busy ? 'Memproses...' : 'Tandai Siap'}

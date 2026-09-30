@@ -8,6 +8,7 @@ import { TeacherReadinessView } from './components/TeacherReadinessView.tsx';
 import { TeacherResultsView } from './components/TeacherResultsView.tsx';
 import { ExamMonitoringView } from './components/ExamMonitoringView.tsx';
 import { TeacherExamImportView } from './components/TeacherExamImportView.tsx';
+import { TeacherExamPreviewView } from './components/TeacherExamPreviewView.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
 import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './session/SessionScreens.tsx';
 import { ReauthDialog } from './session/ReauthDialog.tsx';
@@ -25,6 +26,8 @@ interface RouteState {
   monitorExam: string | null;
   /** Teacher workspace: a new exam from a question file. */
   newExam: boolean;
+  /** Teacher workspace: the exam whose questions are previewed before it opens. */
+  previewExam: string | null;
 }
 
 function readRoute(): RouteState {
@@ -35,6 +38,7 @@ function readRoute(): RouteState {
     examResults: params.get('examResults'),
     monitorExam: params.get('monitorExam'),
     newExam: params.get('newExam') === '1',
+    previewExam: params.get('previewExam'),
   };
 }
 
@@ -88,6 +92,10 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
     content = (
       <ExamMonitoringView key={route.monitorExam} examInstanceId={route.monitorExam} backLabel="Kembali ke Pelaksanaan Ujian" onBack={() => navigate('?view=teacher')} />
     );
+  } else if (current === 'teacher' && route.previewExam) {
+    content = (
+      <TeacherExamPreviewView key={route.previewExam} examInstanceId={route.previewExam} onBack={() => navigate('?view=teacher')} />
+    );
   } else if (current === 'teacher' && route.newExam) {
     content = (
       <TeacherExamImportView onBack={() => navigate('?view=teacher')} onScheduled={notice => navigate('?view=teacher', notice)} />
@@ -100,6 +108,7 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
         onOpenResults={id => navigate(`?view=teacher&examResults=${encodeURIComponent(id)}`)}
         onOpenMonitoring={id => navigate(`?view=teacher&monitorExam=${encodeURIComponent(id)}`)}
         onCreateExam={() => navigate('?view=teacher&newExam=1')}
+        onOpenPreview={id => navigate(`?view=teacher&previewExam=${encodeURIComponent(id)}`)}
         notice={teacherNotice}
       />
     );

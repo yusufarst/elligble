@@ -18,6 +18,7 @@ import { handleAttemptStart } from './attempt-start.ts';
 import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
 import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImport } from './teacher-exam-import.ts';
+import { readTeacherExamPreview } from './teacher-exam-preview.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
@@ -377,6 +378,39 @@ export function createServer(deps: ServerDependencies): http.Server {
                 switch (result.type) {
                     case 'ok':
                         sendJson(res, 200, result.setup);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/preview') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readTeacherExamPreview(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.preview);
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.lifecycleState });
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');

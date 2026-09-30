@@ -437,3 +437,26 @@ export interface TeacherExamImportResult {
   questionCount: number;
   participantCount: number;
 }
+
+/** The managing teacher's preview of a scheduled or ready exam (ASSESS-TEACHER-002). */
+export interface TeacherExamPreview {
+  exam: {
+    examInstanceId: string;
+    subjectLabel: string | null;
+    groupLabel: string | null;
+    assessmentTypeLabel: string | null;
+    lifecycleState: string;
+    windowStartsAt: string | null;
+    windowEndsAt: string | null;
+    durationMinutes: number | null;
+  };
+  questions: Array<{
+    snapshotId: string;
+    no: number;
+    prompt: string;
+    options: Array<{ id: string; content: string }>;
+    correctOptionId: string | null;
+    maxScore: number | null;
+    valid: boolean;
+  }>;
+}

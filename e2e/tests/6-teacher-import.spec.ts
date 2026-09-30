@@ -3,8 +3,9 @@ import { login, shotName, withDatabase } from './helpers.ts';
 
 // The teacher prepares an exam without platform staff (ASSESS-TEACHER-001; D04.4-26A,
 // D04.3-61..66): upload the question file, see every problem with its line, fix it, check
-// the questions, key and participants, leave one student out, schedule, mark ready and
-// open it; an included student then answers the imported questions. Runs after the
+// the questions, key and participants, leave one student out, schedule, preview it as
+// students will see it (ASSESS-TEACHER-002, D04.3-38/39), mark ready and open it; an
+// included student then answers the imported questions. Runs after the
 // lifecycle suite, when the operator-imported exam of the same class is finalized.
 
 test.describe.configure({ mode: 'serial' });
@@ -68,6 +69,32 @@ test('a teacher schedules an exam from a question file, and an included student 
     await expect(card).toHaveCount(1);
     await expect(card).toContainText('Terjadwal');
     await expect(card).toContainText('X-E2E · Ulangan Harian');
+
+    // Preview before it opens (D04.3-38/39): the questions as students get them, the key on
+    // request; trying an option writes nothing.
+    await card.getByRole('button', { name: 'Pratinjau Soal' }).click();
+    await expect(page.getByRole('heading', { name: 'Pratinjau Soal' })).toBeVisible();
+    await expect(page.getByText('Soal 1 dari 2')).toBeVisible();
+    await expect(page.getByText('Lambang unsur oksigen adalah')).toBeVisible();
+    await page.getByText('Os', { exact: true }).click();
+    await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
+    await expect(page.getByText('Rumus air adalah')).toBeVisible();
+    await expect(page.getByText('Kunci jawaban', { exact: true })).toHaveCount(0);
+    await page.getByLabel('Tampilkan kunci jawaban dan skor').check();
+    await expect(page.locator('label').filter({ has: page.getByText('Kunci jawaban', { exact: true }) })).toContainText('H2O');
+    await expect(page.getByText('Skor 1,5')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(shotName('teacher-exam-preview')), fullPage: true });
+    // No attempt exists for the new exam (answers need one): the preview created nothing.
+    const attempts = await withDatabase(async client => (await client.query(
+        `SELECT count(*)::int AS n FROM secure_assessment_exam_attempts t
+         JOIN secure_assessment_exam_participants p ON p.id = t.exam_participant_id
+         JOIN secure_assessment_exam_instances i ON i.id = p.exam_instance_id
+         WHERE i.lifecycle_state <> 'FINALIZED'`
+    )).rows[0].n);
+    expect(attempts).toBe(0);
+    await page.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }).click();
+
     await card.getByRole('button', { name: 'Tandai Siap' }).click();
     await card.getByRole('button', { name: 'Buka Ujian' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Buka Ujian' }).click();

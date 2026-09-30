@@ -108,14 +108,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → ~~E2E-001~~ (CI run 30, five browser projects) → ASSESS-TEACHER-001 (CI evidence pending) → ASSESS-TEACHER-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → ~~E2E-001~~ (CI run 30, five browser projects) → ~~ASSESS-TEACHER-001~~ (CI run 31) → ASSESS-TEACHER-002 (CI evidence pending) → ASSESS-TEACHER-003.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | ASSESS-TEACHER-001 (VERIFYING: all local suites pass; CI pending) |
-| READY QUEUE (by value) | ASSESS-TEACHER-002; next in backlog ASSESS-TEACHER-003 (its lifecycle transition check comes first) |
+| IN PROGRESS | ASSESS-TEACHER-002 (VERIFYING: all local suites pass; CI pending) |
+| READY QUEUE (by value) | none; next in backlog ASSESS-TEACHER-003 (its lifecycle transition check comes first) |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -249,7 +249,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-TEACHER / P2 / VERIFYING |
+| Workstream / priority / status | ASSESS-TEACHER / P2 / DONE |
 | Dependencies / blocks | none / retires the operator exam-import bridge for ordinary teacher-managed exams |
 | Repository evidence | exams entered only through the operator CLI (`ops/provisioning/exam.ts`); the teacher workspace had no way to create one |
 | Why | D04.4-26A/26C LOCKED (a teacher with a valid teaching assignment creates the exam for that subject and class and supervises it), D04.3-61..66 LOCKED (structured import, canonical template, preview before commit, semantic validation, idempotent retry, batch provenance), D04.4-03/04/05 LOCKED (participants from the class with a preview, individual exclusion, explicit participants), D04.2-26/31/34/36/37..39 LOCKED (assessment type required, explicit window, late-start policy, school time zone, participant-aware conflicts) |
@@ -257,23 +257,21 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Out of scope | question authoring UI, media (D04.3-67), editing or withdrawing a scheduled exam (ASSESS-TEACHER-003), the exam preview before READY (ASSESS-TEACHER-002) |
 | Delivered | "Buat Ujian" in "Pelaksanaan Ujian" opens "Buat Ujian dari Berkas Soal": the teacher's own classes (`GET /assessment/teacher-exams/setup`), one of the school's assessment types, start and end in school time, duration, the late-start rule, and the question file ("Unduh Templat CSV"; semicolons or commas, UTF-8). "Periksa" (`POST /assessment/teacher-exams/import/preview`) schedules the exam inside a transaction with the shared provisioning code, runs the same readiness checks as "Tandai Siap" and rolls everything back, so the preview is exactly what a confirmation creates; it lists every file problem with its line (the parser `question-import.ts` is shared with the CLI: header, numbering, empty prompt or option, duplicate options, one key letter only, score above 0 up to 1 000 with at most two decimals, not a text or UTF-8 file) and every setup problem (window, duration, school time zone, type, participants, conflicts), the questions with their key and score, and the students enrolled in the class on the exam day; any student can be left out; a student already expected in another exam at an overlapping time blocks it. Any change needs a new check. "Jadwalkan Ujian" (`POST /assessment/teacher-exams/import`) repeats it on the same file (SHA-256 must match) with an import key chosen by the device: a retry with the key returns the exam already created, the key never serves another file. Migration `0048`: `secure_assessment_question_import_batches` (teacher, key, template, file name, SHA-256, question count, time; append-only) and each question snapshot's batch and source line; the scheduling is recorded as a lifecycle event with the teacher as actor. The exam list shows class and assessment type for every exam. Operators define the school's assessment types at onboarding with `exam types` (migration `0049` audit action); teachers never create one. The reference proxy accepts 1 MB on the two import routes only |
 | Known limits | a scheduled exam cannot yet be corrected or withdrawn in the app (ASSESS-TEACHER-003; the confirmation says so); two teachers scheduling overlapping exams for the same students at the same moment can both pass the check; both are then held at "Tandai Siap" by the readiness conflict check until one moves; limits are implementation defaults (§7) |
-| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Commit / PR | `02cb0b1`, CI run 31 (all eight jobs, the new browser journey in all five projects); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-TEACHER-002 · Exam preview before READY
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-TEACHER / P2 / READY |
+| Workstream / priority / status | ASSESS-TEACHER / P2 / VERIFYING |
 | Dependencies / blocks | none (serves operator-imported and teacher-imported exams alike) / none |
-| Repository evidence | no preview exists: a teacher first sees the questions as a student does only by taking the exam; readiness checks the stored content (D04.3-40) but nothing lets the teacher look at it |
+| Repository evidence | no preview existed: a teacher first saw the questions as a student does only by taking the exam; readiness checks the stored content (D04.3-40) but nothing let the teacher look at it |
 | Why | D04.3-38 LOCKED (the teacher previews the exam before READY: question rendering, options, navigation), D04.3-39 LOCKED (a preview never creates a real attempt), D04.3-84 (Teacher Preview ≠ Student Attempt) |
 | Exact scope | "Pratinjau Soal" for the managing teacher of a SCHEDULED or READY exam: the frozen questions in the delivered order with options A to E, rendered like the exam screen, with the key and score marked for the teacher; read-only; no attempt, timer, answer or participant record is created |
-| Out of scope | editing questions (D04.2-03 allows it in DRAFT only); media (D04.3-67); randomization (not configured in the baseline) |
-| Expected product result | a teacher can check every question before marking the exam ready |
-| Surfaces | a read route for the managing teacher, `TeacherReadinessView.tsx`, a preview screen |
-| Verification | integration (authority, no attempt rows written, content in order), component, E2E |
-| Owner decision | none |
-| Commit / PR | pending |
+| Out of scope | editing questions (ASSESS-TEACHER-003); media (D04.3-67); randomization (not configured in the baseline) |
+| Delivered | `GET /assessment/teacher-exams/preview` (`teacher-exam-preview.ts`) for the teacher who manages the exam, while it is SCHEDULED or READY (409 otherwise), read in a read-only transaction so it cannot write; the questions in the order students receive them (display order, as question delivery), each with the key and score, and content the readiness check would refuse shown as it is and marked invalid. "Pratinjau Soal" on every scheduled or ready exam card opens one question at a time in the exam screen's own question card (options A to E, the question numbers, "Sebelumnya" and "Berikutnya"); the key and score appear only with "Tampilkan kunci jawaban dan skor", marked in words; options can be tried and stay on the screen |
+| Known limits | the preview follows the exam screen's question card but not its whole frame (timer, save state, "Ragu-ragu"), which have nothing to show before an attempt; images and formulas do not exist in the baseline (D04.3-67) |
+| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-TEACHER-003 · Correct or withdraw a scheduled exam before it opens
 
@@ -344,6 +342,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
+| ASSESS-TEACHER-001 | Teachers schedule their own exams from a question file: preview before commit, problems with their lines, participants from the class, conflicts refused, idempotent confirmation, batch provenance | `02cb0b1`, CI run 31 |
 | E2E-001 | The whole browser suite in Chromium at 360, 768 and 1280 px, Firefox and WebKit; pages opened without depending on the load event (Firefox driver after the COOP switch); failure details in the CI log | `b00fc3a`, `0c67e52`, `78b22d2`, CI run 30 |
 | OPS-003 | Reference nginx configuration and smoke test: TLS, HSTS, correlation, per-address limits sized for schools | `72b97f9`, CI run 27 |
 | OPS-002 | Internal metrics listener per exam-day component and alert rules with first actions | `c45b223`, CI run 26 |
@@ -667,12 +666,22 @@ After teacher question import (ASSESS-TEACHER-001, this branch):
 | reference proxy (nginx 1.24, local, TLS) | smoke test PASS, including a 200 KB question file reaching the runtime on the import route while other routes keep the 64 KB limit and more than 1 MB is refused |
 | DesainPakeAI checkpoint | authenticated, project `b5a22aa4-...`, context revision unchanged; the new screen uses the LOCKED tokens and shadcn/ui components |
 
+After the exam preview (ASSESS-TEACHER-002, this branch):
+
+| Check | Result |
+|---|---|
+| secure-assessment integration (real PostgreSQL) | `teacher-exam-preview.test.ts` (4): the managing teacher gets the questions in delivered order (ids sorting differently) with key and score, invalid content shown without a key, nothing written; READY too; another teacher, a student, an unknown or malformed id, an open exam (409) and a revoked assignment refused |
+| mutation checks | any state allowed, any teacher, insertion order, no key, revoked assignment allowed: each caught |
+| web client | 253/253 PASS (5 new: one question at a time in order with the key only on request, trying options requests nothing else, invalid content marked, refusals explained, the card button only before the exam opens) |
+| browser E2E, Chromium, locally | 18/18 at 360, 768 and 1280 px: the teacher previews the imported exam, tries an option, shows the key, and no attempt exists afterwards; the check found the navigation buttons too wide at 360 px, fixed |
+| rendered check (Chromium, 360 and 1280 px) | question card, key marked in words, navigation: no horizontal overflow |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure; `e2e/ci-failure-details.sh` also prints the page at the failure, the step timeline, the requests and the end of the server log into the job log, for readers who cannot fetch the uploaded report. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-TEACHER-001 (CI evidence), then ASSESS-TEACHER-002 (exam preview before READY), then ASSESS-TEACHER-003 (correct or withdraw a scheduled exam); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: ASSESS-TEACHER-002 (CI evidence), then ASSESS-TEACHER-003 (correct or withdraw a scheduled exam, after its lifecycle transition check); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

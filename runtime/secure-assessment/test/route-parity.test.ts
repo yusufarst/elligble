@@ -50,6 +50,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         postBroadcast: m => m.postBroadcast(ID, { scope: 'EXAM' }, 'Harap tetap di tempat duduk.'),
         postBroadcastInbox: m => m.postBroadcastInbox(ID, []),
         getTeacherExamSetup: m => m.getTeacherExamSetup(),
+        getTeacherExamPreview: m => m.getTeacherExamPreview(ID),
         postTeacherExamImportPreview: m => m.postTeacherExamImportPreview(IMPORT_INPUT),
         postTeacherExamImport: m => m.postTeacherExamImport(IMPORT_INPUT, { importKey: ID, expectedSha256: '0'.repeat(64) }),
     },

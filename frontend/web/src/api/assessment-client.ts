@@ -20,6 +20,7 @@ import type {
   TeacherExamImportInput,
   TeacherExamImportPreview,
   TeacherExamImportResult,
+  TeacherExamPreview,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
@@ -207,4 +208,11 @@ export async function postTeacherExamImport(
 ): Promise<TeacherExamImportResult> {
   const res = await apiFetch('/api/v1/assessment/teacher-exams/import', { method: 'POST', json: { ...input, ...confirmation } });
   return handleResponse<TeacherExamImportResult>(res);
+}
+
+/** The questions of a scheduled or ready exam as students will receive them; writes nothing. */
+export async function getTeacherExamPreview(examInstanceId: string): Promise<TeacherExamPreview> {
+  const url = `/api/v1/assessment/teacher-exams/preview?examInstanceId=${encodeURIComponent(examInstanceId)}`;
+  const res = await apiFetch(url, { method: 'GET' });
+  return handleResponse<TeacherExamPreview>(res);
 }
