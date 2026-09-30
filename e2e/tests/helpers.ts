@@ -1,12 +1,30 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { errors, expect, test, type Locator, type Page } from '@playwright/test';
 import pg from 'pg';
 import { readState } from '../state.ts';
 
 export const state = readState();
 
+/**
+ * Opens the client in a page that has not shown it yet. Every page of the client sends
+ * Cross-Origin-Opener-Policy: same-origin, so this first navigation moves the page from
+ * about:blank into a new browsing context group. After that switch Playwright's Firefox
+ * driver sometimes never reports the load event although every file was served (CI runs 28
+ * and 29). The tests need the rendered client, not the load event: wait for the navigation
+ * to commit, then for the client to render. A navigation that really fails still fails.
+ */
+export async function open(page: Page, url = '/'): Promise<void> {
+    try {
+        await page.goto(url, { waitUntil: 'commit', timeout: 20_000 });
+    } catch (err) {
+        if (!(err instanceof errors.TimeoutError)) throw err;
+    }
+    await expect(page).toHaveURL(/^http:\/\/127\.0\.0\.1:\d+\//);
+    await expect(page.locator('#root > *').first()).toBeAttached();
+}
+
 /** First sign-in with the activation card printed by the operator CLI. */
 export async function activate(page: Page, elligbleId: string, password: string): Promise<void> {
-    await page.goto('/');
+    await open(page);
     await page.getByRole('button', { name: 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi' }).click();
     await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(elligbleId);
     await page.getByLabel('Kode Aktivasi').fill(state.cards[elligbleId]);
@@ -16,7 +34,7 @@ export async function activate(page: Page, elligbleId: string, password: string)
 }
 
 export async function login(page: Page, elligbleId: string, password: string): Promise<void> {
-    await page.goto('/');
+    await open(page);
     await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(elligbleId);
     await page.getByLabel('Kata Sandi', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Masuk', exact: true }).click();

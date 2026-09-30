@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { activate, closeQuestionList, continueExam, login, openQuestionList, option, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
+import { activate, closeQuestionList, continueExam, login, open, openQuestionList, option, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
 
 // Answer preservation (D04.5-17..24, PB07): offline answering, reload with unsynced
 // choices, and one active exam session per attempt across tabs (D04.4-32/35/37).
@@ -39,7 +39,7 @@ test('a second tab needs explicit takeover; the first tab stops writing; a dupli
     const url = page.url();
 
     const second = await context.newPage();
-    await second.goto(url);
+    await open(second, url);
     await expect(second.getByRole('heading', { name: 'Sesi Aktif Ditemukan' })).toBeVisible();
     await second.getByRole('button', { name: 'Ya, Pindahkan Sesi' }).click();
     await expect(second.getByText('Hasil dari 2 + 3 adalah')).toBeVisible();
@@ -56,7 +56,7 @@ test('a second tab needs explicit takeover; the first tab stops writing; a dupli
             sessionStorage.setItem('__copied', '1');
         }
     }, copied);
-    await duplicate.goto(url);
+    await open(duplicate, url);
     await expect(duplicate.getByRole('heading', { name: 'Sesi Aktif Ditemukan' })).toBeVisible();
 
     await second.bringToFront();

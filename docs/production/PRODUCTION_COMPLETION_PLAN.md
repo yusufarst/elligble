@@ -108,11 +108,11 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001 (Firefox failure being diagnosed) → ASSESS-TEACHER-001.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001 (Firefox fix awaiting CI) → ASSESS-TEACHER-001.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | E2E-001 (VERIFYING: WebKit and the three Chromium widths pass in CI; one Firefox step fails and is being diagnosed), ASSESS-TEACHER-001 (design) |
+| IN PROGRESS | E2E-001 (VERIFYING: WebKit and the three Chromium widths pass in CI; the Firefox first-navigation fix awaits its CI run), ASSESS-TEACHER-001 (design) |
 | READY QUEUE (by value) | ASSESS-TEACHER-002 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
 | RECENTLY COMPLETED | OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
@@ -313,7 +313,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Exact scope | run the critical journeys in Firefox and WebKit projects in CI and a tablet and desktop viewport; record platform limits honestly |
 | Out of scope | native apps; split-screen and multi-window evidence on real devices (PB06 artifact) |
 | Delivered | five Playwright projects, one per run on its own database and server: `mobile-360`, `tablet-768`, `desktop-1280` (Chromium), `firefox-1280` (Firefox desktop) and `webkit-390` (WebKit with the iPhone 13 profile: mobile, touch); the whole suite (pilot journey, resilience, security, results, pause, lock, messages, end and finalization) runs in each; steps that differ by layout use the question list as it appears (side panel from 1024 px, "Daftar Soal" sheet below); CI runs the five as a matrix |
-| Known limits | Firefox and WebKit cannot be installed in the development container, so their evidence comes from CI only; WebKit runs with the development cookie (it refuses Secure cookies over plain HTTP on 127.0.0.1; production uses HTTPS); browser engines in CI are not real phones or tablets (no real touch keyboards, battery or network) |
+| Known limits | Firefox and WebKit cannot be installed in the development container, so their evidence comes from CI only; Playwright's Firefox driver sometimes misses the load event of a page's first navigation (the browsing context group switch caused by the COOP header), so the suite waits for the rendered client instead; WebKit runs with the development cookie (it refuses Secure cookies over plain HTTP on 127.0.0.1; production uses HTTPS); browser engines in CI are not real phones or tablets (no real touch keyboards, battery or network) |
 | Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### Blocked tasks
@@ -635,7 +635,9 @@ After browser and width coverage (E2E-001, this branch):
 |---|---|
 | typecheck (E2E suite) and actionlint (workflow) | PASS |
 | browser E2E, Chromium, locally | `mobile-360` 17/17, `tablet-768` 17/17, `desktop-1280` 17/17 (the question list checks follow the layout: sheet below 1024 px, side panel from 1024 px) |
-| browser E2E, CI run 28 (`b00fc3a`) | `mobile-360`, `tablet-768`, `desktop-1280` and `webkit-390` 17/17 PASS; `firefox-1280` 16/17: the last step of the finalization test (a new student page opened after the teacher's CSV download and print view) never finished loading within the test time. Under investigation; the job log now carries the failure details (page at the failure, timeline, requests, server log) because the uploaded report cannot be fetched from the development container |
+| browser E2E, CI run 28 (`b00fc3a`) | `mobile-360`, `tablet-768`, `desktop-1280` and `webkit-390` 17/17 PASS; `firefox-1280` 16/17: the first navigation of a new student page never reported the load event within the test time |
+| browser E2E, CI run 29 (`0c67e52`, failure details in the job log) | the three Chromium widths PASS 17/17; `firefox-1280` failed in another test with the same signature: the first navigation of a new page served the page, script, style sheet and the session check (all 200, the client rendered and called the API) and still never reported the load event; two later tests failed as a consequence (the student of that test never started). Cause: every page sends `Cross-Origin-Opener-Policy: same-origin`, so the first navigation of a page leaves about:blank for a new browsing context group, and Playwright's Firefox driver sometimes loses the load event after that switch. The header stays (it protects the exam window from cross-origin openers); the suite now opens a page with `open()`, which waits for the navigation to commit and for the client to render instead of the load event, and still fails when a navigation really fails |
+| browser E2E, Chromium, locally, after `open()` | `mobile-360` 17/17, `desktop-1280` 17/17 |
 | rendered check (Chromium, 1280 px) | question list with the "Ragu-ragu" mark in the side panel, locked screen: readable, no overflow |
 
 ## 12. Friction reducers (automation)

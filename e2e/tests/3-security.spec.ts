@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { activate, option, saveStatus, serverAnswers, startExam, state, withDatabase } from './helpers.ts';
+import { activate, open, option, saveStatus, serverAnswers, startExam, state, withDatabase } from './helpers.ts';
 
 // Isolation and session expiry in the browser: another school's data, another student's
 // attempt, and a session that ends in the middle of an exam without losing answers
@@ -25,7 +25,7 @@ test('another school and another student’s attempt are refused', async ({ page
 });
 
 test('a session that ends mid-exam asks the same student to sign in again and loses no answer', async ({ page }) => {
-    await page.goto('/');
+    await open(page);
     await page.getByLabel('ELLIGBLE ID', { exact: true }).fill('siswa.e2e.05');
     await page.getByLabel('Kata Sandi', { exact: true }).fill('bintang-kejora-2026');
     await page.getByRole('button', { name: 'Masuk', exact: true }).click();
