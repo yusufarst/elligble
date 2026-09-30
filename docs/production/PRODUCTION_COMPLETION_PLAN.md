@@ -108,12 +108,12 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001 (CI evidence pending) → ASSESS-TEACHER-001.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → ~~OPS-003~~ → E2E-001 (Firefox failure being diagnosed) → ASSESS-TEACHER-001.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | E2E-001 (VERIFYING: Firefox and WebKit run only in CI) |
-| READY QUEUE (by value) | ASSESS-TEACHER-001 |
+| IN PROGRESS | E2E-001 (VERIFYING: WebKit and the three Chromium widths pass in CI; one Firefox step fails and is being diagnosed), ASSESS-TEACHER-001 (design) |
+| READY QUEUE (by value) | ASSESS-TEACHER-002 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
 | RECENTLY COMPLETED | OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
@@ -249,7 +249,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | ASSESS-TEACHER / P2 / READY |
+| Workstream / priority / status | ASSESS-TEACHER / P2 / IN_PROGRESS |
 | Dependencies / blocks | none / retires the operator exam-import bridge |
 | Repository evidence | exams enter only through the operator CLI (`ops/provisioning/exam.ts`) |
 | Why | D04.4-26A (teacher creates teacher-managed exams), D04.3 import rules |
@@ -258,6 +258,22 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Expected product result | teachers prepare exams without platform staff |
 | Surfaces | routes, `exam-provisioning.ts`, teacher screens |
 | Verification | integration, E2E |
+| Owner decision | none |
+| Commit / PR | pending |
+
+#### ASSESS-TEACHER-002 · Exam preview before READY
+
+| Field | Value |
+|---|---|
+| Workstream / priority / status | ASSESS-TEACHER / P2 / READY |
+| Dependencies / blocks | none (serves operator-imported and teacher-imported exams alike) / none |
+| Repository evidence | no preview exists: a teacher first sees the questions as a student does only by taking the exam; readiness checks the stored content (D04.3-40) but nothing lets the teacher look at it |
+| Why | D04.3-38 LOCKED (the teacher previews the exam before READY: question rendering, options, navigation), D04.3-39 LOCKED (a preview never creates a real attempt), D04.3-84 (Teacher Preview ≠ Student Attempt) |
+| Exact scope | "Pratinjau Soal" for the managing teacher of a SCHEDULED or READY exam: the frozen questions in the delivered order with options A to E, rendered like the exam screen, with the key and score marked for the teacher; read-only; no attempt, timer, answer or participant record is created |
+| Out of scope | editing questions (D04.2-03 allows it in DRAFT only); media (D04.3-67); randomization (not configured in the baseline) |
+| Expected product result | a teacher can check every question before marking the exam ready |
+| Surfaces | a read route for the managing teacher, `TeacherReadinessView.tsx`, a preview screen |
+| Verification | integration (authority, no attempt rows written, content in order), component, E2E |
 | Owner decision | none |
 | Commit / PR | pending |
 
@@ -619,12 +635,12 @@ After browser and width coverage (E2E-001, this branch):
 |---|---|
 | typecheck (E2E suite) and actionlint (workflow) | PASS |
 | browser E2E, Chromium, locally | `mobile-360` 17/17, `tablet-768` 17/17, `desktop-1280` 17/17 (the question list checks follow the layout: sheet below 1024 px, side panel from 1024 px) |
-| browser E2E, Firefox and WebKit | CI only (matrix jobs `firefox-1280`, `webkit-390`); result recorded when the run completes |
+| browser E2E, CI run 28 (`b00fc3a`) | `mobile-360`, `tablet-768`, `desktop-1280` and `webkit-390` 17/17 PASS; `firefox-1280` 16/17: the last step of the finalization test (a new student page opened after the teacher's CSV download and print view) never finished loading within the test time. Under investigation; the job log now carries the failure details (page at the failure, timeline, requests, server log) because the uploaded report cannot be fetched from the development container |
 | rendered check (Chromium, 1280 px) | question list with the "Ragu-ragu" mark in the side panel, locked screen: readable, no overflow |
 
 ## 12. Friction reducers (automation)
 
-Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
+Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure; `e2e/ci-failure-details.sh` also prints the page at the failure, the step timeline, the requests and the end of the server log into the job log, for readers who cannot fetch the uploaded report. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
 
