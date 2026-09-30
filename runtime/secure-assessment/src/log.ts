@@ -17,7 +17,8 @@ export type LogEvent =
     | 'http_request'
     | 'request_failed'
     | 'expired_attempts_finalized'
-    | 'expiry_finalization_failed';
+    | 'expiry_finalization_failed'
+    | 'metrics_listening';
 
 export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 

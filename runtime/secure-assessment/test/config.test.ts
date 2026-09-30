@@ -195,3 +195,15 @@ test('the expiry finalization interval is bounded', () => {
     assert.throws(() => parseConfig({ ...base, SA_EXPIRY_SWEEP_SECONDS: '0' }), /between 1 and 300/);
     assert.throws(() => parseConfig({ ...base, SA_EXPIRY_SWEEP_SECONDS: '301' }), /between 1 and 300/);
 });
+
+test('the metrics listener is off unless a separate port is configured', () => {
+    const base = { DATABASE_URL: 'postgres://u@h/db' };
+    assert.equal(parseConfig(base).SA_METRICS_PORT, null);
+    assert.equal(parseConfig(base).SA_METRICS_HOST, '127.0.0.1');
+    const on = parseConfig({ ...base, SA_METRICS_PORT: '9464', SA_METRICS_HOST: '10.0.0.5' });
+    assert.equal(on.SA_METRICS_PORT, 9464);
+    assert.equal(on.SA_METRICS_HOST, '10.0.0.5');
+    assert.throws(() => parseConfig({ ...base, SA_PORT: '9464', SA_METRICS_PORT: '9464' }), /must differ from SA_PORT/);
+    assert.throws(() => parseConfig({ ...base, SA_METRICS_PORT: '70000' }), /between 1 and 65535/);
+    assert.throws(() => parseConfig({ ...base, SA_METRICS_PORT: 'abc' }), /bounded integer/);
+});

@@ -20,6 +20,10 @@ export interface AppConfig {
     readonly SA_STARTUP_DB_WAIT_SECONDS: number;
     /** How often the server finalizes attempts whose time ran out while the device was away. */
     readonly SA_EXPIRY_SWEEP_SECONDS: number;
+    /** Port of the internal metrics listener (OPS-002); null keeps it off. */
+    readonly SA_METRICS_PORT: number | null;
+    /** Interface of the metrics listener: loopback unless an internal network is chosen. */
+    readonly SA_METRICS_HOST: string;
 }
 
 function parseStrictInteger(value: string | undefined, min: number, max: number, name: string): number {
@@ -108,6 +112,10 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
     }
     const dbWaitSeconds = parseStrictInteger(environment['SA_STARTUP_DB_WAIT_SECONDS'] ?? '60', 0, 600, 'SA_STARTUP_DB_WAIT_SECONDS');
     const expirySweepSeconds = parseStrictInteger(environment['SA_EXPIRY_SWEEP_SECONDS'] ?? '15', 1, 300, 'SA_EXPIRY_SWEEP_SECONDS');
+    const metricsPort = environment['SA_METRICS_PORT'] ? parseStrictInteger(environment['SA_METRICS_PORT'], 1, 65535, 'SA_METRICS_PORT') : null;
+    if (metricsPort !== null && metricsPort === port) {
+        throw new Error('Malformed configuration: SA_METRICS_PORT must differ from SA_PORT (metrics never share the public port).');
+    }
 
     return Object.freeze({
         DATABASE_URL: databaseUrl,
@@ -122,5 +130,7 @@ export function parseConfig(environment: Record<string, string | undefined>): Ap
         SA_MIGRATIONS_ON_START: migrationMode,
         SA_STARTUP_DB_WAIT_SECONDS: dbWaitSeconds,
         SA_EXPIRY_SWEEP_SECONDS: expirySweepSeconds,
+        SA_METRICS_PORT: metricsPort,
+        SA_METRICS_HOST: environment['SA_METRICS_HOST'] || '127.0.0.1',
     });
 }

@@ -3,6 +3,7 @@ import type pg from 'pg';
 import { createServer } from '../../src/server.ts';
 import { createAttemptAuthorizer } from '../../src/http/attempt-authorization.ts';
 import { checkDatabaseReadiness } from '../../src/db.ts';
+import type { RuntimeMetrics } from '../../src/metrics.ts';
 
 // Starts the production-wired HTTP server (real session, cookie and origin policy) on an
 // ephemeral port, backed by a disposable database pool.
@@ -13,13 +14,14 @@ export interface RunningServer {
     close(): Promise<void>;
 }
 
-export async function startProductionWiredServer(pool: pg.Pool, options: { secureCookie?: boolean } = {}): Promise<RunningServer> {
+export async function startProductionWiredServer(pool: pg.Pool, options: { secureCookie?: boolean; metrics?: RuntimeMetrics } = {}): Promise<RunningServer> {
     const cookie = { secure: options.secureCookie ?? false };
     const server = createServer({
         checkReadiness: () => checkDatabaseReadiness(pool),
         pool,
         security: { cookie, allowedOrigins: [], hsts: cookie.secure },
         authorizeAttempt: createAttemptAuthorizer(pool, cookie),
+        metrics: options.metrics,
     });
     await new Promise<void>((resolve, reject) => {
         server.once('listening', resolve);

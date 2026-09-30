@@ -49,14 +49,23 @@ export interface ExpiryFinalizationSweeper {
     stop(): Promise<void>;
 }
 
+export type SweepReport = { ok: true; finalized: number; pending: number | null } | { ok: false };
+
 /**
  * Runs finalizeExpiredAttempts every intervalMs (and again at once while a full batch was
  * finalized). A failed sweep is logged and retried on the next tick; it never stops the
- * process. stop() waits for a sweep in progress.
+ * process. stop() waits for a sweep in progress. onSweep receives each sweep's outcome and,
+ * with countPending, how many overdue attempts are still waiting (for operator metrics).
  */
 export function startExpiryFinalizationSweeper(
     pool: pg.Pool,
-    options: { intervalMs: number; batchSize?: number; log?: LogWriter }
+    options: {
+        intervalMs: number;
+        batchSize?: number;
+        log?: LogWriter;
+        onSweep?: (report: SweepReport) => void;
+        countPending?: () => Promise<number>;
+    }
 ): ExpiryFinalizationSweeper {
     const batchSize = options.batchSize ?? 200;
     let stopped = false;
@@ -64,15 +73,27 @@ export function startExpiryFinalizationSweeper(
     let running: Promise<void> = Promise.resolve();
 
     const sweep = async (): Promise<void> => {
+        let total = 0;
         try {
             for (let round = 0; round < 50 && !stopped; round++) {
                 const { finalized } = await finalizeExpiredAttempts(pool, batchSize);
+                total += finalized;
                 if (finalized > 0) options.log?.('INFO', 'expired_attempts_finalized', { count: finalized });
                 if (finalized < batchSize) break;
             }
         } catch (err) {
             options.log?.('WARN', 'expiry_finalization_failed', describeError(err));
+            options.onSweep?.({ ok: false });
+            return;
         }
+        if (!options.onSweep) return;
+        let pending: number | null = null;
+        try {
+            pending = options.countPending ? await options.countPending() : null;
+        } catch {
+            // The count is for operators only; the sweep itself succeeded.
+        }
+        options.onSweep({ ok: true, finalized: total, pending });
     };
 
     const schedule = () => {

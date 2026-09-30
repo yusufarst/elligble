@@ -25,6 +25,7 @@ import type { SessionCookieConfig } from './http/session-credentials.ts';
 import type { StaticSite } from './http/static-site.ts';
 import { assignRequestId, classifyRequest, describeError, logRequestCompletion } from './http/request-log.ts';
 import type { LogWriter } from './log.ts';
+import type { RuntimeMetrics } from './metrics.ts';
 
 export interface ServerSecurityConfig {
     cookie: SessionCookieConfig;
@@ -56,6 +57,8 @@ export interface ServerDependencies {
     staticSite?: StaticSite;
     /** Access and error log; silent when absent (focused tests). */
     log?: LogWriter;
+    /** Operator metrics (OPS-002); served by the separate internal listener, never here. */
+    metrics?: RuntimeMetrics;
 }
 
 type AttemptRoute = { method: 'GET' | 'POST'; source: 'query' | 'body' };
@@ -562,6 +565,17 @@ export function createServer(deps: ServerDependencies): http.Server {
             url = new URL('http://localhost/');
         }
         if (deps.log) logRequestCompletion(req, res, { requestId, pathname: url.pathname, startedAt }, deps.log);
+        if (deps.metrics) {
+            const metrics = deps.metrics;
+            let counted = false;
+            const count = () => {
+                if (counted) return;
+                counted = true;
+                metrics.observeRequest(url.pathname, res.statusCode, Number(process.hrtime.bigint() - startedAt) / 1e9);
+            };
+            res.once('finish', count);
+            res.once('close', count);
+        }
         route(req, res, url).catch(err => {
             deps.log?.('ERROR', 'request_failed', { requestId, ...describeError(err) });
             sendError(res, 500, 'internal_error');

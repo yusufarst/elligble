@@ -49,6 +49,34 @@ Result finalization: once an ended exam has no attempt still running, the managi
 
 Never logged: query strings (attempt ids), request or response bodies, cookies, `Authorization`, passwords, database URLs. Every response carries `X-Request-ID`; quote it when reporting a problem.
 
+### Metrics and alerts
+
+Set `SA_METRICS_PORT` (for example `9464`) to start the internal metrics listener; it serves only `GET /metrics` in the Prometheus text format, which any compatible collector reads (no vendor, no agent in the image). It binds to `SA_METRICS_HOST` (default `127.0.0.1`); in a container, use the address of an internal network that only the collector reaches, and never route this port through the public reverse proxy. The public port never serves metrics (`/metrics` there is an ordinary 404). Labels are fixed vocabularies only: no ids, paths or personal data.
+
+| Metric | Meaning |
+|---|---|
+| `elligble_http_requests_total{component, status_class}` | requests by exam-day component (D04.9-03: `authentication`, `attempt_runtime`, `response_persistence`, `timer`, `monitoring`, `broadcast`, `reporting`, plus `health`, `static`, `other`) and 2xx to 5xx |
+| `elligble_http_request_duration_seconds{component}` | request duration histogram per component |
+| `elligble_answer_saves_total{outcome}` | answer saves: `acknowledged`, `refused` (409, the exam rules: pause, lock, time over, stale version), `rejected` (other 4xx), `failed` (5xx: the server did not store it) |
+| `elligble_expiry_sweeps_total{result}`, `elligble_expiry_attempts_finalized_total`, `elligble_expiry_last_success_timestamp_seconds` | server finalization at time expiry |
+| `elligble_expiry_pending_attempts` | attempts past their deadline and still not finalized after the last sweep (held by a long transaction) |
+| `elligble_database_ready`, `elligble_db_pool_connections{state}` | database reachable during the scrape; pool connections `total`, `idle`, `waiting` |
+| `elligble_event_loop_delay_seconds{quantile}` | event loop delay since the previous scrape (process overload) |
+| `elligble_process_resident_memory_bytes`, `elligble_process_start_time_seconds` | memory and restarts |
+
+Example scrape job (the collector runs on the same internal network): `{ job_name: elligble, scrape_interval: 15s, static_configs: [{ targets: ['<runtime-internal-address>:9464'] }] }`. Alert rules: `deploy/monitoring/elligble-alerts.yml` (thresholds are pilot starting points; a unit test keeps every metric they use exported by the runtime).
+
+| Alert | Severity | First action |
+|---|---|---|
+| `ElligbleAnswerSavesFailing` | critical | answers are not being stored (D04.9-25): check the database and `request_failed` in the error log; students keep answering on their devices and the answers are sent when the server recovers |
+| `ElligbleDatabaseNotReady` | critical | the database is unreachable: restore it before anything else; `/readyz` answers 503 meanwhile |
+| `ElligbleExpirySweepStalled` | critical | overdue attempts stay open: check `expiry_finalization_failed` in the log |
+| `ElligbleMetricsDown` | critical | the process may be down: check the container and `/readyz` through the proxy |
+| `ElligbleResponsePersistenceSlow`, `ElligbleDatabasePoolExhausted`, `ElligbleEventLoopDelayed` | warning | load: look for slow queries and the request rate per component before raising `SA_DB_POOL_MAX` or adding instances |
+| `ElligbleExpiryBacklog`, `ElligbleServerErrors` | warning | a held attempt or a failing component: follow the request ids in the log |
+
+Without a metrics collector, the same conditions show in the logs: `http_request` lines with `status` 5xx on `/api/v1/assessment/answer/save` (answers not stored), `expiry_finalization_failed` (sweep failing), `database_not_ready` and 503 from `/readyz`. Drill on a running process: `curl -s http://127.0.0.1:9464/metrics | grep elligble_database_ready` answers `elligble_database_ready 1`, and `curl -s -o /dev/null -w '%{http_code}' http://<public-address>/metrics` answers `404`.
+
 ## 4. Rollback
 
 - Code-only release: redeploy the previous image.

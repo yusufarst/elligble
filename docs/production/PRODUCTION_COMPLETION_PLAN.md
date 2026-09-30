@@ -79,7 +79,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 | P1-5 | No security headers (CSP, frame, referrer, nosniff), no Origin/CSRF check | `server.ts` — **RESOLVED** (headers on every response, `no-store` API cache, HSTS when secure, Origin check on state-changing API calls) | RESOLVED |
 | P1-6 | `transitionExamInstanceDraftToScheduled` defaulted to `granted` when no capability evaluator was passed (fail-open default) | `exam-instance-draft-to-scheduled-transition.ts`: **RESOLVED**, the evaluator is required and a missing one is denied before any database access | RESOLVED |
 | P1-7 | Official `npm test` ran 6 of 46 secure-assessment test files; 2 broken test files never ran | **RESOLVED**: `npm test` runs all unit tests; broken `.js` import (also in `src/client-answer-save-state.ts`) and ordering test fixed | RESOLVED |
-| P1-8 | No request/error logging, no metrics; startup logs only | `log.ts`: **RESOLVED** for logging: one JSON line per request (request id, method, path without query, status, duration), 5xx at ERROR, unhandled errors by class and code only, `X-Request-ID` correlation; metrics remain open | RESOLVED |
+| P1-8 | No request/error logging, no metrics; startup logs only | `log.ts`: **RESOLVED** for logging: one JSON line per request (request id, method, path without query, status, duration), 5xx at ERROR, unhandled errors by class and code only, `X-Request-ID` correlation; metrics and alert rules added by OPS-002 (`metrics.ts`, `deploy/monitoring/elligble-alerts.yml`) | RESOLVED |
 | P1-9 | Design tokens in code drifted from LOCKED design system v1.1.0 (navy actions/focus, slate neutrals, radii, undefined tokens) | **RESOLVED** in `design-tokens.css` + component CSS; screens still use hand-written CSS (migration to shadcn/ui components is incremental) | RESOLVED |
 | P1-10 | Assigned-exam projection had no lifecycle/window/duration | **RESOLVED**: `schedule` + `serverNow` in the projection; the list explains when and why an exam can or cannot be started (D04.2-73) | RESOLVED |
 | P1-11 | Proctor Feed (Kejadian/Pelanggaran) not implemented (D01, D04.1-54) | no feed tables/routes. First part done: the exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61) from server facts, including session moves (D04.6-30). Second part done: lock and unlock of one participant (D04.6-38/39/40, ASSESS-PROCTOR-001). Third part done: broadcast messages (D04.1-77A..G, D04.6-49..55, ASSESS-PROCTOR-002). Remaining: device-side signals and their policy (D04.6-19..32, D04.7 presets), incidents, other control actions | OPEN (in progress) |
@@ -108,14 +108,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → OPS-002.
+**CRITICAL PATH:** ~~ASSESS-LIFE-001~~ → ~~ASSESS-LIFE-002~~ → ~~RESULT-001~~ → ~~RESULT-002~~ → ~~PR checkpoint~~ ([yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1), CI run 21 green, awaiting the Owner's review and squash-merge) → ~~ASSESS-PROCTOR-001~~ → ~~ASSESS-SYNC-001~~ → ~~ASSESS-PROCTOR-002~~ → ~~OPS-002~~ → OPS-003.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | none (next: OPS-002) |
-| READY QUEUE (by value) | OPS-002, OPS-003, E2E-001, ASSESS-TEACHER-001 |
+| IN PROGRESS | none (next: OPS-003) |
+| READY QUEUE (by value) | OPS-003, E2E-001, ASSESS-TEACHER-001 |
 | BLOCKED | UI-001 (Owner), RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
-| RECENTLY COMPLETED | ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| RECENTLY COMPLETED | OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -227,7 +227,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Out of scope | critical persistent messages (D04.1-77D), push channels, message editing or withdrawal |
 | Delivered | migration `0047`: `secure_assessment_exam_broadcasts` (sender, target, message of 1 to 200 characters, time; append-only) and `secure_assessment_exam_broadcast_recipients` (fixed when sent: participants in the target and in the sender's scope who have not submitted; the delivery time is recorded once, when the device confirms). `POST /assessment/exam-monitoring/broadcast`: a proctor limited to rooms reaches only their rooms or participants in them, never the entire exam; nothing is sent when a chosen participant is outside the scope; allowed while the exam is ACTIVE, PAUSED or ENDED; limited per sender and exam. The shared supervision scope (`supervision-scope.ts`) now serves the participant list, the lock and broadcast alike. Students: the timer answer carries `messageCount`; the device fetches its messages (`POST /assessment/broadcasts/inbox`) only when that count grows, confirms the new ones at once, shows a recent new one as a notice in the header area (to the right on wide screens) that closes after 20 s or with "Tutup", never takes the focus and covers nothing of the question, choices, timer, navigation or save state; every message stays in "Pesan Pengawas" in the question list, and the latest one shows on the paused and locked screens. Supervisors: "Kirim Pesan" with target, message and the four quick messages of D04.6-51, and "Pesan Terkirim" with time, target, sender and "Sampai di perangkat X dari Y peserta", explicitly not "read" |
 | Known limits | a student sees a message at the next state check (about 15 s, 5 s while paused or locked); a device offline at that time receives it on reconnecting; a message older than 5 minutes when it first reaches a device goes to the list without a notice; rate limit and quick messages are implementation defaults (§7) |
-| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
+| Commit / PR | `cd69126`, CI run 25; part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### ASSESS-PROCTOR-003 · Device signals and incidents in the Proctor Feed
 
@@ -265,17 +265,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | Field | Value |
 |---|---|
-| Workstream / priority / status | OPS / P2 / READY (parallelizable) |
+| Workstream / priority / status | OPS / P2 / DONE |
 | Dependencies / blocks | none / none |
-| Repository evidence | JSON logs only (§9) |
-| Why | D04.9 operations, PB12 |
+| Why | D04.9-03 LOCKED (platform health is componentized), D04.9-25 (response persistence failure is critical), D04.9-32 (monitoring below response writes), PB12 |
 | Exact scope | an internal metrics endpoint (requests, errors, save latency, pending finalizations) protected from the public, and documented alert rules on logs and metrics; no new vendor |
-| Out of scope | choosing a hosted monitoring vendor |
-| Expected product result | operators see exam-day health |
-| Surfaces | runtime, runbook |
-| Verification | unit, integration, runbook drill |
-| Owner decision | none |
-| Commit / PR | pending |
+| Out of scope | choosing a hosted monitoring vendor; dashboards |
+| Delivered | `metrics.ts`: in-memory counters, gauges and histograms rendered in the Prometheus text format without any dependency; requests and durations per exam-day component of D04.9-03 (every API route is mapped, a test fails for an unmapped new route), answer saves by outcome (acknowledged, refused by the exam rules, rejected, failed), expiry sweeps with finalized and still pending attempts and the last success time, database readiness and pool state, event loop delay, memory and start time; labels are fixed vocabularies, never ids or paths. A separate listener (`SA_METRICS_PORT`, `SA_METRICS_HOST` default loopback, off unless set, never the public port) serves only `GET /metrics`. `deploy/monitoring/elligble-alerts.yml`: nine alert rules with severities, answer saves failing and the database first; a test keeps every metric they use exported. Runbook §3: metrics, scrape example, alerts with their first action, the same conditions in the logs, and a drill |
+| Known limits | thresholds are starting points to tune after the first exam days; metrics are per process (several instances are summed by the collector); no dashboard is shipped |
+| Commit / PR | this change (see §11); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### OPS-003 · Edge rate limiting guidance and defaults
 
@@ -326,7 +323,8 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | ID | Result | Evidence |
 |---|---|---|
-| ASSESS-PROCTOR-002 | Messages from supervisors to the exam, a room or chosen participants; non-blocking on the exam screen; delivery to devices, never "read" | this change (§11) |
+| OPS-002 | Internal metrics listener per exam-day component and alert rules with first actions | this change (§11) |
+| ASSESS-PROCTOR-002 | Messages from supervisors to the exam, a room or chosen participants; non-blocking on the exam screen; delivery to devices, never "read" | `cd69126`, CI run 25 |
 | ASSESS-SYNC-001 | Exam-state answers ordered by server time: no resend loop, no choice dropped by a late refusal (P1-29) | `3e28d9b`, CI run 24 |
 | ASSESS-PROCTOR-001 | Lock and unlock of one participant by the proctor or the managing teacher, audited; questions hidden while the time runs | `9243a85`, CI run 23 |
 | RESULT-002 | Teacher result export (CSV with provenance) and print view | `ce86528`, CI run 21 |
@@ -389,7 +387,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Build | `Dockerfile`: web client built with Vite, runtime on Node 24 (type stripping), production dependencies only, non-root user, `HEALTHCHECK` |
 | Startup / health | preflight (database wait, schema check), `/healthz`, `/readyz`, graceful SIGTERM (verified with the real process) |
 | Hosting / TLS / cookies | client and API from one origin; TLS at the reverse proxy (runbook §1); `__Host-` Secure cookie and HSTS in production |
-| Logging / monitoring / error reporting | JSON-lines access and error log with request ids; no metrics or alerting yet |
+| Logging / monitoring / error reporting | JSON-lines access and error log with request ids; internal metrics listener (`SA_METRICS_PORT`) per exam-day component and alert rules in `deploy/monitoring/` (OPS-002); choosing where the collector and alerting run belongs to OPS-001 |
 | Backup / restore / incident response / rollback | runbook procedures; local restore drill verified; production drill pending (PB11) |
 | Rate limiting | per-account login policy in runtime (DEC-041); infrastructure limits at the proxy (P1-14) |
 | Provisioning | audited operator CLI (runbook §7) for schools (with their time zone), people with activation cards, academic setup, exams and activation reissue |
@@ -598,6 +596,17 @@ After broadcast messages (ASSESS-PROCTOR-002, this branch):
 | web vitest / `vite build` | 238/238 / PASS: composer with the whole exam for the teacher, only rooms and chosen participants for a room proctor, quick message, counter, no send without a chosen participant, wait time on the rate limit, history with sender, target and "Sampai di perangkat", no composer after finalization; inbox fetched at the start, confirmed at once, a recent message shown once and not after a reload, older ones only listed, fetched again only when the count grows or a confirmation is owed, the notice closes by itself and on "Tutup"; on the exam screen the notice keeps the focus where it was, answers still save, the message stays in the question list, and the paused screen shows the latest one. Mutation-checked (10): all caught |
 | browser E2E | 17/17 PASS against the production process: the teacher sends "Ujian tersisa 15 menit." to the entire exam at 360 px; the student's screen shows it with the time, the student changes an answer and it is saved, closes the notice and finds the message in "Daftar Soal"; the teacher's "Pesan Terkirim" shows it reached one device; the database records the teacher, the target and the message |
 | rendered check (Chromium, 360 px and 1280 px) | composer (the long quick message wraps inside the dialog after the first render showed it cut off, now asserted), student notice at the top and to the right on a wide screen with the list in the question panel, monitoring history: no horizontal overflow, no em dash; DesainPakeAI context revision unchanged (§10) |
+| CI GitHub Actions | run 25 green on `cd69126` |
+
+After operator metrics and alert rules (OPS-002, this branch):
+
+| Check | Result |
+|---|---|
+| typecheck (secure-assessment) | PASS |
+| runtime unit | 905/905 PASS: every API route of the server belongs to a named component; counters, cumulative histogram buckets with +Inf, sum and count, save outcomes and sweep results render in the text format without ids or paths; the listener serves only GET /metrics (404 elsewhere, 405 for POST) with live pool state and a readiness of 0 when the database check fails; the public server counts requests but answers 404 for /metrics; every metric the alert rules use is exported; the metrics port must differ from the public port |
+| integration (real PostgreSQL 16) | 118/118 PASS: through the production wiring an acknowledged and a refused save are counted by outcome with their latency, per-component request counts follow the journey, no attempt id appears; an overdue attempt held by another transaction is reported as pending by the sweep, then finalized and counted once released |
+| mutation checks | refused saves counted as rejected, non-cumulative buckets, an unmapped route, running attempts counted as pending, a sweep never reported, metrics on the public port: all caught |
+| runbook drill (real process, `SA_METRICS_PORT=9464`) | `metrics_listening` logged; the internal listener answers with request counts, a successful sweep, pool state, `elligble_database_ready 1` and the event loop delay; POST answers 405; the public port answers 404 for /metrics; SIGTERM closes both listeners (`shutdown_complete`) |
 
 ## 12. Friction reducers (automation)
 
@@ -605,6 +614,6 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 
 ## 13. Next engineering work
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: OPS-002 (metrics and alerting), then OPS-003 (edge rate limiting guidance); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Current order: OPS-003 (edge rate limiting guidance), then E2E-001 (browser evidence beyond Chromium); the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.

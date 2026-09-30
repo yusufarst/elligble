@@ -9,10 +9,13 @@ import { createAttemptAuthorizer } from './http/attempt-authorization.ts';
 import { loadStaticSite, type StaticSite } from './http/static-site.ts';
 import { runStartupPreflight } from './ops/preflight.ts';
 import { startExpiryFinalizationSweeper, type ExpiryFinalizationSweeper } from './expiry-finalization.ts';
+import { RuntimeMetrics, countPendingExpiredAttempts, createMetricsServer } from './metrics.ts';
 
 let activeServer: http.Server | undefined;
 let activePool: pg.Pool | undefined;
 let activeSweeper: ExpiryFinalizationSweeper | undefined;
+let activeMetrics: RuntimeMetrics | undefined;
+let activeMetricsServer: http.Server | undefined;
 let isShuttingDown = false;
 
 async function start() {
@@ -34,6 +37,7 @@ async function start() {
         migrationsOnStart: config.SA_MIGRATIONS_ON_START,
         servesWebClient: config.SA_STATIC_DIR !== null,
         expirySweepSeconds: config.SA_EXPIRY_SWEEP_SECONDS,
+        metrics: config.SA_METRICS_PORT !== null,
     });
 
     let staticSite: StaticSite | undefined;
@@ -67,6 +71,8 @@ async function start() {
     logInfo('database_ready');
 
     const cookie = { secure: config.SA_COOKIE_SECURE };
+    const pool = activePool;
+    if (config.SA_METRICS_PORT !== null) activeMetrics = new RuntimeMetrics();
     activeServer = createServer({
         checkReadiness: () => activePool ? checkDatabaseReadiness(activePool) : Promise.resolve(false),
         pool: activePool,
@@ -78,12 +84,28 @@ async function start() {
         authorizeAttempt: createAttemptAuthorizer(activePool, cookie),
         staticSite,
         log: writeLog,
+        metrics: activeMetrics,
     });
 
     activeServer.listen(config.SA_PORT, config.SA_HOST, () => {
         logInfo('runtime_started');
     });
-    activeSweeper = startExpiryFinalizationSweeper(activePool, { intervalMs: config.SA_EXPIRY_SWEEP_SECONDS * 1000, log: writeLog });
+    const metrics = activeMetrics;
+    activeSweeper = startExpiryFinalizationSweeper(activePool, {
+        intervalMs: config.SA_EXPIRY_SWEEP_SECONDS * 1000,
+        log: writeLog,
+        ...(metrics && { onSweep: report => metrics.observeSweep(report), countPending: () => countPendingExpiredAttempts(pool) }),
+    });
+    if (metrics && config.SA_METRICS_PORT !== null) {
+        activeMetricsServer = createMetricsServer({ metrics, pool, checkReadiness: () => checkDatabaseReadiness(pool) });
+        activeMetricsServer.on('error', (err: Error) => {
+            logError('fatal_startup_error', { message: err.message });
+            shutdown(1);
+        });
+        activeMetricsServer.listen(config.SA_METRICS_PORT, config.SA_METRICS_HOST, () => {
+            logInfo('metrics_listening', { host: config.SA_METRICS_HOST, port: config.SA_METRICS_PORT });
+        });
+    }
 
     activeServer.on('error', (err: Error) => {
         logError('fatal_startup_error', { message: err.message });
@@ -106,6 +128,12 @@ async function shutdown(exitCode = 0) {
             // Ignored
         }
     }
+
+    if (activeMetricsServer) {
+        const metricsServer = activeMetricsServer;
+        await new Promise<void>(resolve => metricsServer.close(() => resolve()));
+    }
+    activeMetrics?.stop();
 
     if (activeSweeper) {
         await activeSweeper.stop();
