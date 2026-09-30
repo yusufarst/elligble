@@ -1,0 +1,197 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, waitFor, act, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx';
+import type { ResumeResponse, StudentSafeQuestion, TimerResponse } from '../types/assessment.ts';
+import { openAnswerStore } from '../exam/answer-store.ts';
+import { storeExamSessionId } from '../exam/exam-session.ts';
+import { setDisplayTimeZone } from '../lib/format.ts';
+
+// The student's exam screen under a teacher's pause or end (Owner decision 2026-09-30): paused
+// means read-only with the questions hidden and the time frozen; an answer chosen before the
+// pause is still saved; a choice made after it is not, and the student is told; resume
+// continues from the frozen time; end lets the attempt finish on its own time.
+
+const ATTEMPT = '11111111-1111-4111-8111-111111111111';
+const SESSION = '22222222-2222-4222-8222-222222222222';
+const Q1 = '33333333-3333-4333-8333-333333333331';
+const Q2 = '33333333-3333-4333-8333-333333333332';
+const PROMPT = 'Manakah unsur kimia dengan simbol O?';
+
+const questions: StudentSafeQuestion[] = [
+  { snapshotId: Q1, schemaVersion: 1, questionType: 'MULTIPLE_CHOICE_SINGLE', prompt: PROMPT, options: [{ id: 'opt-a', content: 'Emas' }, { id: 'opt-b', content: 'Oksigen' }] },
+  { snapshotId: Q2, schemaVersion: 1, questionType: 'MULTIPLE_CHOICE_SINGLE', prompt: 'Manakah gas mulia?', options: [{ id: 'opt-c', content: 'Neon' }, { id: 'opt-d', content: 'Klorin' }] },
+];
+
+const PAUSED_AT = '2026-09-30T01:14:00.000Z';
+
+function resume(overrides: Partial<ResumeResponse> = {}): ResumeResponse {
+  return {
+    attemptId: ATTEMPT,
+    session: { status: 'active', activatedAt: '2026-09-30T01:00:00.000Z', ownedByCaller: true },
+    answers: [],
+    timer: { status: 'active', startedAt: '2026-09-30T01:00:00.000Z', configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 2530 },
+    submission: { status: 'not_submitted' },
+    context: { subjectLabel: 'Kimia', roomLabel: null },
+    reviewFlags: [],
+    exam: { lifecycleState: 'ACTIVE', pausedAt: null },
+    ...overrides,
+  };
+}
+
+function timer(examState: string, pausedAt: string | null = null, remaining = 2530): TimerResponse {
+  return { status: 'active', startedAt: '2026-09-30T01:00:00.000Z', configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: remaining, examState, pausedAt };
+}
+
+type Handler = (url: string, init?: RequestInit) => Promise<Response> | Response;
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
+function server(overrides: Record<string, Handler> = {}): ReturnType<typeof vi.fn> {
+  return vi.fn(async (url: string, init?: RequestInit) => {
+    for (const [fragment, handler] of Object.entries(overrides)) {
+      if (url.includes(fragment)) return handler(url, init);
+    }
+    if (url.includes('/api/v1/assessment/resume')) return json(resume());
+    if (url.includes('/api/v1/assessment/questions')) return json({ attemptId: ATTEMPT, questions });
+    if (url.includes('/api/v1/assessment/timer')) return json(timer('ACTIVE'));
+    if (url.includes('/api/v1/assessment/answer/save')) {
+      const body = JSON.parse(init?.body as string);
+      return json({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1 });
+    }
+    return json({ error: 'not_found' }, 404);
+  });
+}
+
+/** The workstation checks the exam state at once when the connection returns. */
+const checkNow = () => act(async () => {
+  window.dispatchEvent(new Event('online'));
+});
+
+describe('the exam screen during a pause', () => {
+  beforeEach(async () => {
+    window.history.pushState({}, '', `?attemptId=${ATTEMPT}`);
+    window.sessionStorage.clear();
+    storeExamSessionId(ATTEMPT, SESSION);
+    await (await openAnswerStore()).clearAttempt('', ATTEMPT);
+    setDisplayTimeZone('Asia/Jakarta');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setDisplayTimeZone(null);
+    window.history.pushState({}, '', '/');
+  });
+
+  it('opens paused after a reload: no question content, the frozen time, then the exam continues from it', async () => {
+    let examState = 'PAUSED';
+    const fetchSpy = server({
+      '/api/v1/assessment/resume': () => json(resume({ exam: { lifecycleState: 'PAUSED', pausedAt: PAUSED_AT } })),
+      '/api/v1/assessment/timer': () => json(timer(examState, examState === 'PAUSED' ? PAUSED_AT : null)),
+    });
+    globalThis.fetch = fetchSpy;
+    render(<StudentExamWorkstation />);
+
+    expect(await screen.findByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    expect(screen.getByText(/Guru menjeda ujian sejak 08\.14 WIB\./)).toBeTruthy();
+    expect(screen.getByText('42:10')).toBeTruthy();
+    expect(await screen.findByText('Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.')).toBeTruthy();
+    expect(screen.queryByText(PROMPT)).toBeNull();
+    expect(fetchSpy.mock.calls.some(c => (c[0] as string).includes('/questions'))).toBe(false);
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    expect(screen.getByText('42:10')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('—');
+
+    examState = 'ACTIVE';
+    await checkNow();
+    expect(await screen.findByText(PROMPT)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Ujian Dijeda' })).toBeNull();
+    expect(screen.getByLabelText(/Sisa waktu pengerjaan ujian: 42:(10|09)/)).toBeTruthy();
+  });
+
+  it('saves an answer chosen before the pause even though it reaches the server during the pause', async () => {
+    let examState = 'ACTIVE';
+    let pausedAt: string | null = null;
+    const saves: Array<{ capturedAt: string }> = [];
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json(timer(examState, pausedAt)),
+      '/api/v1/assessment/answer/save': (_url, init) => {
+        const body = JSON.parse(init?.body as string);
+        saves.push(body);
+        if (examState === 'ACTIVE') {
+          // The request is lost while the teacher pauses the exam.
+          examState = 'PAUSED';
+          pausedAt = new Date(Date.now() + 1).toISOString();
+          throw new TypeError('Failed to fetch');
+        }
+        if (Date.parse(body.capturedAt) >= Date.parse(pausedAt!)) return json({ error: 'exam_paused', pausedAt }, 409);
+        return json({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1 });
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+    await waitFor(() => expect(saves).toHaveLength(1));
+    await checkNow();
+    expect(await screen.findByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    expect(await screen.findByText('Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(saves).toHaveLength(2);
+    expect(saves[1].capturedAt).toBe(saves[0].capturedAt);
+  });
+
+  it('switches to the paused screen when a save shows the pause, and says which choice was not saved', async () => {
+    let examState = 'ACTIVE';
+    const boundary = new Date(Date.now() - 60_000).toISOString();
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json(timer(examState, examState === 'PAUSED' ? boundary : null)),
+      '/api/v1/assessment/answer/save': () => {
+        examState = 'PAUSED';
+        return json({ error: 'exam_paused', pausedAt: boundary }, 409);
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await userEvent.click(await screen.findByLabelText(/Oksigen/));
+
+    expect(await screen.findByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    expect(await screen.findByText('Pilihan jawaban pada soal 1 dibuat setelah ujian dijeda sehingga tidak disimpan. Periksa kembali soal tersebut.')).toBeTruthy();
+    expect(screen.queryByText(PROMPT)).toBeNull();
+
+    examState = 'ACTIVE';
+    await checkNow();
+    expect(await screen.findByText(PROMPT)).toBeTruthy();
+    expect(screen.getByText('Pilihan jawaban pada soal 1 dibuat setelah ujian dijeda sehingga tidak disimpan. Periksa kembali soal tersebut.')).toBeTruthy();
+    expect((screen.getByLabelText(/Oksigen/) as HTMLInputElement).checked).toBe(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Mengerti' }));
+    expect(screen.queryByText(/dibuat setelah ujian dijeda/)).toBeNull();
+  });
+
+  it('does not submit while paused', async () => {
+    let examState = 'ACTIVE';
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json(timer(examState, examState === 'PAUSED' ? PAUSED_AT : null)),
+      '/api/v1/assessment/submit': () => {
+        examState = 'PAUSED';
+        return json({ error: 'exam_paused', pausedAt: PAUSED_AT }, 409);
+      },
+    });
+    render(<StudentExamWorkstation />);
+    await screen.findByText(PROMPT);
+    await userEvent.click(screen.getByRole('button', { name: 'Selesaikan Ujian' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
+    await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
+    expect(await screen.findByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    expect(screen.queryByText('Ujian Berhasil Dikumpulkan')).toBeNull();
+  });
+
+  it('shows a calm note when the teacher ends the exam and lets the student keep working', async () => {
+    let examState = 'ACTIVE';
+    globalThis.fetch = server({
+      '/api/v1/assessment/timer': () => json(timer(examState)),
+    });
+    render(<StudentExamWorkstation />);
+    await screen.findByText(PROMPT);
+    examState = 'ENDED';
+    await checkNow();
+    expect(await screen.findByText('Guru telah mengakhiri ujian. Anda tetap dapat menyelesaikan sampai waktu Anda habis.')).toBeTruthy();
+    await userEvent.click(screen.getByLabelText(/Oksigen/));
+    expect(await screen.findByText('Tersimpan')).toBeTruthy();
+  });
+});

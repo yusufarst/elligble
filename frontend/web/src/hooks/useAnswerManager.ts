@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ResumeAnswer, SaveState } from '../types/assessment.ts';
-import { AnswerSyncEngine, type SyncApi } from '../exam/answer-sync-engine.ts';
+import { AnswerSyncEngine, type ExamRunState, type SyncApi } from '../exam/answer-sync-engine.ts';
 import { MemoryAnswerStore, openAnswerStore, type AnswerStore, type PendingAnswerRecord } from '../exam/answer-store.ts';
 import { createAnswerSyncApi, selectedOptionOf, toServerAnswerState } from '../exam/answer-sync-api.ts';
 import { useOptionalSession } from '../session/SessionProvider.tsx';
@@ -20,6 +20,10 @@ export interface UseAnswerManagerOptions {
   enabled: boolean;
   onSessionInactive?: () => void;
   onTerminalEvent?: (code: string) => void;
+  /** A save showed the exam is paused (Owner decision 2026-09-30). */
+  onExamPaused?: (pausedAt: number | null) => void;
+  /** Choices made during a pause were dropped for these questions. */
+  onDiscarded?: (snapshotIds: string[]) => void;
   /** Seams for tests; production uses IndexedDB and the HTTP API. */
   openStore?: () => Promise<AnswerStore>;
   api?: SyncApi;
@@ -41,6 +45,8 @@ export interface AnswerManager {
   pendingCount: number;
   /** Try to send pending choices now (e.g. at timer expiry, D04.5-46). */
   flush: () => void;
+  /** Tells the engine what the server said about the exam (pause stops new choices). */
+  noteExamState: (state: ExamRunState, pausedAt: number | null) => void;
 }
 
 /** Lets the engine start immediately while the durable store is still opening. */
@@ -96,6 +102,8 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
         onTerminal: code => callbacksRef.current.onTerminalEvent?.(code),
         // The shared transport already reports 401 to the session layer (re-auth dialog).
         onUnauthorized: () => undefined,
+        onExamPaused: pausedAt => callbacksRef.current.onExamPaused?.(pausedAt),
+        onDiscarded: ids => callbacksRef.current.onDiscarded?.(ids),
       },
     });
     let active = true;
@@ -171,6 +179,10 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     engine?.kick();
   }, [engine]);
 
+  const noteExamState = useCallback((state: ExamRunState, pausedAt: number | null) => {
+    if (engine) void engine.noteExamState(state, pausedAt);
+  }, [engine]);
+
   return {
     selectedOptions,
     saveStates,
@@ -181,5 +193,6 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     storageDurable: engine?.storageDurable ?? false,
     pendingCount: engine?.pendingCount ?? 0,
     flush,
+    noteExamState,
   };
 }

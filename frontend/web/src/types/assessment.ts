@@ -66,9 +66,19 @@ export interface ResumeResponse {
   context: ResumeContext;
   /** Questions the student marked "Ragu-ragu" (D04.5-34); absent from older servers. */
   reviewFlags?: string[];
+  /** Exam state: PAUSED freezes the time (Owner decision 2026-09-30); absent from older servers. */
+  exam?: { lifecycleState: string | null; pausedAt: string | null };
+  serverTime?: string;
 }
 
-export interface TimerResponse {
+/** Exam state and server time reported beside the timer (absent from older servers). */
+export interface ExamRunInfo {
+  examState?: string | null;
+  pausedAt?: string | null;
+  serverTime?: string;
+}
+
+export interface TimerResponse extends ExamRunInfo {
   status: 'active' | 'expired';
   startedAt: string;
   configuredDurationSeconds: number;
@@ -139,7 +149,7 @@ export interface TimerStartRequest {
   attemptId: string;
 }
 
-export interface TimerStartResponse {
+export interface TimerStartResponse extends ExamRunInfo {
   status: 'started';
   startedAt: string;
   configuredDurationSeconds: number;

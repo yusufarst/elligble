@@ -304,8 +304,223 @@ describe('AnswerSyncEngine', () => {
 });
 
 describe('classifySaveFailure', () => {
-  it('keeps an answer when the exam is paused instead of dropping it', () => {
-    expect(classifySaveFailure(409, 'exam_paused')).toEqual({ kind: 'retry' });
+  it('reads the pause boundary and the pause interval from a refusal', () => {
+    expect(classifySaveFailure(409, 'exam_paused', { pausedAt: '2026-09-30T01:00:00.000Z' })).toEqual({ kind: 'exam_paused', pausedAt: Date.parse('2026-09-30T01:00:00.000Z') });
+    expect(classifySaveFailure(409, 'exam_paused')).toEqual({ kind: 'exam_paused', pausedAt: null });
+    expect(classifySaveFailure(409, 'captured_during_pause', { pausedAt: '2026-09-30T01:00:00.000Z', resumedAt: '2026-09-30T01:10:00.000Z' }))
+      .toEqual({ kind: 'captured_during_pause', pausedAt: Date.parse('2026-09-30T01:00:00.000Z'), resumedAt: Date.parse('2026-09-30T01:10:00.000Z') });
+    // Without its interval the choice is kept and retried.
+    expect(classifySaveFailure(409, 'captured_during_pause', {})).toEqual({ kind: 'retry' });
     expect(classifySaveFailure(409, 'timer_expired')).toEqual({ kind: 'terminal', code: 'timer_expired' });
+  });
+});
+
+/** The server's pause rules (answer.ts, Owner decision 2026-09-30) on top of the versioned fake. */
+class PausableServer extends FakeServer {
+  pauses: Array<{ from: number; to: number | null }> = [];
+  captured: number[] = [];
+
+  override async save(req: Parameters<FakeServer['save']>[0] & { capturedAt?: number }): Promise<SaveOutcome> {
+    if (this.mode !== 'down' && typeof req.capturedAt === 'number') {
+      this.captured.push(req.capturedAt);
+      const at = req.capturedAt;
+      const current = this.answers.get(req.snapshotId);
+      const replay = current && current.cwi === req.clientWriteIdentity && current.optionId === req.optionId;
+      const open = this.pauses.find(p => p.to === null);
+      if (!replay && open && at >= open.from) {
+        this.calls.push({ snapshotId: req.snapshotId, optionId: req.optionId, expected: req.expectedWriteVersion, cwi: req.clientWriteIdentity });
+        return { kind: 'exam_paused', pausedAt: open.from };
+      }
+      const covering = this.pauses.find(p => at >= p.from && (p.to === null || at < p.to));
+      if (!replay && covering) {
+        this.calls.push({ snapshotId: req.snapshotId, optionId: req.optionId, expected: req.expectedWriteVersion, cwi: req.clientWriteIdentity });
+        return { kind: 'captured_during_pause', pausedAt: covering.from, resumedAt: covering.to };
+      }
+    }
+    return super.save(req);
+  }
+}
+
+describe('AnswerSyncEngine under an exam pause (Owner decision 2026-09-30)', () => {
+  beforeEach(() => vi.useRealTimers());
+
+  function pausable(clock: { now: number }, store = new MemoryAnswerStore()) {
+    const server = new PausableServer();
+    const onExamPaused = vi.fn();
+    const onDiscarded = vi.fn();
+    const made = makeEngine(server, store, { now: () => clock.now });
+    Object.assign(made.events, { onExamPaused, onDiscarded });
+    return { server, ...made, onExamPaused, onDiscarded };
+  }
+
+  it('sends each choice with its server-anchored capture time', async () => {
+    const clock = { now: 1_000_000 };
+    const { server, engine } = pausable(clock);
+    await engine.initialize([]);
+    await engine.capture(Q1, 'A');
+    await settle();
+    expect(server.captured).toEqual([1_000_000]);
+  });
+
+  it('saves a choice made before the pause even while paused, and drops only the one made after it', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onExamPaused, onDiscarded } = pausable(clock);
+    await engine.initialize([]);
+    server.mode = 'down';
+    await engine.capture(Q1, 'A');
+    await vi.advanceTimersByTimeAsync(0);
+    server.pauses.push({ from: 1500, to: null });
+    clock.now = 2500;
+    await engine.capture(Q1, 'C'); // this device did not know about the pause yet
+    server.mode = 'ok';
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(server.answers.get(Q1)?.optionId).toBe('A');
+    expect(onExamPaused).toHaveBeenCalledWith(1500);
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+    expect(engine.view(Q1)).toEqual({ optionId: 'A', status: 'saved' });
+    expect(engine.hasUnresolved).toBe(false);
+
+    // No new choice while paused.
+    await engine.capture(Q2, 'B');
+    expect(engine.view(Q2)).toEqual({ optionId: null, status: 'unanswered' });
+  });
+
+  it('keeps the server answer when nothing was chosen before the pause', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onDiscarded } = pausable(clock);
+    server.answers.set(Q1, { optionId: 'A', writeVersion: 1, cwi: 'earlier' });
+    await engine.initialize(server.state());
+    server.pauses.push({ from: 1500, to: null });
+    clock.now = 2000;
+    await engine.capture(Q1, 'C');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(server.answers.get(Q1)).toEqual({ optionId: 'A', writeVersion: 1, cwi: 'earlier' });
+    expect(engine.view(Q1)).toEqual({ optionId: 'A', status: 'saved' });
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+    expect(engine.pendingCount).toBe(0);
+  });
+
+  it('after a resume, refuses a choice made during the pause and sends the earlier one; later choices save normally', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onDiscarded } = pausable(clock);
+    await engine.initialize([]);
+    server.mode = 'down';
+    await engine.capture(Q1, 'A');
+    clock.now = 2000;
+    await engine.capture(Q1, 'C'); // offline through a pause it never saw
+    await vi.advanceTimersByTimeAsync(0);
+    server.pauses.push({ from: 1500, to: 3000 });
+    server.mode = 'ok';
+    clock.now = 3500;
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(server.answers.get(Q1)?.optionId).toBe('A');
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+
+    await engine.capture(Q1, 'D');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(server.answers.get(Q1)?.optionId).toBe('D');
+    expect(engine.view(Q1)).toEqual({ optionId: 'D', status: 'saved' });
+  });
+
+  it('settles waiting choices as soon as the pause is known, and closes it when the exam runs again', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const { server, engine, onDiscarded } = pausable(clock);
+    await engine.initialize([]);
+    server.mode = 'down';
+    clock.now = 2000;
+    await engine.capture(Q1, 'C');
+    await vi.advanceTimersByTimeAsync(0);
+    const callsBefore = server.calls.length;
+    await engine.noteExamState('PAUSED', 1500);
+    expect(onDiscarded).toHaveBeenCalledWith([Q1]);
+    expect(engine.pendingCount).toBe(0);
+    expect(server.calls.length).toBe(callsBefore);
+    expect(engine.examIsPaused).toBe(true);
+
+    clock.now = 9000;
+    await engine.noteExamState('ACTIVE', null);
+    server.mode = 'ok';
+    clock.now = 9001;
+    await engine.capture(Q1, 'E');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(server.answers.get(Q1)?.optionId).toBe('E');
+  });
+
+  it('keeps every choice and backs off when a pause refusal cannot be decided', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const server = new PausableServer();
+    let refusals = 0;
+    const api: SyncApi = {
+      save: async () => {
+        refusals++;
+        return { kind: 'exam_paused', pausedAt: null };
+      },
+      fetchServerAnswers: async () => server.state(),
+    };
+    const { engine } = makeEngine(server, new MemoryAnswerStore(), { api, now: () => clock.now });
+    await engine.initialize([]);
+    await engine.capture(Q1, 'A');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(refusals).toBe(1);
+    expect(engine.pendingCount).toBe(1);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(refusals).toBeLessThanOrEqual(3);
+    expect(engine.view(Q1).optionId).toBe('A');
+  });
+
+  it('keeps the earlier choices across a reload, so the fallback still works afterwards', async () => {
+    vi.useFakeTimers();
+    const clock = { now: 1000 };
+    const store = new MemoryAnswerStore();
+    const first = pausable(clock, store);
+    await first.engine.initialize([]);
+    first.server.mode = 'down';
+    await first.engine.capture(Q1, 'A');
+    clock.now = 2000;
+    await first.engine.capture(Q1, 'C');
+    await vi.advanceTimersByTimeAsync(0);
+    first.engine.dispose();
+    const saved = await store.listForAttempt(TENANT, ATTEMPT);
+    expect(saved[0].optionId).toBe('C');
+    expect(saved[0].history?.map(h => h.optionId)).toEqual(['A']);
+
+    const second = pausable(clock, store);
+    second.server.pauses.push({ from: 1500, to: null });
+    await second.engine.initialize([]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(second.server.answers.get(Q1)?.optionId).toBe('A');
+  });
+
+  it('forgets earlier choices once the server holds a later one', async () => {
+    const clock = { now: 1000 };
+    let release: () => void = () => {};
+    const server = new PausableServer();
+    const api: SyncApi = {
+      save: async req => {
+        if (req.optionId === 'A') await new Promise<void>(resolve => { release = resolve; });
+        return server.save(req);
+      },
+      fetchServerAnswers: async () => server.state(),
+    };
+    const store = new MemoryAnswerStore();
+    const { engine } = makeEngine(server, store, { api, now: () => clock.now });
+    await engine.initialize([]);
+    await engine.capture(Q1, 'A');
+    await settle();
+    clock.now = 1100;
+    await engine.capture(Q1, 'B');
+    const [inQueue] = await store.listForAttempt(TENANT, ATTEMPT);
+    expect(inQueue.history?.map(h => h.optionId)).toEqual(['A']);
+    release();
+    await settle();
+    await settle();
+    expect(server.answers.get(Q1)?.optionId).toBe('B');
+    expect(await store.listForAttempt(TENANT, ATTEMPT)).toEqual([]);
   });
 });

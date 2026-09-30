@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { StudentSafeQuestion, ResumeResponse } from '../types/assessment.ts';
+import type { StudentSafeQuestion, ResumeResponse, TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -9,6 +9,7 @@ import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { formatTime } from '../lib/format.ts';
+import type { ExamRunState } from '../exam/answer-sync-engine.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
 import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
 
@@ -43,6 +44,34 @@ const TIME_REMINDER_VISIBLE_MS = 10000;
 const FINALIZE_RETRY_INITIAL_MS = 2000;
 const FINALIZE_RETRY_MAX_MS = 30000;
 const EXPIRY_FLUSH_WAIT_MS = 3000;
+/**
+ * How often the exam state is checked while working and while paused (Owner decision
+ * 2026-09-30). A save also reports a pause at once; while paused the check is more frequent
+ * so the exam continues on this device soon after the teacher resumes it.
+ */
+const STATE_CHECK_ACTIVE_MS = 15000;
+const STATE_CHECK_PAUSED_MS = 5000;
+
+function runStateOf(value: string | null | undefined): ExamRunState {
+  return value === 'PAUSED' ? 'PAUSED' : value === 'ENDED' ? 'ENDED' : 'ACTIVE';
+}
+
+function instantOrNull(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/** "soal 3", "soal 3 dan 5", "soal 2, 3 dan 7": numbers of the questions whose choice was dropped. */
+function describeQuestions(snapshotIds: string[], questions: StudentSafeQuestion[]): string | null {
+  const numbers = snapshotIds
+    .map(id => questions.findIndex(q => q.snapshotId === id) + 1)
+    .filter(n => n > 0)
+    .sort((a, b) => a - b);
+  if (numbers.length === 0) return null;
+  if (numbers.length === 1) return `soal ${numbers[0]}`;
+  return `soal ${numbers.slice(0, -1).join(', ')} dan ${numbers[numbers.length - 1]}`;
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -80,6 +109,14 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isNavSheetOpen, setIsNavSheetOpen] = useState<boolean>(false);
   const navSheetTriggerRef = useRef<HTMLButtonElement>(null);
+  // Exam pause and end (Owner decision 2026-09-30): a paused exam hides the questions and
+  // freezes the time; an ended exam lets this running attempt finish on its own time.
+  const [examState, setExamState] = useState<ExamRunState>('ACTIVE');
+  const [pausedAt, setPausedAt] = useState<string | null>(null);
+  const [discardedIds, setDiscardedIds] = useState<string[]>([]);
+  const examStateRef = useRef<ExamRunState>('ACTIVE');
+  examStateRef.current = examState;
+  const questionsLoadingRef = useRef<boolean>(false);
 
   const finalizingRef = useRef<boolean>(false);
   const mountedRef = useRef<boolean>(true);
@@ -132,6 +169,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
 
   const timerControlRef = useRef<{ applyServerRemaining: (seconds: number) => void } | null>(null);
   const answersRef = useRef<{ pendingCount: number; flush: () => void; hasUnresolvedSaves: boolean } | null>(null);
+  const runInfoRef = useRef<((timer: TimerResponse) => void) | null>(null);
 
   // Timer expiry: flush what can still be sent (D04.5-46), then ask the server to finalize
   // from its accepted answers (D04.5-47), retrying until it answers (D04.5-45/49).
@@ -161,6 +199,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               const timer = await getTimer(id);
               if (timer.status === 'active' && timer.effectiveRemainingSeconds > 0) {
                 timerControlRef.current?.applyServerRemaining(timer.effectiveRemainingSeconds);
+                runInfoRef.current?.(timer);
                 if (mountedRef.current) setPhase('active');
                 return;
               }
@@ -231,6 +270,16 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         setInitialAnswers(resume.answers);
         setInitialFlags(resume.reviewFlags ?? []);
 
+        const runState = runStateOf(resume.exam?.lifecycleState);
+        setExamState(runState);
+        examStateRef.current = runState;
+        if (runState === 'PAUSED') {
+          // No question content while paused; the questions load when the exam continues.
+          setPausedAt(resume.exam?.pausedAt ?? null);
+          setPhase('active');
+          return;
+        }
+
         // Load questions
         const qRes = await getQuestions(attemptId!);
         if (isCancelled) return;
@@ -265,6 +314,13 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               void finalizeExpiredAttempt(attemptId!);
               return;
             }
+            if (err.code === 'exam_paused') {
+              // Paused between the resume and the questions: wait on the paused screen.
+              setExamState('PAUSED');
+              examStateRef.current = 'PAUSED';
+              setPhase('active');
+              return;
+            }
           }
         }
         setErrorMessage('Gagal memuat lembar ujian. Periksa koneksi internet Anda atau hubungi pengawas.');
@@ -288,8 +344,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const timer = useAuthoritativeTimer({
     attemptId: attemptId || '',
     initialRemainingSeconds,
-    enabled: phase === 'active',
+    // Time stands still while the exam is paused.
+    enabled: phase === 'active' && examState !== 'PAUSED',
     onExpire: handleExpire,
+    onTimerInfo: timerInfo => runInfoRef.current?.(timerInfo),
   });
   timerControlRef.current = timer;
   const { formattedTime, isWarning, isUrgent, remainingSeconds } = timer;
@@ -297,7 +355,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const [timeReminder, setTimeReminder] = useState<string | null>(null);
   const lastRemainingRef = useRef<number | null>(null);
   useEffect(() => {
-    if (phase !== 'active') {
+    if (phase !== 'active' || examState === 'PAUSED') {
       lastRemainingRef.current = null;
       return;
     }
@@ -307,7 +365,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     if (TIME_REMINDER_THRESHOLDS_SECONDS.some(t => previous > t && remainingSeconds <= t)) {
       setTimeReminder(`Sisa waktu ${Math.ceil(remainingSeconds / 60)} menit.`);
     }
-  }, [remainingSeconds, phase]);
+  }, [remainingSeconds, phase, examState]);
   useEffect(() => {
     if (!timeReminder) return;
     const hide = setTimeout(() => setTimeReminder(null), TIME_REMINDER_VISIBLE_MS);
@@ -336,6 +394,20 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     setPhase('superseded');
   }, []);
 
+  const checkExamStateRef = useRef<(() => Promise<void>) | null>(null);
+  const handleExamPausedBySave = useCallback((at: number | null) => {
+    setIsSubmitModalOpen(false);
+    setIsNavSheetOpen(false);
+    setExamState('PAUSED');
+    examStateRef.current = 'PAUSED';
+    if (at !== null) setPausedAt(new Date(at).toISOString());
+    // Fetch the frozen remaining time to show it.
+    void checkExamStateRef.current?.();
+  }, []);
+  const handleDiscarded = useCallback((ids: string[]) => {
+    setDiscardedIds(prev => [...new Set([...prev, ...ids])]);
+  }, []);
+
   const answers = useAnswerManager({
     tenantId: tenantKey,
     attemptId: attemptId || '',
@@ -344,10 +416,91 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     enabled: phase === 'active' || phase === 'expired',
     onSessionInactive: handleSessionInactive,
     onTerminalEvent: handleTerminalEvent,
+    onExamPaused: handleExamPausedBySave,
+    onDiscarded: handleDiscarded,
   });
   const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
   const review = useReviewFlags({ attemptId: attemptId || '', sessionId, initialFlags, enabled: phase === 'active' });
   answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, hasUnresolvedSaves };
+
+  const loadQuestions = useCallback(async (id: string) => {
+    if (questionsLoadingRef.current) return;
+    questionsLoadingRef.current = true;
+    try {
+      const qRes = await getQuestions(id);
+      if (mountedRef.current) setQuestions(qRes.questions);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'exam_paused' && mountedRef.current) {
+        setExamState('PAUSED');
+        examStateRef.current = 'PAUSED';
+      }
+      // Otherwise the next state check tries again.
+    } finally {
+      questionsLoadingRef.current = false;
+    }
+  }, []);
+
+  // What the server says about the exam: pause (freeze and hide), resume (exact remaining
+  // time, questions back) or end (this attempt continues on its own time).
+  const noteExamState = answers.noteExamState;
+  const applyRunInfo = useCallback((info: TimerResponse) => {
+    if (!mountedRef.current) return;
+    const state = runStateOf(info.examState);
+    const remaining = info.status === 'expired' ? 0 : info.effectiveRemainingSeconds;
+    const wasPaused = examStateRef.current === 'PAUSED';
+    if (state === 'PAUSED') {
+      setIsSubmitModalOpen(false);
+      setIsNavSheetOpen(false);
+      setPausedAt(info.pausedAt ?? null);
+    }
+    examStateRef.current = state;
+    setExamState(state);
+    noteExamState(state, state === 'PAUSED' ? instantOrNull(info.pausedAt) : null);
+    // The server's value replaces the local countdown (frozen while paused, exact on resume).
+    timerControlRef.current?.applyServerRemaining(remaining);
+    // Questions are fetched once the exam runs again (also retried by later checks).
+    if (state !== 'PAUSED' && attemptId && questions.length === 0) void loadQuestions(attemptId);
+    if (wasPaused && state !== 'PAUSED') answersRef.current?.flush();
+  }, [noteExamState, attemptId, questions.length, loadQuestions]);
+  runInfoRef.current = applyRunInfo;
+
+  const checkExamState = useCallback(async () => {
+    if (!attemptId) return;
+    try {
+      applyRunInfo(await getTimer(attemptId));
+    } catch {
+      // Offline or unreachable: the next check, a save or reconnecting tries again.
+    }
+  }, [attemptId, applyRunInfo]);
+  checkExamStateRef.current = checkExamState;
+
+  // Regular state check while the exam screen is open; sooner while paused, and at once
+  // when the tab is visible again or the connection returns.
+  useEffect(() => {
+    if (phase !== 'active') return;
+    const base = examState === 'PAUSED' ? STATE_CHECK_PAUSED_MS : STATE_CHECK_ACTIVE_MS;
+    let stopped = false;
+    let handle: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      // A little jitter keeps a whole room from asking at the same moment.
+      handle = setTimeout(async () => {
+        await checkExamState();
+        if (!stopped) schedule();
+      }, base * (0.8 + Math.random() * 0.4));
+    };
+    schedule();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void checkExamState();
+    };
+    window.addEventListener('online', onVisible);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stopped = true;
+      if (handle) clearTimeout(handle);
+      window.removeEventListener('online', onVisible);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [phase, examState, checkExamState]);
 
   // Handle final submission (idempotent on the server, D04.5-40/44).
   const handleConfirmSubmit = useCallback(async () => {
@@ -368,11 +521,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         handleExpire();
         return;
       }
+      if (err instanceof ApiError && err.code === 'exam_paused') {
+        handleExamPausedBySave(instantOrNull(typeof err.data?.pausedAt === 'string' ? err.data.pausedAt : null));
+        return;
+      }
       setSubmitError('Gagal mengumpulkan ujian. Periksa koneksi internet Anda lalu coba lagi.');
     } finally {
       if (mountedRef.current) setIsSubmitting(false);
     }
-  }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire]);
+  }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire, handleExamPausedBySave]);
 
   // Render Phase States
   if (phase === 'invalid_attempt') {
@@ -518,9 +675,50 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     );
   }
 
+  const discardedText = discardedIds.length > 0
+    ? (() => {
+      const which = describeQuestions(discardedIds, questions);
+      return which
+        ? `Pilihan jawaban pada ${which} dibuat setelah ujian dijeda sehingga tidak disimpan. Periksa kembali soal tersebut.`
+        : 'Beberapa pilihan jawaban dibuat setelah ujian dijeda sehingga tidak disimpan. Periksa kembali jawaban Anda setelah ujian dilanjutkan.';
+    })()
+    : null;
+
+  // Paused (Owner decision 2026-09-30): the questions are hidden and the time is frozen, so
+  // the pause gives no extra working time; answers chosen before it keep being sent.
+  if (phase === 'active' && examState === 'PAUSED') {
+    return (
+      <main className="fullscreen-state-container">
+        <div className="state-card paused-card" role="status" aria-live="polite">
+          <h1 className="state-card-title">Ujian Dijeda</h1>
+          <p className="state-card-body">
+            {pausedAt ? `Guru menjeda ujian sejak ${formatTime(pausedAt)}.` : 'Guru menjeda ujian.'} Sisa waktu Anda berhenti dan berjalan lagi saat ujian dilanjutkan.
+          </p>
+          <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}`}>
+            <span className="paused-remaining-label">Sisa waktu</span>
+            <span className="paused-remaining-value">{formattedTime}</span>
+          </p>
+          <p className="state-card-body">
+            {!answers.ready
+              ? 'Memeriksa jawaban di perangkat ini...'
+              : answers.pendingCount > 0
+                ? (degraded || !isOnline
+                  ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum ujian dijeda akan dikirim otomatis saat kembali terhubung.'
+                  : 'Mengirim jawaban yang Anda pilih sebelum ujian dijeda...')
+                : 'Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.'}
+          </p>
+          {discardedText && (
+            <p className="state-card-body paused-discarded" role="alert">{discardedText}</p>
+          )}
+          <p className="state-card-body">Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
+        </div>
+      </main>
+    );
+  }
+
   // Questions appear only once this device's unsynced choices are restored, so nothing can
   // be answered or submitted before the local buffer and the server state are reconciled.
-  if (phase === 'loading' || (phase === 'active' && !answers.ready)) {
+  if (phase === 'loading' || (phase === 'active' && (!answers.ready || questions.length === 0))) {
     return (
       <main className="fullscreen-state-container">
         <div className="state-card">
@@ -642,6 +840,17 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         {timeReminder && (
           <div className="time-reminder-banner" role="status" aria-live="polite">
             {timeReminder}
+          </div>
+        )}
+        {examState === 'ENDED' && (
+          <div className="exam-ended-banner" role="status">
+            Guru telah mengakhiri ujian. Anda tetap dapat menyelesaikan sampai waktu Anda habis.
+          </div>
+        )}
+        {discardedText && (
+          <div className="discarded-banner" role="alert">
+            <span>{discardedText}</span>
+            <button type="button" className="discarded-banner-dismiss" onClick={() => setDiscardedIds([])}>Mengerti</button>
           </div>
         )}
         {(degraded || !isOnline) && (

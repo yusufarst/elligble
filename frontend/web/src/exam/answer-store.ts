@@ -3,6 +3,13 @@
 // Records are deleted as soon as the server acknowledges that intent, so the device only
 // keeps what is not yet on the server (shared-device privacy, D04.3-83D).
 
+/** An earlier choice for the same question that the server has not acknowledged. */
+export interface IntentHistoryEntry {
+  optionId: string;
+  clientWriteIdentity: string;
+  capturedAt: number;
+}
+
 export interface PendingAnswerRecord {
   key: string;
   attemptKey: string;
@@ -18,7 +25,15 @@ export interface PendingAnswerRecord {
   /** Server write version the intent is based on (null: no server answer yet). */
   baseVersion: number | null;
   localSequence: number;
+  /** When the student chose it, in server-anchored epoch milliseconds (server-clock.ts). */
   capturedAt: number;
+  /**
+   * Earlier unacknowledged choices for the question, oldest first. When the server refuses
+   * the latest choice because it was made during an exam pause, the latest earlier choice
+   * made outside the pause is sent instead, so an answer chosen before the pause is not
+   * lost (Owner decision 2026-09-30). Absent in records written before it existed.
+   */
+  history?: IntentHistoryEntry[];
 }
 
 export interface AnswerStore {

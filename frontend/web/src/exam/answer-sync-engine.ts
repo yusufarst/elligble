@@ -1,4 +1,5 @@
-import { answerKey, attemptKey, type AnswerStore, type PendingAnswerRecord } from './answer-store.ts';
+import { answerKey, attemptKey, type AnswerStore, type IntentHistoryEntry, type PendingAnswerRecord } from './answer-store.ts';
+import { serverClock } from './server-clock.ts';
 
 // Local-first answer synchronisation for one attempt on one device (D04.3-83A..D,
 // D04.5-05..18, D04.4-37/41). Every selection is written to the local buffer before it is
@@ -13,6 +14,12 @@ import { answerKey, attemptKey, type AnswerStore, type PendingAnswerRecord } fro
 //   not moved since, or its latest write was this device's own; otherwise the server wins.
 // - Transient failures retry with exponential backoff and jitter; session supersession,
 //   expiry and submission stop the engine without deleting unsynced local intents.
+// - Exam pause (Owner decision 2026-09-30): every intent carries its server-anchored
+//   capture time. The server accepts, even while paused, an intent chosen before the pause
+//   boundary and refuses one chosen during a pause. A refused intent falls back to the
+//   latest earlier choice for that question made outside every known pause; when there is
+//   none, the server's answer stays. Such discarded choices are reported, never silently
+//   lost, and no new choice is captured while the exam is known to be paused.
 
 export type SaveOutcome =
   | { kind: 'ack'; writeVersion: number; clientWriteIdentity: string }
@@ -22,7 +29,11 @@ export type SaveOutcome =
   | { kind: 'terminal'; code: string }
   | { kind: 'rejected'; code: string }
   | { kind: 'unauthorized' }
-  | { kind: 'retry' };
+  | { kind: 'retry' }
+  /** The exam is paused and the intent was not chosen before the boundary (null: unknown boundary). */
+  | { kind: 'exam_paused'; pausedAt: number | null }
+  /** The intent was chosen inside this pause interval of the exam. */
+  | { kind: 'captured_during_pause'; pausedAt: number; resumedAt: number | null };
 
 export interface ServerAnswerState {
   snapshotId: string;
@@ -39,6 +50,8 @@ export interface SyncApi {
     optionId: string;
     clientWriteIdentity: string;
     expectedWriteVersion: number | null;
+    /** Server-anchored capture time in epoch milliseconds. */
+    capturedAt: number;
   }): Promise<SaveOutcome>;
   fetchServerAnswers(): Promise<ServerAnswerState[]>;
 }
@@ -55,7 +68,13 @@ export interface EngineEvents {
   onSessionInactive(): void;
   onTerminal(code: string): void;
   onUnauthorized(): void;
+  /** A save showed that the exam is paused (the workstation switches to its paused screen). */
+  onExamPaused?(pausedAt: number | null): void;
+  /** Choices made during a pause were dropped for these questions (each shows its earlier answer). */
+  onDiscarded?(snapshotIds: string[]): void;
 }
+
+export type ExamRunState = 'ACTIVE' | 'PAUSED' | 'ENDED';
 
 export interface RetryPolicy {
   initialDelayMs: number;
@@ -76,11 +95,20 @@ export interface EngineOptions {
   random?: () => number;
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
+  /** Server-anchored clock for capture times (epoch milliseconds). */
+  now?: () => number;
 }
 
 const DEFAULT_RETRY: RetryPolicy = { initialDelayMs: 1000, maxDelayMs: 30000, multiplier: 2, jitterRatio: 0.3 };
 const MAX_CONSECUTIVE_STALE = 2;
 const MAX_OWN_IDENTITIES = 20;
+const MAX_HISTORY = 8;
+
+interface PauseInterval {
+  from: number;
+  /** Null while the pause is open. */
+  to: number | null;
+}
 
 interface ServerEntry {
   optionId: string | null;
@@ -112,6 +140,8 @@ export class AnswerSyncEngine {
   private retryTimer: unknown = null;
   private retryDelay = 0;
   private lastSendFailed = false;
+  private readonly pauses: PauseInterval[] = [];
+  private examPaused = false;
 
   constructor(options: EngineOptions) {
     this.opts = {
@@ -119,6 +149,7 @@ export class AnswerSyncEngine {
       random: Math.random,
       setTimer: (fn, ms) => setTimeout(fn, ms),
       clearTimer: handle => clearTimeout(handle as ReturnType<typeof setTimeout>),
+      now: () => serverClock.now(),
       ...options,
       retryPolicy: options.retryPolicy ?? DEFAULT_RETRY,
     };
@@ -224,13 +255,17 @@ export class AnswerSyncEngine {
     // A choice made while the stored intents are still loading must not be overwritten by
     // an older stored intent for the same question.
     if (!this.initialized && this.initialization) await this.initialization;
-    if (this.disposed) return;
+    // The exam screen is read-only during a pause; a choice made anyway would be refused.
+    if (this.disposed || this.examPaused) return;
     const existing = this.pending.get(snapshotId);
     const server = this.server.get(snapshotId);
     if (!existing && server?.optionId === optionId) return;
 
     const ownIdentities = [...(existing?.ownIdentities ?? [])];
     if (existing) ownIdentities.push(existing.clientWriteIdentity);
+    const history: IntentHistoryEntry[] = existing
+      ? [...(existing.history ?? []), { optionId: existing.optionId, clientWriteIdentity: existing.clientWriteIdentity, capturedAt: existing.capturedAt }].slice(-MAX_HISTORY)
+      : [];
     const record: PendingAnswerRecord = {
       key: answerKey(this.opts.tenantId, this.opts.attemptId, snapshotId),
       attemptKey: attemptKey(this.opts.tenantId, this.opts.attemptId),
@@ -243,7 +278,8 @@ export class AnswerSyncEngine {
       ownIdentities: [...new Set(ownIdentities)].slice(-MAX_OWN_IDENTITIES),
       baseVersion: existing ? existing.baseVersion : server ? server.writeVersion : null,
       localSequence: ++this.sequence,
-      capturedAt: Date.now(),
+      capturedAt: this.opts.now(),
+      history,
     };
     this.pending.set(snapshotId, record);
     this.rejected.delete(snapshotId);
@@ -322,6 +358,7 @@ export class AnswerSyncEngine {
   /** Returns false when processing should stop (backoff scheduled or engine halted). */
   private async sendOne(record: PendingAnswerRecord): Promise<boolean> {
     const snapshotId = record.snapshotId;
+    const sentIdentity = record.clientWriteIdentity;
     this.inFlight.add(snapshotId);
     this.opts.events.onChange();
     let outcome: SaveOutcome;
@@ -333,6 +370,7 @@ export class AnswerSyncEngine {
         optionId: record.optionId,
         clientWriteIdentity: record.clientWriteIdentity,
         expectedWriteVersion: record.baseVersion,
+        capturedAt: record.capturedAt,
       });
     } catch {
       outcome = { kind: 'retry' };
@@ -381,7 +419,127 @@ export class AnswerSyncEngine {
         this.opts.events.onChange();
         this.scheduleRetry();
         return false;
+      case 'exam_paused':
+        this.examPaused = true;
+        this.opts.events.onExamPaused?.(outcome.pausedAt);
+        if (outcome.pausedAt === null) {
+          // No boundary to decide by: keep every intent and ask again later.
+          this.scheduleRetry();
+          return false;
+        }
+        this.notePause(outcome.pausedAt, null);
+        return this.afterPauseRefusal(snapshotId, sentIdentity);
+      case 'captured_during_pause':
+        this.notePause(outcome.pausedAt, outcome.resumedAt);
+        return this.afterPauseRefusal(snapshotId, sentIdentity);
     }
+  }
+
+  /**
+   * The workstation learned the exam state (periodic check, resume). A known pause stops
+   * new captures and settles every intent against its boundary at once; when the exam runs
+   * again, an open pause is closed at the current time (the screen was paused until now).
+   */
+  async noteExamState(state: ExamRunState, pausedAt: number | null): Promise<void> {
+    if (this.disposed) return;
+    if (state === 'PAUSED') {
+      this.examPaused = true;
+      if (pausedAt !== null) {
+        this.notePause(pausedAt, null);
+        await this.settleAgainstPauses();
+      }
+      this.opts.events.onChange();
+      this.kick();
+      return;
+    }
+    if (this.examPaused || this.pauses.some(p => p.to === null)) {
+      const now = this.opts.now();
+      for (const pause of this.pauses) if (pause.to === null) pause.to = Math.max(pause.from, now);
+    }
+    this.examPaused = false;
+    this.opts.events.onChange();
+    this.kick();
+  }
+
+  /** True while the engine knows the exam is paused (captures are ignored). */
+  get examIsPaused(): boolean {
+    return this.examPaused;
+  }
+
+  private notePause(from: number, to: number | null): void {
+    const known = this.pauses.find(p => p.from === from);
+    if (known) {
+      if (to !== null) known.to = to;
+      return;
+    }
+    // A newer open pause replaces an older one this engine still believed open.
+    for (const pause of this.pauses) if (pause.to === null && pause.from < from) pause.to = from;
+    this.pauses.push({ from, to });
+  }
+
+  private insidePause(capturedAt: number): boolean {
+    return this.pauses.some(p => capturedAt >= p.from && (p.to === null || capturedAt < p.to));
+  }
+
+  private async afterPauseRefusal(snapshotId: string, sentIdentity: string): Promise<boolean> {
+    await this.settleAgainstPauses();
+    const current = this.pending.get(snapshotId);
+    if (current && current.clientWriteIdentity === sentIdentity) {
+      // The server refused an intent this engine would keep: never loop, back off.
+      this.failedAttempts.set(snapshotId, (this.failedAttempts.get(snapshotId) ?? 0) + 1);
+      this.opts.events.onChange();
+      this.scheduleRetry();
+      return false;
+    }
+    return true;
+  }
+
+  /** Applies every known pause to every waiting intent; reports the questions whose latest choice was dropped. */
+  private async settleAgainstPauses(): Promise<void> {
+    const discarded: string[] = [];
+    for (const record of [...this.pending.values()]) {
+      if (this.inFlight.has(record.snapshotId)) continue;
+      if (await this.settleRecord(record)) discarded.push(record.snapshotId);
+    }
+    if (discarded.length > 0) this.opts.events.onDiscarded?.(discarded);
+    this.opts.events.onChange();
+  }
+
+  /** Returns true when the latest choice for the question was dropped. */
+  private async settleRecord(record: PendingAnswerRecord): Promise<boolean> {
+    const candidates: IntentHistoryEntry[] = [
+      ...(record.history ?? []),
+      { optionId: record.optionId, clientWriteIdentity: record.clientWriteIdentity, capturedAt: record.capturedAt },
+    ];
+    let keep = -1;
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      if (!this.insidePause(candidates[i].capturedAt)) {
+        keep = i;
+        break;
+      }
+    }
+    if (keep === candidates.length - 1) return false;
+    const snapshotId = record.snapshotId;
+    const server = this.server.get(snapshotId);
+    if (keep < 0 || server?.optionId === candidates[keep].optionId) {
+      // Nothing else to send: the server's answer (or no answer) stays for this question.
+      this.pending.delete(snapshotId);
+      this.rejected.delete(snapshotId);
+      this.failedAttempts.delete(snapshotId);
+      this.staleCount.delete(snapshotId);
+      await this.safeDelete(record.key);
+      return true;
+    }
+    const chosen = candidates[keep];
+    const dropped = candidates.slice(keep + 1).map(c => c.clientWriteIdentity);
+    record.optionId = chosen.optionId;
+    record.clientWriteIdentity = chosen.clientWriteIdentity;
+    record.capturedAt = chosen.capturedAt;
+    record.history = candidates.slice(0, keep);
+    record.ownIdentities = [...new Set([...record.ownIdentities, ...dropped])].filter(id => id !== chosen.clientWriteIdentity).slice(-MAX_OWN_IDENTITIES);
+    this.rejected.delete(snapshotId);
+    await this.safePut(record);
+    return true;
   }
 
   private async onAck(sent: PendingAnswerRecord, ack: { writeVersion: number; clientWriteIdentity: string }): Promise<void> {
@@ -395,8 +553,12 @@ export class AnswerSyncEngine {
       await this.safeDelete(current.key);
     } else if (current) {
       // A newer choice was made while this one was in flight: rebase it on the new version.
+      // Earlier choices up to the acknowledged one are now the server's answer.
       current.baseVersion = ack.writeVersion;
       current.ownIdentities = [...new Set([...current.ownIdentities, ack.clientWriteIdentity])].slice(-MAX_OWN_IDENTITIES);
+      const history = current.history ?? [];
+      const acked = history.findIndex(h => h.clientWriteIdentity === sent.clientWriteIdentity);
+      if (acked >= 0) current.history = history.slice(acked + 1);
       await this.safePut(current);
     }
     this.opts.events.onChange();

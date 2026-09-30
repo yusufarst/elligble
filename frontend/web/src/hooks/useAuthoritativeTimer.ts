@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getTimer } from '../api/assessment-client.ts';
+import type { TimerResponse } from '../types/assessment.ts';
 
 export interface UseAuthoritativeTimerOptions {
   attemptId: string;
   initialRemainingSeconds: number;
   enabled?: boolean;
   onExpire: () => void;
+  /** Receives every timer response, so the caller also learns the exam state (pause, end). */
+  onTimerInfo?: (timer: TimerResponse) => void;
 }
 
 export function formatRemainingTime(seconds: number): string {
@@ -34,6 +37,7 @@ export function useAuthoritativeTimer({
   initialRemainingSeconds,
   enabled = true,
   onExpire,
+  onTimerInfo,
 }: UseAuthoritativeTimerOptions) {
   const [remainingSeconds, setRemainingSeconds] = useState<number>(initialRemainingSeconds);
   const deadlineRef = useRef<number>(monotonicNow() + initialRemainingSeconds * 1000);
@@ -41,6 +45,8 @@ export function useAuthoritativeTimer({
   const expiredRef = useRef<boolean>(initialRemainingSeconds <= 0);
   const onExpireRef = useRef(onExpire);
   onExpireRef.current = onExpire;
+  const onTimerInfoRef = useRef(onTimerInfo);
+  onTimerInfoRef.current = onTimerInfo;
 
   if (prevInitialRef.current !== initialRemainingSeconds) {
     prevInitialRef.current = initialRemainingSeconds;
@@ -81,7 +87,8 @@ export function useAuthoritativeTimer({
     if (!enabled || expiredRef.current) return;
     try {
       const timerData = await getTimer(attemptId);
-      applyServerRemaining(timerData.status === 'expired' ? 0 : timerData.effectiveRemainingSeconds);
+      if (onTimerInfoRef.current) onTimerInfoRef.current(timerData);
+      else applyServerRemaining(timerData.status === 'expired' ? 0 : timerData.effectiveRemainingSeconds);
     } catch {
       // Do not crash or mutate local time on resync network failure
     }

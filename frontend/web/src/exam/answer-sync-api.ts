@@ -3,6 +3,7 @@ import { getResume } from '../api/assessment-client.ts';
 import type { ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
+import { serverClock } from './server-clock.ts';
 
 // HTTP adapter between the sync engine and POST /api/v1/assessment/answer/save. Every
 // response is classified once here so the engine never guesses from raw status codes.
@@ -25,7 +26,13 @@ export function toServerAnswerState(answer: ResumeAnswer): ServerAnswerState {
   };
 }
 
-export function classifySaveFailure(status: number, code: string): SaveOutcome {
+function instantOrNull(value: unknown): number | null {
+  if (typeof value !== 'string') return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+export function classifySaveFailure(status: number, code: string, body: Record<string, unknown> = {}): SaveOutcome {
   if (status === 401) return { kind: 'unauthorized' };
   if (status === 409) {
     switch (code) {
@@ -39,9 +46,14 @@ export function classifySaveFailure(status: number, code: string): SaveOutcome {
       case 'timer_expired':
         return { kind: 'terminal', code };
       case 'exam_paused':
-        // The teacher paused the exam: the intent stays on the device and is sent again
-        // once the exam continues (Owner decision 2026-09-30); nothing is dropped.
-        return { kind: 'retry' };
+        // The teacher paused the exam (Owner decision 2026-09-30): the engine keeps what
+        // was chosen before the boundary and drops only what was chosen after it.
+        return { kind: 'exam_paused', pausedAt: instantOrNull(body.pausedAt) };
+      case 'captured_during_pause': {
+        const pausedAt = instantOrNull(body.pausedAt);
+        if (pausedAt === null) return { kind: 'retry' };
+        return { kind: 'captured_during_pause', pausedAt, resumedAt: instantOrNull(body.resumedAt) };
+      }
       default:
         return { kind: 'rejected', code };
     }
@@ -51,12 +63,12 @@ export function classifySaveFailure(status: number, code: string): SaveOutcome {
   return { kind: 'rejected', code };
 }
 
-async function errorCode(res: Response): Promise<string> {
+async function errorBody(res: Response): Promise<Record<string, unknown>> {
   try {
     const body = await res.json();
-    return body && typeof body.error === 'string' ? body.error : 'unknown_error';
+    return body && typeof body === 'object' ? body : {};
   } catch {
-    return 'unknown_error';
+    return {};
   }
 }
 
@@ -64,6 +76,7 @@ export function createAnswerSyncApi(attemptId: string, examSessionId: string): S
   return {
     async save(request) {
       let res: Response;
+      const sentAt = Date.now();
       try {
         res = await apiFetch('/api/v1/assessment/answer/save', {
           method: 'POST',
@@ -74,14 +87,21 @@ export function createAnswerSyncApi(attemptId: string, examSessionId: string): S
             answerPayload: { selectedOptionId: request.optionId },
             clientWriteIdentity: request.clientWriteIdentity,
             expectedWriteVersion: request.expectedWriteVersion,
+            capturedAt: new Date(request.capturedAt).toISOString(),
           },
         });
       } catch {
         return { kind: 'retry' };
       }
-      if (!res.ok) return classifySaveFailure(res.status, await errorCode(res));
+      const receivedAt = Date.now();
+      if (!res.ok) {
+        const body = await errorBody(res);
+        serverClock.observe(typeof body.serverTime === 'string' ? body.serverTime : null, sentAt, receivedAt);
+        return classifySaveFailure(res.status, typeof body.error === 'string' ? body.error : 'unknown_error', body);
+      }
       try {
         const body = await res.json();
+        serverClock.observe(body && typeof body.serverTime === 'string' ? body.serverTime : null, sentAt, receivedAt);
         if (body && typeof body.writeVersion === 'number') {
           return {
             kind: 'ack',

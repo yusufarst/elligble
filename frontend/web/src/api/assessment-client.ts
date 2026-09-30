@@ -13,6 +13,7 @@ import type {
   ExamMonitoringResponse,
 } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
+import { observeServerTime } from '../exam/server-clock.ts';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -49,8 +50,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export async function getResume(attemptId: string, examSessionId?: string | null): Promise<ResumeResponse> {
   let url = `/api/v1/assessment/resume?attemptId=${encodeURIComponent(attemptId)}`;
   if (examSessionId) url += `&examSessionId=${encodeURIComponent(examSessionId)}`;
-  const res = await apiFetch(url, { method: 'GET' });
-  return handleResponse<ResumeResponse>(res);
+  return observeServerTime(async () => handleResponse<ResumeResponse>(await apiFetch(url, { method: 'GET' })));
 }
 
 export async function getQuestions(attemptId: string): Promise<QuestionsResponse> {
@@ -61,8 +61,7 @@ export async function getQuestions(attemptId: string): Promise<QuestionsResponse
 
 export async function getTimer(attemptId: string): Promise<TimerResponse> {
   const url = `/api/v1/assessment/timer?attemptId=${encodeURIComponent(attemptId)}`;
-  const res = await apiFetch(url, { method: 'GET' });
-  return handleResponse<TimerResponse>(res);
+  return observeServerTime(async () => handleResponse<TimerResponse>(await apiFetch(url, { method: 'GET' })));
 }
 
 export async function postSaveAnswer(req: SaveAnswerRequest): Promise<SaveAnswerResponse> {
