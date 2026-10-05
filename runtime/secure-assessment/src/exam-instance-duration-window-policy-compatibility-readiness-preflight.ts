@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+import { isReadinessEvaluableState } from './readiness-states.ts';
 
 export type CapabilityEvaluator = (context: {
   tenantId: string;
@@ -94,7 +95,7 @@ export async function checkExamInstanceDurationWindowPolicyCompatibilityReadines
       latest_start_policy,
     } = instanceResult.rows[0];
 
-    if (lifecycle_state !== 'SCHEDULED') {
+    if (!isReadinessEvaluableState(lifecycle_state)) {
       return { type: 'invalid_state' };
     }
 

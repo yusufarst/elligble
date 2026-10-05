@@ -1,0 +1,88 @@
+# ELLIGBLE runtime alert rules (OPS-002), Prometheus rule-file format. Load them into any
+# Prometheus-compatible evaluator that scrapes the internal metrics listener
+# (SA_METRICS_PORT, GET /metrics). Thresholds are starting points for a pilot; tune them
+# after the first exam days. Runbook: docs/production/OPERATIONS_RUNBOOK.md, section 3.
+# Answer persistence comes first (D04.9-25): its alerts are critical.
+groups:
+  - name: elligble-exam-day
+    rules:
+      - alert: ElligbleAnswerSavesFailing
+        expr: sum(rate(elligble_answer_saves_total{outcome="failed"}[2m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Answer saves are failing on the server (5xx).
+          description: Students keep answers on their devices, but the server is not storing them. Check the database and the error log (request_failed) now.
+
+      - alert: ElligbleResponsePersistenceSlow
+        expr: histogram_quantile(0.95, sum by (le) (rate(elligble_http_request_duration_seconds_bucket{component="response_persistence"}[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Answer saves and submissions take over 1 s at the 95th percentile.
+          description: Saves are slow enough for students to see "Menyimpan..." for long. Check database load and the pool (elligble_db_pool_connections).
+
+      - alert: ElligbleExpirySweepStalled
+        expr: time() - elligble_expiry_last_success_timestamp_seconds > 120
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: The server has not finalized expired attempts for over 2 minutes.
+          description: Attempts whose time ran out while the device was away stay open. Check expiry_finalization_failed in the log and the database.
+
+      - alert: ElligbleExpiryBacklog
+        expr: elligble_expiry_pending_attempts > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Overdue attempts are still waiting for server finalization.
+          description: Attempts held by long transactions are skipped by each sweep. Look for long-running queries or stuck requests.
+
+      - alert: ElligbleServerErrors
+        expr: sum by (component) (rate(elligble_http_requests_total{status_class="5xx"}[5m])) / sum by (component) (rate(elligble_http_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 1% of requests fail with 5xx in component {{ $labels.component }}.
+          description: Check request_failed in the error log with the request ids of the failing calls.
+
+      - alert: ElligbleDatabaseNotReady
+        expr: elligble_database_ready == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: The runtime cannot reach the database.
+          description: Answers wait on the students' devices; saves, starts and submissions fail until the database is back.
+
+      - alert: ElligbleDatabasePoolExhausted
+        expr: elligble_db_pool_connections{state="waiting"} > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Requests are waiting for a database connection.
+          description: The pool (SA_DB_POOL_MAX) is saturated. Check slow queries before raising the pool size.
+
+      - alert: ElligbleEventLoopDelayed
+        expr: elligble_event_loop_delay_seconds{quantile="0.99"} > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: The runtime process is overloaded (event loop delay over 200 ms).
+          description: Every request waits. Check CPU of the container and the request rate per component.
+
+      - alert: ElligbleMetricsDown
+        expr: up{job="elligble"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: The metrics listener does not answer.
+          description: The runtime process may be down. Check /readyz through the proxy and the container state.

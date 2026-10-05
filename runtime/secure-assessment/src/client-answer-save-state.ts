@@ -1,4 +1,4 @@
-import { type ClientAnswerMutationRecord, isMutationAcknowledged } from './client-answer-sync.js';
+import { type ClientAnswerMutationRecord, isMutationAcknowledged } from './client-answer-sync.ts';
 
 export type ClientAnswerSaveState = 
   | 'saved'

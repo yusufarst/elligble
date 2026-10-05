@@ -1,5 +1,16 @@
 import type { Client } from 'pg';
-import { verifyPassword, hashPassword, generateSessionSecret, verifySessionSecret } from './crypto.ts';
+import { randomBytes } from 'node:crypto';
+import {
+  verifyPassword, hashPassword, generateSessionSecret, verifySessionSecret, normalizeActivationCode,
+} from './crypto.ts';
+import { checkNewPassword, type PasswordRejection } from './password-policy.ts';
+import { createUnusableVerifier, issueActivationInTransaction } from './provisioning.ts';
+
+export { checkNewPassword, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, type PasswordRejection } from './password-policy.ts';
+
+// Verifier for a random, unknowable password. Unknown usernames are checked against it so that
+// "no such account" costs the same key-derivation work as "wrong password" (no timing enumeration).
+const UNKNOWN_ACCOUNT_VERIFIER = hashPassword(randomBytes(32).toString('hex'));
 
 export interface Clock {
   now(): Date;
@@ -18,9 +29,28 @@ export const POLICY = {
   IDLE_EXPIRY_MS: 60 * 60 * 1000 // 60 minutes
 } as const;
 
+export const ACTIVATION_POLICY = {
+  MAX_FAILED_ATTEMPTS: 10, // then the code is revoked and a new one must be issued
+  MIN_VALIDITY_MS: 60 * 60 * 1000,
+  DEFAULT_VALIDITY_MS: 7 * 24 * 60 * 60 * 1000,
+  MAX_VALIDITY_MS: 30 * 24 * 60 * 60 * 1000,
+} as const;
+
+export interface ActivationIssue {
+  /** Shown once to the operator for the activation sheet; never stored in plain form. */
+  code: string;
+  expiresAt: Date;
+}
+
+export type ActivationResult =
+  | { success: true; userAccountId: string; personId: string; session: SessionCreationResult }
+  | { success: false; error: 'INVALID_ACTIVATION' }
+  | { success: false; error: 'PASSWORD_REJECTED'; reason: PasswordRejection };
+
 export interface SessionCreationResult {
   sessionId: string;
   secret: string;
+  expiresAt: Date;
 }
 
 export interface AuthenticationSuccess {
@@ -85,6 +115,7 @@ export class IdentityRuntime {
 
       if (res.rowCount === 0) {
         await this.#pg.query('COMMIT');
+        verifyPassword(passwordAttempt, UNKNOWN_ACCOUNT_VERIFIER);
         return { success: false, error: 'INVALID_CREDENTIALS' };
       }
 
@@ -92,6 +123,7 @@ export class IdentityRuntime {
 
       if (!creds.is_valid) {
         await this.#pg.query('COMMIT');
+        verifyPassword(passwordAttempt, creds.password_verifier);
         return { success: false, error: 'REVOKED' };
       }
 
@@ -187,6 +219,116 @@ export class IdentityRuntime {
   }
 
   /**
+   * Issues a single-use activation code for an account (D02.3-09, D02.5-04/05, D02.7-37..41).
+   * Any open code is revoked, and unless `rotatePassword` is false the current password stops
+   * working and every session of the account is revoked (administrative reset, D02.3-17).
+   * Returns null for an unknown account.
+   */
+  async issueActivation(
+    userAccountId: string,
+    options: { validForMs?: number; rotatePassword?: boolean } = {}
+  ): Promise<ActivationIssue | null> {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof userAccountId !== 'string' || !UUID_REGEX.test(userAccountId)) return null;
+    const validForMs = options.validForMs ?? ACTIVATION_POLICY.DEFAULT_VALIDITY_MS;
+    if (!Number.isFinite(validForMs) || validForMs < ACTIVATION_POLICY.MIN_VALIDITY_MS || validForMs > ACTIVATION_POLICY.MAX_VALIDITY_MS) {
+      throw new RangeError('Activation validity must be between 1 hour and 30 days.');
+    }
+    const now = this.#clock.now();
+    const unusableVerifier = options.rotatePassword === false ? null : createUnusableVerifier();
+
+    await this.#pg.query('BEGIN');
+    try {
+      const account = await this.#pg.query(
+        'SELECT user_account_id FROM identity_account_credentials WHERE user_account_id = $1 FOR UPDATE',
+        [userAccountId]
+      );
+      if (account.rowCount === 0) {
+        await this.#pg.query('ROLLBACK');
+        return null;
+      }
+      const issued = await issueActivationInTransaction(this.#pg, userAccountId, { now, validForMs, unusableVerifier });
+      await this.#pg.query('COMMIT');
+      return issued;
+    } catch (err) {
+      await this.#pg.query('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /**
+   * Activates an account: the person proves the activation code and sets their own password,
+   * which also signs them in. Every failure answers INVALID_ACTIVATION with the same cost,
+   * except a refused new password, which is checked before any account lookup. A code dies
+   * after use, on expiry, on reissue and after ACTIVATION_POLICY.MAX_FAILED_ATTEMPTS wrong
+   * tries. The login lockout does not block activation (DEC-041: recovery stays available).
+   */
+  async activate(username: string, codeAttempt: string, newPassword: string): Promise<ActivationResult> {
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+    const code = normalizeActivationCode(codeAttempt);
+    const rejection = checkNewPassword(newPassword, { username: trimmedUsername });
+    if (rejection) return { success: false, error: 'PASSWORD_REJECTED', reason: rejection };
+    if (!trimmedUsername || !code) {
+      verifyPassword('invalid-activation', UNKNOWN_ACCOUNT_VERIFIER);
+      return { success: false, error: 'INVALID_ACTIVATION' };
+    }
+
+    const now = this.#clock.now();
+    await this.#pg.query('BEGIN');
+    try {
+      const account = await this.#pg.query(`
+        SELECT c.user_account_id, c.is_valid, a.person_id
+        FROM identity_account_credentials c
+        JOIN identity_user_accounts a ON a.id = c.user_account_id
+        WHERE c.username = $1
+        FOR UPDATE OF c
+      `, [trimmedUsername]);
+      const creds = account.rows[0];
+      const activation = creds && creds.is_valid
+        ? (await this.#pg.query(`
+            SELECT id, code_verifier, expires_at, failed_attempts
+            FROM identity_account_activations
+            WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL
+            FOR UPDATE
+          `, [creds.user_account_id])).rows[0]
+        : undefined;
+
+      if (!activation || new Date(activation.expires_at).getTime() <= now.getTime()) {
+        await this.#pg.query('COMMIT');
+        verifyPassword(code, UNKNOWN_ACCOUNT_VERIFIER);
+        return { success: false, error: 'INVALID_ACTIVATION' };
+      }
+
+      if (!verifyPassword(code, activation.code_verifier)) {
+        const failures = activation.failed_attempts + 1;
+        await this.#pg.query(
+          `UPDATE identity_account_activations
+           SET failed_attempts = $2::int, revoked_at = CASE WHEN $2::int >= $3::int THEN $4::timestamptz ELSE NULL END
+           WHERE id = $1`,
+          [activation.id, failures, ACTIVATION_POLICY.MAX_FAILED_ATTEMPTS, now]
+        );
+        await this.#pg.query('COMMIT');
+        return { success: false, error: 'INVALID_ACTIVATION' };
+      }
+
+      await this.#pg.query(
+        `UPDATE identity_account_credentials
+         SET password_verifier = $2, failed_attempts_timeline = '[]'::jsonb, consecutive_failures_count = 0,
+             locked_until = NULL, last_successful_login_at = $3, updated_at = $3
+         WHERE user_account_id = $1`,
+        [creds.user_account_id, hashPassword(newPassword), now]
+      );
+      await this.#pg.query('UPDATE identity_account_activations SET consumed_at = $2 WHERE id = $1', [activation.id, now]);
+      const session = await this.#createSessionInternal(creds.user_account_id, now);
+      await this.#pg.query('COMMIT');
+      return { success: true, userAccountId: creds.user_account_id, personId: creds.person_id, session };
+    } catch (err) {
+      await this.#pg.query('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /**
    * Internal session creation routine. Only callable with verified authentication event.
    */
   async #createSessionInternal(userAccountId: string, authenticatedAt: Date): Promise<SessionCreationResult> {
@@ -203,7 +345,7 @@ export class IdentityRuntime {
       ) VALUES ($1, $2, $3, $4, $5, $6)
     `, [sessionId, userAccountId, verifier, authenticatedAt, expiresAt, authenticatedAt]);
 
-    return { sessionId, secret };
+    return { sessionId, secret, expiresAt };
   }
 
 
@@ -271,6 +413,22 @@ export class IdentityRuntime {
       expiresAt: new Date(session.expires_at),
       lastActivityAt: newActivityAt
     };
+  }
+
+  /**
+   * Returns the login identifier (ELLIGBLE ID / username) of an account, for display to
+   * its own authenticated owner. Callers must pass an account id from a resolved session.
+   */
+  async getLoginIdentifier(userAccountId: string): Promise<string | null> {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userAccountId || typeof userAccountId !== 'string' || !UUID_REGEX.test(userAccountId)) {
+      return null;
+    }
+    const res = await this.#pg.query(
+      'SELECT username FROM identity_account_credentials WHERE user_account_id = $1',
+      [userAccountId]
+    );
+    return res.rowCount === 1 ? res.rows[0].username : null;
   }
 
   /**

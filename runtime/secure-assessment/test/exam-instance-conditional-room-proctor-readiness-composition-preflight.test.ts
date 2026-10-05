@@ -134,7 +134,7 @@ test('BU-077 - 7. wrong tenant -> denied', async () => {
 });
 
 test('BU-077 - 8. non-SCHEDULED Exam Instance -> invalid_state', async () => {
-  for (const nonScheduledState of ['DRAFT', 'READY', 'ACTIVE', 'COMPLETED', 'CANCELLED']) {
+  for (const nonScheduledState of ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED']) { // READY is re-evaluated too (D04.2-25, D04.2-68)
     const mockClient = {
       query: async () => ({
         rows: [{

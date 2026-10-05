@@ -529,7 +529,9 @@ test('submission tests', async (t) => {
         // Also check INSERT params do NOT contain the client value
         const insertQuery = queries.find(q => q.queryText.includes('INSERT INTO secure_assessment_exam_submissions'));
         assert.ok(insertQuery);
-        assert.equal(insertQuery.params.length, 2); // only tenantId and attemptId
+        // Only the tenant and attempt from the authorized context, and the server's own source.
+        assert.deepEqual(insertQuery.params.slice(1), [validAttemptId, 'STUDENT_SUBMIT']);
+        assert.ok(!insertQuery.params.includes('1999-01-01T00:00:00Z'));
     });
 
     await t.test('C. CLIENT TENANT DATA IS NOT AUTHORITATIVE', async () => {

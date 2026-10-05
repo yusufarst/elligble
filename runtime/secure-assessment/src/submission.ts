@@ -1,6 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
+import { readAttemptExamState, readOpenLock } from './exam-pause.ts';
 
 export interface SubmissionDependencies {
     pool: pg.Pool;
@@ -11,15 +12,18 @@ function isValidUUID(uuid: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
 }
 
-async function executeSubmissionInsertion(client: pg.PoolClient, tenantId: string, attemptId: string): Promise<{ submissionId: string, submittedAt: string } | null> {
+/** What finalized the attempt (migration 0041); the first finalization wins. */
+export type FinalizationSource = 'STUDENT_SUBMIT' | 'EXPIRY_CLIENT' | 'EXPIRY_SERVER';
+
+async function executeSubmissionInsertion(client: pg.PoolClient, tenantId: string, attemptId: string, source: FinalizationSource): Promise<{ submissionId: string, submittedAt: string } | null> {
     const insertRes = await client.query(
         `INSERT INTO secure_assessment_exam_submissions
-        (tenant_id, exam_attempt_id)
-        VALUES ($1, $2)
+        (tenant_id, exam_attempt_id, finalization_source)
+        VALUES ($1, $2, $3)
         ON CONFLICT (tenant_id, exam_attempt_id)
         DO NOTHING
         RETURNING id, submitted_at`,
-        [tenantId, attemptId]
+        [tenantId, attemptId, source]
     );
 
     if (insertRes.rows.length > 0) {
@@ -113,8 +117,11 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
 
         try {
             let attemptRes;
+            let exam: Awaited<ReturnType<typeof readAttemptExamState>> = null;
             try {
                 await client.query('BEGIN');
+                // Exam row before attempt row, the order every attempt writer uses.
+                exam = await readAttemptExamState(client, context.tenantId, attemptId, { lock: true });
                 attemptRes = await client.query(
                     'SELECT id FROM secure_assessment_exam_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE',
                     [attemptId, context.tenantId]
@@ -139,9 +146,42 @@ export async function handleSubmit(req: http.IncomingMessage, res: http.ServerRe
                 return;
             }
 
+            // While the exam is paused the exam screen is read-only: no submission, except
+            // that a submission already made is still answered (idempotent retry).
+            // The same holds while a supervisor has locked the attempt.
+            let pausedAt: string | null | undefined;
+            let lockedAt: Date | null = null;
+            try {
+                const existing = await client.query(
+                    'SELECT 1 FROM secure_assessment_exam_submissions WHERE tenant_id = $1 AND exam_attempt_id = $2',
+                    [context.tenantId, attemptId]
+                );
+                if (existing.rows.length === 0 && exam?.lifecycleState === 'PAUSED') {
+                    pausedAt = exam.pausedAt ? exam.pausedAt.toISOString() : null;
+                }
+                if (existing.rows.length === 0) lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+            } catch (err) {
+                try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'persistence_unavailable' }));
+                return;
+            }
+            if (pausedAt !== undefined) {
+                try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'exam_paused', pausedAt }));
+                return;
+            }
+            if (lockedAt !== null) {
+                try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
+                res.writeHead(409, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'attempt_locked', lockedAt: lockedAt.toISOString() }));
+                return;
+            }
+
             let result;
             try {
-                result = await executeSubmissionInsertion(client, context.tenantId, attemptId);
+                result = await executeSubmissionInsertion(client, context.tenantId, attemptId, 'STUDENT_SUBMIT');
             } catch (err) {
                 try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
                 res.writeHead(503, { 'Content-Type': 'application/json' });
@@ -382,7 +422,7 @@ export async function handleExpiryFinalize(req: http.IncomingMessage, res: http.
                     t.started_at,
                     t.configured_duration_seconds,
                     COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                    FLOOR(EXTRACT(EPOCH FROM (statement_timestamp() - t.started_at)))::integer as elapsed_seconds
+                    secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) as elapsed_seconds
                 FROM secure_assessment_timer_state t
                 WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
             `, [context.tenantId, attemptId]);
@@ -416,7 +456,7 @@ export async function handleExpiryFinalize(req: http.IncomingMessage, res: http.
                 return;
             }
 
-            const result = await executeSubmissionInsertion(client, context.tenantId, attemptId);
+            const result = await executeSubmissionInsertion(client, context.tenantId, attemptId, 'EXPIRY_CLIENT');
 
             if (!result) {
                 await client.query('ROLLBACK');

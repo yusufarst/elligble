@@ -5,6 +5,7 @@ import type { ResumeResponse } from '../types/assessment.ts';
 
 const VALID_ATTEMPT_ID = '11111111-1111-4111-8111-111111111111';
 const VALID_SESSION_ID = '22222222-2222-4222-8222-222222222222';
+const FINGERPRINT = 'a1b2c3d4e5f60718';
 
 vi.mock('../api/assessment-client.ts', () => ({
   getResume: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock('../api/assessment-client.ts', () => ({
 }));
 
 import { getResume, postActivateSession, postStartTimer, ApiError } from '../api/assessment-client.ts';
+import { readExamSessionId, storeExamSessionId } from '../exam/exam-session.ts';
 
 vi.mock('../components/StudentExamWorkstation.tsx', () => ({
   StudentExamWorkstation: () => <div data-testid="student-exam-workstation">Workstation</div>
@@ -40,6 +42,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
     originalLocation = window.location;
     delete (window as any).location;
     window.location = { ...originalLocation, search: `?attemptId=${VALID_ATTEMPT_ID}` } as any;
@@ -71,16 +74,25 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
   });
 
   it('3. active session / timer not started', async () => {
+    storeExamSessionId(VALID_ATTEMPT_ID, VALID_SESSION_ID);
     vi.mocked(getResume).mockResolvedValue(createMockResume({
-      session: { status: 'active', sessionId: VALID_SESSION_ID, activatedAt: new Date().toISOString() },
+      session: { status: 'active', activatedAt: new Date().toISOString(), ownedByCaller: true },
       timer: { status: 'not_started' }
     }));
+    vi.mocked(postStartTimer).mockResolvedValue({ status: 'started', startedAt: new Date().toISOString(), configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 3600 });
 
     render(<AttemptLaunch />);
     
     await waitFor(() => {
       expect(screen.getByText('Siap Memulai Ujian')).toBeDefined();
     });
+    // The resume asks about this tab's own session.
+    expect(getResume).toHaveBeenCalledWith(VALID_ATTEMPT_ID, VALID_SESSION_ID);
+
+    // Own session already active: only the timer is started.
+    fireEvent.click(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' }));
+    await waitFor(() => expect(postStartTimer).toHaveBeenCalledTimes(1));
+    expect(postActivateSession).not.toHaveBeenCalled();
   });
 
   it('4. session activation then timer start ordering (B, C, D)', async () => {
@@ -117,7 +129,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
     }));
     
     vi.mocked(postActivateSession).mockRejectedValueOnce(
-      new ApiError(409, 'active_session_exists', 'Conflict', { activeSessionId: VALID_SESSION_ID })
+      new ApiError(409, 'active_session_exists', 'Conflict', { error: 'active_session_exists', activeSessionFingerprint: FINGERPRINT })
     );
 
     render(<AttemptLaunch />);
@@ -142,7 +154,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
     }));
     
     vi.mocked(postActivateSession).mockRejectedValueOnce(
-      new ApiError(409, 'active_session_exists', 'Conflict', { activeSessionId: VALID_SESSION_ID })
+      new ApiError(409, 'active_session_exists', 'Conflict', { error: 'active_session_exists', activeSessionFingerprint: FINGERPRINT })
     );
 
     render(<AttemptLaunch />);
@@ -164,7 +176,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
     await waitFor(() => {
       expect(postActivateSession).toHaveBeenLastCalledWith(expect.objectContaining({
         attemptId: VALID_ATTEMPT_ID,
-        expectedActiveSessionId: VALID_SESSION_ID,
+        expectedActiveSessionFingerprint: FINGERPRINT,
         confirmSupersede: true
       }));
     });
@@ -207,8 +219,9 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
   });
 
   it('10. active workstation handoff', async () => {
+    storeExamSessionId(VALID_ATTEMPT_ID, VALID_SESSION_ID);
     vi.mocked(getResume).mockResolvedValue(createMockResume({
-      session: { status: 'active', sessionId: VALID_SESSION_ID, activatedAt: new Date().toISOString() },
+      session: { status: 'active', activatedAt: new Date().toISOString(), ownedByCaller: true },
       timer: { status: 'active', startedAt: new Date().toISOString(), configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 3600 }
     }));
 
@@ -226,7 +239,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
     }));
     
     vi.mocked(postActivateSession).mockRejectedValueOnce(
-      new ApiError(409, 'active_session_exists', 'Conflict', { activeSessionId: VALID_SESSION_ID })
+      new ApiError(409, 'active_session_exists', 'Conflict', { error: 'active_session_exists', activeSessionFingerprint: FINGERPRINT })
     );
 
     render(<AttemptLaunch />);
@@ -288,7 +301,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
     }));
     
     vi.mocked(postActivateSession).mockRejectedValueOnce(
-      new ApiError(409, 'active_session_exists', 'Conflict', { activeSessionId: VALID_SESSION_ID })
+      new ApiError(409, 'active_session_exists', 'Conflict', { error: 'active_session_exists', activeSessionFingerprint: FINGERPRINT })
     );
 
     render(<AttemptLaunch />);
@@ -305,7 +318,7 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
 
     // Now confirm, but the server says active_session_changed
     vi.mocked(postActivateSession).mockRejectedValueOnce(
-      new ApiError(409, 'active_session_changed', 'Conflict', { activeSessionId: 'NEW_SESSION_ID' })
+      new ApiError(409, 'active_session_changed', 'Conflict', { error: 'active_session_changed' })
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Ya, Pindahkan Sesi' }));
@@ -376,6 +389,102 @@ describe('BU-084 AttemptLaunch Test Suite', () => {
       expect(screen.getByText('Siap Memulai Ujian')).toBeDefined();
     });
     
-    expect(container.querySelector('.launch-context')).toBeNull();
+    expect(container.querySelector('[data-slot="status-page-subtitle"]')).toBeNull();
+  });
+  it('18. the active session id is never needed: an exam running elsewhere requires explicit takeover', async () => {
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'active', activatedAt: new Date().toISOString(), ownedByCaller: false },
+      timer: { status: 'active', startedAt: new Date().toISOString(), configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 1800 }
+    }));
+
+    render(<AttemptLaunch />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Sesi Aktif Ditemukan')).toBeDefined();
+    });
+    expect(screen.queryByTestId('student-exam-workstation')).toBeNull();
+    expect(postActivateSession).not.toHaveBeenCalled();
+
+    vi.mocked(postActivateSession)
+      .mockRejectedValueOnce(new ApiError(409, 'active_session_exists', 'Conflict', { error: 'active_session_exists', activeSessionFingerprint: FINGERPRINT }))
+      .mockResolvedValueOnce({ status: 'active', sessionId: 'x', activatedAt: new Date().toISOString() });
+    vi.mocked(postStartTimer).mockResolvedValue({ status: 'started', startedAt: new Date().toISOString(), configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 1800 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ya, Pindahkan Sesi' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('student-exam-workstation')).toBeDefined();
+    });
+    const calls = vi.mocked(postActivateSession).mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls[0][0]).toEqual({ attemptId: VALID_ATTEMPT_ID, sessionId: calls[1][0].sessionId });
+    expect(calls[1][0]).toEqual(expect.objectContaining({ expectedActiveSessionFingerprint: FINGERPRINT, confirmSupersede: true }));
+    // The new session belongs to this tab from now on.
+    expect(readExamSessionId(VALID_ATTEMPT_ID)).toBe(calls[1][0].sessionId);
+  });
+
+  it('19. a stored session that is no longer the active one is not reused', async () => {
+    storeExamSessionId(VALID_ATTEMPT_ID, VALID_SESSION_ID);
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'none' },
+      timer: null
+    }));
+    vi.mocked(postActivateSession).mockResolvedValue({ status: 'active', sessionId: 'x', activatedAt: new Date().toISOString() });
+    vi.mocked(postStartTimer).mockResolvedValue({ status: 'started', startedAt: new Date().toISOString(), configuredDurationSeconds: 3600, effectiveDurationSeconds: 3600, effectiveRemainingSeconds: 3600 });
+
+    render(<AttemptLaunch />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' })).toBeDefined();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' }));
+    await waitFor(() => expect(postStartTimer).toHaveBeenCalledTimes(1));
+
+    const candidate = vi.mocked(postActivateSession).mock.calls[0][0].sessionId;
+    expect(candidate).not.toBe(VALID_SESSION_ID);
+    expect(readExamSessionId(VALID_ATTEMPT_ID)).toBe(candidate);
+  });
+
+  it('20. the candidate is stored before activation so a lost response is recovered after reload', async () => {
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'none' },
+      timer: null
+    }));
+    let storedDuringActivation: string | null = null;
+    vi.mocked(postActivateSession).mockImplementation(async req => {
+      storedDuringActivation = readExamSessionId(VALID_ATTEMPT_ID);
+      expect(storedDuringActivation).toBe(req.sessionId);
+      throw new Error('Network error');
+    });
+
+    render(<AttemptLaunch />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' })).toBeDefined();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' }));
+    await waitFor(() => {
+      expect(screen.getByText('Gagal memulai ujian. Silakan coba lagi.')).toBeDefined();
+    });
+    expect(storedDuringActivation).not.toBeNull();
+  });
+
+  it('21. a timer start refused by the server explains why', async () => {
+    storeExamSessionId(VALID_ATTEMPT_ID, VALID_SESSION_ID);
+    vi.mocked(getResume).mockResolvedValue(createMockResume({
+      session: { status: 'active', activatedAt: new Date().toISOString(), ownedByCaller: true },
+      timer: { status: 'not_started' }
+    }));
+    vi.mocked(postStartTimer).mockRejectedValueOnce(new ApiError(409, 'late_start_blocked'));
+
+    render(<AttemptLaunch />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' })).toBeDefined();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mulai Ujian Sekarang' }));
+    await waitFor(() => {
+      expect(screen.getByText('Batas waktu untuk memulai ujian ini telah lewat. Hubungi pengawas ruangan.')).toBeDefined();
+    });
   });
 });

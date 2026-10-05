@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx';
 import type { StudentSafeQuestion, ResumeResponse, QuestionsResponse, TimerResponse } from '../types/assessment.ts';
+import { openAnswerStore } from '../exam/answer-store.ts';
+import { storeExamSessionId } from '../exam/exam-session.ts';
 
 const VALID_ATTEMPT_ID = '11111111-1111-4111-8111-111111111111';
 const VALID_SESSION_ID = '22222222-2222-4222-8222-222222222222';
@@ -43,8 +45,8 @@ function createMockResume(overrides?: Partial<ResumeResponse>): ResumeResponse {
     attemptId: VALID_ATTEMPT_ID,
     session: {
       status: 'active',
-      sessionId: VALID_SESSION_ID,
       activatedAt: '2026-09-12T08:00:00.000Z',
+      ownedByCaller: true,
     },
     answers: [],
     timer: {
@@ -68,10 +70,14 @@ function createMockResume(overrides?: Partial<ResumeResponse>): ResumeResponse {
 describe('BU-081 StudentExamWorkstation Test Suite', () => {
   let fetchSpy: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.restoreAllMocks();
     fetchSpy = vi.fn();
     globalThis.fetch = fetchSpy;
+    // This tab owns the active exam session; no answers are left over from other tests.
+    window.sessionStorage.clear();
+    storeExamSessionId(VALID_ATTEMPT_ID, VALID_SESSION_ID);
+    await (await openAnswerStore()).clearAttempt('', VALID_ATTEMPT_ID);
   });
 
   afterEach(() => {
@@ -720,15 +726,15 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     // Modal dialog is open
     expect(await screen.findByText('Konfirmasi Pengumpulan Ujian')).toBeTruthy();
-    expect(screen.getByText('Total Soal:').nextElementSibling?.textContent).toBe('2');
-    expect(screen.getByText('Sudah Dijawab:').nextElementSibling?.textContent).toBe('1');
-    expect(screen.getByText('Belum Dijawab:').nextElementSibling?.textContent).toBe('1');
+    expect(within(screen.getByRole('dialog')).getByText('Total Soal').nextElementSibling?.textContent).toBe('2');
+    expect(within(screen.getByRole('dialog')).getByText('Sudah Dijawab').nextElementSibling?.textContent).toBe('1');
+    expect(within(screen.getByRole('dialog')).getByText('Belum Dijawab').nextElementSibling?.textContent).toBe('1');
 
     const confirmBtn = screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }) as HTMLButtonElement;
     expect(confirmBtn.disabled).toBe(true);
 
     // Check confirmation declaration checkbox
-    const checkbox = screen.getByRole('checkbox');
+    const checkbox = within(screen.getByRole('dialog')).getByRole('checkbox');
     await userEvent.click(checkbox);
     expect(confirmBtn.disabled).toBe(false);
 
@@ -1099,7 +1105,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
 
     // Open submit dialog and confirm
     await userEvent.click(screen.getByRole('button', { name: 'Selesaikan Ujian' }));
-    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
 
     // Presented as safe terminal success
@@ -1356,7 +1362,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     });
 
     // Check declaration and confirm
-    await userEvent.click(screen.getByRole('checkbox'));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: 'Kirim Jawaban Sekarang' }));
 
     expect(await screen.findByText('Ujian Berhasil Dikumpulkan')).toBeTruthy();

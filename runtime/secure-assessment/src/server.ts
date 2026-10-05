@@ -1,6 +1,8 @@
 import * as http from 'node:http';
+import { Readable } from 'node:stream';
 import * as pg from 'pg';
 import { handleSaveAnswer, type AuthorizedAssessmentContext } from './answer.ts';
+import { handleReviewFlag } from './review-flag.ts';
 import { handleTimerStart, handleTimerGet } from './timer.ts';
 import { handleSubmit, handleSubmissionGet, handleExpiryFinalize } from './submission.ts';
 import { handleResumeGet } from './resume.ts';
@@ -9,27 +11,244 @@ import { handleQuestionDelivery } from './question-delivery.ts';
 import { handleAssignedExamsGet, type AssignedExamDiscoveryContext } from './assigned-exams.ts';
 import { handleProctorMonitoringGet } from './proctor-monitoring.ts';
 import { handleTeacherReadinessGet, type TeacherReadinessContext } from './teacher-readiness.ts';
+import { AuthenticationError, buildAuthenticatedContext } from './http/authenticated-context.ts';
+import { handleActivate, handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
+import { handleMeContextGet } from './http/me-context.ts';
+import { handleAttemptStart } from './attempt-start.ts';
+import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
+import { readTeacherExamResults } from './teacher-results.ts';
+import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImport } from './teacher-exam-import.ts';
+import { readTeacherExamPreview } from './teacher-exam-preview.ts';
+import { parseRescheduleRequest, rescheduleTeacherExam } from './teacher-exam-schedule.ts';
+import { cancelTeacherExam, parseCancellationRequest } from './teacher-exam-cancel.ts';
+import { addTeacherExamParticipants, parseParticipantAdditionRequest, readParticipantCandidates } from './teacher-exam-participants.ts';
+import { readExamMonitoring } from './exam-monitoring.ts';
+import { performParticipantLockAction } from './participant-lock.ts';
+import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
+import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
+import { HttpError, applySecurityHeaders, isOriginAllowed, readBody, readJsonObject, sendError, sendJson } from './http/http-utils.ts';
+import type { SessionCookieConfig } from './http/session-credentials.ts';
+import type { StaticSite } from './http/static-site.ts';
+import { assignRequestId, classifyRequest, describeError, logRequestCompletion } from './http/request-log.ts';
+import type { LogWriter } from './log.ts';
+import type { RuntimeMetrics } from './metrics.ts';
+
+export interface ServerSecurityConfig {
+    cookie: SessionCookieConfig;
+    allowedOrigins: readonly string[];
+    hsts: boolean;
+}
+
+/** Person-level context for tenant-scoped read models (assigned exams, proctor, teacher views). */
+export interface PersonContext {
+    tenantId: string;
+    personId: string;
+}
 
 export interface ServerDependencies {
     checkReadiness: () => Promise<boolean>;
     pool: pg.Pool;
-    getAuthorizedContext: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
+    /**
+     * Production wiring: session, cookie and origin policy. When present, every protected
+     * route resolves the caller from the session credential (header or HttpOnly cookie).
+     */
+    security?: ServerSecurityConfig;
+    /** Production attempt authorization: session -> membership -> participant -> attempt. */
+    authorizeAttempt?: (req: http.IncomingMessage, attemptId: string) => Promise<AuthorizedAssessmentContext | null>;
+    /** Synchronous context injection used by focused handler tests. Fails closed when absent. */
+    getAuthorizedContext?: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
     getAssignedExamDiscoveryContext?: (req: http.IncomingMessage) => AssignedExamDiscoveryContext | null;
     getTeacherReadinessContext?: (req: http.IncomingMessage) => TeacherReadinessContext | null;
+    /** Built web client served for every non-API path (single-origin deployment). */
+    staticSite?: StaticSite;
+    /** Access and error log; silent when absent (focused tests). */
+    log?: LogWriter;
+    /** Operator metrics (OPS-002); served by the separate internal listener, never here. */
+    metrics?: RuntimeMetrics;
+}
+
+type AttemptRoute = { method: 'GET' | 'POST'; source: 'query' | 'body' };
+
+/** The question file travels inside the import request (at most 512 KB of text, plan §7). */
+const TEACHER_IMPORT_BODY_LIMIT_BYTES = 1024 * 1024;
+
+const ATTEMPT_ROUTES: Record<string, AttemptRoute> = {
+    '/api/v1/assessment/answer/save': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/review-flag': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/broadcasts/inbox': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/timer/start': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/submit': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/expiry-finalize': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/session/activate': { method: 'POST', source: 'body' },
+    '/api/v1/assessment/submission': { method: 'GET', source: 'query' },
+    '/api/v1/assessment/timer': { method: 'GET', source: 'query' },
+    '/api/v1/assessment/resume': { method: 'GET', source: 'query' },
+    '/api/v1/assessment/questions': { method: 'GET', source: 'query' },
+};
+
+const ATTEMPT_ID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function replayRequest(original: http.IncomingMessage, body: Buffer): http.IncomingMessage {
+    const replay = Readable.from(body.length > 0 ? [body] : []) as unknown as http.IncomingMessage;
+    Object.assign(replay, {
+        method: original.method,
+        url: original.url,
+        headers: original.headers,
+        socket: original.socket,
+    });
+    return replay;
+}
+
+function extractAttemptId(route: AttemptRoute, url: URL, body: Buffer | null): string | null {
+    if (route.source === 'query') {
+        return url.searchParams.get('attemptId');
+    }
+    try {
+        const parsed = JSON.parse((body ?? Buffer.alloc(0)).toString('utf8'));
+        return parsed && typeof parsed === 'object' && typeof parsed.attemptId === 'string' ? parsed.attemptId : null;
+    } catch {
+        return null;
+    }
 }
 
 export function createServer(deps: ServerDependencies): http.Server {
     const server = http.createServer();
+    const security = deps.security;
 
-    server.on('request', (req, res) => {
-        if (req.method === 'GET' && req.url === '/healthz') {
+    async function resolvePersonContext(req: http.IncomingMessage): Promise<PersonContext> {
+        if (!security) {
+            throw new AuthenticationError(401, 'unauthorized');
+        }
+        const membership = await buildAuthenticatedContext(req, deps.pool, { cookie: security.cookie });
+        if (!membership) {
+            throw new AuthenticationError(403, 'forbidden');
+        }
+        return { tenantId: membership.tenantId, personId: membership.personId };
+    }
+
+    async function withPersonContext(
+        req: http.IncomingMessage,
+        res: http.ServerResponse,
+        legacy: ((req: http.IncomingMessage) => PersonContext | null) | undefined,
+        run: (getContext: () => PersonContext | null) => Promise<void>
+    ): Promise<void> {
+        if (!security) {
+            await run(legacy ? () => legacy(req) : () => null);
+            return;
+        }
+        let context: PersonContext;
+        try {
+            context = await resolvePersonContext(req);
+        } catch (err) {
+            if (err instanceof AuthenticationError) {
+                sendError(res, err.statusCode, err.message);
+                return;
+            }
+            sendError(res, 500, 'internal_error');
+            return;
+        }
+        await run(() => context);
+    }
+
+    async function dispatchAttemptRoute(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, url: URL): Promise<void> {
+        const route = ATTEMPT_ROUTES[pathname];
+
+        let body: Buffer | null = null;
+        let handlerReq = req;
+        if (route.source === 'body' && req.method === 'POST') {
+            try {
+                body = await readBody(req);
+            } catch (err) {
+                const status = err instanceof HttpError ? err.statusCode : 400;
+                sendError(res, status, err instanceof HttpError ? err.message : 'invalid_request');
+                return;
+            }
+            handlerReq = replayRequest(req, body);
+        }
+
+        let getAuthorizedContext: (r: http.IncomingMessage) => AuthorizedAssessmentContext | null;
+        if (deps.authorizeAttempt) {
+            if (req.method !== route.method) {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            const attemptId = extractAttemptId(route, url, body);
+            if (!attemptId || !ATTEMPT_ID_REGEX.test(attemptId)) {
+                sendError(res, 400, 'invalid_request');
+                return;
+            }
+            let context: AuthorizedAssessmentContext | null;
+            try {
+                context = await deps.authorizeAttempt(req, attemptId);
+            } catch (err) {
+                if (err instanceof AuthenticationError) {
+                    sendError(res, err.statusCode, err.message);
+                    return;
+                }
+                sendError(res, 500, 'internal_error');
+                return;
+            }
+            getAuthorizedContext = () => context;
+        } else {
+            getAuthorizedContext = deps.getAuthorizedContext ?? (() => null);
+        }
+
+        const handlerDeps = { pool: deps.pool, getAuthorizedContext };
+        switch (pathname) {
+            case '/api/v1/assessment/answer/save':
+                return handleSaveAnswer(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/review-flag':
+                return handleReviewFlag(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/broadcasts/inbox':
+                return handleBroadcastInbox(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/timer/start':
+                return handleTimerStart(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/submit':
+                return handleSubmit(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/expiry-finalize':
+                return handleExpiryFinalize(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/submission':
+                return handleSubmissionGet(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/timer':
+                return handleTimerGet(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/resume':
+                return handleResumeGet(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/questions':
+                return handleQuestionDelivery(handlerReq, res, handlerDeps);
+            case '/api/v1/assessment/session/activate': {
+                let ctx;
+                try {
+                    ctx = getAuthorizedContext(handlerReq);
+                } catch {
+                    sendError(res, 500, 'internal_error');
+                    return;
+                }
+                if (!ctx) {
+                    sendError(res, 403, 'forbidden');
+                    return;
+                }
+                return handleSessionActivate(handlerReq, res, ctx, deps.pool);
+            }
+        }
+    }
+
+    async function route(req: http.IncomingMessage, res: http.ServerResponse, url: URL): Promise<void> {
+        const pathname = url.pathname;
+        const kind = classifyRequest(pathname);
+        const isApi = kind === 'api';
+
+        // Static client files set their own caching; API and health responses are never cached.
+        applySecurityHeaders(res, { hsts: security?.hsts ?? false, api: kind !== 'static' || !deps.staticSite });
+
+        if (req.method === 'GET' && pathname === '/healthz') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ status: 'alive' }));
             return;
         }
 
-        if (req.method === 'GET' && req.url === '/readyz') {
-            deps.checkReadiness().then(isReady => {
+        if (req.method === 'GET' && pathname === '/readyz') {
+            try {
+                const isReady = await deps.checkReadiness();
                 if (isReady) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ status: 'ready' }));
@@ -37,146 +256,692 @@ export function createServer(deps: ServerDependencies): http.Server {
                     res.writeHead(503, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ status: 'unavailable' }));
                 }
-            }).catch(() => {
+            } catch {
                 res.writeHead(503, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'error' }));
-            });
+            }
             return;
         }
 
-        if (req.url === '/api/v1/assessment/answer/save') {
-            handleSaveAnswer(req, res, deps);
+        if (kind === 'static' && deps.staticSite) {
+            deps.staticSite.handle(req, res, pathname);
             return;
         }
 
-        if (req.url === '/api/v1/assessment/timer/start') {
-            handleTimerStart(req, res, deps);
+        if (isApi && security && !isOriginAllowed(req, security.allowedOrigins)) {
+            req.resume();
+            sendError(res, 403, 'origin_not_allowed');
             return;
         }
 
-        if (req.url === '/api/v1/assessment/submit') {
-            handleSubmit(req, res, deps);
+        if (pathname in ATTEMPT_ROUTES) {
+            await dispatchAttemptRoute(req, res, pathname, url);
             return;
         }
 
-        if (req.url === '/api/v1/assessment/expiry-finalize') {
-            handleExpiryFinalize(req, res, deps);
-            return;
-        }
-
-        if (req.url === '/api/v1/assessment/session/activate') {
-            let ctx;
-            try {
-                ctx = deps.getAuthorizedContext(req);
-            } catch (e) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'internal_error' }));
+        if (pathname === '/api/v1/auth/login' || pathname === '/api/v1/auth/activate' || pathname === '/api/v1/auth/logout' || pathname === '/api/v1/auth/session') {
+            if (!security) {
+                sendError(res, 404, 'not found');
                 return;
             }
-            if (!ctx) {
-                res.writeHead(403, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'forbidden' }));
-                return;
-            }
-            handleSessionActivate(req, res, ctx, deps.pool);
-            return;
+            const authDeps = { pool: deps.pool, cookie: security.cookie };
+            if (pathname === '/api/v1/auth/login') return handleLogin(req, res, authDeps);
+            if (pathname === '/api/v1/auth/activate') return handleActivate(req, res, authDeps);
+            if (pathname === '/api/v1/auth/logout') return handleLogout(req, res, authDeps);
+            return handleSessionGet(req, res, authDeps);
         }
 
-        if (req.url && req.url.startsWith('/api/v1/assessment/submission')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/submission') {
-                handleSubmissionGet(req, res, deps);
+        if (pathname === '/api/v1/me/context') {
+            if (!security) {
+                sendError(res, 404, 'not found');
                 return;
             }
+            return handleMeContextGet(req, res, { pool: deps.pool, cookie: security.cookie });
         }
 
-        if (req.url && req.url.startsWith('/api/v1/assessment/timer')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/timer') {
-                handleTimerGet(req, res, deps);
+        if (pathname === '/api/v1/assessment/attempts/start') {
+            if (!security) {
+                sendError(res, 404, 'not found');
                 return;
             }
-        }
-
-        if (req.url && req.url.startsWith('/api/v1/assessment/resume')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/resume') {
-                handleResumeGet(req, res, deps);
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
                 return;
             }
+            return withPersonContext(req, res, undefined, getContext =>
+                handleAttemptStart(req, res, { pool: deps.pool, getContext: () => getContext()! }));
         }
 
-        if (req.url && req.url.startsWith('/api/v1/assessment/questions')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/questions') {
-                handleQuestionDelivery(req, res, deps);
+        if (pathname === '/api/v1/assessment/teacher-exams/transition') {
+            if (!security) {
+                sendError(res, 404, 'not found');
                 return;
             }
-        }
-
-        if (req.url && req.url.startsWith('/api/v1/assessment/assigned-exams')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/assigned-exams') {
-                if (req.method !== 'GET') {
-                    res.writeHead(405, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'method_not_allowed' }));
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
                     return;
                 }
-                (async () => {
-                    let authContext: AssignedExamDiscoveryContext | null = null;
-                    try {
-                        const { buildAuthenticatedContext } = await import('./http/authenticated-context.ts');
-                        const membership = await buildAuthenticatedContext(req, deps.pool);
-                        if (membership) {
-                            authContext = {
-                                tenantId: membership.tenantId,
-                                personId: membership.personId,
-                            };
-                        }
-                    } catch (err: any) {
-                        if (err && err.statusCode) {
-                            res.writeHead(err.statusCode, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: err.message }));
-                            return;
-                        }
-                        res.writeHead(500, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'internal_error' }));
+                const examInstanceId = body['examInstanceId'];
+                const action = body['action'];
+                if (typeof examInstanceId !== 'string' || typeof action !== 'string' || !TEACHER_EXAM_ACTIONS.includes(action as TeacherExamAction)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await performTeacherExamAction(deps.pool, getContext()!, examInstanceId, action as TeacherExamAction);
+                switch (result.type) {
+                    case 'transitioned':
+                        sendJson(res, 200, { examInstanceId: result.examInstanceId, lifecycleState: result.lifecycleState, changed: result.changed });
                         return;
-                    }
-
-                    handleAssignedExamsGet(req, res, {
-                        pool: deps.pool,
-                        getAssignedExamDiscoveryContext: () => authContext,
-                    });
-                })();
-                return;
-            }
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'not_ready':
+                        sendJson(res, 409, { error: 'not_ready', readiness: result.readiness });
+                        return;
+                    case 'window_not_started':
+                        sendJson(res, 409, { error: 'window_not_started', windowStartsAt: result.windowStartsAt });
+                        return;
+                    case 'window_closed':
+                        sendError(res, 409, 'window_closed');
+                        return;
+                    case 'attempts_running':
+                        sendJson(res, 409, { error: 'attempts_running', running: result.running });
+                        return;
+                    case 'scoring_unavailable':
+                        sendError(res, 409, 'scoring_unavailable');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
         }
 
-        if (req.url && req.url.startsWith('/api/v1/assessment/proctor-monitoring')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/proctor-monitoring') {
-                handleProctorMonitoringGet(req, res, {
-                    pool: deps.pool,
-                    getProctorMonitoringContext: deps.getAssignedExamDiscoveryContext ?? (() => null),
-                });
+        if (pathname === '/api/v1/assessment/teacher-exams/setup') {
+            if (!security) {
+                sendError(res, 404, 'not found');
                 return;
             }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const result = await readTeacherExamSetup(deps.pool, getContext()!);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.setup);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
         }
 
-        if (req.url && req.url.startsWith('/api/v1/assessment/teacher-readiness')) {
-            const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-            if (parsedUrl.pathname === '/api/v1/assessment/teacher-readiness') {
+        if (pathname === '/api/v1/assessment/teacher-exams/preview') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readTeacherExamPreview(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.preview);
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.lifecycleState });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/import/preview' || pathname === '/api/v1/assessment/teacher-exams/import') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            const confirm = pathname === '/api/v1/assessment/teacher-exams/import';
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req, TEACHER_IMPORT_BODY_LIMIT_BYTES);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseTeacherExamImportRequest(body, confirm);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await runTeacherExamImport(deps.pool, getContext()!, request, confirm ? 'confirm' : 'preview');
+                switch (outcome.type) {
+                    case 'preview':
+                        sendJson(res, 200, outcome.preview);
+                        return;
+                    case 'invalid':
+                        sendJson(res, 422, { error: 'import_invalid', ...outcome.preview });
+                        return;
+                    case 'scheduled':
+                        sendJson(res, outcome.replayed ? 200 : 201, {
+                            examInstanceId: outcome.examInstanceId,
+                            replayed: outcome.replayed,
+                            questionCount: outcome.questionCount,
+                            participantCount: outcome.participantCount,
+                        });
+                        return;
+                    case 'content_changed':
+                        sendError(res, 409, 'content_changed');
+                        return;
+                    case 'import_key_reused':
+                        sendError(res, 409, 'import_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/reschedule') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseRescheduleRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await rescheduleTeacherExam(deps.pool, getContext()!, request);
+                switch (outcome.type) {
+                    case 'rescheduled':
+                        sendJson(res, 200, {
+                            examInstanceId: outcome.examInstanceId,
+                            lifecycleState: outcome.lifecycleState,
+                            schedule: outcome.schedule,
+                            changed: outcome.changed,
+                            replayed: outcome.replayed,
+                            changedAt: outcome.changedAt,
+                        });
+                        return;
+                    case 'invalid':
+                        sendJson(res, 422, { error: 'reschedule_invalid', problems: outcome.problems });
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
+                        return;
+                    case 'action_key_reused':
+                        sendError(res, 409, 'action_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/cancel') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseCancellationRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await cancelTeacherExam(deps.pool, getContext()!, request);
+                switch (outcome.type) {
+                    case 'cancelled':
+                        sendJson(res, 200, {
+                            examInstanceId: outcome.examInstanceId,
+                            cancelledAt: outcome.cancelledAt,
+                            reason: outcome.reason,
+                            changed: outcome.changed,
+                            replayed: outcome.replayed,
+                        });
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
+                        return;
+                    case 'action_key_reused':
+                        sendError(res, 409, 'action_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/participants/candidates') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readParticipantCandidates(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.candidates);
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/participants/add') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseParticipantAdditionRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const outcome = await addTeacherExamParticipants(deps.pool, getContext()!, request);
+                switch (outcome.type) {
+                    case 'added':
+                        sendJson(res, 200, {
+                            examInstanceId: outcome.examInstanceId,
+                            lifecycleState: outcome.lifecycleState,
+                            addedAt: outcome.addedAt,
+                            added: outcome.added,
+                            replayed: outcome.replayed,
+                        });
+                        return;
+                    case 'invalid':
+                        sendJson(res, 422, { error: 'participants_invalid', problems: outcome.problems });
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
+                        return;
+                    case 'action_key_reused':
+                        sendError(res, 409, 'action_key_reused');
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readExamMonitoring(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.monitoring);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring/participant-lock') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const { examInstanceId, participantId, action } = body;
+                if (typeof examInstanceId !== 'string' || !ATTEMPT_ID_REGEX.test(examInstanceId)
+                    || typeof participantId !== 'string' || !ATTEMPT_ID_REGEX.test(participantId)
+                    || (action !== 'lock' && action !== 'unlock')) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await performParticipantLockAction(deps.pool, getContext()!, examInstanceId, participantId, action);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, { participantId: result.participantId, locked: result.locked, changed: result.changed, lockedAt: result.lockedAt });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'no_active_attempt':
+                        sendError(res, 409, 'no_active_attempt');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring/add-time') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const request = parseTimeAdditionRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await addParticipantTime(deps.pool, getContext()!, request);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, result.replayed ? 200 : 201, {
+                            participantId: result.participantId,
+                            addedSeconds: result.addedSeconds,
+                            totalAddedSeconds: result.totalAddedSeconds,
+                            remainingSeconds: result.remainingSeconds,
+                            addedAt: result.addedAt,
+                            replayed: result.replayed,
+                        });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'no_active_attempt':
+                    case 'not_started':
+                    case 'time_up':
+                    case 'action_key_reused':
+                        sendError(res, 409, result.type);
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/exam-monitoring/broadcast') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try {
+                    body = await readJsonObject(req);
+                } catch (err) {
+                    sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                    return;
+                }
+                const examInstanceId = body.examInstanceId;
+                const target = parseBroadcastTarget(body.target);
+                const message = normalizeBroadcastMessage(body.message);
+                if (typeof examInstanceId !== 'string' || !ATTEMPT_ID_REGEX.test(examInstanceId) || !target || !message) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await sendExamBroadcast(deps.pool, getContext()!, examInstanceId, target, message);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, { broadcastId: result.broadcastId, sentAt: result.sentAt, recipients: result.recipients });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'no_recipients':
+                        sendError(res, 409, 'no_recipients');
+                        return;
+                    case 'rate_limited':
+                        sendJson(res, 429, { error: 'rate_limited', retryAfterSeconds: result.retryAfterSeconds }, { 'Retry-After': String(result.retryAfterSeconds) });
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/results') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readTeacherExamResults(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.results);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/assigned-exams') {
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            let authContext: AssignedExamDiscoveryContext | null = null;
+            try {
+                const membership = await buildAuthenticatedContext(req, deps.pool, { cookie: security?.cookie ?? null });
+                if (membership) {
+                    authContext = { tenantId: membership.tenantId, personId: membership.personId };
+                }
+            } catch (err) {
+                if (err instanceof AuthenticationError) {
+                    sendError(res, err.statusCode, err.message);
+                    return;
+                }
+                sendError(res, 500, 'internal_error');
+                return;
+            }
+            return handleAssignedExamsGet(req, res, {
+                pool: deps.pool,
+                getAssignedExamDiscoveryContext: () => authContext,
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/proctor-monitoring') {
+            return withPersonContext(req, res, deps.getAssignedExamDiscoveryContext, getContext =>
+                handleProctorMonitoringGet(req, res, { pool: deps.pool, getProctorMonitoringContext: getContext }));
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-readiness') {
+            return withPersonContext(req, res, deps.getTeacherReadinessContext, getContext =>
                 handleTeacherReadinessGet(req, res, {
                     pool: deps.pool,
-                    getTeacherReadinessContext: deps.getTeacherReadinessContext,
-                });
-                return;
-            }
+                    getTeacherReadinessContext: security || deps.getTeacherReadinessContext ? getContext : undefined,
+                }));
         }
 
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'not found' }));
+    }
+
+    server.on('request', (req, res) => {
+        const startedAt = process.hrtime.bigint();
+        const requestId = assignRequestId(req, res);
+        // Routing never depends on the Host header; a fixed base keeps parsing total.
+        let url: URL;
+        try {
+            url = new URL(req.url || '/', 'http://localhost');
+        } catch {
+            url = new URL('http://localhost/');
+        }
+        if (deps.log) logRequestCompletion(req, res, { requestId, pathname: url.pathname, startedAt }, deps.log);
+        if (deps.metrics) {
+            const metrics = deps.metrics;
+            let counted = false;
+            const count = () => {
+                if (counted) return;
+                counted = true;
+                metrics.observeRequest(url.pathname, res.statusCode, Number(process.hrtime.bigint() - startedAt) / 1e9);
+            };
+            res.once('finish', count);
+            res.once('close', count);
+        }
+        route(req, res, url).catch(err => {
+            deps.log?.('ERROR', 'request_failed', { requestId, ...describeError(err) });
+            sendError(res, 500, 'internal_error');
+        });
     });
 
     return server;

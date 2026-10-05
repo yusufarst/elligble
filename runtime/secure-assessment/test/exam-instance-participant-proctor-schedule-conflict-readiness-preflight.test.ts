@@ -161,7 +161,7 @@ describe('BU-079: Exam Instance Participant and Proctor Schedule Conflict Readin
 
   // 8. target lifecycle != SCHEDULED -> invalid_state
   test('8. target lifecycle != SCHEDULED -> invalid_state', async () => {
-    for (const state of ['DRAFT', 'READY', 'ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED', 'ARCHIVED']) {
+    for (const state of ['DRAFT', 'ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED', 'ARCHIVED']) { // READY is re-evaluated too (D04.2-25, D04.2-68)
       const res = await checkExamInstanceParticipantProctorScheduleConflictReadiness(
         createMockClient({ targetLifecycle: state }),
         VALID_TENANT,

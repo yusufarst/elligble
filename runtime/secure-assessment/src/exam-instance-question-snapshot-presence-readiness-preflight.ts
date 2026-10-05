@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+import { isReadinessEvaluableState } from './readiness-states.ts';
 
 export type CapabilityContext = {
   tenantId: string;
@@ -74,7 +75,7 @@ export async function checkExamInstanceQuestionSnapshotPresenceReadiness(
 
     const row = result.rows[0];
 
-    if (row.lifecycle_state !== 'SCHEDULED') {
+    if (!isReadinessEvaluableState(row.lifecycle_state)) {
       return { type: 'invalid_state' };
     }
 

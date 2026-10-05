@@ -1,7 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getResume, postActivateSession, postStartTimer, ApiError } from '../api/assessment-client.ts';
 import { StudentExamWorkstation } from './StudentExamWorkstation.tsx';
 import type { ResumeResponse } from '../types/assessment.ts';
+import {
+  claimExamSessionForTab,
+  forgetExamSessionId,
+  newExamSessionId,
+  readExamSessionId,
+  storeExamSessionId,
+} from '../exam/exam-session.ts';
+import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IconAlertCircle } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { StatusPage } from '@/components/ui/status-page';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -11,55 +23,85 @@ type LaunchPhase =
   | 'forbidden'
   | 'not_found'
   | 'inconsistent_state'
-  | 'pre_start_no_session'
-  | 'pre_start_has_session'
-  | 'conflict_confirmation'
+  /** No active session, or this tab's own session with the timer not started yet. */
+  | 'ready_to_start'
+  /** The exam session is active on another device or tab: explicit takeover only. */
+  | 'takeover_required'
   | 'launching'
   | 'launched';
 
-export const AttemptLaunch: React.FC = () => {
+export interface AttemptLaunchProps {
+  /** Leaves the exam screen (back to the student's exam list). */
+  onExit?: () => void;
+}
+
+function refusalMessage(err: unknown): string | null {
+  return err instanceof ApiError && START_REFUSAL_COPY[err.code] ? START_REFUSAL_COPY[err.code] : null;
+}
+
+// One exam session per attempt is active at a time (D04.4-32/35/36/37). This tab keeps its
+// own session id; the server only reports whether that id is the active one, and moving
+// the exam to this tab always needs the student's explicit confirmation.
+export const AttemptLaunch: React.FC<AttemptLaunchProps> = ({ onExit }) => {
   const [phase, setPhase] = useState<LaunchPhase>('initializing');
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [resumeContext, setResumeContext] = useState<ResumeResponse['context'] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  
-  const candidateSessionIdRef = useRef<string>('');
-  const [conflictSessionId, setConflictSessionId] = useState<string | null>(null);
+  const [examSessionId, setExamSessionId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('attemptId');
-    if (!id || !UUID_REGEX.test(id)) {
-      setPhase('invalid_attempt');
-      return;
+  /** Candidate id for activating from this screen; reused across retries of the same launch. */
+  const candidateRef = useRef<string | null>(null);
+  /** Fingerprint of the session to take over, known after a 409 active_session_exists. */
+  const fingerprintRef = useRef<string | null>(null);
+
+  const ensureCandidate = useCallback((id: string): string => {
+    if (!candidateRef.current) {
+      candidateRef.current = newExamSessionId();
+      // Stored before activation: if the response is lost, a reload still finds its session.
+      storeExamSessionId(id, candidateRef.current);
+      void claimExamSessionForTab(candidateRef.current);
     }
-    setAttemptId(id);
-    candidateSessionIdRef.current = crypto.randomUUID();
+    return candidateRef.current;
   }, []);
 
-  const fetchState = async (id: string, _forceRefresh: boolean = false) => {
+  const adoptSession = useCallback((id: string, sessionId: string) => {
+    storeExamSessionId(id, sessionId);
+    setExamSessionId(sessionId);
+  }, []);
+
+  const loadState = useCallback(async (id: string) => {
+    setPhase('initializing');
+    setErrorMessage('');
+    fingerprintRef.current = null;
+    let own = readExamSessionId(id);
+    if (own && !(await claimExamSessionForTab(own))) {
+      // Another tab of this browser (e.g. a duplicated tab) already works with this id.
+      own = null;
+      forgetExamSessionId(id);
+    }
     try {
-      setPhase('initializing');
-      const resume = await getResume(id);
+      const resume = await getResume(id, own);
       setResumeContext(resume.context);
+      const timerActive = resume.timer?.status === 'active';
 
       if (resume.submission && resume.submission.status === 'submitted') {
         setPhase('launched');
         return;
       }
-
+      if (own && resume.session.status === 'active' && resume.session.ownedByCaller) {
+        adoptSession(id, own);
+        setPhase(timerActive ? 'launched' : 'ready_to_start');
+        return;
+      }
+      // This tab has no active session of its own.
+      setExamSessionId(null);
+      if (own && own !== candidateRef.current) forgetExamSessionId(id);
       if (resume.session.status === 'active') {
-        if (resume.timer && resume.timer.status === 'active') {
-          setPhase('launched');
-        } else {
-          setPhase('pre_start_has_session');
-        }
+        setPhase('takeover_required');
+      } else if (timerActive) {
+        setPhase('inconsistent_state');
       } else {
-        if (resume.timer && resume.timer.status === 'active') {
-          setPhase('inconsistent_state');
-        } else {
-          setPhase('pre_start_no_session');
-        }
+        setPhase('ready_to_start');
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -74,211 +116,217 @@ export const AttemptLaunch: React.FC = () => {
         setPhase('inconsistent_state');
       }
     }
-  };
+  }, [adoptSession]);
 
   useEffect(() => {
-    if (attemptId && phase === 'initializing') {
-      fetchState(attemptId);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('attemptId');
+    if (!id || !UUID_REGEX.test(id)) {
+      setPhase('invalid_attempt');
+      return;
     }
-  }, [attemptId, phase]);
+    setAttemptId(id);
+    void loadState(id);
+    // Runs once per mounted exam screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleStartFailure = (err: unknown, fallback: string, retryPhase: LaunchPhase) => {
+    if (err instanceof ApiError && err.status === 409) {
+      if (err.code === 'active_session_exists' && typeof err.data?.activeSessionFingerprint === 'string') {
+        fingerprintRef.current = err.data.activeSessionFingerprint;
+        setPhase('takeover_required');
+        return;
+      }
+      if (err.code === 'session_not_activatable') {
+        setErrorMessage('Sesi ujian tidak dapat diaktifkan.');
+        setPhase('inconsistent_state');
+        return;
+      }
+      if (err.code === 'attempt_already_submitted') {
+        setPhase('launched');
+        return;
+      }
+    }
+    setErrorMessage(refusalMessage(err) ?? fallback);
+    setPhase(retryPhase);
+  };
 
   const handleLaunch = async () => {
     if (!attemptId) return;
     setPhase('launching');
     setErrorMessage('');
-
     try {
-      if (phase === 'pre_start_no_session') {
-        await postActivateSession({
-          attemptId,
-          sessionId: candidateSessionIdRef.current,
-        });
+      if (!examSessionId) {
+        const candidate = ensureCandidate(attemptId);
+        await postActivateSession({ attemptId, sessionId: candidate });
+        adoptSession(attemptId, candidate);
       }
-      
       await postStartTimer({ attemptId });
       setPhase('launched');
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        if (err.code === 'active_session_exists' && err.data?.activeSessionId) {
-          setConflictSessionId(err.data.activeSessionId);
-          setPhase('conflict_confirmation');
-          return;
-        } else if (err.code === 'session_not_activatable') {
-          setErrorMessage('Sesi ujian tidak dapat diaktifkan.');
-          setPhase('inconsistent_state');
-          return;
-        }
-      }
-      setErrorMessage('Gagal memulai ujian. Silakan coba lagi.');
-      setPhase('pre_start_no_session'); // Or whatever allows retry safely
+      handleStartFailure(err, 'Gagal memulai ujian. Silakan coba lagi.', 'ready_to_start');
     }
   };
 
-  const handleConfirmSupersede = async () => {
-    if (!attemptId || !conflictSessionId) return;
+  const handleConfirmTakeover = async () => {
+    if (!attemptId) return;
     setPhase('launching');
     setErrorMessage('');
-
+    const candidate = ensureCandidate(attemptId);
     try {
-      await postActivateSession({
-        attemptId,
-        sessionId: candidateSessionIdRef.current,
-        expectedActiveSessionId: conflictSessionId,
-        confirmSupersede: true,
-      });
+      let fingerprint = fingerprintRef.current;
+      let activated = false;
+      if (!fingerprint) {
+        // Resume only said "active elsewhere": learn which session is being replaced.
+        try {
+          await postActivateSession({ attemptId, sessionId: candidate });
+          activated = true;
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 409 && err.code === 'active_session_exists' && typeof err.data?.activeSessionFingerprint === 'string') {
+            fingerprint = err.data.activeSessionFingerprint;
+          } else {
+            throw err;
+          }
+        }
+      }
+      if (!activated) {
+        await postActivateSession({
+          attemptId,
+          sessionId: candidate,
+          expectedActiveSessionFingerprint: fingerprint ?? undefined,
+          confirmSupersede: true,
+        });
+      }
+      adoptSession(attemptId, candidate);
       await postStartTimer({ attemptId });
       setPhase('launched');
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.code === 'active_session_changed') {
-        // Refresh authoritative resume state and require confirmation again
-        fetchState(attemptId, true);
+        // The session changed again meanwhile: show the current state and ask again.
+        void loadState(attemptId);
         return;
       }
-      setErrorMessage('Gagal mengambil alih sesi ujian. Silakan coba lagi.');
-      setPhase('conflict_confirmation');
+      if (err instanceof ApiError && err.status === 409 && err.code !== 'active_session_exists') {
+        handleStartFailure(err, 'Gagal mengambil alih sesi ujian. Silakan coba lagi.', 'takeover_required');
+        return;
+      }
+      setErrorMessage(refusalMessage(err) ?? 'Gagal mengambil alih sesi ujian. Silakan coba lagi.');
+      setPhase('takeover_required');
     }
   };
+
+  const handleSessionLost = useCallback(() => {
+    if (!attemptId) return;
+    candidateRef.current = null;
+    setExamSessionId(null);
+    forgetExamSessionId(attemptId);
+    void loadState(attemptId);
+  }, [attemptId, loadState]);
 
   if (phase === 'launched') {
-    return <StudentExamWorkstation />;
+    return (
+      <StudentExamWorkstation
+        examSessionId={examSessionId ?? undefined}
+        onRequestTakeover={handleSessionLost}
+        onExit={onExit}
+      />
+    );
   }
 
-  const renderContext = () => {
-    if (!resumeContext) return null;
-    
-    if (resumeContext.subjectLabel) {
-      return (
-        <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-neutral-600)' }}>
-          <div style={{ fontSize: '1.125rem', fontWeight: 500 }}>{resumeContext.subjectLabel}</div>
-        </div>
-      );
-    }
-    
-    if (resumeContext.roomLabel) {
-      return (
-        <div className="launch-context" style={{ marginBottom: '1.5rem', textAlign: 'center', color: 'var(--color-neutral-600)' }}>
-          <div>{resumeContext.roomLabel}</div>
-        </div>
-      );
-    }
-    
-    return null;
-  };
+  // The exam the page is about: its subject, else its room.
+  const context = resumeContext?.subjectLabel || resumeContext?.roomLabel || undefined;
 
   if (phase === 'invalid_attempt') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Tautan Ujian Tidak Valid</h1>
-          <p className="state-card-body">
-            Sesi ujian ini harus dibuka melalui halaman tugas / ujian yang resmi. Silakan kembali ke halaman utama aplikasi dan pilih ujian yang ditugaskan kepada Anda.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Tautan Ujian Tidak Valid" role="alert">
+        <p>
+          Sesi ujian ini harus dibuka melalui halaman tugas / ujian yang resmi. Silakan kembali ke halaman utama aplikasi dan pilih ujian yang ditugaskan kepada Anda.
+        </p>
+      </StatusPage>
     );
   }
 
   if (phase === 'forbidden') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Akses Ditolak</h1>
-          <p className="state-card-body">
-            Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Akses Ditolak" role="alert">
+        <p>Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'not_found') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Data Tidak Ditemukan</h1>
-          <p className="state-card-body">
-            Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Data Tidak Ditemukan" role="alert">
+        <p>Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'inconsistent_state') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Status Ujian Tidak Valid</h1>
-          <p className="state-card-body">
-            {errorMessage || 'Sistem mendeteksi ketidaksesuaian status pada ujian Anda. Harap hubungi pengawas.'}
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Status Ujian Tidak Valid" role="alert">
+        <p>{errorMessage || 'Sistem mendeteksi ketidaksesuaian status pada ujian Anda. Harap hubungi pengawas.'}</p>
+      </StatusPage>
     );
   }
 
-  if (phase === 'conflict_confirmation') {
+  if (phase === 'takeover_required') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Sesi Aktif Ditemukan</h1>
-          {renderContext()}
-          <p className="state-card-body" style={{ marginBottom: '1.5rem' }}>
-            Sistem mendeteksi Anda sedang mengerjakan ujian ini di perangkat atau jendela lain.
-            Apakah Anda ingin memindahkan sesi pengerjaan ke layar ini?
-          </p>
-          {errorMessage && <p className="state-card-body" style={{ color: 'var(--color-red-600)', marginBottom: '1rem' }}>{errorMessage}</p>}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => fetchState(attemptId!)}
-            >
+      <StatusPage
+        title="Sesi Aktif Ditemukan"
+        subtitle={context}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => (onExit ? onExit() : attemptId && loadState(attemptId))}>
               Batal
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleConfirmSupersede}
-            >
-              Ya, Pindahkan Sesi
-            </button>
-          </div>
-        </div>
-      </main>
+            </Button>
+            <Button onClick={handleConfirmTakeover}>Ya, Pindahkan Sesi</Button>
+          </>
+        }
+      >
+        <p>
+          Sistem mendeteksi Anda sedang mengerjakan ujian ini di perangkat atau jendela lain.
+          Apakah Anda ingin memindahkan sesi pengerjaan ke layar ini?
+        </p>
+        <p>Jawaban yang sudah tersimpan tetap aman. Layar lain akan dinonaktifkan dan tidak dapat lagi menyimpan jawaban.</p>
+        {errorMessage && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+      </StatusPage>
     );
   }
 
-  if (phase === 'pre_start_no_session' || phase === 'pre_start_has_session' || phase === 'launching') {
+  if (phase === 'ready_to_start' || phase === 'launching') {
     const isLaunching = phase === 'launching';
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Siap Memulai Ujian</h1>
-          {renderContext()}
-          <p className="state-card-body" style={{ marginBottom: '1.5rem' }}>
-            Pastikan Anda sudah siap. Waktu akan mulai berjalan segera setelah Anda menekan tombol di bawah.
-          </p>
-          {errorMessage && <p className="state-card-body" style={{ color: 'var(--color-red-600)', marginBottom: '1rem' }}>{errorMessage}</p>}
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleLaunch}
-            disabled={isLaunching}
-            style={{ width: '100%', maxWidth: '300px', margin: '0 auto', display: 'block' }}
-          >
-            {isLaunching ? 'Memulai...' : 'Mulai Ujian Sekarang'}
-          </button>
-        </div>
-      </main>
+      <StatusPage
+        title="Siap Memulai Ujian"
+        subtitle={context}
+        actions={
+          <>
+            <Button onClick={handleLaunch} disabled={isLaunching}>
+              {isLaunching ? 'Memulai...' : 'Mulai Ujian Sekarang'}
+            </Button>
+            {onExit && !isLaunching && (
+              <Button variant="secondary" onClick={onExit}>Kembali ke Jadwal Ujian</Button>
+            )}
+          </>
+        }
+      >
+        <p>Pastikan Anda sudah siap. Waktu akan mulai berjalan segera setelah Anda menekan tombol di bawah.</p>
+        {errorMessage && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+      </StatusPage>
     );
   }
 
-  return (
-    <main className="fullscreen-state-container">
-      <div className="state-card">
-        <h1 className="state-card-title">Memuat...</h1>
-      </div>
-    </main>
-  );
+  return <StatusPage title="Memuat..." role="status" live="polite" />;
 };

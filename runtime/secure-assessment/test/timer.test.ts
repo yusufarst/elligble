@@ -10,6 +10,19 @@ test('timer capability tests', async (t) => {
     let timerStates: any[] = [];
     let timerAdjustments: any[] = [];
 
+    // Exam timing seen by the start-eligibility query (database time = 2026-08-01T12:00:00Z).
+    let examRow: any = null;
+    const defaultExamRow = () => ({
+        lifecycle_state: 'ACTIVE',
+        window_starts_at: new Date('2026-08-01T11:00:00Z'),
+        window_ends_at: new Date('2026-08-01T14:00:00Z'),
+        configured_attempt_duration_seconds: 3600,
+        latest_start_policy: 'FULL_DURATION_BEYOND_WINDOW',
+        db_now: new Date('2026-08-01T12:00:00Z'),
+        submitted: false,
+    });
+    let lastUpdateParams: any[] | null = null;
+
     let mockPoolShouldFail = false;
     let mockQueryShouldFail = false;
     let poolConnectCount = 0;
@@ -30,12 +43,18 @@ test('timer capability tests', async (t) => {
                 return { rows: found };
             }
 
+            if (sqlLower.includes('from secure_assessment_exam_attempts a') && sqlLower.includes('secure_assessment_exam_instances')) {
+                return { rows: examRow ? [examRow] : [] };
+            }
+
             if (sqlLower.includes('update secure_assessment_timer_state')) {
                 const tenantId = params![0];
                 const attemptId = params![1];
+                lastUpdateParams = params!;
                 const state = timerStates.find(s => s.tenant_id === tenantId && s.exam_attempt_id === attemptId);
                 if (state && !state.started_at) {
                     state.started_at = new Date('2026-08-01T12:00:00Z');
+                    state.configured_duration_seconds = String(Math.min(Number(state.configured_duration_seconds), Number(params![2])));
                     return { rows: [state] };
                 }
                 return { rows: [] };
@@ -131,6 +150,58 @@ test('timer capability tests', async (t) => {
         }];
         timerAdjustments = [];
         mockContext = { tenantId: validUUID, authorizedAttemptId: validUUID };
+        examRow = defaultExamRow();
+        lastUpdateParams = null;
+    });
+
+    await t.test('start re-validates eligibility: exam not ACTIVE -> 409 and the timer stays unstarted', async () => {
+        examRow.lifecycle_state = 'READY';
+        const res = await sendStart({ attemptId: validUUID });
+        assert.equal(res.status, 409);
+        assert.equal((await res.json()).error, 'exam_not_active');
+        assert.equal(timerStates[0].started_at, null);
+        assert.equal(lastUpdateParams, null);
+    });
+
+    await t.test('start before the window opens -> 409 exam_not_open', async () => {
+        examRow.window_starts_at = new Date('2026-08-01T12:30:00Z');
+        const res = await sendStart({ attemptId: validUUID });
+        assert.equal(res.status, 409);
+        assert.equal((await res.json()).error, 'exam_not_open');
+        assert.equal(timerStates[0].started_at, null);
+    });
+
+    await t.test('LATE_START_BLOCKED refuses a start that cannot fit the full duration', async () => {
+        examRow.latest_start_policy = 'LATE_START_BLOCKED';
+        examRow.window_ends_at = new Date('2026-08-01T12:30:00Z');
+        const res = await sendStart({ attemptId: validUUID });
+        assert.equal(res.status, 409);
+        assert.equal((await res.json()).error, 'late_start_blocked');
+    });
+
+    await t.test('REMAINING_WINDOW_ONLY shortens the duration to the remaining window at start', async () => {
+        examRow.latest_start_policy = 'REMAINING_WINDOW_ONLY';
+        examRow.window_ends_at = new Date('2026-08-01T12:20:00Z');
+        const res = await sendStart({ attemptId: validUUID });
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(data.configuredDurationSeconds, 1200);
+        assert.deepEqual(lastUpdateParams, [validUUID, validUUID, 1200]);
+    });
+
+    await t.test('a submitted attempt cannot start its timer', async () => {
+        examRow.submitted = true;
+        const res = await sendStart({ attemptId: validUUID });
+        assert.equal(res.status, 409);
+        assert.equal((await res.json()).error, 'attempt_already_submitted');
+    });
+
+    await t.test('an already started timer is returned without re-checking eligibility', async () => {
+        await sendStart({ attemptId: validUUID });
+        examRow.lifecycle_state = 'ENDED';
+        const res = await sendStart({ attemptId: validUUID });
+        assert.equal(res.status, 200);
+        assert.equal((await res.json()).status, 'started');
     });
 
     await t.test('1. first start succeeds', async () => {

@@ -101,3 +101,37 @@ export function verifySessionSecret(secret: string, verifier: string): boolean {
     return false;
   }
 }
+
+// Activation codes (D02.7-38..41): 12 random characters from an alphabet without visually
+// ambiguous characters (as DEC-041 recovery codes), shown as XXXX-XXXX-XXXX. Only a
+// verifier is stored; input is accepted case-insensitively with or without separators.
+export const ACTIVATION_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export const ACTIVATION_CODE_LENGTH = 12;
+
+export function generateActivationCode(): string {
+  const alphabet = ACTIVATION_CODE_ALPHABET;
+  // Rejection sampling keeps every character uniformly likely.
+  const limit = 256 - (256 % alphabet.length);
+  let code = '';
+  while (code.length < ACTIVATION_CODE_LENGTH) {
+    for (const byte of randomBytes(ACTIVATION_CODE_LENGTH * 2)) {
+      if (byte < limit && code.length < ACTIVATION_CODE_LENGTH) code += alphabet[byte % alphabet.length];
+    }
+  }
+  return code;
+}
+
+/** Canonical form of a typed code, or null when it cannot be an activation code. */
+export function normalizeActivationCode(input: unknown): string | null {
+  if (typeof input !== 'string' || input.length > 64) return null;
+  const compact = input.toUpperCase().replace(/[\s-]/g, '');
+  if (compact.length !== ACTIVATION_CODE_LENGTH) return null;
+  for (const ch of compact) {
+    if (!ACTIVATION_CODE_ALPHABET.includes(ch)) return null;
+  }
+  return compact;
+}
+
+export function formatActivationCode(code: string): string {
+  return `${code.slice(0, 4)}-${code.slice(4, 8)}-${code.slice(8, 12)}`;
+}

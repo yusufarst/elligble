@@ -455,15 +455,33 @@ describe('transitionExamInstanceDraftToScheduled', () => {
     const result1 = await transitionExamInstanceDraftToScheduled(pool, {
       tenantId: 'invalid-tenant-uuid',
       examInstanceId: validExamInstanceId,
-    });
+    }, grantEvaluator);
     assert.strictEqual(result1.type, 'denied');
     assert.strictEqual(connectCalled, false);
 
     const result2 = await transitionExamInstanceDraftToScheduled(pool, {
       tenantId: validTenantId,
       examInstanceId: 'invalid-exam-uuid',
-    });
+    }, grantEvaluator);
     assert.strictEqual(result2.type, 'denied');
+    assert.strictEqual(connectCalled, false);
+  });
+
+  it('13. a missing capability evaluator is denied without touching the database (fail closed)', async () => {
+    let connectCalled = false;
+    const pool = {
+      connect: async () => {
+        connectCalled = true;
+        throw new Error('Should not connect');
+      },
+    } as unknown as Pool;
+    const untypedTransition = transitionExamInstanceDraftToScheduled as unknown as (
+      pool: Pool,
+      input: { tenantId: string; examInstanceId: string }
+    ) => ReturnType<typeof transitionExamInstanceDraftToScheduled>;
+
+    const result = await untypedTransition(pool, { tenantId: validTenantId, examInstanceId: validExamInstanceId });
+    assert.strictEqual(result.type, 'denied');
     assert.strictEqual(connectCalled, false);
   });
 });

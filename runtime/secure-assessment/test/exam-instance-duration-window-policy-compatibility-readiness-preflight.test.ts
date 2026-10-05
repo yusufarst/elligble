@@ -351,7 +351,7 @@ test('BU-064 Duration-Window Compatibility - 10. both duration and policy NULL =
 });
 
 test('BU-064 Duration-Window Compatibility - 11. non-SCHEDULED => invalid_state', async () => {
-  const nonScheduledStates = ['DRAFT', 'READY', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+  const nonScheduledStates = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED']; // READY is re-evaluated too (D04.2-25, D04.2-68)
   for (const state of nonScheduledStates) {
     const mockEvaluator: CapabilityEvaluator = async () => 'granted';
     const mockClient = {

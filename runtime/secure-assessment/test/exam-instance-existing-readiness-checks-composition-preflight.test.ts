@@ -230,7 +230,7 @@ test('BU-065 Composition - 7. LATE_START_BLOCKED with configured duration exceed
 });
 
 test('BU-065 Composition - 8. non-SCHEDULED => invalid_state', async () => {
-  const nonScheduledStates = ['DRAFT', 'READY', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
+  const nonScheduledStates = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED']; // READY is re-evaluated too (D04.2-25, D04.2-68)
   for (const state of nonScheduledStates) {
     const mockEvaluator: CapabilityEvaluator = async () => 'granted' as const;
     const mockClient = createMockClient({ lifecycle_state: state });

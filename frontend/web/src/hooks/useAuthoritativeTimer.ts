@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getTimer } from '../api/assessment-client.ts';
+import type { TimerResponse } from '../types/assessment.ts';
 
 export interface UseAuthoritativeTimerOptions {
   attemptId: string;
   initialRemainingSeconds: number;
   enabled?: boolean;
   onExpire: () => void;
+  /** Receives every timer response, so the caller also learns the exam state (pause, end). */
+  onTimerInfo?: (timer: TimerResponse) => void;
 }
 
 export function formatRemainingTime(seconds: number): string {
@@ -19,73 +22,77 @@ export function formatRemainingTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+const TICK_MS = 250;
+
+function monotonicNow(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+// The server owns the clock; the device only counts down towards a deadline derived from
+// the server's remaining seconds. A monotonic deadline keeps the display correct when the
+// tab is throttled in the background or the device clock is changed, and every resync
+// (focus, visibility) replaces the deadline with the server's value.
 export function useAuthoritativeTimer({
   attemptId,
   initialRemainingSeconds,
   enabled = true,
   onExpire,
+  onTimerInfo,
 }: UseAuthoritativeTimerOptions) {
   const [remainingSeconds, setRemainingSeconds] = useState<number>(initialRemainingSeconds);
+  const deadlineRef = useRef<number>(monotonicNow() + initialRemainingSeconds * 1000);
   const prevInitialRef = useRef<number>(initialRemainingSeconds);
-  const expiredRef = useRef<boolean>(false);
+  const expiredRef = useRef<boolean>(initialRemainingSeconds <= 0);
   const onExpireRef = useRef(onExpire);
   onExpireRef.current = onExpire;
+  const onTimerInfoRef = useRef(onTimerInfo);
+  onTimerInfoRef.current = onTimerInfo;
 
-  // Synchronously update state when initialRemainingSeconds updates
   if (prevInitialRef.current !== initialRemainingSeconds) {
     prevInitialRef.current = initialRemainingSeconds;
-    setRemainingSeconds(initialRemainingSeconds);
+    deadlineRef.current = monotonicNow() + initialRemainingSeconds * 1000;
     expiredRef.current = initialRemainingSeconds <= 0;
+    setRemainingSeconds(initialRemainingSeconds);
   }
 
-  // Local 1-second monotonic countdown
-  useEffect(() => {
-    if (!enabled || initialRemainingSeconds <= 0) return;
+  const applyServerRemaining = useCallback((seconds: number) => {
+    const clamped = Math.max(0, seconds);
+    deadlineRef.current = monotonicNow() + clamped * 1000;
+    setRemainingSeconds(clamped);
+    if (clamped > 0) {
+      expiredRef.current = false;
+    } else if (!expiredRef.current) {
+      expiredRef.current = true;
+      onExpireRef.current();
+    }
+  }, []);
 
-    if (remainingSeconds <= 0) {
-      if (!expiredRef.current) {
+  useEffect(() => {
+    if (!enabled) return;
+    const tick = () => {
+      if (expiredRef.current) return;
+      const left = Math.max(0, Math.ceil((deadlineRef.current - monotonicNow()) / 1000));
+      setRemainingSeconds(left);
+      if (left <= 0) {
         expiredRef.current = true;
         onExpireRef.current();
       }
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setRemainingSeconds(prev => {
-        const next = prev - 1;
-        if (next <= 0) {
-          clearInterval(interval);
-          if (!expiredRef.current) {
-            expiredRef.current = true;
-            onExpireRef.current();
-          }
-          return 0;
-        }
-        return next;
-      });
-    }, 1000);
-
+    };
+    const interval = setInterval(tick, TICK_MS);
     return () => clearInterval(interval);
-  }, [remainingSeconds, enabled, initialRemainingSeconds]);
+  }, [enabled]);
 
-  // Resynchronize on focus / visibility change
+  // Resynchronize with the server on focus / visibility change.
   const resync = useCallback(async () => {
     if (!enabled || expiredRef.current) return;
     try {
       const timerData = await getTimer(attemptId);
-      if (timerData.status === 'expired' || timerData.effectiveRemainingSeconds <= 0) {
-        setRemainingSeconds(0);
-        if (!expiredRef.current) {
-          expiredRef.current = true;
-          onExpireRef.current();
-        }
-      } else {
-        setRemainingSeconds(timerData.effectiveRemainingSeconds);
-      }
+      if (onTimerInfoRef.current) onTimerInfoRef.current(timerData);
+      else applyServerRemaining(timerData.status === 'expired' ? 0 : timerData.effectiveRemainingSeconds);
     } catch {
       // Do not crash or mutate local time on resync network failure
     }
-  }, [attemptId, enabled]);
+  }, [attemptId, enabled, applyServerRemaining]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -120,5 +127,7 @@ export function useAuthoritativeTimer({
     isUrgent,
     isExpired,
     resync,
+    /** Replace the countdown with the server's remaining seconds (e.g. after timer_not_expired). */
+    applyServerRemaining,
   };
 }

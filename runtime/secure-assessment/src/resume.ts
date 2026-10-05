@@ -1,6 +1,7 @@
 import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
+import { readAttemptExamState, readOpenLock } from './exam-pause.ts';
 
 export interface ResumeDependencies {
     pool: pg.Pool;
@@ -20,8 +21,16 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
 
     const parsedUrl = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
     const attemptId = parsedUrl.searchParams.get('attemptId');
+    // The caller's own exam session id (kept per browser tab). The active session id is
+    // never returned: knowing it is what lets a device write answers (D04.4-32/35/37).
+    const callerExamSessionId = parsedUrl.searchParams.get('examSessionId');
 
     if (!attemptId || !isValidUUID(attemptId)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request' }));
+        return;
+    }
+    if (callerExamSessionId !== null && !isValidUUID(callerExamSessionId)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'invalid_request' }));
         return;
@@ -58,7 +67,7 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
     }
 
     try {
-        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes;
+        let attemptRes, sessionRes, answersRes, timerRes, submissionRes, contextProjectionRes, reviewFlagsRes, examState, lockedAt;
         try {
             await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
@@ -104,7 +113,8 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                     t.started_at,
                     t.configured_duration_seconds,
                     COALESCE((SELECT SUM(adjustment_seconds) FROM secure_assessment_timer_adjustments WHERE tenant_id = $1 AND timer_state_id = t.id), 0) as total_adjustment,
-                    FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.started_at)))::integer as elapsed_seconds
+                    secure_assessment_attempt_elapsed_seconds(t.tenant_id, t.exam_attempt_id, CURRENT_TIMESTAMP) as elapsed_seconds,
+                    statement_timestamp() as db_now
                 FROM secure_assessment_timer_state t
                 WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2
             `, [context.tenantId, attemptId]);
@@ -143,6 +153,19 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 WHERE a.id = $1 AND a.tenant_id = $2
             `, [attemptId, context.tenantId]);
 
+            // Whether the exam is paused (time frozen) or ended (Owner decision 2026-09-30).
+            examState = await readAttemptExamState(client, context.tenantId, attemptId, { lock: false });
+            // Whether a supervisor locked this attempt (D04.6-38).
+            lockedAt = await readOpenLock(client, context.tenantId, attemptId);
+
+            // "Ragu-ragu" marks: the student's own navigation aid, kept apart from answers (D04.5-35).
+            reviewFlagsRes = await client.query(
+                `SELECT exam_question_snapshot_id AS "snapshotId" FROM secure_assessment_review_flags
+                 WHERE tenant_id = $1 AND exam_attempt_id = $2 AND flagged
+                 ORDER BY exam_question_snapshot_id ASC`,
+                [context.tenantId, attemptId]
+            );
+
             await client.query('COMMIT');
         } catch (dbErr) {
             try { await client.query('ROLLBACK'); } catch (rollbackErr) { }
@@ -156,8 +179,8 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
             if (sessionRes.rows.length === 1) {
                 sessionResponse = {
                     status: 'active',
-                    sessionId: sessionRes.rows[0].id,
-                    activatedAt: sessionRes.rows[0].activated_at.toISOString()
+                    activatedAt: sessionRes.rows[0].activated_at.toISOString(),
+                    ownedByCaller: callerExamSessionId !== null && sessionRes.rows[0].id === callerExamSessionId
                 };
             }
 
@@ -214,7 +237,14 @@ export async function handleResumeGet(req: http.IncomingMessage, res: http.Serve
                 answers,
                 timer: timerResponse,
                 submission: submissionResponse,
-                context: contextData
+                context: contextData,
+                reviewFlags: (reviewFlagsRes.rows ?? []).map(row => row.snapshotId as string),
+                exam: {
+                    lifecycleState: examState?.lifecycleState ?? null,
+                    pausedAt: examState?.pausedAt ? examState.pausedAt.toISOString() : null
+                },
+                lock: { lockedAt: lockedAt ? lockedAt.toISOString() : null },
+                serverTime: new Date(timer.db_now ?? Date.now()).toISOString()
             }));
         } catch (appErr) {
             res.writeHead(500, { 'Content-Type': 'application/json' });

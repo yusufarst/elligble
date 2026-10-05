@@ -1,5 +1,10 @@
+/*
+ * ELLIGBLE design tokens: values from FRONTEND_DESIGN_SYSTEM.md v1.1.0 (LOCKED) and the
+ * Warm Monochrome Visual Foundation (DEC-040). Every component, including the shadcn/ui
+ * foundation (DEC-043, see globals.css), reads colors, radii and shadows from here.
+ */
 :root {
-  /* Font Families */
+  /* Font Families (system stack; no external font downloads) */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
@@ -15,7 +20,21 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* Primary Brand Tokens */
+  /* Warm Monochrome core (DEC-040) */
+  --color-primary: #000000;
+  --color-primary-action: #000000;
+  --color-primary-fg: #ffffff;
+  --color-primary-hover: #262626;
+  --color-secondary: #4e4e4e;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9f9fb;
+  --color-border: #e5e5e5;
+  --color-border-subtle: #f0f0f0;
+  --color-text-primary: #000000;
+  --color-text-secondary: #4e4e4e;
+
+  /* Historical Institution Navy: token compatibility only, never dominant (DEC-040) */
   --color-primary-50: #f0f4f8;
   --color-primary-100: #d9e2ec;
   --color-primary-500: #334e68;
@@ -23,62 +42,73 @@
   --color-primary-700: #102a43;
   --color-primary-900: #0b1d30;
 
-  /* Neutral Gray Tokens */
+  /* Neutral scale (warm-neutral, aligned to the monochrome foundation) */
   --color-neutral-0: #ffffff;
-  --color-neutral-50: #f8fafc;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-300: #cbd5e1;
-  --color-neutral-400: #94a3b8;
-  --color-neutral-500: #64748b;
-  --color-neutral-700: #334155;
-  --color-neutral-900: #0f172a;
+  --color-neutral-50: #f9f9fb;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-700: #4e4e4e;
+  --color-neutral-900: #09090b;
 
-  /* Semantic State Tokens */
-  --color-success-bg: #f0fdf4;
-  --color-success-border: #bbf7d0;
-  --color-success-text: #166534;
+  /* Semantic State Tokens (§11) */
+  --color-success-base: #10b981;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-success-text: #064e3b;
 
+  --color-warning-base: #f59e0b;
   --color-warning-bg: #fffbeb;
   --color-warning-border: #fde68a;
   --color-warning-text: #92400e;
 
+  /* Destructive actions carry white text: 6.6:1 (the DesainPakeAI danger; #ef4444 gave 3.8:1). */
+  --color-danger-base: #b42318;
   --color-danger-bg: #fef2f2;
   --color-danger-border: #fecaca;
   --color-danger-text: #991b1b;
+  --color-error-text: #991b1b;
 
+  --color-info-base: #3b82f6;
   --color-info-bg: #eff6ff;
   --color-info-border: #bfdbfe;
   --color-info-text: #1e40af;
 
-  --color-neutral-badge-bg: #f1f5f9;
-  --color-neutral-badge-text: #475569;
+  --color-neutral-badge-bg: #f4f4f5;
+  --color-neutral-badge-text: #4e4e4e;
 
-  /* Surfaces */
-  --surface-0: var(--color-neutral-50);
-  --surface-1: var(--color-neutral-0);
-  --surface-2: var(--color-neutral-0);
-  --surface-inset: var(--color-neutral-100);
+  /* Running now (an exam in progress, a participant working): the DesainPakeAI status chip,
+     revision sha256-5d0d7779... (5.9:1). */
+  --color-active-bg: #e8f7f1;
+  --color-active-text: #006b49;
 
-  /* Borders */
-  --border-subtle: 1px solid var(--color-neutral-100);
-  --border-default: 1px solid var(--color-neutral-200);
-  --border-active: 1px solid var(--color-primary-600);
-  --border-error: 1px solid var(--color-danger-text);
-  --border-focus: 2px solid var(--color-primary-600);
+  /* Surfaces (§12) */
+  --surface-0: var(--color-background);
+  --surface-1: var(--color-surface);
+  --surface-2: var(--color-surface);
+  --surface-inset: var(--color-surface-muted);
 
-  /* Radii Scale */
+  /* Borders (§13) */
+  --border-subtle: 1px solid var(--color-border-subtle);
+  --border-default: 1px solid var(--color-border);
+  --border-active: 1px solid var(--color-primary);
+  --border-error: 1px solid var(--color-danger-base);
+  --border-focus: 2px solid var(--color-primary);
+
+  /* Radii Scale (§14) */
   --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows */
+  /* Shadows (§15) */
   --shadow-none: none;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
 }
 
 /* Base resets and defaults */
@@ -92,13 +122,13 @@ body {
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
-  color: var(--color-neutral-700);
+  color: var(--color-text-primary);
   background-color: var(--surface-0);
   -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-primary-600);
+  outline: var(--border-focus);
   outline-offset: 2px;
 }
 

@@ -1,10 +1,24 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { StudentSafeQuestion, ResumeResponse } from '../types/assessment.ts';
-import { getResume, getQuestions, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
+import type { StudentSafeQuestion, ResumeResponse, TimerResponse } from '../types/assessment.ts';
+import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
+import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
 import { useAnswerManager } from '../hooks/useAnswerManager.ts';
+import { clearReviewFlags, useReviewFlags } from '../hooks/useReviewFlags.ts';
+import { clearBroadcastSeen, useBroadcastInbox } from '../hooks/useBroadcastInbox.ts';
+import { clearLocalAnswers } from '../exam/answer-store.ts';
+import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
+import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
+import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
+import { formatTime } from '../lib/format.ts';
+import type { ExamRunState } from '../exam/answer-sync-engine.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
 import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
+import { ExamMessageList, ExamMessageNotice } from './ExamMessages.tsx';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IconAlertCircle, IconInfo } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { StatusPage } from '@/components/ui/status-page';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -14,13 +28,78 @@ type WorkstationPhase =
   | 'access_denied'
   | 'not_found'
   | 'session_inactive'
+  /** The exam session moved to another device or tab; this one can no longer write. */
+  | 'superseded'
   | 'timer_not_started'
   | 'active'
   | 'expired'
   | 'submitted'
   | 'error';
 
-export const StudentExamWorkstation: React.FC = () => {
+export interface StudentExamWorkstationProps {
+  /** This tab's own exam session id; defaults to the one stored for the attempt in this tab. */
+  examSessionId?: string;
+  /** Moves the exam session to this device again (explicit takeover flow). */
+  onRequestTakeover?: () => void;
+  /** Leaves the exam screen (back to the student's exam list). */
+  onExit?: () => void;
+}
+
+/** Non-blocking reminders (D04.5-32); the server timer stays the only authority. */
+const TIME_REMINDER_THRESHOLDS_SECONDS = [30 * 60, 15 * 60, 5 * 60];
+const TIME_REMINDER_VISIBLE_MS = 10000;
+/** How long the note about time added by the teacher stays (it also shows while paused or locked). */
+const TIME_ADDED_VISIBLE_MS = 20000;
+const FINALIZE_RETRY_INITIAL_MS = 2000;
+const FINALIZE_RETRY_MAX_MS = 30000;
+const EXPIRY_FLUSH_WAIT_MS = 3000;
+/**
+ * How often the exam state is checked while working and while paused (Owner decision
+ * 2026-09-30). A save also reports a pause at once; while paused the check is more frequent
+ * so the exam continues on this device soon after the teacher resumes it.
+ */
+const STATE_CHECK_ACTIVE_MS = 15000;
+const STATE_CHECK_PAUSED_MS = 5000;
+
+function runStateOf(value: string | null | undefined): ExamRunState {
+  return value === 'PAUSED' ? 'PAUSED' : value === 'ENDED' ? 'ENDED' : 'ACTIVE';
+}
+
+function instantOrNull(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/** "soal 3", "soal 3 dan 5", "soal 2, 3 dan 7": numbers of the questions whose choice was dropped. */
+function describeQuestions(snapshotIds: string[], questions: StudentSafeQuestion[]): string | null {
+  const numbers = snapshotIds
+    .map(id => questions.findIndex(q => q.snapshotId === id) + 1)
+    .filter(n => n > 0)
+    .sort((a, b) => a - b);
+  if (numbers.length === 0) return null;
+  if (numbers.length === 1) return `soal ${numbers[0]}`;
+  return `soal ${numbers.slice(0, -1).join(', ')} dan ${numbers[numbers.length - 1]}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Waits for the next retry, or less when the connection comes back. */
+function waitForRetry(ms: number): Promise<void> {
+  return new Promise(resolve => {
+    const done = () => {
+      clearTimeout(timer);
+      window.removeEventListener('online', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    window.addEventListener('online', done);
+  });
+}
+
+export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ examSessionId, onRequestTakeover, onExit }) => {
   const [phase, setPhase] = useState<WorkstationPhase>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -29,14 +108,40 @@ export const StudentExamWorkstation: React.FC = () => {
   const [questions, setQuestions] = useState<StudentSafeQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [initialRemainingSeconds, setInitialRemainingSeconds] = useState<number>(0);
-  const [initialAnswers, setInitialAnswers] = useState<ResumeResponse['answers']>([]);
+  const [initialAnswers, setInitialAnswers] = useState<ResumeResponse['answers'] | null>(null);
+  const [initialFlags, setInitialFlags] = useState<string[] | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
+  const [unreceivedAtCompletion, setUnreceivedAtCompletion] = useState<number>(0);
+  const [submitError, setSubmitError] = useState<string>('');
+  const [isOnline, setIsOnline] = useState<boolean>(() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false));
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isNavSheetOpen, setIsNavSheetOpen] = useState<boolean>(false);
   const navSheetTriggerRef = useRef<HTMLButtonElement>(null);
+  // Exam pause and end (Owner decision 2026-09-30): a paused exam hides the questions and
+  // freezes the time; an ended exam lets this running attempt finish on its own time.
+  const [examState, setExamState] = useState<ExamRunState>('ACTIVE');
+  const [pausedAt, setPausedAt] = useState<string | null>(null);
+  const [discardedIds, setDiscardedIds] = useState<string[]>([]);
+  const [discardReason, setDiscardReason] = useState<'pause' | 'lock'>('pause');
+  const examStateRef = useRef<ExamRunState>('ACTIVE');
+  examStateRef.current = examState;
+  // A supervisor's lock of this attempt (D04.6-38): questions hidden, time keeps running.
+  const [lockedAt, setLockedAt] = useState<string | null>(null);
+  const lockedRef = useRef<boolean>(false);
+  lockedRef.current = lockedAt !== null;
+  const questionsLoadingRef = useRef<boolean>(false);
 
-  const expiryFinalizedRef = useRef<boolean>(false);
+  const finalizingRef = useRef<boolean>(false);
+  const mountedRef = useRef<boolean>(true);
+  const tenantKey = getActiveTenantId() ?? '';
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Validate attemptId from search params
   useEffect(() => {
@@ -49,7 +154,89 @@ export const StudentExamWorkstation: React.FC = () => {
     }
 
     setAttemptId(id);
+    const own = examSessionId ?? readExamSessionId(id);
+    if (own) setSessionId(own);
+  }, [examSessionId]);
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine !== false);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
   }, []);
+
+  /** The attempt is final on the server: drop this device's copy of it (shared devices). */
+  const completeAttempt = useCallback(async (id: string, at: string | null) => {
+    const unreceived = await countUnreceivedLocalAnswers(tenantKey, id);
+    await clearLocalAnswers(tenantKey, id);
+    clearReviewFlags(id);
+    clearBroadcastSeen(id);
+    clearAddedTime(id);
+    forgetExamSessionId(id);
+    if (!mountedRef.current) return;
+    setUnreceivedAtCompletion(unreceived);
+    setSubmittedAt(at);
+    setIsSubmitModalOpen(false);
+    setPhase('submitted');
+  }, [tenantKey]);
+
+  const timerControlRef = useRef<{ applyServerRemaining: (seconds: number) => void } | null>(null);
+  const answersRef = useRef<{ pendingCount: number; flush: () => void; flushBeforeFinalization: () => void; hasUnresolvedSaves: boolean } | null>(null);
+  const runInfoRef = useRef<((timer: TimerResponse) => void) | null>(null);
+
+  // Timer expiry: flush what can still be sent (D04.5-46), then ask the server to finalize
+  // from its accepted answers (D04.5-47), retrying until it answers (D04.5-45/49).
+  const finalizeExpiredAttempt = useCallback(async (id: string) => {
+    if (finalizingRef.current) return;
+    finalizingRef.current = true;
+    setPhase('expired');
+    try {
+      const answers = answersRef.current;
+      if (answers && answers.pendingCount > 0) {
+        answers.flushBeforeFinalization();
+        const deadline = Date.now() + EXPIRY_FLUSH_WAIT_MS;
+        while (Date.now() < deadline && (answersRef.current?.pendingCount ?? 0) > 0 && mountedRef.current) {
+          await sleep(200);
+        }
+      }
+      let delay = FINALIZE_RETRY_INITIAL_MS;
+      while (mountedRef.current) {
+        try {
+          const res = await postExpiryFinalize(id);
+          await completeAttempt(id, res.submittedAt);
+          return;
+        } catch (err) {
+          if (err instanceof ApiError && err.code === 'timer_not_expired') {
+            // The server still has time left (this device ran ahead): continue the exam.
+            try {
+              const timer = await getTimer(id);
+              if (timer.status === 'active' && timer.effectiveRemainingSeconds > 0) {
+                timerControlRef.current?.applyServerRemaining(timer.effectiveRemainingSeconds);
+                runInfoRef.current?.(timer);
+                if (mountedRef.current) setPhase('active');
+                return;
+              }
+            } catch {
+              // Retry below.
+            }
+          } else if (err instanceof ApiError && (err.status === 400 || err.status === 403 || err.status === 404)) {
+            if (mountedRef.current) {
+              setErrorMessage('Pengumpulan otomatis tidak dapat diproses. Hubungi pengawas ruangan.');
+              setPhase('error');
+            }
+            return;
+          }
+        }
+        await waitForRetry(delay);
+        delay = Math.min(delay * 2, FINALIZE_RETRY_MAX_MS);
+      }
+    } finally {
+      finalizingRef.current = false;
+    }
+  }, [completeAttempt]);
 
   // Initial resume load
   useEffect(() => {
@@ -59,13 +246,12 @@ export const StudentExamWorkstation: React.FC = () => {
 
     async function loadResume() {
       try {
-        const resume = await getResume(attemptId!);
+        const resume = await getResume(attemptId!, sessionId || null);
         if (isCancelled) return;
 
         // Check if already submitted
         if (resume.submission && resume.submission.status === 'submitted') {
-          setSubmittedAt(resume.submission.submittedAt);
-          setPhase('submitted');
+          await completeAttempt(attemptId!, resume.submission.submittedAt);
           return;
         }
 
@@ -74,8 +260,11 @@ export const StudentExamWorkstation: React.FC = () => {
           setPhase('session_inactive');
           return;
         }
-
-        setSessionId(resume.session.sessionId);
+        if (!sessionId || !resume.session.ownedByCaller) {
+          // Another device or tab holds the exam session (D04.4-37, D04.5-22).
+          setPhase('superseded');
+          return;
+        }
 
         // Check timer
         if (!resume.timer || resume.timer.status === 'not_started') {
@@ -83,18 +272,11 @@ export const StudentExamWorkstation: React.FC = () => {
           return;
         }
 
+        setExamContext(resume.context);
+
         if (resume.timer.status === 'active') {
           if (resume.timer.effectiveRemainingSeconds <= 0) {
-            setPhase('expired');
-            if (!expiryFinalizedRef.current) {
-              expiryFinalizedRef.current = true;
-              postExpiryFinalize(attemptId!).then(res => {
-                setSubmittedAt(res.submittedAt);
-                setPhase('submitted');
-              }).catch(() => {
-                // Remain in expired safe state
-              });
-            }
+            void finalizeExpiredAttempt(attemptId!);
             return;
           }
 
@@ -102,7 +284,20 @@ export const StudentExamWorkstation: React.FC = () => {
         }
 
         setInitialAnswers(resume.answers);
-        setExamContext(resume.context);
+        setInitialFlags(resume.reviewFlags ?? []);
+
+        const runState = runStateOf(resume.exam?.lifecycleState);
+        setExamState(runState);
+        examStateRef.current = runState;
+        const lock = resume.lock?.lockedAt ?? null;
+        setLockedAt(lock);
+        lockedRef.current = lock !== null;
+        if (runState === 'PAUSED' || lock !== null) {
+          // No question content while paused or locked; the questions load afterwards.
+          if (runState === 'PAUSED') setPausedAt(resume.exam?.pausedAt ?? null);
+          setPhase('active');
+          return;
+        }
 
         // Load questions
         const qRes = await getQuestions(attemptId!);
@@ -135,7 +330,20 @@ export const StudentExamWorkstation: React.FC = () => {
               return;
             }
             if (err.code === 'timer_expired') {
-              setPhase('expired');
+              void finalizeExpiredAttempt(attemptId!);
+              return;
+            }
+            if (err.code === 'exam_paused') {
+              // Paused between the resume and the questions: wait on the paused screen.
+              setExamState('PAUSED');
+              examStateRef.current = 'PAUSED';
+              setPhase('active');
+              return;
+            }
+            if (err.code === 'attempt_locked') {
+              setLockedAt(typeof err.data?.lockedAt === 'string' ? err.data.lockedAt : new Date().toISOString());
+              lockedRef.current = true;
+              setPhase('active');
               return;
             }
           }
@@ -150,179 +358,426 @@ export const StudentExamWorkstation: React.FC = () => {
     return () => {
       isCancelled = true;
     };
+    // The session id is fixed for this mounted workstation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attemptId]);
 
-  // Handle timer expiration
-  const handleExpire = useCallback(async () => {
-    setPhase('expired');
-    if (attemptId && !expiryFinalizedRef.current) {
-      expiryFinalizedRef.current = true;
-      try {
-        const res = await postExpiryFinalize(attemptId);
-        setSubmittedAt(res.submittedAt);
-        setPhase('submitted');
-      } catch {
-        // Safe non-success state: student instructed not to close page
-      }
-    }
-  }, [attemptId]);
+  const handleExpire = useCallback(() => {
+    if (attemptId) void finalizeExpiredAttempt(attemptId);
+  }, [attemptId, finalizeExpiredAttempt]);
 
-  const { formattedTime, isWarning, isUrgent } = useAuthoritativeTimer({
+  const timer = useAuthoritativeTimer({
     attemptId: attemptId || '',
     initialRemainingSeconds,
-    enabled: phase === 'active',
+    // Time stands still while the exam is paused.
+    enabled: phase === 'active' && examState !== 'PAUSED',
     onExpire: handleExpire,
+    onTimerInfo: timerInfo => runInfoRef.current?.(timerInfo),
   });
+  timerControlRef.current = timer;
+  const { formattedTime, isWarning, isUrgent, remainingSeconds } = timer;
+
+  const [timeReminder, setTimeReminder] = useState<string | null>(null);
+  const lastRemainingRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (phase !== 'active' || examState === 'PAUSED') {
+      lastRemainingRef.current = null;
+      return;
+    }
+    const previous = lastRemainingRef.current;
+    lastRemainingRef.current = remainingSeconds;
+    if (previous === null || remainingSeconds <= 0) return;
+    if (TIME_REMINDER_THRESHOLDS_SECONDS.some(t => previous > t && remainingSeconds <= t)) {
+      setTimeReminder(`Sisa waktu ${Math.ceil(remainingSeconds / 60)} menit.`);
+    }
+  }, [remainingSeconds, phase, examState]);
+  useEffect(() => {
+    if (!timeReminder) return;
+    const hide = setTimeout(() => setTimeReminder(null), TIME_REMINDER_VISIBLE_MS);
+    return () => clearTimeout(hide);
+  }, [timeReminder]);
+
+  // Time added by the teacher (D04.6-41): said once, without the reason.
+  const [timeAdded, setTimeAdded] = useState<string | null>(null);
+  useEffect(() => {
+    if (!timeAdded) return;
+    const hide = setTimeout(() => setTimeAdded(null), TIME_ADDED_VISIBLE_MS);
+    return () => clearTimeout(hide);
+  }, [timeAdded]);
+
+  // Re-align with the server clock after a reconnect (D04.5-28).
+  useEffect(() => {
+    if (phase !== 'active') return;
+    const onOnline = () => void timer.resync();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [phase, timer.resync]);
 
   const handleTerminalEvent = useCallback((code: string) => {
     if (code === 'timer_expired') {
       handleExpire();
     } else if (code === 'attempt_already_submitted') {
-      setPhase('submitted');
-    } else if (code === 'session_not_active') {
-      setPhase('session_inactive');
+      if (attemptId) void completeAttempt(attemptId, null);
     }
-  }, [handleExpire]);
+  }, [handleExpire, attemptId, completeAttempt]);
 
-  const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves } = useAnswerManager({
+  const handleSessionInactive = useCallback(() => {
+    setIsSubmitModalOpen(false);
+    setIsNavSheetOpen(false);
+    setPhase('superseded');
+  }, []);
+
+  const checkExamStateRef = useRef<(() => Promise<void>) | null>(null);
+  const handleExamPausedBySave = useCallback((at: number | null) => {
+    setIsSubmitModalOpen(false);
+    setIsNavSheetOpen(false);
+    setExamState('PAUSED');
+    examStateRef.current = 'PAUSED';
+    if (at !== null) setPausedAt(new Date(at).toISOString());
+    // Fetch the frozen remaining time to show it.
+    void checkExamStateRef.current?.();
+  }, []);
+  const handleAttemptLockedBySave = useCallback((at: number | null) => {
+    setIsSubmitModalOpen(false);
+    setIsNavSheetOpen(false);
+    setLockedAt(at !== null ? new Date(at).toISOString() : new Date().toISOString());
+    lockedRef.current = true;
+    void checkExamStateRef.current?.();
+  }, []);
+  const handleDiscarded = useCallback((ids: string[]) => {
+    setDiscardReason(lockedRef.current && examStateRef.current !== 'PAUSED' ? 'lock' : 'pause');
+    setDiscardedIds(prev => [...new Set([...prev, ...ids])]);
+  }, []);
+
+  const answers = useAnswerManager({
+    tenantId: tenantKey,
     attemptId: attemptId || '',
     sessionId,
     initialAnswers,
+    enabled: phase === 'active' || phase === 'expired',
+    onSessionInactive: handleSessionInactive,
     onTerminalEvent: handleTerminalEvent,
+    onExamPaused: handleExamPausedBySave,
+    onAttemptLocked: handleAttemptLockedBySave,
+    onDiscarded: handleDiscarded,
   });
+  const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
+  const review = useReviewFlags({ attemptId: attemptId || '', sessionId, initialFlags, enabled: phase === 'active' });
+  // Supervisor messages (D04.6-49..53): fetched when the timer answer counts more of them.
+  const inbox = useBroadcastInbox({ attemptId: attemptId || '', enabled: phase === 'active' });
+  const noteMessageCount = inbox.noteCount;
+  answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, flushBeforeFinalization: answers.flushBeforeFinalization, hasUnresolvedSaves };
 
-  // Handle final submission
+  const loadQuestions = useCallback(async (id: string) => {
+    if (questionsLoadingRef.current) return;
+    questionsLoadingRef.current = true;
+    try {
+      const qRes = await getQuestions(id);
+      if (mountedRef.current) setQuestions(qRes.questions);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'exam_paused' && mountedRef.current) {
+        setExamState('PAUSED');
+        examStateRef.current = 'PAUSED';
+      }
+      if (err instanceof ApiError && err.code === 'attempt_locked' && mountedRef.current) {
+        setLockedAt(typeof err.data?.lockedAt === 'string' ? err.data.lockedAt : new Date().toISOString());
+        lockedRef.current = true;
+      }
+      // Otherwise the next state check tries again.
+    } finally {
+      questionsLoadingRef.current = false;
+    }
+  }, []);
+
+  // What the server says about the exam: pause (freeze and hide), resume (exact remaining
+  // time, questions back) or end (this attempt continues on its own time).
+  const noteExamState = answers.noteExamState;
+  const noteLockState = answers.noteLockState;
+  const isFreshState = answers.isFreshState;
+  const applyRunInfo = useCallback((info: TimerResponse) => {
+    if (!mountedRef.current) return;
+    // Answers can arrive out of order: one produced before an answer already applied about
+    // the pause or the lock (such as a refusal that reported it) changes nothing.
+    const at = instantOrNull(info.serverTime);
+    if (!isFreshState('pause', at) || !isFreshState('lock', at)) return;
+    noteMessageCount(info.messageCount);
+    if (attemptId) {
+      const added = takeNewlyAddedSeconds(attemptId, info.effectiveDurationSeconds - info.configuredDurationSeconds);
+      if (added > 0) setTimeAdded(timeAddedMessage(added));
+    }
+    const state = runStateOf(info.examState);
+    const remaining = info.status === 'expired' ? 0 : info.effectiveRemainingSeconds;
+    const wasPaused = examStateRef.current === 'PAUSED';
+    if (state === 'PAUSED') {
+      setIsSubmitModalOpen(false);
+      setIsNavSheetOpen(false);
+      setPausedAt(info.pausedAt ?? null);
+    }
+    examStateRef.current = state;
+    setExamState(state);
+    noteExamState(state, state === 'PAUSED' ? instantOrNull(info.pausedAt) : null, at);
+    const lock = info.lockedAt ?? null;
+    const wasLocked = lockedRef.current;
+    if (lock !== null) {
+      setIsSubmitModalOpen(false);
+      setIsNavSheetOpen(false);
+    }
+    lockedRef.current = lock !== null;
+    setLockedAt(lock);
+    noteLockState(instantOrNull(lock), at);
+    // The server's value replaces the local countdown (frozen while paused, exact on resume).
+    timerControlRef.current?.applyServerRemaining(remaining);
+    // Questions are fetched once the exam runs again (also retried by later checks).
+    if (state !== 'PAUSED' && lock === null && attemptId && questions.length === 0) void loadQuestions(attemptId);
+    if ((wasPaused && state !== 'PAUSED') || (wasLocked && lock === null)) answersRef.current?.flush();
+  }, [noteExamState, noteLockState, isFreshState, noteMessageCount, attemptId, questions.length, loadQuestions]);
+  runInfoRef.current = applyRunInfo;
+
+  const checkExamState = useCallback(async () => {
+    if (!attemptId) return;
+    try {
+      applyRunInfo(await getTimer(attemptId));
+    } catch {
+      // Offline or unreachable: the next check, a save or reconnecting tries again.
+    }
+  }, [attemptId, applyRunInfo]);
+  checkExamStateRef.current = checkExamState;
+
+  // Regular state check while the exam screen is open; sooner while paused, and at once
+  // when the tab is visible again or the connection returns.
+  useEffect(() => {
+    if (phase !== 'active') return;
+    const base = examState === 'PAUSED' || lockedAt !== null ? STATE_CHECK_PAUSED_MS : STATE_CHECK_ACTIVE_MS;
+    let stopped = false;
+    let handle: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      // A little jitter keeps a whole room from asking at the same moment.
+      handle = setTimeout(async () => {
+        await checkExamState();
+        if (!stopped) schedule();
+      }, base * (0.8 + Math.random() * 0.4));
+    };
+    schedule();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void checkExamState();
+    };
+    window.addEventListener('online', onVisible);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stopped = true;
+      if (handle) clearTimeout(handle);
+      window.removeEventListener('online', onVisible);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [phase, examState, lockedAt !== null, checkExamState]);
+
+  // Handle final submission (idempotent on the server, D04.5-40/44).
   const handleConfirmSubmit = useCallback(async () => {
     if (!attemptId || hasUnresolvedSaves || isSubmitting) return;
 
     setIsSubmitting(true);
+    setSubmitError('');
     try {
       const res = await postSubmit(attemptId);
-      setSubmittedAt(res.submittedAt);
-      setIsSubmitModalOpen(false);
-      setPhase('submitted');
-    } catch {
-      setIsSubmitting(false);
-      alert('Gagal mengumpulkan ujian. Pastikan seluruh jawaban telah tersimpan dan coba lagi.');
+      await completeAttempt(attemptId, res.submittedAt);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'attempt_already_submitted') {
+        await completeAttempt(attemptId, null);
+        return;
+      }
+      if (err instanceof ApiError && err.code === 'timer_expired') {
+        setIsSubmitModalOpen(false);
+        handleExpire();
+        return;
+      }
+      if (err instanceof ApiError && err.code === 'exam_paused') {
+        handleExamPausedBySave(instantOrNull(typeof err.data?.pausedAt === 'string' ? err.data.pausedAt : null));
+        return;
+      }
+      if (err instanceof ApiError && err.code === 'attempt_locked') {
+        handleAttemptLockedBySave(instantOrNull(typeof err.data?.lockedAt === 'string' ? err.data.lockedAt : null));
+        return;
+      }
+      setSubmitError('Gagal mengumpulkan ujian. Periksa koneksi internet Anda lalu coba lagi.');
+    } finally {
+      if (mountedRef.current) setIsSubmitting(false);
     }
-  }, [attemptId, hasUnresolvedSaves, isSubmitting]);
+  }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire, handleExamPausedBySave, handleAttemptLockedBySave]);
 
-  // Render Phase States
+  // Render Phase States: every full-screen state is the shared status page (UI-SYSTEM-002).
   if (phase === 'invalid_attempt') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Tautan Tidak Valid</h1>
-          <p className="state-card-body">
-            Tautan pengerjaan ujian tidak valid atau format sesi tidak dikenali.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Tautan Tidak Valid" role="alert">
+        <p>Tautan pengerjaan ujian tidak valid atau format sesi tidak dikenali.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'access_denied') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Akses Ditolak</h1>
-          <p className="state-card-body">
-            Akses ditolak. Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Akses Ditolak" role="alert">
+        <p>Akses ditolak. Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'not_found') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Data Tidak Ditemukan</h1>
-          <p className="state-card-body">
-            Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Data Tidak Ditemukan" role="alert">
+        <p>Data pengerjaan ujian tidak ditemukan. Hubungi pengawas ruangan.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'session_inactive') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Sesi Ujian Tidak Aktif</h1>
-          <p className="state-card-body">
-            Sesi ujian belum aktif atau tidak dapat diakses. Silakan hubungi pengawas ujian.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Sesi Ujian Tidak Aktif">
+        <p>Sesi ujian belum aktif atau tidak dapat diakses. Silakan hubungi pengawas ujian.</p>
+      </StatusPage>
+    );
+  }
+
+  if (phase === 'superseded') {
+    return (
+      <StatusPage
+        title="Sesi Dipindahkan"
+        role="alert"
+        actions={onRequestTakeover && <Button onClick={onRequestTakeover}>Lanjutkan di Perangkat Ini</Button>}
+      >
+        <p>Sesi ujian Anda telah dibuka di perangkat lain. Sesi pada perangkat ini dinonaktifkan.</p>
+        <p>Jawaban yang sudah tersimpan tetap aman. Lanjutkan ujian di perangkat yang sedang aktif, atau pindahkan kembali ke perangkat ini.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'timer_not_started') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Waktu Ujian Belum Dimulai</h1>
-          <p className="state-card-body">
-            Waktu pelaksanaan ujian belum dimulai oleh pengawas ruangan.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Waktu Ujian Belum Dimulai">
+        <p>Waktu pelaksanaan ujian belum dimulai oleh pengawas ruangan.</p>
+      </StatusPage>
     );
   }
 
   if (phase === 'submitted') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Ujian Berhasil Dikumpulkan</h1>
-          <p className="state-card-body">
-            Jawaban Anda telah tersimpan resmi pada server sekolah. Anda dapat meninggalkan ruang ujian setelah diizinkan pengawas.
-          </p>
-          {submittedAt && (
-            <p className="state-card-body" style={{ fontSize: '0.875rem', color: 'var(--color-neutral-500)' }}>
-              Waktu Pengumpulan: {new Date(submittedAt).toLocaleTimeString('id-ID')} WIB
-            </p>
-          )}
-        </div>
-      </main>
+      <StatusPage
+        title="Ujian Berhasil Dikumpulkan"
+        actions={onExit && <Button variant="secondary" onClick={onExit}>Kembali ke Jadwal Ujian</Button>}
+      >
+        <p>Jawaban Anda telah tersimpan resmi pada server sekolah. Anda dapat meninggalkan ruang ujian setelah diizinkan pengawas.</p>
+        {submittedAt && <p>Waktu Pengumpulan: {formatTime(submittedAt)}</p>}
+        {unreceivedAtCompletion > 0 && (
+          <Alert variant="destructive">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>
+              {unreceivedAtCompletion} jawaban terakhir di perangkat ini belum diterima server sebelum ujian berakhir. Laporkan kepada pengawas ruangan.
+            </AlertDescription>
+          </Alert>
+        )}
+      </StatusPage>
     );
   }
 
   if (phase === 'expired') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert" aria-live="assertive">
-          <h1 className="state-card-title">Waktu Ujian Telah Habis</h1>
-          <p className="state-card-body">
-            Sistem sedang mengumpulkan seluruh jawaban Anda secara otomatis. Harap tunggu hingga proses selesai.
-          </p>
-        </div>
-      </main>
+      <StatusPage title="Waktu Ujian Telah Habis" role="alert" live="assertive">
+        <p>Sistem sedang mengumpulkan seluruh jawaban Anda secara otomatis. Harap tunggu hingga proses selesai.</p>
+        {!isOnline && <p>Koneksi terputus. Pengumpulan dicoba lagi otomatis saat kembali terhubung. Jangan tutup halaman ini.</p>}
+      </StatusPage>
     );
   }
 
   if (phase === 'error') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card" role="alert">
-          <h1 className="state-card-title">Terjadi Kendala</h1>
-          <p className="state-card-body">{errorMessage}</p>
-        </div>
-      </main>
+      <StatusPage title="Terjadi Kendala" role="alert">
+        <p>{errorMessage}</p>
+      </StatusPage>
     );
   }
 
-  if (phase === 'loading') {
+  const discardedText = discardedIds.length > 0
+    ? (() => {
+      const which = describeQuestions(discardedIds, questions);
+      const when = discardReason === 'lock' ? 'setelah pengerjaan dikunci' : 'setelah ujian dijeda';
+      return which
+        ? `Pilihan jawaban pada ${which} dibuat ${when} sehingga tidak disimpan. Periksa kembali soal tersebut.`
+        : `Beberapa pilihan jawaban dibuat ${when} sehingga tidak disimpan. Periksa kembali jawaban Anda.`;
+    })()
+    : null;
+
+  // Paused (Owner decision 2026-09-30): the questions are hidden and the time is frozen, so
+  // the pause gives no extra working time; answers chosen before it keep being sent.
+  if (phase === 'active' && examState === 'PAUSED') {
     return (
-      <main className="fullscreen-state-container">
-        <div className="state-card">
-          <h1 className="state-card-title">Memuat Ujian...</h1>
-          <p className="state-card-body">Menyiapkan lembar jawaban dan data soal.</p>
-        </div>
-      </main>
+      <StatusPage title="Ujian Dijeda" role="status" live="polite">
+        <p>
+          {pausedAt ? `Guru menjeda ujian sejak ${formatTime(pausedAt)}.` : 'Guru menjeda ujian.'} Sisa waktu Anda berhenti dan berjalan lagi saat ujian dilanjutkan.
+        </p>
+        <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}`}>
+          <span className="paused-remaining-label">Sisa waktu</span>
+          <span className="paused-remaining-value">{formattedTime}</span>
+        </p>
+        {timeAdded && <p className="font-semibold text-foreground">{timeAdded}</p>}
+        <p>
+          {!answers.ready
+            ? 'Memeriksa jawaban di perangkat ini...'
+            : answers.pendingCount > 0
+              ? (degraded || !isOnline
+                ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum ujian dijeda akan dikirim otomatis saat kembali terhubung.'
+                : 'Mengirim jawaban yang Anda pilih sebelum ujian dijeda...')
+              : 'Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.'}
+        </p>
+        {discardedText && (
+          <Alert variant="warning">
+            <IconInfo aria-hidden="true" />
+            <AlertDescription>{discardedText}</AlertDescription>
+          </Alert>
+        )}
+        <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
+        <p>Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
+      </StatusPage>
+    );
+  }
+
+  // Locked by a supervisor (D04.6-38/40): the questions are hidden, the time keeps running,
+  // answers chosen before the lock keep being sent.
+  if (phase === 'active' && lockedAt !== null) {
+    return (
+      <StatusPage title="Pengerjaan Dikunci" role="status" live="polite">
+        <p>Pengawas mengunci pengerjaan Anda sejak {formatTime(lockedAt)}. Hubungi pengawas ruangan untuk membuka kunci.</p>
+        <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}, tetap berjalan`}>
+          <span className="paused-remaining-label">Sisa waktu, tetap berjalan</span>
+          <span className="paused-remaining-value">{formattedTime}</span>
+        </p>
+        {timeAdded && <p className="font-semibold text-foreground">{timeAdded}</p>}
+        <p>
+          {!answers.ready
+            ? 'Memeriksa jawaban di perangkat ini...'
+            : answers.pendingCount > 0
+              ? (degraded || !isOnline
+                ? 'Koneksi terputus. Jawaban yang Anda pilih sebelum pengerjaan dikunci akan dikirim otomatis saat kembali terhubung.'
+                : 'Mengirim jawaban yang Anda pilih sebelum pengerjaan dikunci...')
+              : 'Semua jawaban yang Anda pilih sebelum pengerjaan dikunci sudah tersimpan.'}
+        </p>
+        {discardedText && (
+          <Alert variant="warning">
+            <IconInfo aria-hidden="true" />
+            <AlertDescription>{discardedText}</AlertDescription>
+          </Alert>
+        )}
+        <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
+        <p>Soal tampil kembali setelah pengawas membuka kunci.</p>
+      </StatusPage>
+    );
+  }
+
+  // Questions appear only once this device's unsynced choices are restored, so nothing can
+  // be answered or submitted before the local buffer and the server state are reconciled.
+  if (phase === 'loading' || (phase === 'active' && (!answers.ready || questions.length === 0))) {
+    return (
+      <StatusPage title="Memuat Ujian..." role="status" live="polite">
+        <p>Menyiapkan lembar jawaban dan data soal.</p>
+      </StatusPage>
     );
   }
 
@@ -434,6 +889,35 @@ export const StudentExamWorkstation: React.FC = () => {
             </div>
           </div>
         </div>
+        {timeReminder && (
+          <div className="time-reminder-banner" role="status" aria-live="polite">
+            {timeReminder}
+          </div>
+        )}
+        {timeAdded && (
+          <div className="time-reminder-banner time-added-banner" role="status" aria-live="polite">
+            {timeAdded}
+          </div>
+        )}
+        {inbox.notice && <ExamMessageNotice notice={inbox.notice} onDismiss={inbox.dismiss} />}
+        {examState === 'ENDED' && (
+          <div className="exam-ended-banner" role="status">
+            Guru telah mengakhiri ujian. Anda tetap dapat menyelesaikan sampai waktu Anda habis.
+          </div>
+        )}
+        {discardedText && (
+          <div className="discarded-banner" role="alert">
+            <span>{discardedText}</span>
+            <button type="button" className="discarded-banner-dismiss" onClick={() => setDiscardedIds([])}>Mengerti</button>
+          </div>
+        )}
+        {(degraded || !isOnline) && (
+          <div className="connection-banner" role="status" aria-live="polite">
+            {storageDurable
+              ? 'Koneksi terputus. Jawaban disimpan sementara di perangkat ini dan akan dikirim otomatis saat kembali terhubung.'
+              : 'Koneksi terputus. Jangan tutup atau muat ulang halaman ini. Jawaban akan dikirim otomatis saat kembali terhubung.'}
+          </div>
+        )}
       </header>
 
       {/* Main Split Workstation */}
@@ -448,6 +932,7 @@ export const StudentExamWorkstation: React.FC = () => {
             <span className="legend-chip"><span className="chip-indicator active-dot" /> Aktif</span>
             <span className="legend-chip"><span className="chip-indicator answered-dot" /> Terjawab</span>
             <span className="legend-chip"><span className="chip-indicator unanswered-dot" /> Kosong</span>
+            <span className="legend-chip"><span className="chip-indicator flagged-dot" /> Ragu-ragu</span>
           </div>
 
           <div className="navigator-grid" role="group" aria-label="Nomor Soal">
@@ -457,19 +942,23 @@ export const StudentExamWorkstation: React.FC = () => {
               const qState = saveStates[q.snapshotId];
               const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
 
+              const isFlagged = !!review.flags[q.snapshotId];
+
               let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
               if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
+              if (isFlagged) statusText += ', ditandai ragu-ragu';
 
               return (
                 <button
                   key={q.snapshotId}
                   type="button"
-                  className={`nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''}`}
+                  className={`nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''} ${isFlagged ? 'flagged' : ''}`}
                   onClick={() => setCurrentIndex(idx)}
                   aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
                   aria-current={isCurrent ? 'true' : undefined}
                 >
                   <span className="nav-btn-num">{idx + 1}</span>
+                  {isFlagged && <span className="flag-corner" aria-hidden="true" />}
                   {isAnswered && !isUnresolved && <span className="nav-btn-dot answered-dot" aria-hidden="true" />}
                   {isCurrent && <span className="nav-btn-dot current-dot" aria-hidden="true" />}
                   {isUnresolved && <span className="nav-btn-dot unresolved-dot" aria-hidden="true" />}
@@ -491,7 +980,14 @@ export const StudentExamWorkstation: React.FC = () => {
               <span className="navigator-summary-label">Belum Dijawab</span>
               <strong className="navigator-summary-val">{unansweredCount}</strong>
             </div>
+            {review.flaggedCount > 0 && (
+              <div className="navigator-summary-row">
+                <span className="navigator-summary-label">Ragu-ragu</span>
+                <strong className="navigator-summary-val">{review.flaggedCount}</strong>
+              </div>
+            )}
           </div>
+          <ExamMessageList messages={inbox.messages} />
         </nav>
 
         {/* Right Pane: Question Stimulus & Options */}
@@ -548,6 +1044,18 @@ export const StudentExamWorkstation: React.FC = () => {
                 })}
               </div>
             </fieldset>
+
+            <label className={`review-flag-toggle ${review.flags[currentQuestion.snapshotId] ? 'flagged' : ''}`}>
+              <input
+                type="checkbox"
+                checked={!!review.flags[currentQuestion.snapshotId]}
+                onChange={() => review.toggle(currentQuestion.snapshotId)}
+                aria-label="Ragu-ragu"
+                aria-describedby="review-flag-hint"
+              />
+              <span aria-hidden="true">Ragu-ragu</span>
+              <span id="review-flag-hint" className="review-flag-hint">Tandai untuk diperiksa lagi sebelum mengumpulkan. Jawaban tidak berubah.</span>
+            </label>
 
             {/* Workstation Actions: Persistent Bottom Bar on Mobile, Grid-aligned on Desktop */}
             <footer className="workstation-actions">
@@ -668,10 +1176,12 @@ export const StudentExamWorkstation: React.FC = () => {
         currentIndex={currentIndex}
         selectedOptions={selectedOptions}
         saveStates={saveStates}
+        flags={review.flags}
         onSelectQuestion={idx => setCurrentIndex(idx)}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         hasUnresolvedSaves={hasUnresolvedSaves}
         triggerRef={navSheetTriggerRef}
+        messages={inbox.messages}
       />
 
       {/* Submit Confirmation Modal */}
@@ -680,8 +1190,13 @@ export const StudentExamWorkstation: React.FC = () => {
         totalQuestions={totalQuestions}
         answeredCount={answeredCount}
         unansweredCount={unansweredCount}
+        flaggedCount={review.flaggedCount}
         isSubmitting={isSubmitting}
-        onCancel={() => setIsSubmitModalOpen(false)}
+        errorMessage={submitError}
+        onCancel={() => {
+          setSubmitError('');
+          setIsSubmitModalOpen(false);
+        }}
         onConfirm={handleConfirmSubmit}
       />
     </div>

@@ -7,6 +7,12 @@ export interface MembershipContext {
   personId: string;
 }
 
+export interface PersonMembershipSummary {
+  tenantId: string;
+  membershipId: string;
+  tenantDisplayLabel: string | null;
+}
+
 export class TenantAccessRuntime {
   #pg: Client;
   #identityRuntime: IdentityRuntime;
@@ -73,5 +79,29 @@ export class TenantAccessRuntime {
       membershipId: membership.id,
       personId: membership.person_id
     };
+  }
+
+  /**
+   * Lists the tenants in which an already-authenticated Person holds a Membership.
+   * The caller must pass a personId obtained from a resolved Identity session, never
+   * from client input. Used only to offer explicit tenant selection (D02.2-20).
+   */
+  async listMembershipsForPerson(personId: string): Promise<PersonMembershipSummary[]> {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!personId || typeof personId !== 'string' || !UUID_REGEX.test(personId)) {
+      return [];
+    }
+    const res = await this.#pg.query(`
+      SELECT m.id, m.tenant_id, t.display_label
+      FROM tenant_memberships m
+      JOIN tenant_tenants t ON t.id = m.tenant_id
+      WHERE m.person_id = $1
+      ORDER BY t.display_label ASC NULLS LAST, m.tenant_id ASC
+    `, [personId]);
+    return res.rows.map(row => ({
+      tenantId: row.tenant_id,
+      membershipId: row.id,
+      tenantDisplayLabel: row.display_label ?? null,
+    }));
   }
 }

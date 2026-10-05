@@ -1,8 +1,18 @@
 import { IncomingMessage, ServerResponse } from 'http';
+import { createHash } from 'node:crypto';
 import { Pool } from 'pg';
 import type { AuthorizedAssessmentContext } from './answer.ts';
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const fingerprintRegex = /^[0-9a-f]{16}$/;
+
+/**
+ * Opaque identifier of an active exam session for takeover confirmation. The session id
+ * itself is a per-device write capability and is never disclosed to another device.
+ */
+export function sessionFingerprint(sessionId: string): string {
+  return createHash('sha256').update(sessionId).digest('hex').slice(0, 16);
+}
 function isValidUUID(uuid: any): boolean {
   return typeof uuid === 'string' && uuidRegex.test(uuid);
 }
@@ -34,7 +44,7 @@ export async function handleSessionActivate(
         return resolve();
       }
 
-      const { attemptId, sessionId, expectedActiveSessionId } = parsed;
+      const { attemptId, sessionId, expectedActiveSessionId, expectedActiveSessionFingerprint } = parsed;
 
       if (parsed.confirmSupersede !== undefined && typeof parsed.confirmSupersede !== 'boolean') {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -55,7 +65,8 @@ export async function handleSessionActivate(
         return resolve();
       }
 
-      if (confirmSupersede && !isValidUUID(expectedActiveSessionId)) {
+      const hasFingerprint = typeof expectedActiveSessionFingerprint === 'string' && fingerprintRegex.test(expectedActiveSessionFingerprint);
+      if (confirmSupersede && !hasFingerprint && !isValidUUID(expectedActiveSessionId)) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'invalid_request' }));
         return resolve();
@@ -161,12 +172,15 @@ export async function handleSessionActivate(
             res.writeHead(409, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
               error: 'active_session_exists',
-              activeSessionId: currentActive.id
+              activeSessionFingerprint: sessionFingerprint(currentActive.id)
             }));
             return resolve();
           }
 
-          if (currentActive.id !== expectedActiveSessionId) {
+          const expectedMatches = hasFingerprint
+            ? sessionFingerprint(currentActive.id) === expectedActiveSessionFingerprint
+            : currentActive.id === expectedActiveSessionId;
+          if (!expectedMatches) {
             await client.query('ROLLBACK');
             res.writeHead(409, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'active_session_changed' }));
