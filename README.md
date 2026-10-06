@@ -8,11 +8,14 @@ Current program:
 Recovery / Discovery / Master Blueprint / Architecture → COMPLETE / LOCKED
 Build → CONTINUOUS PRODUCTION COMPLETION (DEC-042)
         Program 1: canonical baseline completion (Secure Assessment first)
+Current release → SECURE ASSESSMENT / CBT ONLY for one school (DEC-044)
+Execution → AICWDF v4.3 adapted (DEC-045)
 ```
 
 Start here:
 
 - `READ_ME_FIRST.md` and `AGENTS.md`: entry path and agent rules.
+- `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md`: current release scope and execution framework.
 - `docs/production/PRODUCTION_COMPLETION_PLAN.md`: live production state, critical path and next work.
 - `docs/00-governance/`: governance (execution model in `00.10_CONTINUOUS_PRODUCTION_COMPLETION.md`).
 - `docs/01-discovery/`, `docs/02-master-blueprint/`, `docs/architecture/`, `docs/design/`: locked product, architecture and design sources.

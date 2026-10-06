@@ -7,6 +7,7 @@ Before acting, you MUST use `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` as
 **Core Requirements:**
 - Require Git working-state verification (`git status --short`) before trusting dynamic state files.
 - Read the living plan `docs/production/PRODUCTION_COMPLETION_PLAN.md` for current production state and the critical path. `CURRENT_STATE.md`, `HANDOFF_PACKET.md` and `BUILD_PHASE_INDEX.md` are frozen historical records (BU-090 terminal); `DOCUMENT_MANIFEST.md` is the document index.
+- Read `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (DEC-044: the current release is Secure Assessment / CBT only) and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (DEC-045: execute only the Owner-authorized Task, one bounded READY Task at a time; Task records in `docs/production/tasks/`).
 - **Evidence-Over-Summary Rule:** Actual repository file content and Git output ALWAYS beat agent summaries or external reports.
 - **Working-Tree Preservation Rule:** A modified/untracked file is evidence of possible in-progress work. Do NOT perform destructive cleanup merely to make Git appear clean.
 
@@ -31,6 +32,7 @@ LEGACY       → reference only until audited
 
 ## Current Phase Guard
 
+- Current release: Secure Assessment / CBT only (DEC-044). Deferred domains (00.11 §8) are not planned, built or put on the critical path unless the Owner reopens them.
 - Execution model: `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (DEC-042). The live tracker is `docs/production/PRODUCTION_COMPLETION_PLAN.md`.
 - `CURRENT_STATE.md`, `HANDOFF_PACKET.md`, `BUILD_PHASE_INDEX.md` and the roadmap status fields are frozen historical records at the BU-090 terminal state. Use them for history, not for live navigation.
 - If the working tree is non-clean, execute the working-state reconstruction protocol in `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` before acting.
@@ -56,7 +58,7 @@ Architecture, API and UI work is authorized when it serves the critical path in 
 Web-first delivery
 Mobile-first student UX
 Multi-platform-ready
-InsForge-first/provider-agnostic
+Provider-agnostic; current release self-hosted on the school VPS (ADR-001 / DEC-046)
 Modular monolith initially
 One PostgreSQL database allowed with strict logical domain ownership
 Versioned Git migrations only
@@ -85,6 +87,7 @@ DROP
 
 Follow `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (execution model) and the non-superseded parts of `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` (baseline-first priority, Baseline Completion Gate).
 
+- **AUTHORIZED TASK ONLY (DEC-045):** implement only the Task the Owner authorized, within its contract; the critical path is the P11 Task baseline.
 - **PRODUCT COMPLETION FIRST:** Work the shortest safe production critical path recorded in `docs/production/PRODUCTION_COMPLETION_PLAN.md`. Keep that plan current in the same change.
 - **NO NEW BUILD UNITS:** Do not create BU-091 or later, Stage-1..5 lifecycle records, Controller stage audits, or lifecycle-close / navigation-correction commits. BU-001..BU-090 are historical construction assets: do not reopen or rewrite them.
 - **BASELINE PRIORITY:** `IN — CORE` + `IN — MANDATORY BASELINE` first. `OPTIONAL` / `FUTURE` stay deferred until the Baseline Completion Gate passes.
@@ -104,6 +107,13 @@ Follow `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (execution
 - **RENDERED VISUAL VERIFICATION:** Source code inspection, static typing, and automated unit/test PASS alone are not sufficient proof of visual quality or responsive correctness. Rendered visual verification across representative viewports (narrow mobile to wide desktop) is mandatory for all material UI changes.
 - **CROSS-ROLE VISUAL CONSISTENCY:** ELLIGBLE must have ONE coherent core design language. Individual Build Units may NOT independently invent their own colors, fonts, spacing, buttons, forms, cards, or navigation patterns.
 - **GLOBAL UI/UX CONSISTENCY CONTRACT (Owner, 2026-09-30, permanent):** one product, one design system across every role and module; design authority for UI/UX: Owner-approved DesainPakeAI project → product/domain/security requirements → compatible canonical visual decisions → shared ELLIGBLE tokens and primitives → shadcn/ui → page decisions. No per-page design systems; a pattern used twice becomes a shared primitive or documented variant. Full contract: `docs/production/PRODUCTION_COMPLETION_PLAN.md` §10.1 (work tracked as UI-SYSTEM tasks). Every UI task must answer: "Does this look and behave like the same ELLIGBLE product as every other role and module?" If not, fix the shared system rather than adding another isolated style.
+
+## Git Identity and Attribution
+
+- Commit only with the Owner's configured author and committer identity. Before the first commit of a session, check `git config user.name` and `git config user.email`; if they are not the Owner's identity, stop and ask. Never set an identity yourself.
+- Never add AI, model or tool attribution to commits, trailers, pull request metadata or contributor metadata (no Co-Authored-By, Generated-By, Assisted-By or session links).
+- After every commit, inspect `git log -1 --format=fuller` and the raw message; report any attribution instead of rewriting history.
+- No force push. No rewriting of published history. The Owner merges into `main`.
 
 ## Secrets
 

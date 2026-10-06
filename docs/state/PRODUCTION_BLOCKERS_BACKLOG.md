@@ -2,12 +2,13 @@
 
 ## 1. CONTROL METADATA
 - **Status:** ACTIVE
-- **Version:** 0.1.4
+- **Version:** 0.1.5
 - **Authority:** CONTROL / DERIVED — DOES NOT SUPERSEDE CANONICAL SOURCES
 - **Owner Carry-Forward:** APPROVED
 - **Production Blocker Count:** 12
 - **Resolved / Closed:** 1
-- **Last Reviewed:** 2026-09-18
+- **Last Reviewed:** 2026-10-06
+- **Current release applicability (DEC-044):** PB-08 and PB-09 are conditional and do not activate for the current CBT release (closure rule 6); they stay OPEN / CARRIED FORWARD. Every other blocker applies to the current release.
 
 ## 2. PURPOSE
 Track controlled closure of all 12 Production Blockers accepted for carry-forward at the Master Blueprint Exit Gate.

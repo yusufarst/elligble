@@ -1,6 +1,6 @@
-**Status:** LIVING PLAN (DEC-042) — the only live execution tracker
+**Status:** LIVING PLAN (DEC-042, amended by DEC-045): live production state, gaps, evidence, Owner decisions and continuity checkpoint; Task records in `docs/production/tasks/`; from P11 approval, Task status lives only in `docs/production/TASK_PLAN.md`
 **Canonical:** YES for current production state, gaps, critical path and next work. Does not override LOCKED decisions.
-**Last Updated:** 2026-09-30
+**Last Updated:** 2026-10-06
 **Audit Baseline:** `3a69883544ac3750b17fe5e4bdbd0f41b3608b07` (BU-090 terminal)
 
 # ELLIGBLE Production Completion Plan
@@ -50,7 +50,7 @@ Status on this branch (baseline findings in §4-§5). Rows marked E2E are exerci
 | Parent / Guardian | nothing | whole domain (schema, runtime, UI) | Milestone 7 |
 | Partner | nothing | whole domain; PB09 policy | Milestone 6-7 |
 
-Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outcome and Alumni are not started (Milestones 4-6). They are baseline scope but come after Secure Assessment on the critical path.
+Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outcome and Alumni are not started (Milestones 4-6). They are baseline scope but come after Secure Assessment on the critical path. Like Parent / Guardian and Partner, they are deferred from the current release (DEC-044, `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` §8).
 
 ## 4. P0 gaps (production blockers in the product itself)
 
@@ -105,7 +105,7 @@ Track, Care, Passport, Path, Opportunity, Application, Verified Connection, Outc
 
 ## 6. Production task graph
 
-Planning aids only: these identifiers are not Build Units and have no lifecycle stages (DEC-042). One coherent, verified product result per task; every active or backlog task carries its scope, dependencies and verification. Status values: BACKLOG, READY, IN_PROGRESS, BLOCKED, VERIFYING, DONE. Priority: P0 blocks safe production or risks data loss or security; P1 blocks a required baseline journey; P2 important reliability, quality or operations; P3 post-baseline. Work-in-progress limit: 3.
+Planning aids only: these identifiers are not Build Units and have no lifecycle stages (DEC-042). One coherent, verified product result per task; every active or backlog task carries its scope, dependencies and verification. Status values: BACKLOG, READY, IN_PROGRESS, BLOCKED, VERIFYING, DONE. Priority: P0 blocks safe production or risks data loss or security; P1 blocks a required baseline journey; P2 important reliability, quality or operations; P3 post-baseline. Work-in-progress limit: 3 (superseded by DEC-045: one Owner-authorized Task at a time).
 
 ### 6.1 Views
 
@@ -391,6 +391,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Commit / PR | `b00fc3a`, `0c67e52`, `78b22d2`, CI run 30 (all five projects 17/17); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### Blocked tasks
+> Re-evaluated in P11 against DEC-044 (2026-10-06): OD-09 answers the Owner question of RESULT-003; OD-08 sets the D04.7 preset for ASSESS-PROCTOR-003; OD-07 names the School Operator as the role for ADMIN-001 and gives the principles for SEC-001, whose CBT permission matrix (PB-05) follows in P5. See `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` §12.
 
 | ID | Title | Priority | Blocked by | What unblocks it |
 |---|---|---|---|---|
@@ -444,13 +445,13 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 |---|---|---|---|
 | DesainPakeAI credentials | Verifying UI against project `b5a22aa4-...` | Key supplied by the Owner for this environment | DONE 2026-09-30: CLI authenticated at user level, no key in the repository (§10) |
 | DesainPakeAI design direction versus the LOCKED design system (UI-001) | Aligning screens with the DesainPakeAI project | Keep the LOCKED ELLIGBLE tokens and components until the Owner confirms which parts of the project's "Provenance Thread" foundation supersede them, or adds ELLIGBLE screens to the project | RESOLVED 2026-09-30 by the Owner's UI/UX consistency contract (§10.1): the DesainPakeAI project leads UI and UX, compatible canonical visual decisions remain, and its intent is adapted into shared ELLIGBLE tokens and components (UI-SYSTEM tasks, §6); it never overrides security, authorization, privacy, domain logic, accessibility or responsive correctness (AGENTS.md) |
-| PB05 Permission Matrix | Production launch; roles beyond explicit assignments | Keep assignment-scoped least privilege until the matrix is approved | OPEN |
+| PB05 Permission Matrix | Production launch; roles beyond explicit assignments | Keep assignment-scoped least privilege until the matrix is approved | OPEN; CBT role-authority principles decided 2026-10-06 (OD-07, OD-07b; 00.11 §12); the CBT matrix follows in P5 |
 | PB01, PB02, PB03, PB10 (legal allocation, retention, DPIA, classification/consent) | Production launch with real student data | Owner/legal artifacts | OPEN |
-| Centralized (institution-managed) exam governance roles (D04.4-26D/E) | Activation of non-teacher-managed exams | Teacher-managed mode first | OPEN (not blocking critical path) |
+| Centralized (institution-managed) exam governance roles (D04.4-26D/E) | Activation of non-teacher-managed exams | Teacher-managed mode first | DECIDED 2026-10-06 (OD-07b; 00.11 §12): the School Operator organizes institution-managed exams; subject teachers own content, essay grading and result finalization |
 | End-of-exam handling (D04.2-81) and pause timer behaviour (D04.2-77) | ENDED / PAUSED operations | ENDED: no new attempt starts; active attempts are not force-submitted and keep their own server-authoritative remaining time, finishing by normal submission or automatic submission at their own expiry; finalization only when no active attempt remains; ENDED does not publish results. PAUSED: no new starts; every active attempt's remaining time freezes at the authoritative pause boundary; no extra working time; the exam screen becomes paused and read-only; no new answer edits accepted; answers captured before the boundary are not lost because they had not synced yet; RESUME continues from exactly the pre-pause remaining time; PAUSE/RESUME idempotent, audited, safe across reload, reconnect and the session rules | RESOLVED 2026-09-30 by the Owner; implemented by ASSESS-LIFE-001 and ASSESS-LIFE-002 (§6) |
 | ELLIGBLE ID format and generation (D02.10-C) | Account provisioning at scale | Until decided, operators supply IDs in a conservative syntax (3 to 64 lower-case letters, digits, dot, dash, underscore; not e-mail based); the platform only checks uniqueness | OPEN (not blocking the pilot) |
 | Activation code validity (D02.3-09 "short-lived") | Activation cards | 7 days by default, operator may choose 1 to 30 days per issue | IMPLEMENTED DEFAULT, adjustable |
-| Student result visibility (D04.8-16/21/22: options exist, "exact school-facing options later") | Showing scores to students | Hidden until the teacher publishes a finalized result, per exam; only the student's own score, no ranking or peer results (D04.8-50/51) | OPEN (students see no scores today; teachers see provisional results) |
+| Student result visibility (D04.8-16/21/22: options exist, "exact school-facing options later") | Showing scores to students | Hidden until the teacher publishes a finalized result, per exam; only the student's own score, no ranking or peer results (D04.8-50/51) | DECIDED 2026-10-06 (OD-09; 00.11 §12): the recommended default; implementation is RESULT-003 |
 | Who finalizes the results of a teacher-managed exam (D04.8-17/57; D03.6-25/26 keep finalization capability-based and allow maker-checker, PB05 matrix OPEN) | "Finalisasi Hasil" | The teacher who manages the exam (the same assignment-scoped authority that opens, pauses and ends it, D04.4-26A); one step, audited with actor and time; no second approver | IMPLEMENTED DEFAULT, adjustable when PB05 or a maker-checker rule is decided |
 | Broadcast rate limit (D04.1-77F: "exact rate limits remain later implementation policy") | "Kirim Pesan" | One message per sender and exam every 15 s, at most 20 per sender and exam in an hour; the refusal says when to try again | IMPLEMENTED DEFAULT, adjustable |
 | Quick broadcast messages ("exact quick broadcast templates" left open by Discovery 04) | "Pesan cepat" in the composer | The four examples of D04.6-51 | IMPLEMENTED DEFAULT, adjustable |
@@ -936,6 +937,7 @@ After the exam focus shell's states and submit confirmation on the shared page a
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure; `e2e/ci-failure-details.sh` also prints the page at the failure, the step timeline, the requests and the end of the server log into the job log, for readers who cannot fetch the uploaded report. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
 
 ## 13. Next engineering work
+> Amended by DEC-045: execution proceeds one Owner-authorized Task at a time; see §14 and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md`.
 
 The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Production Sprint Mode (§14). The sprint of 2026-09-30 is closed (WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-002 part 1; CI run 47). Next sprint candidates: UI-SYSTEM-002 part 2 (the action dock and question list on the shared Button, the shell's page widths and title, with the whole exam journey verified again) together with the rest of UI-SYSTEM-004 (touch targets and focus states); UI-SYSTEM-005 (token convergence) waits until the approved DesainPakeAI project can be inspected again; every UI change answers the §10.1 question; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
@@ -945,15 +947,15 @@ Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
 
 Replaced at every checkpoint: facts, state and next actions, so the work can resume after an interruption from the repository alone.
 
-| Item | State (2026-09-30) |
+| Item | State (2026-10-06) |
 |---|---|
 | Branch and pull request | `claude/laughing-mendel-p2l9gh`, [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) to `main`; the Owner reviews and squash-merges, the agent never merges |
 | Last CI-verified commit | `71392ce` (UI-SYSTEM-002 part 1), CI run 47, all eight jobs |
 | Checkpoint commit | the sprint checkpoint commit that carries this state (documentation only, after `71392ce`) |
-| Active tasks (at most 3) | none: the sprint is closed; the next one starts on a new session or an explicit continuation |
-| Next task | next sprint candidates: UI-SYSTEM-002 part 2 (the action dock and question list on the shared Button; one shell for every role with its page widths and title, audit C2 and C3) with the rest of UI-SYSTEM-004 (touch targets, focus states); UI-SYSTEM-005 once the approved DesainPakeAI project can be inspected again |
-| Decisions in force | global UI/UX consistency contract (§10.1, Owner 2026-09-30); exam cancellation (Owner 2026-09-30); nobody is removed from an exam in the product (OPEN-05 stays open) |
-| Waiting on the Owner | PB05, PB01, PB02, PB03, PB10; student result visibility (RESULT-003); the final ELLIGBLE ID format; institution-managed exam governance; OPEN-05; DesainPakeAI access to project `b5a22aa4-...` (§10) |
+| Current Task | GOV-REALIGN-001 (pre-baseline governance Task; its status lives in its record `docs/production/tasks/GOV-REALIGN-001.md`); further Tasks start only when the Owner authorizes them by ID (DEC-045) |
+| Next task | GOV-REALIGN-002 (EXECUTION_CONTEXT.md and TOOLCHAIN.md, pre-baseline) once GOV-REALIGN-001 is DONE; then planning: P1 CBT release definition and the P2 specifications (00.11), then the P11 Task baseline; READY items carried into the baseline: UI-SYSTEM-002 part 2, the remainder of UI-SYSTEM-004 |
+| Decisions in force | global UI/UX consistency contract (§10.1, Owner 2026-09-30); exam cancellation (Owner 2026-09-30); nobody is removed from an exam in the product (OPEN-05 stays open); current release CBT only (DEC-044) with the CBT-R1 policy decisions OD-05 to OD-09 (00.11 §12); AICWDF v4.3 execution model (DEC-045); as-built stack and self-hosted topology (DEC-046, ADR-001) |
+| Waiting on the Owner | PB-05 CBT permission matrix (principles decided, matrix in P5); PB-01, PB-02, PB-03, PB-10, PB-12; the final ELLIGBLE ID format (AUTH-001); OPEN-05; OD-10 repository visibility; part C actions of the realignment decision sheet (VPS facts, real devices and UAT, legal contacts, DesainPakeAI access to project `b5a22aa4-...` (§10)) |
 | Verification baseline | web 333 tests; runtime unit and PostgreSQL integration green in CI run 47 (no runtime change since CI run 40); browser E2E 21/21 at 360, 768 and 1280 px (Chromium, locally) and in the five CI browser projects in CI run 47; axe-core: no violation on the 14 audited screens and the 9 state screens at each of the three widths |
-| Execution mode | Production Sprint Mode (Owner, 2026-09-30): a sprint is 2 to 3 closely related READY tasks or one large vertical task; verification in three tiers (while implementing: only the affected checks; per task: affected regression and one representative width; per sprint, once: full suites, build, PostgreSQL and HTTP integration, route parity, E2E at 360, 768 and 1280 px, axe-core where the UI changed, CI); time budgets per verification, at most one expensive local verification at a time; mutation checks for authentication, authorization, tenancy, exam lifecycle, answers, timer, submission, concurrency, idempotency, constraints, security and real defects; a push per verified task; at the end of a sprint the Owner report, then stop until a new session or an explicit continuation |
+| Execution mode | AICWDF v4.3 adapted (DEC-045): one Owner-authorized bounded Task at a time, three verification layers (00.12 §6); Production Sprint Mode and the work-in-progress limit of 3 are superseded |
 | Resume procedure | `git status --short` first (00.04), then §6.1 for the queue and §11 for the latest evidence; the axe-core audit and the flake hunts use tooling kept outside the repository (the audit injects axe-core 4.13 into the rendered screens, audit §1) |

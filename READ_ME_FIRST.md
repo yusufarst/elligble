@@ -5,15 +5,16 @@ You are working on the ELLIGBLE platform.
 Before doing anything:
 
 1. Read `AGENTS.md`.
-2. Read the canonical New-Agent/New-Chat protocol: `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md`
-3. Execute its Git baseline / working-state inspection.
-4. Read the execution model `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (DEC-042).
-5. Read the living plan `docs/production/PRODUCTION_COMPLETION_PLAN.md`: current production state, P0/P1 gaps, critical path, Owner decisions and next work.
-6. Preserve existing working changes.
-7. Verify work before `DONE` (00.10 §4).
-8. Do not reuse legacy CBT code/migrations/RLS/RPC without audit.
-9. Do not introduce paid AI dependencies into baseline ELLIGBLE.
-10. Do not create Build Units or Stage lifecycle records. Work the critical path and keep the living plan current.
+2. Read `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (current release: CBT only) and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (execution framework).
+3. Read the canonical New-Agent/New-Chat protocol: `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md`
+4. Execute its Git baseline / working-state inspection.
+5. Read the execution model `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (DEC-042).
+6. Read the living plan `docs/production/PRODUCTION_COMPLETION_PLAN.md`: current production state, P0/P1 gaps, critical path, Owner decisions and next work.
+7. Preserve existing working changes.
+8. Verify work before `DONE` (00.10 §4).
+9. Do not reuse legacy CBT code/migrations/RLS/RPC without audit.
+10. Do not introduce paid AI dependencies into baseline ELLIGBLE.
+11. Do not create Build Units or Stage lifecycle records. Work the critical path and keep the living plan current.
 
 Current high-level phase truth:
 
@@ -24,6 +25,8 @@ Master Blueprint: COMPLETE / LOCKED v1.0.0
 Architecture:     COMPLETE / EXIT GATE PASSED
 Build:            CONTINUOUS PRODUCTION COMPLETION (DEC-042)
                   BU-001..BU-090 historical construction assets (BU-090 TERMINAL)
+Current release:  SECURE ASSESSMENT / CBT ONLY (DEC-044)
+Execution:        AICWDF v4.3 adapted (DEC-045): Owner-authorized Tasks, one at a time
 ```
 
 Live state: `docs/production/PRODUCTION_COMPLETION_PLAN.md`.
