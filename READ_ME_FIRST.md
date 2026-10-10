@@ -5,9 +5,9 @@ You are working on the ELLIGBLE platform.
 Before doing anything:
 
 1. Read `AGENTS.md`.
-2. Read `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (current release: CBT only) and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (execution framework).
-3. Read the canonical New-Agent/New-Chat protocol: `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md`
-4. Execute its Git baseline / working-state inspection.
+2. Read the canonical New-Agent/New-Chat protocol: `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md`
+3. Execute its Git baseline / working-state inspection.
+4. Read `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (current release: CBT only) and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (execution framework).
 5. Read the execution model `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (DEC-042).
 6. Read the living plan `docs/production/PRODUCTION_COMPLETION_PLAN.md`: current production state, P0/P1 gaps, critical path, Owner decisions and next work.
 7. Preserve existing working changes.

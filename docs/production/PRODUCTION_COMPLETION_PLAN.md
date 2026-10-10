@@ -1,6 +1,6 @@
 **Status:** LIVING PLAN (DEC-042, amended by DEC-045): live production state, gaps, evidence, Owner decisions and continuity checkpoint; Task records in `docs/production/tasks/`; from P11 approval, Task status lives only in `docs/production/TASK_PLAN.md`
 **Canonical:** YES for current production state, gaps, critical path and next work. Does not override LOCKED decisions.
-**Last Updated:** 2026-10-06
+**Last Updated:** 2026-10-08
 **Audit Baseline:** `3a69883544ac3750b17fe5e4bdbd0f41b3608b07` (BU-090 terminal)
 
 # ELLIGBLE Production Completion Plan
@@ -113,7 +113,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | none: the sprint of 2026-09-30 is closed (WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-002 part 1); the next sprint starts from the READY queue |
+| IN PROGRESS | none: the sprint of 2026-09-30 is closed (WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-002 part 1); a next Task starts only when the Owner authorizes it by ID (DEC-045, §14) |
 | READY QUEUE (by value) | UI-SYSTEM-002 part 2 (the exam workspace's action dock and question list on the shared Button; the shell's page widths and title, audit C2 and C3), UI-SYSTEM-004 (the rest: touch targets and focus states at 360, 768 and 1280 px) |
 | BLOCKED | RESULT-003 (Owner), SEC-001 (Owner), AUTH-001 (Owner), ADMIN-001 (Owner, PB05), ASSESS-STUDENT-001 (Owner, D04.5-48), UI-SYSTEM-005 (Owner: access to the approved DesainPakeAI project, §10), ASSESS-PROCTOR-003 (canonical review), OPS-001 (external infrastructure) |
 | RECENTLY COMPLETED | WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-003, UI-SYSTEM-001, ASSESS-SYNC-002, ASSESS-TEACHER-004, ASSESS-TEACHER-003 cancellation, ASSESS-TEACHER-003 rescheduling, ASSESS-PROCTOR-004, ASSESS-TEACHER-002, ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
@@ -939,7 +939,7 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 ## 13. Next engineering work
 > Amended by DEC-045: execution proceeds one Owner-authorized Task at a time; see §14 and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md`.
 
-The production task graph (§6) is the work queue: the critical path and READY queue in §6.1 decide what comes next, at most three tasks in progress at once. Production Sprint Mode (§14). The sprint of 2026-09-30 is closed (WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-002 part 1; CI run 47). Next sprint candidates: UI-SYSTEM-002 part 2 (the action dock and question list on the shared Button, the shell's page widths and title, with the whole exam journey verified again) together with the rest of UI-SYSTEM-004 (touch targets and focus states); UI-SYSTEM-005 (token convergence) waits until the approved DesainPakeAI project can be inspected again; every UI change answers the §10.1 question; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
+Under DEC-045 the Owner authorizes one Task at a time by ID (§14): the production task graph (§6), its critical path and its READY queue are planning input, not a work queue, and the limit of three tasks in progress and Production Sprint Mode are superseded. The sprint of 2026-09-30 is closed (WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-002 part 1; CI run 47). READY items carried into the P11 Task baseline (§14): UI-SYSTEM-002 part 2 (the action dock and question list on the shared Button, the shell's page widths and title, with the whole exam journey verified again) together with the rest of UI-SYSTEM-004 (touch targets and focus states); UI-SYSTEM-005 (token convergence) waits until the approved DesainPakeAI project can be inspected again; every UI change answers the §10.1 question; the pull request [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) waits for the Owner's review and squash-merge, and later commits on the branch join it. Blocked items wait on the Owner or on external infrastructure and are listed with their reason.
 
 Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
 
