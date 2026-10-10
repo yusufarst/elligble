@@ -9,16 +9,16 @@
 | Task ID | GOV-REALIGN-001 |
 | Classification | PRE-P11 / PRE-BASELINE GOVERNANCE TASK; NOT COUNTED IN P11 BASELINE |
 | Risk class | HIGH (governance authority change; documentation only) |
-| Status | VERIFYING |
+| Status | DONE |
 | Contract | realignment package v0.3, prepared 2026-10-05 by the planning agent (Claude Project chat) |
 | Owner decisions | 2026-10-05: package v0.1 approved with four corrections; OD-01 to OD-11 approved (OD-05, OD-07 and OD-07b with refinements); OD-10 and the part C actions not authorized by that approval |
 | Package v0.3 approval | YES (Owner, 2026-10-06) |
-| Execution authorization | 2026-10-06: base 8fdd60948a7c0f0de51c663b7b61b02dc38445fa; push no (Step 6 needs a separate Owner authorization); commit-msg hook no |
+| Execution authorization | 2026-10-06: base 8fdd60948a7c0f0de51c663b7b61b02dc38445fa; push no (Step 6 needs a separate Owner authorization); commit-msg hook no. 2026-10-07, Step 6: push yes, only this branch at commit A, normal push; pull request by the executor with GitHub CLI; full CI of commit A awaited, no re-run, no workflow dispatch. 2026-10-08, Step 7 after the review FAIL: one content commit A2 changing only READ_ME_FIRST.md and docs/production/PRODUCTION_COMPLETION_PLAN.md (review fixes R1 to R4), normal push, full CI of A2 awaited, no re-run, no workflow dispatch. 2026-10-11, Step 7: commit B, then a normal push of this branch; the CI run on commit B observed only |
 | Base commit | 8fdd60948a7c0f0de51c663b7b61b02dc38445fa |
 | Branch | `task/gov-realign-001-cbt-aicwdf` |
 | Executor | Claude Code Desktop on `C:\Projects\ELLIGBLE` |
-| Pull request / CI | PENDING (pull request and the full CI result of commit A; recorded in commit B) |
-| Independent review | PENDING (recorded in commit B) |
+| Pull request / CI | pull request #2, https://github.com/yusufarst/elligble/pull/2 (base main 8fdd60948a7c0f0de51c663b7b61b02dc38445fa); latest content commit A2 759d02029b8eada9ae25dc5ac800d305e0c6a4c1: full CI run 51 (databaseId 38078002666, attempt 1, push event) GREEN, all eight jobs success; commit A abd9a116de032d84b0b95ca1cd5005e241f8524b: full CI run 50 (databaseId 37557769730, attempt 1, push event) GREEN, all eight jobs success; see §5.4 |
+| Independent review | PASS on the latest content commit A2 (planning agent, 2026-10-11, relayed by the Owner; the Owner's independent second review also PASS), after the FAIL on commit A of 2026-10-08 was remediated by A2; no unresolved finding; see §6 |
 
 ### Status history
 
@@ -28,6 +28,7 @@
 | 2026-10-06 | READY | Owner approved package v0.3 and authorized execution: base 8fdd609, push no, commit-msg hook no |
 | 2026-10-06 | IN_PROGRESS | Step 0 passed |
 | 2026-10-06 | VERIFYING | commit A prepared; waiting for the full CI of commit A and the independent review |
+| 2026-10-11 | DONE | DONE gate held on the latest content commit A2 (759d020): full CI GREEN (run 51), independent review PASS (2026-10-11) after the FAIL of 2026-10-08 was remediated, no unresolved finding; commit B records the evidence and the review |
 
 ## 2. Contract
 
@@ -753,11 +754,80 @@ NOT FOUND in docs/production/tasks/GOV-REALIGN-001.md: docs/production/TOOLCHAIN
 
 ### 5.3 Commit A SHA and attribution check (recorded in commit B)
 
-PENDING
+```text
+Step 5 outputs of every content commit, re-read from the commit objects before commit B:
+
+commit A (2026-10-06): abd9a116de032d84b0b95ca1cd5005e241f8524b
+tree 73f7b91f22326c1f231d35085f91f1024d62ca14; parent 8fdd60948a7c0f0de51c663b7b61b02dc38445fa
+author:    Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>
+committer: Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>
+message: docs(governance): record the CBT release realignment, AICWDF v4.3 adoption and as-built stack decision
+raw commit object: the subject line only; no body, no trailer
+attribution check: no output
+changed paths against the base: 18 (5 A, 13 M)
+
+commit A2 (2026-10-11, review fix): 759d02029b8eada9ae25dc5ac800d305e0c6a4c1
+tree d61523614d6e409d095c59216f316a90d79ab5c9; parent abd9a116de032d84b0b95ca1cd5005e241f8524b
+author:    Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>
+committer: Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>
+message: docs(governance): restore the 00.04 entry order and mark superseded sprint rules in the living plan
+raw commit object: the subject line only; no body, no trailer
+attribution check: no output
+changed against commit A: READ_ME_FIRST.md (blob 3f88eb989b8e4784d517d6557fb0f1f735eae9a9) and docs/production/PRODUCTION_COMPLETION_PLAN.md (blob 1e4854f6ae7017b84c3c43fa8871a2f312d579d6), 3 insertions and 3 deletions each
+changed paths against the base: 18 (5 A, 13 M)
+```
 
 ### 5.4 Pull request and full CI of commit A (recorded in commit B)
 
-PENDING
+```text
+Step 6 and the Step 7 fix, outputs as reported:
+
+push of commit A (2026-10-07): new branch task/gov-realign-001-cbt-aicwdf, normal push, upstream set; remote branch at abd9a116de032d84b0b95ca1cd5005e241f8524b
+push of A2 (2026-10-11): abd9a11..759d020, normal fast-forward push; remote branch at 759d02029b8eada9ae25dc5ac800d305e0c6a4c1
+
+pull request #2: https://github.com/yusufarst/elligble/pull/2
+opened 2026-10-07 by yusufarst, not a draft
+title: docs(governance): record the CBT release realignment, AICWDF v4.3 adoption and as-built stack decision
+at commit A: head abd9a116de032d84b0b95ca1cd5005e241f8524b, base main 8fdd60948a7c0f0de51c663b7b61b02dc38445fa, changedFiles 18, exactly one commit
+PR FILES = COMMIT A PATHS
+PR BODY EXACT
+attribution check of title and body: no output
+at A2: state OPEN, isDraft false, head 759d02029b8eada9ae25dc5ac800d305e0c6a4c1, base 8fdd60948a7c0f0de51c663b7b61b02dc38445fa, changedFiles 18; commits abd9a116de032d84b0b95ca1cd5005e241f8524b, 759d02029b8eada9ae25dc5ac800d305e0c6a4c1
+
+full CI of the latest content commit A2: GREEN
+run 51, databaseId 38078002666, attempt 1, event push, workflow CI
+head task/gov-realign-001-cbt-aicwdf at 759d02029b8eada9ae25dc5ac800d305e0c6a4c1
+status completed, conclusion success
+startedAt 2026-10-10T18:59:36Z, updatedAt 2026-10-10T19:05:24Z
+https://github.com/yusufarst/elligble/actions/runs/38078002666
+Runtime (typecheck, unit, PostgreSQL integration): completed, success
+Web client (typecheck, tests, build): completed, success
+Container image (build and smoke test): completed, success
+Browser end-to-end (firefox-1280): completed, success
+Browser end-to-end (mobile-360): completed, success
+Browser end-to-end (tablet-768): completed, success
+Browser end-to-end (desktop-1280): completed, success
+Browser end-to-end (webkit-390): completed, success
+the only push run on A2; nothing re-run or dispatched
+
+full CI of commit A (history): GREEN
+run 50, databaseId 37557769730, attempt 1, event push, workflow CI
+head task/gov-realign-001-cbt-aicwdf at abd9a116de032d84b0b95ca1cd5005e241f8524b
+status completed, conclusion success
+startedAt 2026-10-07T01:34:21Z, updatedAt 2026-10-07T01:41:54Z
+https://github.com/yusufarst/elligble/actions/runs/37557769730
+Runtime (typecheck, unit, PostgreSQL integration): completed, success
+Web client (typecheck, tests, build): completed, success
+Container image (build and smoke test): completed, success
+Browser end-to-end (firefox-1280): completed, success
+Browser end-to-end (tablet-768): completed, success
+Browser end-to-end (webkit-390): completed, success
+Browser end-to-end (mobile-360): completed, success
+Browser end-to-end (desktop-1280): completed, success
+the only push run on commit A; nothing re-run or dispatched
+
+the executor did not poll either run (its app does not allow it); after the Owner signalled completion, it read each run record once
+```
 
 ### 5.5 Landing commit on main (recorded by GOV-REALIGN-002)
 
@@ -767,11 +837,11 @@ PENDING. After the Owner's squash merge, GOV-REALIGN-002 records the landing com
 
 | Field | Value |
 |---|---|
-| Reviewer | PENDING (planning or review agent, relayed by the Owner) |
-| Date | PENDING |
-| Scope | PENDING (complete pull request governance and content diff against §2.1 and E1 to E13; full CI evidence of commit A; Step 0, Step 4 and Step 5 evidence; AC-01 onward as applicable at commit A) |
-| Result | PENDING (PASS or FAIL) |
-| Findings | PENDING (each finding with its resolution; none unresolved at DONE) |
+| Reviewer | Planning agent (Claude Project chat), relayed by the Owner; an independent second review for the Owner reached the same result |
+| Date | 2026-10-11 (PASS on the latest content commit A2); earlier, 2026-10-08: FAIL on commit A |
+| Scope | Complete pull request governance and content diff against §2.1, E1 to E13 and the review fixes R1 to R4 (pull request #2: commit A abd9a116de032d84b0b95ca1cd5005e241f8524b and A2 759d02029b8eada9ae25dc5ac800d305e0c6a4c1 on base 8fdd60948a7c0f0de51c663b7b61b02dc38445fa); full CI evidence of A2 (run 51) and of commit A (run 50); Step 0, Step 4 and Step 5 evidence of commit A and A2; AC-01 to AC-11 as applicable at A2; every review thread on pull request #2 |
+| Result | PASS |
+| Findings | No unresolved finding. The planning agent's first review passed commit A on 2026-10-07 without checking the pull request's open review threads; after the Owner's second review it was corrected to FAIL on 2026-10-08. Three review threads on pull request #2 (discussion_r4202171756, discussion_r4202171760, discussion_r4202171766), each resolved by the Owner and verified on GitHub on 2026-10-11: (1) AGENTS.md, commit identity: false positive; the thread cited commit 5697e64, which is not part of the pull request, and commits A and A2 both carry the Owner's author and committer identity; no change and no history rewrite. (2) Living plan: valid; §13 and the §6.1 IN PROGRESS row still stated rules that DEC-045 supersedes; fixed in A2 (R2 to R4). (3) READ_ME_FIRST.md: valid; 00.11 and 00.12 were read before 00.04 and its Git baseline inspection; fixed in A2 (R1). Both valid findings came from the package text, not from its execution. A2 was rebuilt independently: its tree d61523614d6e409d095c59216f316a90d79ab5c9 equals commit A plus exactly R1 to R4. Accepted without change: the nine Stage A execution notes, the Step 6 note that the executor did not poll CI, and the read-only thread listing re-run with an equivalent pattern. Carried to GOV-REALIGN-002, outside this Task: the durable record of the Owner's OD-10 decision; the living-plan text that predates that decision and the PR #1 landing; and the remaining DEC-042 wording (AGENTS.md "authorized when it serves the critical path" and "PRODUCT COMPLETION FIRST", READ_ME_FIRST.md step 11, living plan §14 "Resume procedure"). |
 
 ## 7. Safe next Task, limits and first response
 
