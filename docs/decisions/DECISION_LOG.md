@@ -1,9 +1,9 @@
 **Status:** ACTIVE  
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Canonical:** YES  
-**Supersedes:** 1.0.9
+**Supersedes:** 1.1.0
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-09-29
+**Last Reviewed:** 2026-10-06
 
 # ELLIGBLE — Decision Log
 
@@ -19,7 +19,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-006 | Identity | One global Person identity with memberships/assignments/capabilities | LOCKED | R2.5–R2.6 |
 | DEC-007 | Tenant | One school = one academic tenant; organization groups do not bypass isolation | LOCKED | R2.4 |
 | DEC-008 | Architecture | Web-first, mobile-first UX, multi-platform-ready | LOCKED | R2.9 |
-| DEC-009 | Backend | InsForge-first/provider-agnostic; modular monolith initially | LOCKED | R2.10 |
+| DEC-009 | Backend | InsForge-first/provider-agnostic; modular monolith initially | LOCKED; provider selection superseded for the current release by DEC-046 (ADR-001) | R2.10 |
 | DEC-010 | AI | AI is FUTURE/OPTIONAL/NON-BLOCKING; no paid AI required baseline | LOCKED | R2 global/R3.1 |
 | DEC-011 | Profile/Passport | Profile ≠ Passport; Passport is portable and provenance-based | LOCKED | R2.12 |
 | DEC-012 | LPTPAT | LPTPAT is historical lineage, not a standalone ELLIGBLE module | LOCKED | R2.16/R3.2 |
@@ -29,7 +29,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-016 | Partner | Partner ≠ academic tenant; student data access is consent/purpose limited | LOCKED | R2.20 |
 | DEC-017 | Alumni | Alumni retains same Person/Passport/Path identity | LOCKED | R2.21 |
 | DEC-018 | Communication | Messaging is relationship-scoped; Search is permission-aware | LOCKED | R2.22 |
-| DEC-019 | Support | Every role receives role/context-aware Bantuan & Feedback | LOCKED | R2.25 addendum |
+| DEC-019 | Support | Every role receives role/context-aware Bantuan & Feedback | LOCKED; deferred from the current release except minimal exam-journey help (DEC-044) | R2.25 addendum |
 | DEC-020 | Commercial | School is initial payer; core modules are not artificially paywalled | LOCKED | R2.24 |
 | DEC-021 | Student data | Student database is not sold | PROHIBITED | R2.24 |
 | DEC-022 | Password | Minimum password length = 8 characters | LOCKED | R3.4A |
@@ -42,7 +42,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-029 | Discovery 01 | Product Vision & Boundaries finalized v1.0.0 | LOCKED | D01.1–D01.7 |
 | DEC-030 | Discovery 02 | Tenant / Organization / Identity / Access Foundation finalized v1.0.0 | LOCKED | D02.1–D02.10 |
 | DEC-031 | Discovery 03 | Academic Core finalized v1.0.0 | LOCKED | D03.1–D03.9 |
-| DEC-032 | Discovery 04 | Secure Assessment finalized v1.0.1 | LOCKED | D04.1–D04.10 |
+| DEC-032 | Discovery 04 | Secure Assessment finalized v1.0.1 | LOCKED; D04.3-22 to D04.3-27 promoted into the current release by DEC-044 | D04.1–D04.10 |
 | DEC-033 | Governance | Context & Governance Continuity Amendment | LOCKED | Owner |
 | DEC-034 | Build Fast-Track | Build Unit Fast-Track Control v1 applies from BU-011+, reducing administrative lifecycle loops while preserving one-BU, verification, scope, repository, and safety gates | LOCKED | Owner / 00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md |
 | DEC-035 | Full-Product Build Control | Full-Product / Baseline-First / Product-Milestone-Driven Build Control | LOCKED | Owner / 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md |
@@ -52,8 +52,11 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-039 | Assessment UI Context | Secure Assessment Exam Focus Workspace Context Presentation | LOCKED | Owner / SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md |
 | DEC-040 | Platform Visual Foundation | ELLIGBLE Warm Monochrome Institutional Visual Foundation | LOCKED | Owner / DEC-040 / ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md |
 | DEC-041 | PB04 Authentication-Security Policy | Owner-approved final residual Authentication-Security Policy Matrix | LOCKED | Owner / Discovery 02 D02.5-59 |
-| DEC-042 | Execution model | Continuous Production Completion replaces the Build Unit / Stage workflow for all new work; BU-001..BU-090 remain historical assets | LOCKED | Owner / 00.10_CONTINUOUS_PRODUCTION_COMPLETION.md |
+| DEC-042 | Execution model | Continuous Production Completion replaces the Build Unit / Stage workflow for all new work; BU-001..BU-090 remain historical assets | LOCKED; partially superseded by DEC-045 (00.12 §2) | Owner / 00.10_CONTINUOUS_PRODUCTION_COMPLETION.md |
 | DEC-043 | UI foundation and UX reference | shadcn/ui approved as component foundation (themed with ELLIGBLE tokens); DesainPakeAI project b5a22aa4-7b38-49d2-9448-443eab6e8075 is the Owner-approved UX direction | LOCKED | Owner / DEC-043 |
+| DEC-044 | Current release scope | The current release is Secure Assessment / CBT only (CBT-R1) for one school; non-CBT domains are deferred, not deleted; the CBT Release Gate is the current release criterion; CBT-R1 policy decisions OD-05 to OD-09 in 00.11 §12 | LOCKED | Owner / 00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md |
+| DEC-045 | Planning and execution framework | AICWDF v4.3 adopted and adapted; one Owner-authorized bounded Task at a time; Task records in docs/production/tasks/; finite P11 Task baseline | LOCKED | Owner / 00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md |
+| DEC-046 | Stack and topology | As-built stack recorded; self-hosted on the school's VPS; InsForge not used in the current release; provider-agnostic principle retained | LOCKED | Owner / ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -384,3 +387,52 @@ Owner explicitly approved:
 - Components must be themed with the locked ELLIGBLE warm-monochrome tokens. Generic default shadcn styling must not ship. Icons stay project-controlled outline SVGs per DEC-040.
 - **DesainPakeAI** project `b5a22aa4-7b38-49d2-9448-443eab6e8075` is the Owner-approved visual, layout, interaction and UX direction. It does not override security, authorization, privacy, real business logic, domain ownership, accessibility, responsive correctness or product functionality. Prototype code is reference only and must not be copied blindly. Access is through the `dpai` CLI only; `DPAI_API_KEY` is never printed or committed.
 - If a DesainPakeAI design value conflicts with a LOCKED design document value, the conflict is registered in the living plan for Owner decision; it is not silently resolved either way.
+
+### DEC-044 — Current Release: Secure Assessment / CBT Scope Realignment (2026-10-06)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifact:** `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md`
+
+Owner narrowed the current release to Secure Assessment / CBT only (CBT-R1): one school, mobile-first web, about 1,000 concurrent students, on the school's own domain and VPS.
+
+- A release boundary, not a product-identity change: DEC-001 and DEC-007 remain; tenant isolation is preserved.
+- Deferred, not deleted: Learn, Track, Passport, Path, Care, Parent / Guardian, Alumni, Partner and Opportunity, Talent Assurance, AI features, social features, SIS/ERP, general attendance and timetable, payments.
+- The CBT Release Gate (00.11 §9) replaces 02.10 §2 and 00.09 §4 as the current-release criterion; the platform baseline remains the long-term definition.
+- D04.3-22 to D04.3-27 move into CBT-R1 and a numeric-answer type is added; media are images; audio, video and file-upload answers stay out.
+- Student identity: registration creates a claim only; verification by HOMEROOM_TEACHER (own rombel) or SCHOOL_OPERATOR; at most one active account per official identity; no parallel claims that could produce duplicates; uniqueness enforced at the persistence layer; recovery never creates a second identity or account; audited.
+- Participant room reassignment by an authorized School Operator, also during a running exam, with reason, confirmation and an append-only audit trail; it preserves the Attempt, accepted answers, remaining time and submission state, and never creates a retake or a new Attempt or resets answers or the timer.
+- Owner policy decisions OD-05 to OD-09 (registration and recovery, personal data, role authority, institution-managed exams, risk signals, result publication) are recorded in 00.11 §12.
+- Risk signals are evidence for human review, never automatic proof.
+- PB-08 and PB-09 do not activate for CBT-R1.
+
+Supersedes for the current release: 02.10 §2 and 00.09 §4 as the release criterion; the FUTURE status of D04.3-22 to D04.3-27; DEC-019 as a current-release requirement.
+
+### DEC-045 — AICWDF v4.3 Adoption and Task Execution Model (2026-10-06)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifact:** `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md`
+
+Owner adopted AICWDF v4.3 as the planning and operating framework, adapted to the repository (compatibility over conformity):
+
+- Execution: one Owner-authorized, bounded READY Task at a time by an executor (Claude Code Desktop on `C:\Projects\ELLIGBLE` by default); the executor never merges into `main`.
+- Planning: P0 to P11 mapped onto the existing artifacts; a finite P11 Task baseline with counters and progress in `docs/production/TASK_PLAN.md`; pre-adoption work recorded as reused capabilities, not as baseline DONE.
+- Task records: each Task contract in `docs/production/tasks/` records its status history, evidence and independent review; Tasks authorized before the P11 baseline (from GOV-REALIGN-001) are marked PRE-P11 / PRE-BASELINE and not counted in it.
+- DONE requires the required tests and recorded evidence; HIGH-risk Tasks also need an independent review.
+- Git: Owner identity only; no AI or tool attribution; post-commit inspection; no force push; no history rewrite.
+
+Supersedes for new work: 00.10 §3 steps 2 and 6; 00.10 §5 as refined in 00.12 §2; the living plan's work-in-progress limit of 3 and Production Sprint Mode; the living plan as the only live Task tracker (from P11 approval).
+
+Does NOT supersede: 00.02; the rest of DEC-042 (no new Build Units, verification standard); any LOCKED product, security, architecture, domain, privacy or design decision.
+
+### DEC-046 — As-Built Stack and Self-Hosted Topology (2026-10-06)
+
+**Version:** 1.0.0
+**Status:** LOCKED
+**Canonical artifact:** `docs/decisions/ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md`
+
+- The as-built stack is the current-release stack: Node.js 24 and TypeScript on `node:http`, `pg`, PostgreSQL, modular monolith; React, TypeScript, Vite and shadcn/ui; one Docker image; nginx edge; self-hosted on the school's VPS and domain.
+- InsForge is not used in the current release; DEC-009's provider-agnostic principle and modular-monolith direction remain.
+- No Redis or Valkey, queue, broker, Kubernetes or microservices without evidence and a new ADR.
+- Capacity for about 1,000 concurrent students is not claimed until P6 load evidence exists.

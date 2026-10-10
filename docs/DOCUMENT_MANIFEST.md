@@ -1,7 +1,8 @@
 **Status:** ACTIVE / CANONICAL DOCUMENT INDEX
-**Version:** 1.1.3
+**Version:** 1.2.0
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.1.2
+**Supersedes:** 1.1.3
+> **Administrative Note:** v1.2.0 registers `00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (DEC-044), `00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (DEC-045), the AICWDF v4.3 reference copy, `docs/decisions/ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md` (DEC-046) and the Task records folder `docs/production/tasks/`, and updates the living plan and decision log descriptors.
 > **Administrative Note:** v1.1.3 registers `docs/design/UI_CONSISTENCY_AUDIT.md`, the working record of the UI consistency audit (UI-SYSTEM-001) under the Owner's UI/UX consistency contract (plan §10.1).
 > **Administrative Note:** v1.1.2 updates the `OPERATIONS_RUNBOOK.md` descriptor for pilot school provisioning (operator CLI, templates in `docs/production/provisioning-templates/`) and the browser end-to-end suite (`e2e/`).
 > **Administrative Note:** v1.1.1 registers `docs/production/OPERATIONS_RUNBOOK.md` (deployment, release, health and logs, rollback, backup and restore, incident basics).
@@ -83,7 +84,11 @@ NEVER_DEFAULT
 | `docs/00-governance/00.08_BUILD_UNIT_FAST_TRACK_CONTROL.md` | Build Unit Fast-Track Control v1 (historical execution record for BU-011..BU-090; superseded for new work by 00.10 / DEC-042) | Canonical / LOCKED v1.1.1 / SUPERSEDED FOR NEW WORK | ON_DEMAND |
 | `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` | Product Milestone-Driven Build Control: baseline-first priority, Baseline Completion Gate, domain scope, reuse of completed capabilities (§8 and Build Unit items of §10 superseded for new work by 00.10 / DEC-042). Version 1.0.2. | Canonical / LOCKED v1.0.2 (partially superseded) | PHASE: Build |
 | `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` | Execution model: Continuous Production Completion (DEC-042). Supersedes the Build Unit / Stage workflow for new work. Version 1.0.0. | Canonical / LOCKED v1.0.0 | ALWAYS |
-| `docs/production/PRODUCTION_COMPLETION_PLAN.md` | Living production completion plan: capabilities, P0/P1 gaps, critical path, Owner decisions, verification evidence, blockers, deployment readiness, next work. The only live execution tracker. | LIVING PLAN (DEC-042) | ALWAYS |
+| `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` | Current release: Secure Assessment / CBT only (CBT-R1); scope, roles, identity invariants, participant room reassignment, deferred domains, supersessions, CBT Release Gate, Owner policy decisions OD-05 to OD-09 (DEC-044). Version 1.0.0. | Canonical / LOCKED v1.0.0 | ALWAYS |
+| `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` | AICWDF v4.3 adoption: Owner-authorized Task execution, Task records, P0-P11 mapping, Task rules, Git protocol (DEC-045). Version 1.0.0. | Canonical / LOCKED v1.0.0 | ALWAYS |
+| `docs/00-governance/reference/AICWDF_v4.3_EN.md` | Reference copy of the AI-First Complex Web Application Delivery Framework v4.3 (external framework, unchanged, read-only); authority per 00.12 §1. | Reference | On demand |
+| `docs/production/PRODUCTION_COMPLETION_PLAN.md` | Living production completion plan: capabilities, P0/P1 gaps, critical path, Owner decisions, verification evidence, blockers, deployment readiness, next work. Live production state, evidence and continuity; Task status moves to TASK_PLAN.md at P11 approval (DEC-045). | LIVING PLAN (DEC-042) | ALWAYS |
+| `docs/production/tasks/` | Task contracts and records (AICWDF §23; DEC-045): one file per Task with status history, evidence and independent review. GOV-REALIGN-001 is a pre-baseline governance Task, not counted in the P11 baseline. | Live Task records | When executing or reviewing a Task |
 | `docs/production/OPERATIONS_RUNBOOK.md` | Operations runbook: deployment shape, release and migration procedure, health and log fields, rollback, backup and restore drill, incident basics, pilot school provisioning with the audited operator CLI, local development and the browser end-to-end suite. | ACTIVE (DEC-042) | WHEN DEPLOYING OR OPERATING |
 | `docs/build/BUILD_PHASE_INDEX.md` | Historical Build Unit phase index (BU-001..BU-090), frozen at the BU-090 terminal state. Not live navigation. | FROZEN HISTORICAL RECORD (DEC-042) | ON_DEMAND |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product milestone roadmap (Milestones 1-8, Baseline Completion Gate). Status fields frozen at BU-090; live status is in the living production plan. | MILESTONE ROADMAP / STATUS FROZEN (DEC-042) | PHASE: Build |
@@ -101,7 +106,8 @@ NEVER_DEFAULT
 | `docs/00-recovery/00.11_LEGACY_CBT_RECOVERY.md` | Legacy classification | Frozen | ON_DEMAND |
 | `docs/00-recovery/00.12_OPEN_PROVISIONAL_FUTURE_REGISTER.md` | Unresolved status register | Frozen/Canonical handoff | PHASE/DOMAIN |
 | `docs/00-recovery/archive/ELLIGBLE_RECOVERY_FULL_ARCHIVE.md` | Complete Recovery history | Frozen historical | NEVER_DEFAULT |
-| `docs/decisions/DECISION_LOG.md` | Concise decision register. DEC-042 Continuous Production Completion; DEC-043 shadcn/ui foundation and DesainPakeAI UX direction. Version 1.1.0. | Canonical | ALWAYS/Governance |
+| `docs/decisions/DECISION_LOG.md` | Concise decision register. DEC-042 Continuous Production Completion; DEC-043 shadcn/ui foundation and DesainPakeAI UX direction; DEC-044 CBT-only current release; DEC-045 AICWDF adoption; DEC-046 as-built stack. Version 1.2.0. | Canonical | ALWAYS/Governance |
+| `docs/decisions/ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md` | As-built stack and self-hosted topology for the current release (DEC-046). | Canonical / ACCEPTED | Architecture / Operations |
 | `docs/01-discovery/01.01_PRODUCT_VISION_AND_BOUNDARIES.md` | Discovery 01 — Product Vision & Boundaries | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
 | `docs/01-discovery/02.01_TENANT_ORGANIZATION_IDENTITY_ACCESS.md` | Discovery 02 — Tenant / Organization / Identity / Access Foundation | Canonical / FINAL / LOCKED v1.0.1 | PHASE: Discovery |
 | `docs/01-discovery/03.01_ACADEMIC_CORE.md` | Discovery 03 — Academic Core | Canonical / FINAL / LOCKED v1.0.0 | PHASE: Discovery |
