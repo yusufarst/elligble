@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expireAttemptOf, login, shotName, withDatabase } from './helpers.ts';
+import { expireAttemptOf, login, reloadPage, shotName, withDatabase } from './helpers.ts';
 
 // Results after the exam (D04.5-47, D04.8): a student whose device was away when the time
 // ran out is finalized by the server from the answers it accepted, and the teacher who
@@ -53,7 +53,7 @@ test('a device away at time expiry is finalized by the server; the teacher sees 
     await page.screenshot({ path: test.info().outputPath('results-1280.png'), fullPage: true });
 
     // Reload keeps the teacher on the results; back returns to Pelaksanaan Ujian.
-    await page.reload();
+    await reloadPage(page);
     await expect(page.getByRole('heading', { name: 'Hasil Ujian' })).toBeVisible();
     await page.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }).click();
     await expect(page.getByRole('heading', { name: 'Pelaksanaan Ujian' })).toBeVisible();

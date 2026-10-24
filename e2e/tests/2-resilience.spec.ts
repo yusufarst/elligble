@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { STAFF_SCREEN_FILE, activate, closeQuestionList, continueExam, login, open, openQuestionList, option, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
+import { STAFF_SCREEN_FILE, activate, closeQuestionList, continueExam, login, open, openQuestionList, option, reloadPage, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
 
 // Answer preservation (D04.5-17..24, PB07): offline answering, reload with unsynced
 // choices, and one active exam session per attempt across tabs (D04.4-32/35/37). Last, a
@@ -25,7 +25,7 @@ test('a reload while saves fail restores the unsynced choice from this device an
     await page.route('**/api/v1/assessment/answer/save', route => route.abort('failed'));
     await option(page, 4).click();
     await expect(saveStatus(page)).toHaveText('Gagal menyimpan');
-    await page.reload();
+    await reloadPage(page);
     await expect(page.locator('.options-list input[type=radio]').nth(4)).toBeChecked();
     await expect(saveStatus(page)).toHaveText('Gagal menyimpan');
     expect(await serverAnswers(page, attemptId)).toHaveLength(0);
@@ -86,7 +86,7 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     }, { id: attemptId, tenant: state.tenantId });
     await expect.poll(flagsOnServer).toHaveLength(1);
 
-    await page.reload();
+    await reloadPage(page);
     await expect(page.getByText('Hasil dari 2 + 3 adalah')).toBeVisible();
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
     await expect(page.getByRole('checkbox', { name: 'Ragu-ragu' })).toBeChecked();

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { closeQuestionList, continueExam, expireAttemptOf, login, openQuestionList, option, saveStatus, shotName, state, withDatabase } from './helpers.ts';
+import { closeQuestionList, continueExam, expireAttemptOf, login, openQuestionList, option, reloadPage, saveStatus, shotName, state, withDatabase } from './helpers.ts';
 
 // Pause, resume and end on the real production process (Owner decision 2026-09-30). Runs
 // last: it ends the shared exam. A paused exam hides the questions and freezes the time;
@@ -86,7 +86,7 @@ test('a pause freezes the student screen, keeps the answer chosen before it, dro
     expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBe(frozen);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(shotName('paused')), fullPage: true });
-    await page.reload();
+    await reloadPage(page);
     await expect(page.getByRole('heading', { name: 'Ujian Dijeda' })).toBeVisible();
     expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBe(frozen);
 
@@ -173,7 +173,7 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     expect(seconds(await page.locator('.paused-remaining-value').innerText())).toBeLessThan(shown);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(shotName('locked')), fullPage: true });
-    await page.reload();
+    await reloadPage(page);
     await expect(page.getByRole('heading', { name: 'Pengerjaan Dikunci' })).toBeVisible();
     await proctor.screenshot({ path: test.info().outputPath('monitoring-locked-360.png'), fullPage: true });
     await proctor.setViewportSize({ width: 1280, height: 900 });
