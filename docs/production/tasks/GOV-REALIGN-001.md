@@ -831,7 +831,14 @@ the executor did not poll either run (its app does not allow it); after the Owne
 
 ### 5.5 Landing commit on main (recorded by GOV-REALIGN-002)
 
-PENDING. After the Owner's squash merge, GOV-REALIGN-002 records the landing commit SHA on `main` and its identity and attribution check; a commit never records its own SHA.
+Recorded by GOV-REALIGN-002 on 2026-10-26 (its §5.1 holds the check lines; first verified read-only by the E2E-002 Step 0 gate on 2026-10-12, E2E-002 §5.1):
+
+| Field | Value |
+|---|---|
+| Landing commit | `00f3ef6d0386ceac23c32560c3dedba14f982d88`, the Owner's squash merge of pull request #2 (merged 2026-10-10T20:54:28Z by `yusufarst`) |
+| Tree and parent | tree `75577edc0de585391f7d6249a2577b4a16aacee6`, equal to the tree of commit B `2bd7b06` (the pull request head); single parent `8fdd60948a7c0f0de51c663b7b61b02dc38445fa` |
+| Identity and attribution | author `Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>`; committer `GitHub <noreply@github.com>` (GitHub's web squash merge, not an AI or tool attribution); signature verified by GitHub; message exactly `docs(governance): record the CBT release realignment, AICWDF v4.3 adoption and as-built stack decision`, no trailer, no AI attribution |
+| CI on `main` | run 53 (databaseId 38085576996), attempt 1: seven jobs success, `firefox-1280` failed 7 of 21 (a reload waiting for a load event Playwright's Firefox driver did not report; not caused by this Task's documentation change); fixed by E2E-002; `main` green again from `b13fd40` (run 57) and `2cf2f21` (run 61) |
 
 ## 6. Independent review (RISK CLASS HIGH; recorded in commit B)
 
