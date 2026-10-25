@@ -1,6 +1,6 @@
 **Status:** LIVING PLAN (DEC-042, amended by DEC-045): live production state, gaps, evidence, Owner decisions and continuity checkpoint; Task records in `docs/production/tasks/`; from P11 approval, Task status lives only in `docs/production/TASK_PLAN.md`
 **Canonical:** YES for current production state, gaps, critical path and next work. Does not override LOCKED decisions.
-**Last Updated:** 2026-10-08
+**Last Updated:** 2026-10-25
 **Audit Baseline:** `3a69883544ac3750b17fe5e4bdbd0f41b3608b07` (BU-090 terminal)
 
 # ELLIGBLE Production Completion Plan
@@ -387,7 +387,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 | Exact scope | run the critical journeys in Firefox and WebKit projects in CI and a tablet and desktop viewport; record platform limits honestly |
 | Out of scope | native apps; split-screen and multi-window evidence on real devices (PB06 artifact) |
 | Delivered | five Playwright projects, one per run on its own database and server: `mobile-360`, `tablet-768`, `desktop-1280` (Chromium), `firefox-1280` (Firefox desktop) and `webkit-390` (WebKit with the iPhone 13 profile: mobile, touch); the whole suite (pilot journey, resilience, security, results, pause, lock, messages, end and finalization) runs in each; steps that differ by layout use the question list as it appears (side panel from 1024 px, "Daftar Soal" sheet below); CI runs the five as a matrix |
-| Known limits | Firefox and WebKit cannot be installed in the development container, so their evidence comes from CI only; Playwright's Firefox driver sometimes misses the load event of a page's first navigation (the browsing context group switch caused by the COOP header), so the suite waits for the rendered client instead; WebKit runs with the development cookie (it refuses Secure cookies over plain HTTP on 127.0.0.1; production uses HTTPS); browser engines in CI are not real phones or tablets (no real touch keyboards, battery or network) |
+| Known limits | Firefox and WebKit cannot be installed in the development container, so their evidence comes from CI only; Playwright's Firefox driver sometimes misses the load event of a page's first navigation (the browsing context group switch caused by the COOP header), so the suite waits for the rendered client instead; the driver also missed the load event of a reload (CI runs 52 and 53, cause not established), so since E2E-002 (`docs/production/tasks/E2E-002.md`) a reload or a later navigation of an open page waits for proof read inside the page that the old document was replaced and that the client rendered and the page finished loading; WebKit runs with the development cookie (it refuses Secure cookies over plain HTTP on 127.0.0.1; production uses HTTPS); browser engines in CI are not real phones or tablets (no real touch keyboards, battery or network) |
 | Commit / PR | `b00fc3a`, `0c67e52`, `78b22d2`, CI run 30 (all five projects 17/17); part of [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) |
 
 #### Blocked tasks
@@ -932,6 +932,19 @@ After the exam focus shell's states and submit confirmation on the shared page a
 | browser E2E, Chromium, locally | 21/21 at 360, 768 and 1280 px on the final tree (the whole exam journey: start, answers, reload, offline, takeover, pause, lock, time added, messages, submit, time up), plus the temporary audit and state specs (not committed) |
 | accessibility and rendering | axe-core 4.13: no violation on the 14 audited screens (the launch screen, the exam workspace and the submit confirmation among them) nor on the 13 state screens at any of the three widths, no horizontal overflow; the launch screen, the submit confirmation, the paused and the locked screens checked in screenshots at 360 and 1280 px (the refused-answer note gained the shared alert icon after the first look) |
 
+After the Firefox-safe reload and navigation (E2E-002, pre-baseline Task, this branch):
+
+| Check | Result |
+|---|---|
+| cause | CI run 52 (first attempt, GOV-REALIGN-001 branch) and CI run 53 (`main`): `firefox-1280` failed 7 of 21; the first failure was a `page.reload()` waiting for the load event until the test timed out, and the later failures followed because the suite is stateful. Firefox passed in every run that reached the browser jobs from run 30 to run 51 (the code has been the same since run 47) and in the second attempt of run 52. Playwright's Firefox driver sometimes does not report the load event of a reload either; the cause inside the driver is not established |
+| change | `reloadPage()` and `navigatePage()` in `e2e/tests/helpers.ts`: a real reload, or a navigation of a page that already shows the client, that waits for the navigation to commit and then for proof read inside the page: a value stored in the old document for the call is gone, the address and the kind of navigation are the expected ones, the client rendered and the page itself finished loading; never Playwright's load event, and a navigation, rendering or loading failure still fails. The eight reloads and the one navigation of an open page in the suite use them; no assertion or step changed; `open()` (E2E-001), the configuration (retries 0), the workflow with its five browser projects, the application and its headers are unchanged |
+| typecheck (E2E suite) | PASS (tsc 7.0.2) |
+| negative checks (temporary spec, not committed; Chromium, locally) | N1 and N2 pass; N3 to N9 fail closed: N3 old document not replaced (39.1 s), N4 client not rendered (19.3 s), N5 another address (19.3 s), N6 navigation error propagated (0.1 s), N7 status 500 (0.0 s), N8 old document not replaced (39.2 s), N9 readyState interactive (19.5 s) |
+| mutation checks (each against a verified passing baseline) | 6 of 6 caught: M1 by N1, M2 by N1, M3 by N4, M4 by N9, M5 by N5, M6 by N1 |
+| browser E2E, Chromium, locally | 21/21 at 360, 768 and 1280 px on the final tree |
+| browser E2E, Firefox, locally | not run (installing Playwright Firefox is not authorized for this Task); Firefox evidence from CI only |
+| full CI and the repeated Firefox executions | recorded in `docs/production/tasks/E2E-002.md` §5 (a commit never records its own SHA or CI run) |
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure; `e2e/ci-failure-details.sh` also prints the page at the failure, the step timeline, the requests and the end of the server log into the job log, for readers who cannot fetch the uploaded report. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow). The manifest SHA256 synchronization chore is retired (DEC-042).
@@ -947,13 +960,13 @@ Local development and operations: `docs/production/OPERATIONS_RUNBOOK.md`.
 
 Replaced at every checkpoint: facts, state and next actions, so the work can resume after an interruption from the repository alone.
 
-| Item | State (2026-10-06) |
+| Item | State (2026-10-25) |
 |---|---|
 | Branch and pull request | `claude/laughing-mendel-p2l9gh`, [yusufarst/elligble#1](https://github.com/yusufarst/elligble/pull/1) to `main`; the Owner reviews and squash-merges, the agent never merges |
 | Last CI-verified commit | `71392ce` (UI-SYSTEM-002 part 1), CI run 47, all eight jobs |
 | Checkpoint commit | the sprint checkpoint commit that carries this state (documentation only, after `71392ce`) |
-| Current Task | GOV-REALIGN-001 (pre-baseline governance Task; its status lives in its record `docs/production/tasks/GOV-REALIGN-001.md`); further Tasks start only when the Owner authorizes them by ID (DEC-045) |
-| Next task | GOV-REALIGN-002 (EXECUTION_CONTEXT.md and TOOLCHAIN.md, pre-baseline) once GOV-REALIGN-001 is DONE; then planning: P1 CBT release definition and the P2 specifications (00.11), then the P11 Task baseline; READY items carried into the baseline: UI-SYSTEM-002 part 2, the remainder of UI-SYSTEM-004 |
+| Current Task | E2E-002 (pre-baseline Task: Firefox-safe page reload and navigation; its status lives in its record `docs/production/tasks/E2E-002.md`), prioritized by the Owner on 2026-10-11 before GOV-REALIGN-002; GOV-REALIGN-001 is DONE and landed on `main` as `00f3ef6` (landing record in the E2E-002 record, §5.1); further Tasks start only when the Owner authorizes them by ID (DEC-045) |
+| Next task | GOV-REALIGN-002 (EXECUTION_CONTEXT.md and TOOLCHAIN.md, pre-baseline; it also completes the landing records of GOV-REALIGN-001, its §5.5, and of E2E-002) once E2E-002 is DONE; then planning: P1 CBT release definition and the P2 specifications (00.11), then the P11 Task baseline; READY items carried into the baseline: UI-SYSTEM-002 part 2, the remainder of UI-SYSTEM-004 |
 | Decisions in force | global UI/UX consistency contract (§10.1, Owner 2026-09-30); exam cancellation (Owner 2026-09-30); nobody is removed from an exam in the product (OPEN-05 stays open); current release CBT only (DEC-044) with the CBT-R1 policy decisions OD-05 to OD-09 (00.11 §12); AICWDF v4.3 execution model (DEC-045); as-built stack and self-hosted topology (DEC-046, ADR-001) |
 | Waiting on the Owner | PB-05 CBT permission matrix (principles decided, matrix in P5); PB-01, PB-02, PB-03, PB-10, PB-12; the final ELLIGBLE ID format (AUTH-001); OPEN-05; OD-10 repository visibility; part C actions of the realignment decision sheet (VPS facts, real devices and UAT, legal contacts, DesainPakeAI access to project `b5a22aa4-...` (§10)) |
 | Verification baseline | web 333 tests; runtime unit and PostgreSQL integration green in CI run 47 (no runtime change since CI run 40); browser E2E 21/21 at 360, 768 and 1280 px (Chromium, locally) and in the five CI browser projects in CI run 47; axe-core: no violation on the 14 audited screens and the 9 state screens at each of the three widths |
