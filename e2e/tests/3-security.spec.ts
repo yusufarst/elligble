@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { activate, open, option, saveStatus, serverAnswers, startExam, state, withDatabase } from './helpers.ts';
+import { activate, navigatePage, open, option, saveStatus, serverAnswers, startExam, state, withDatabase } from './helpers.ts';
 
 // Isolation and session expiry in the browser: another school's data, another student's
 // attempt, and a session that ends in the middle of an exam without losing answers
@@ -19,7 +19,7 @@ test('another school and another student’s attempt are refused', async ({ page
     const intruder = await intruderContext.newPage();
     await activate(intruder, 'siswa.e2e.06', 'bintang-kejora-2026');
     await expect(intruder.getByText('Daftar Ujian Siswa')).toBeVisible();
-    await intruder.goto(`/?attemptId=${attemptId}`);
+    await navigatePage(intruder, `/?attemptId=${attemptId}`);
     await expect(intruder.getByRole('heading', { name: 'Akses Ditolak' })).toBeVisible();
     await intruderContext.close();
 });

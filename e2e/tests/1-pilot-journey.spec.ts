@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { STAFF_SCREEN_FILE, activate, option, requestedPaths, saveStatus, startExam, state } from './helpers.ts';
+import { STAFF_SCREEN_FILE, activate, option, reloadPage, requestedPaths, saveStatus, startExam, state } from './helpers.ts';
 
 // The pilot journey: provisioning CLI -> activation cards -> teacher opens the exam ->
 // proctor monitors -> a student answers, reloads, submits once.
@@ -41,7 +41,7 @@ test('a student answers, the answers survive a reload, and the exam is submitted
     await option(page, 2).click();
     await expect(saveStatus(page)).toHaveText('Tersimpan');
 
-    await page.reload();
+    await reloadPage(page);
     await expect(page.getByText('Hasil dari 2 + 3 adalah')).toBeVisible();
     await expect(page.locator('.options-list input[type=radio]').nth(1)).toBeChecked();
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();

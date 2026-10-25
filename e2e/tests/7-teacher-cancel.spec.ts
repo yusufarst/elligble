@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { login, shotName, wib, withDatabase } from './helpers.ts';
+import { login, reloadPage, shotName, wib, withDatabase } from './helpers.ts';
 
 // The teacher cancels an exam before it opens (ASSESS-TEACHER-003; D04.2-47, Owner decision
 // 2026-09-30): schedule an exam for tomorrow, see a student find it, cancel it with a reason,
@@ -71,7 +71,7 @@ test('a teacher cancels an exam before it opens; students no longer see it and i
     await page.screenshot({ path: test.info().outputPath(shotName('cancelled-history')), fullPage: true });
 
     // The student no longer finds it.
-    await student.reload();
+    await reloadPage(student);
     await expect(student.getByRole('heading', { name: 'Daftar Ujian Siswa' })).toBeVisible();
     await expect(tomorrowCards).toHaveCount(0);
     await expect(student.locator('body')).not.toContainText('ARCHIVED');

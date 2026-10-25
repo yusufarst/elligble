@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, shotName, wib, withDatabase } from './helpers.ts';
+import { login, reloadPage, shotName, wib, withDatabase } from './helpers.ts';
 
 // The teacher adds a student after scheduling (ASSESS-TEACHER-004; D04.2-64): schedule an exam
 // for the day after tomorrow leaving one student out, mark it ready, then add that student
@@ -95,7 +95,7 @@ test('a teacher adds a student left out of a scheduled exam, who then finds it',
     await expect(card).toContainText('Siap Dibuka');
 
     // The added student now finds it.
-    await student.reload();
+    await reloadPage(student);
     await expect(student.getByTestId(`assignment-${examId}`)).toBeVisible();
     await studentContext.close();
 

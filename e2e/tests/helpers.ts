@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { errors, expect, test, type Locator, type Page } from '@playwright/test';
 import pg from 'pg';
 import { readState } from '../state.ts';
@@ -20,6 +21,77 @@ export async function open(page: Page, url = '/'): Promise<void> {
     }
     await expect(page).toHaveURL(/^http:\/\/127\.0\.0\.1:\d+\//);
     await expect(page.locator('#root > *').first()).toBeAttached();
+}
+
+/** A value stored in the page's current document, so that its replacement can be proven (E2E-002). */
+const DOCUMENT_MARKER = '__elligbleE2eDocument';
+const NAVIGATION_TIMEOUT = 20_000;
+
+/**
+ * The page's document as it is now, read inside the page in one step. A read that fails, or that
+ * does not complete within a second because a navigation is still under way, is reported, not thrown.
+ */
+async function readDocument(page: Page) {
+    const read = page.evaluate(key => ({
+        marker: (window as unknown as Record<string, unknown>)[key] ?? null,
+        href: location.href,
+        navigation: (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)?.type ?? null,
+        readyState: document.readyState,
+        rendered: document.querySelector('#root > *') !== null,
+    }), DOCUMENT_MARKER).catch((err: unknown) => ({ unreadable: String(err).split('\n')[0] }));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const pending = new Promise<{ pending: true }>(resolve => { timer = setTimeout(() => resolve({ pending: true }), 1_000); });
+    try {
+        return await Promise.race([read, pending]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
+ * Replaces the document of a page that already shows the client and proves the replacement: a
+ * value stored in the old document for this call is gone, the new document has the expected
+ * address and kind of navigation, the client rendered in it and the page itself finished
+ * loading. Like open(), it never waits for Playwright's load event, which the Firefox driver
+ * sometimes never reports, also for a reload (CI runs 52 and 53). A navigation that really
+ * fails, or a page that never renders or never finishes loading, still fails.
+ */
+async function replaceDocument(page: Page, navigation: 'reload' | 'navigate', target: (current: string) => string,
+    go: () => Promise<{ status(): number } | null>): Promise<void> {
+    const current = await page.evaluate(([key, value]) => {
+        (window as unknown as Record<string, unknown>)[key] = value;
+        return location.href;
+    }, [DOCUMENT_MARKER, randomUUID()] as const);
+    const expected = target(current);
+    let status: number | undefined;
+    try {
+        status = (await go())?.status();
+    } catch (err) {
+        if (!(err instanceof errors.TimeoutError)) throw err;
+    }
+    if (status !== undefined) expect(status, `${navigation} of ${expected}: status of the document`).toBeLessThan(400);
+    // Playwright's Firefox driver performs a reload as a navigation whose timing entry says 'navigate' (CI run
+    // 40195497143, contract v0.5); Chromium and WebKit say 'reload'. In Firefox the reload is proven by the call in
+    // reloadPage, the replaced document, the address, the rendered client and the finished load.
+    const kinds: string[] = navigation === 'reload' && page.context().browser()?.browserType().name() === 'firefox' ? ['reload', 'navigate'] : [navigation];
+    await expect.poll(async () => {
+        const read = await readDocument(page);
+        return 'navigation' in read && kinds.includes(String(read.navigation)) ? { ...read, navigation } : read;
+    }, {
+        message: `${navigation} of ${expected}: the old document is gone, and the client rendered and loaded in the new one`,
+        timeout: NAVIGATION_TIMEOUT,
+    }).toEqual({ marker: null, href: expected, navigation, readyState: 'complete', rendered: true });
+    await expect(page).toHaveURL(expected);
+}
+
+/** Reloads a page that already shows the client: a real browser reload, proven as above. */
+export async function reloadPage(page: Page): Promise<void> {
+    await replaceDocument(page, 'reload', current => current, () => page.reload({ waitUntil: 'commit', timeout: NAVIGATION_TIMEOUT }));
+}
+
+/** Moves a page that already shows the client to another address of the client, proven as above. */
+export async function navigatePage(page: Page, url: string): Promise<void> {
+    await replaceDocument(page, 'navigate', () => new URL(url, state.baseUrl).href, () => page.goto(url, { waitUntil: 'commit', timeout: NAVIGATION_TIMEOUT }));
 }
 
 /** First sign-in with the activation card printed by the operator CLI. */
