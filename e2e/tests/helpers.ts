@@ -70,7 +70,14 @@ async function replaceDocument(page: Page, navigation: 'reload' | 'navigate', ta
         if (!(err instanceof errors.TimeoutError)) throw err;
     }
     if (status !== undefined) expect(status, `${navigation} of ${expected}: status of the document`).toBeLessThan(400);
-    await expect.poll(() => readDocument(page), {
+    // Playwright's Firefox driver performs a reload as a navigation whose timing entry says 'navigate' (CI run
+    // 40195497143, contract v0.5); Chromium and WebKit say 'reload'. In Firefox the reload is proven by the call in
+    // reloadPage, the replaced document, the address, the rendered client and the finished load.
+    const kinds: string[] = navigation === 'reload' && page.context().browser()?.browserType().name() === 'firefox' ? ['reload', 'navigate'] : [navigation];
+    await expect.poll(async () => {
+        const read = await readDocument(page);
+        return 'navigation' in read && kinds.includes(String(read.navigation)) ? { ...read, navigation } : read;
+    }, {
         message: `${navigation} of ${expected}: the old document is gone, and the client rendered and loaded in the new one`,
         timeout: NAVIGATION_TIMEOUT,
     }).toEqual({ marker: null, href: expected, navigation, readyState: 'complete', rendered: true });
