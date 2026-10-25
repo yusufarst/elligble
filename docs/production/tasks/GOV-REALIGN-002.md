@@ -9,7 +9,7 @@
 | Task ID | GOV-REALIGN-002 |
 | Classification | PRE-P11 / PRE-BASELINE TASK; NOT COUNTED IN P11 BASELINE |
 | Risk class | STANDARD (00.12 §5: documentation only; no product, test, workflow, dependency or data change; no governance authority change: AGENTS.md, READ_ME_FIRST.md, 00.01 to 00.12 and the decision log are not touched, and EXECUTION_CONTEXT.md is non-canonical, every rule in it a pointer to its authority) |
-| Status | VERIFYING |
+| Status | DONE |
 | Contract | v0.1, prepared 2026-10-25 by the planning agent (Claude Project chat) on `main` at `2cf2f21`, as the package `GOV-REALIGN-002.sh` (this record, the two new documents and the four record edits, with the script that applies and verifies them) |
 | Owner decisions | 2026-10-25: "LANJUTKAN PEMBANGUNAN APLIKASI": GOV-REALIGN-002 minimal, then the P11 baseline, then CBT-R1 feature work; nothing that already passed is repeated |
 | Contract approval | YES (Owner, 2026-10-25; package SHA-256 8fd517cb7063dd3c33dc3e4b86c277009fcca027d0d0b0d5003dfde4f996bd8f, LF-normalized) |
@@ -17,7 +17,7 @@
 | Base commit | 2cf2f2136b617b009e6ed4c1ac670e9b3776b968 |
 | Branch | `task/gov-realign-002-execution-context` |
 | Executor | Claude Code Desktop on C:\Projects\ELLIGBLE |
-| Pull request / CI | PENDING |
+| Pull request / CI | pull request #6 (https://github.com/yusufarst/elligble/pull/6); content commit `1cf346e2610fdb5940946accf09276c77b36b403`: CI run 40217721568 attempt 1 (push), all eight jobs success on ubuntu-24.04 (§5.2) |
 | Independent review | NOT REQUIRED (risk class STANDARD, 00.12 §5); the Owner reviews the pull request before the squash merge |
 
 ### Status history
@@ -27,6 +27,7 @@
 | 2026-10-25 | TODO | contract v0.1 prepared; waiting for the Owner's approval of the package and the execution authorization |
 | 2026-10-25 | READY | the Owner approved the package (SHA-256 8fd517cb7063dd3c33dc3e4b86c277009fcca027d0d0b0d5003dfde4f996bd8f) and authorized GOV-REALIGN-002 on base 2cf2f2136b617b009e6ed4c1ac670e9b3776b968: push yes, pull request yes |
 | 2026-10-26 | VERIFYING | content commit prepared by `GOV-REALIGN-002.sh apply`; waiting for its full CI |
+| 2026-10-26 | DONE | full CI of the content commit green (run 40217721568 attempt 1, all eight jobs on ubuntu-24.04); landing facts re-verified (§5.1); this evidence commit records it |
 
 ## 2. Contract
 
@@ -93,7 +94,24 @@ IF NO, BLOCKER: ...
 
 ## 5. Completion evidence (written by the script in the evidence commit)
 
-PENDING.
+### 5.1 Landing facts, re-verified on 2026-10-26 from Git and the GitHub API
+
+```text
+landing 00f3ef6d0386ceac23c32560c3dedba14f982d88: tree 75577edc0de585391f7d6249a2577b4a16aacee6, equal to 2bd7b06abd2840e1a8d2a6fdb62f085cd6895a8d (head of pull request #2); parent 8fdd60948a7c0f0de51c663b7b61b02dc38445fa; author Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>; committer GitHub <noreply@github.com>; signature verified; subject: docs(governance): record the CBT release realignment, AICWDF v4.3 adoption and as-built stack decision; no trailer, no attribution; pull request #2 merged 2026-10-10T20:54:28Z by yusufarst
+main run 53 (38085576996) attempt 1 on 00f3ef6: Browser end-to-end (desktop-1280) success ubuntu-latest; Browser end-to-end (firefox-1280) failure ubuntu-latest; Browser end-to-end (mobile-360) success ubuntu-latest; Browser end-to-end (tablet-768) success ubuntu-latest; Browser end-to-end (webkit-390) success ubuntu-latest; Container image (build and smoke test) success ubuntu-latest; Runtime (typecheck, unit, PostgreSQL integration) success ubuntu-latest; Web client (typecheck, tests, build) success ubuntu-latest
+landing 2cf2f2136b617b009e6ed4c1ac670e9b3776b968: tree 444a7b42eaf2c016b26042ef93b0a2ef2468bbdb, equal to f4423795a9338533d6793b3ab171a9b73777b990 (head of pull request #5); parent b13fd40c00197b7712d1335f2a02681ba9dd8a46; author Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>; committer GitHub <noreply@github.com>; signature verified; subject: test(e2e): reload and navigate pages without waiting for the load event (#5); no trailer, no attribution; pull request #5 merged 2026-10-25T15:25:18Z by yusufarst
+main run 61 (40206851655) attempt 1 on 2cf2f21: Browser end-to-end (desktop-1280) success ubuntu-24.04; Browser end-to-end (firefox-1280) success ubuntu-24.04; Browser end-to-end (mobile-360) success ubuntu-24.04; Browser end-to-end (tablet-768) success ubuntu-24.04; Browser end-to-end (webkit-390) success ubuntu-24.04; Container image (build and smoke test) success ubuntu-24.04; Runtime (typecheck, unit, PostgreSQL integration) success ubuntu-24.04; Web client (typecheck, tests, build) success ubuntu-24.04
+main run 57 (40191939042) attempt 1 on b13fd40: Browser end-to-end (desktop-1280) success ubuntu-24.04; Browser end-to-end (firefox-1280) success ubuntu-24.04; Browser end-to-end (mobile-360) success ubuntu-24.04; Browser end-to-end (tablet-768) success ubuntu-24.04; Browser end-to-end (webkit-390) success ubuntu-24.04; Container image (build and smoke test) success ubuntu-24.04; Runtime (typecheck, unit, PostgreSQL integration) success ubuntu-24.04; Web client (typecheck, tests, build) success ubuntu-24.04
+pull request #3: closed, not merged
+```
+
+### 5.2 Content commit, pull request and full CI
+
+```text
+committed 1cf346e2610fdb5940946accf09276c77b36b403 docs(production): add the execution context and toolchain records and complete the landing records (parent 2cf2f2136b617b009e6ed4c1ac670e9b3776b968; author and committer Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>; no trailer, no attribution; exactly the seven paths of 2.1)
+pr 6 https://github.com/yusufarst/elligble/pull/6 (head 1cf346e2610fdb5940946accf09276c77b36b403, base main)
+ci 40217721568 attempt 1 (push) on 1cf346e2610fdb5940946accf09276c77b36b403: Browser end-to-end (desktop-1280) success ubuntu-24.04; Browser end-to-end (firefox-1280) success ubuntu-24.04; Browser end-to-end (mobile-360) success ubuntu-24.04; Browser end-to-end (tablet-768) success ubuntu-24.04; Browser end-to-end (webkit-390) success ubuntu-24.04; Container image (build and smoke test) success ubuntu-24.04; Runtime (typecheck, unit, PostgreSQL integration) success ubuntu-24.04; Web client (typecheck, tests, build) success ubuntu-24.04
+```
 
 ## 6. Review
 
