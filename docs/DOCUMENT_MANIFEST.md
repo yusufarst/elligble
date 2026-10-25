@@ -1,7 +1,8 @@
 **Status:** ACTIVE / CANONICAL DOCUMENT INDEX
-**Version:** 1.2.0
+**Version:** 1.2.1
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.1.3
+**Supersedes:** 1.2.0
+> **Administrative Note:** v1.2.1 registers `docs/production/EXECUTION_CONTEXT.md` and `docs/production/TOOLCHAIN.md` (P0 under DEC-045; GOV-REALIGN-002).
 > **Administrative Note:** v1.2.0 registers `00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (DEC-044), `00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (DEC-045), the AICWDF v4.3 reference copy, `docs/decisions/ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md` (DEC-046) and the Task records folder `docs/production/tasks/`, and updates the living plan and decision log descriptors.
 > **Administrative Note:** v1.1.3 registers `docs/design/UI_CONSISTENCY_AUDIT.md`, the working record of the UI consistency audit (UI-SYSTEM-001) under the Owner's UI/UX consistency contract (plan §10.1).
 > **Administrative Note:** v1.1.2 updates the `OPERATIONS_RUNBOOK.md` descriptor for pilot school provisioning (operator CLI, templates in `docs/production/provisioning-templates/`) and the browser end-to-end suite (`e2e/`).
@@ -89,6 +90,8 @@ NEVER_DEFAULT
 | `docs/00-governance/reference/AICWDF_v4.3_EN.md` | Reference copy of the AI-First Complex Web Application Delivery Framework v4.3 (external framework, unchanged, read-only); authority per 00.12 §1. | Reference | On demand |
 | `docs/production/PRODUCTION_COMPLETION_PLAN.md` | Living production completion plan: capabilities, P0/P1 gaps, critical path, Owner decisions, verification evidence, blockers, deployment readiness, next work. Live production state, evidence and continuity; Task status moves to TASK_PLAN.md at P11 approval (DEC-045). | LIVING PLAN (DEC-042) | ALWAYS |
 | `docs/production/tasks/` | Task contracts and records (AICWDF §23; DEC-045): one file per Task with status history, evidence and independent review. GOV-REALIGN-001 is a pre-baseline governance Task, not counted in the P11 baseline. | Live Task records | When executing or reviewing a Task |
+| `docs/production/EXECUTION_CONTEXT.md` | Executor and reviewer navigation aid (00.12 §4): what ELLIGBLE is now, where the live state is, the read path and the rules that stop work, each as a pointer to its authority; holds no live state. | ACTIVE (DEC-045), non-canonical | ALWAYS/Agent setup |
+| `docs/production/TOOLCHAIN.md` | Verified toolchain state (00.12 §8): the executor machine, CI (runner pinned to ubuntu-24.04, E2E-003) and the development container, each with its evidence. | ACTIVE (DEC-045) | When executing a Task |
 | `docs/production/OPERATIONS_RUNBOOK.md` | Operations runbook: deployment shape, release and migration procedure, health and log fields, rollback, backup and restore drill, incident basics, pilot school provisioning with the audited operator CLI, local development and the browser end-to-end suite. | ACTIVE (DEC-042) | WHEN DEPLOYING OR OPERATING |
 | `docs/build/BUILD_PHASE_INDEX.md` | Historical Build Unit phase index (BU-001..BU-090), frozen at the BU-090 terminal state. Not live navigation. | FROZEN HISTORICAL RECORD (DEC-042) | ON_DEMAND |
 | `docs/build/PRODUCT_COMPLETION_ROADMAP.md` | Product milestone roadmap (Milestones 1-8, Baseline Completion Gate). Status fields frozen at BU-090; live status is in the living production plan. | MILESTONE ROADMAP / STATUS FROZEN (DEC-042) | PHASE: Build |
