@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { STAFF_SCREEN_FILE, activate, closeQuestionList, continueExam, login, open, openQuestionList, option, reloadPage, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
+import { STAFF_SCREEN_FILE, activate, captureWorkspace, captureWorkspaceTimer, closeQuestionList, continueExam, login, open, openQuestionList, option, reloadPage, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
 
 // Answer preservation (D04.5-17..24, PB07): offline answering, reload with unsynced
 // choices, and one active exam session per attempt across tabs (D04.4-32/35/37). Last, a
@@ -13,10 +13,12 @@ test('answers given offline are kept honestly and delivered when the connection 
     await expect(saveStatus(page)).toHaveText('Gagal menyimpan');
     await expect(page.locator('.connection-banner')).toContainText('Koneksi terputus. Jawaban disimpan sementara di perangkat ini');
     await expect(page.getByRole('button', { name: 'Selesaikan Ujian' })).toBeDisabled();
+    await captureWorkspace(page, 'offline-failed-save');
     await context.setOffline(false);
     await expect(saveStatus(page)).toHaveText('Tersimpan', { timeout: 30_000 });
     await expect(page.locator('.connection-banner')).toHaveCount(0);
     expect(await serverAnswers(page, attemptId)).toHaveLength(1);
+    await captureWorkspaceTimer(page, attemptId);
 });
 
 test('a reload while saves fail restores the unsynced choice from this device and syncs it later', async ({ page }) => {
@@ -29,6 +31,7 @@ test('a reload while saves fail restores the unsynced choice from this device an
     await expect(page.locator('.options-list input[type=radio]').nth(4)).toBeChecked();
     await expect(saveStatus(page)).toHaveText('Gagal menyimpan');
     expect(await serverAnswers(page, attemptId)).toHaveLength(0);
+    await captureWorkspace(page, 'failed-save-restored-after-reload');
     await page.unroute('**/api/v1/assessment/answer/save');
     await expect(saveStatus(page)).toHaveText('Tersimpan', { timeout: 30_000 });
     expect(await serverAnswers(page, attemptId)).toHaveLength(1);
@@ -78,6 +81,7 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     await expect(list.getByRole('button', { name: 'Pindah ke soal nomor 2, status sudah dijawab, ditandai ragu-ragu' })).toBeVisible();
     await expect(list.getByText(/^Ragu-ragu:?$/)).toBeVisible();
     await page.screenshot({ path: test.info().outputPath(shotName('ragu-ragu-list')), animations: 'disabled' });
+    await captureWorkspace(page, 'flagged-navigator');
     await closeQuestionList(page);
 
     const flagsOnServer = () => page.evaluate(async ({ id, tenant }) => {
@@ -92,6 +96,7 @@ test('a "Ragu-ragu" mark survives a reload, follows the server and never changes
     await expect(page.getByRole('checkbox', { name: 'Ragu-ragu' })).toBeChecked();
     await expect(page.locator('.options-list input[type=radio]').nth(2)).toBeChecked();
     await page.screenshot({ path: test.info().outputPath(shotName('ragu-ragu')), fullPage: true });
+    await captureWorkspace(page, 'flagged-saved');
 
     await page.getByRole('checkbox', { name: 'Ragu-ragu' }).uncheck();
     await expect.poll(flagsOnServer).toHaveLength(0);
