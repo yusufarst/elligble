@@ -1,9 +1,8 @@
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import './styles/globals.css';
 import './styles/workstation.css';
-// The two teacher and proctor list styles are in the first download, so the file of those
+// The teacher list style is in the first download, so the file of the teacher and proctor
 // screens (WEB-001) is one script with nothing else to fetch.
-import './styles/proctor-monitoring.css';
 import './styles/teacher-readiness.css';
 import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
@@ -16,6 +15,7 @@ import { LoginScreen, NoMembershipScreen, StatusScreen, TenantPicker } from './s
 import { ReauthDialog } from './session/ReauthDialog.tsx';
 import { AppShell, availableWorkspaces, type Workspace } from './session/AppShell.tsx';
 import { Button } from '@/components/ui/button';
+import { Page, PageTitle } from '@/components/ui/page';
 import type { MeContext } from './api/auth-client.ts';
 import { setDisplayTimeZone } from './lib/format.ts';
 import { SCREEN_TITLE } from './lib/screen-titles.ts';
@@ -126,12 +126,12 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
     );
   } else {
     content = (
-      <main className="mx-auto max-w-[540px] px-4 py-12 text-center">
-        <h1 className="m-0 text-2xl font-semibold">Belum Ada Ruang Kerja</h1>
-        <p className="mt-3 text-muted-foreground">
+      <Page width="narrow" className="gap-3 py-12 text-center">
+        <PageTitle>Belum Ada Ruang Kerja</PageTitle>
+        <p className="m-0 text-muted-foreground">
           Akun Anda belum memiliki penugasan ujian, pengawasan, atau mengajar di sekolah ini. Hubungi operator sekolah Anda.
         </p>
-      </main>
+      </Page>
     );
   }
 

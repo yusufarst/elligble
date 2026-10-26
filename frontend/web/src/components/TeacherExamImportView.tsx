@@ -6,6 +6,7 @@ import type {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadErrorState, LoadingState, PageStateFrame } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -247,14 +248,13 @@ export const TeacherExamImportView: React.FC<{
   const included = preview ? preview.participants.filter(p => !excluded.has(p.enrollmentId)).length : 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
+    <Page>
       {back}
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examImport}</h1>
+      <PageHeader title={SCREEN_TITLE.examImport}>
         <p className="m-0 text-muted-foreground">
           Pilih kelas dan jadwal, unggah soal pilihan ganda (A sampai E) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
         </p>
-      </header>
+      </PageHeader>
 
       <Card>
         <CardHeader>
@@ -435,7 +435,7 @@ export const TeacherExamImportView: React.FC<{
           </DialogContent>
         )}
       </Dialog>
-    </main>
+    </Page>
   );
 };
 

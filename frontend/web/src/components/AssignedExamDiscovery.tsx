@@ -5,12 +5,12 @@ import { formatDateTime, formatDurationMinutes, formatWindow } from '../lib/form
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState, LoadErrorState, LoadingState } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { Button } from '@/components/ui/button';
 import { ActionGroup } from '@/components/ui/action-group';
 import { ExamFact, ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import { SUBMITTED_ATTEMPT_STATUS } from '../lib/status.ts';
 import { START_REFUSAL_COPY } from '../lib/start-refusal-copy.ts';
-import '../styles/assigned-exam-discovery.css';
 
 // Entry guidance per exam (D04.2-73). Display only: the server decides eligibility
 // with its own clock when the student presses "Mulai Ujian" (D04.4-19).
@@ -123,15 +123,14 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
   };
 
   const header = (
-    <header className="discovery-header">
-      <h1 className="discovery-title">Daftar Ujian Siswa</h1>
-      <p className="discovery-subtitle">Pilih sesi pengerjaan ujian untuk memulai.</p>
-    </header>
+    <PageHeader title="Daftar Ujian Siswa">
+      <p className="m-0 text-sm text-muted-foreground">Pilih sesi pengerjaan ujian untuk memulai.</p>
+    </PageHeader>
   );
 
   if (phase !== 'ready') {
     return (
-      <main className="discovery-container">
+      <Page width="focused">
         {header}
         {phase === 'loading' ? (
           <LoadingState>Memuat daftar ujian...</LoadingState>
@@ -146,12 +145,12 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
         ) : (
           <EmptyState title="Belum Ada Ujian yang Ditugaskan">Belum ada ujian yang ditugaskan kepada Anda saat ini.</EmptyState>
         )}
-      </main>
+      </Page>
     );
   }
 
   return (
-    <main className="discovery-container">
+    <Page width="focused">
       {header}
 
       <ExamList>
@@ -252,7 +251,7 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
           );
         })}
       </ExamList>
-    </main>
+    </Page>
   );
 };
 

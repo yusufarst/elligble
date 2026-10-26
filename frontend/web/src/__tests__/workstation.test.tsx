@@ -1226,7 +1226,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
-    const question2Btn = dialog.querySelector('button.sheet-nav-btn:nth-child(2)') as HTMLButtonElement;
+    const question2Btn = within(dialog).getByRole('button', { name: /^Pindah ke soal nomor 2,/ });
     expect(question2Btn).toBeTruthy();
 
     // Click question 2 in sheet
@@ -1290,8 +1290,8 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     expect(screen.getByText('Belum Dijawab:').nextElementSibling?.textContent).toBe('1');
 
     // Question 1 button has answered indicator
-    const btn1 = dialog.querySelector('button.sheet-nav-btn:nth-child(1)') as HTMLButtonElement;
-    expect(btn1.classList.contains('answered')).toBe(true);
+    const btn1 = within(dialog).getByRole('button', { name: /^Pindah ke soal nomor 1,/ });
+    expect(btn1.dataset.answered).toBe('true');
     expect(btn1.textContent).toContain('✓');
   });
 
@@ -1349,7 +1349,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
-    const sheetSubmitBtn = dialog.querySelector('button.sheet-submit-btn') as HTMLButtonElement;
+    const sheetSubmitBtn = within(dialog).getByRole<HTMLButtonElement>('button', { name: 'Selesaikan Ujian' });
     expect(sheetSubmitBtn).toBeTruthy();
 
     // Click submit in sheet
@@ -1512,19 +1512,19 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
-    const btn1 = dialog.querySelector('button.sheet-nav-btn:nth-child(1)') as HTMLButtonElement;
-    const btn2 = dialog.querySelector('button.sheet-nav-btn:nth-child(2)') as HTMLButtonElement;
+    const btn1 = within(dialog).getByRole('button', { name: /^Pindah ke soal nomor 1,/ });
+    const btn2 = within(dialog).getByRole('button', { name: /^Pindah ke soal nomor 2,/ });
 
-    // Button 1 is both active and answered: has aria-current, active class, answered class, and visual marker
+    // Button 1 is both active and answered: aria-current, both states, and both visual markers
     expect(btn1.getAttribute('aria-current')).toBe('true');
-    expect(btn1.classList.contains('active')).toBe(true);
-    expect(btn1.classList.contains('answered')).toBe(true);
+    expect(btn1.dataset.current).toBe('true');
+    expect(btn1.dataset.answered).toBe('true');
     expect(btn1.textContent).toContain('•');
     expect(btn1.textContent).toContain('✓');
 
     // Button 2 is unanswered and inactive
     expect(btn2.getAttribute('aria-current')).toBeNull();
-    expect(btn2.classList.contains('answered')).toBe(false);
+    expect(btn2.dataset.answered).toBeUndefined();
     expect(btn2.textContent).not.toContain('✓');
   });
 
@@ -1561,7 +1561,7 @@ describe('BU-081 StudentExamWorkstation Test Suite', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Daftar Soal' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Daftar Soal' });
-    const sheetSubmitBtn = dialog.querySelector('button.sheet-submit-btn') as HTMLButtonElement;
+    const sheetSubmitBtn = within(dialog).getByRole<HTMLButtonElement>('button', { name: 'Selesaikan Ujian' });
     expect(sheetSubmitBtn.disabled).toBe(true);
   });
 

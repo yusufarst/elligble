@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import type { StudentSafeQuestion, SaveState, InboxMessage } from '../types/assessment.ts';
 import { ExamMessageList } from './ExamMessages.tsx';
+import { QuestionNumberButton, questionNumberState } from './QuestionNumberButton.tsx';
+import { Button } from '@/components/ui/button';
 
 export interface QuestionNavigatorSheetProps {
   isOpen: boolean;
@@ -132,15 +134,15 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
                 Daftar Soal
               </h2>
             </div>
-            <button
+            <Button
               ref={closeButtonRef}
-              type="button"
-              className="sheet-close-btn"
+              variant="ghost"
+              size="icon"
+              className="-mr-2"
               onClick={onClose}
               aria-label="Tutup daftar soal"
             >
               <svg
-                className="sheet-close-svg"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
@@ -150,11 +152,12 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden="true"
+                className="size-4"
               >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -167,35 +170,14 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
           </div>
 
           <div className="sheet-grid" role="group" aria-label="Pilihan Nomor Soal">
-            {questions.map((q, idx) => {
-              const isAnswered = !!selectedOptions[q.snapshotId];
-              const isCurrent = idx === currentIndex;
-              const qState = saveStates[q.snapshotId];
-              const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
-
-              const isFlagged = !!flags[q.snapshotId];
-
-              let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
-              if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
-              if (isFlagged) statusText += ', ditandai ragu-ragu';
-
-              return (
-                <button
-                  key={q.snapshotId}
-                  type="button"
-                  className={`sheet-nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''} ${isFlagged ? 'flagged' : ''}`}
-                  onClick={() => handleSelect(idx)}
-                  aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
-                  aria-current={isCurrent ? 'true' : undefined}
-                >
-                  <span className="sheet-btn-num">{idx + 1}</span>
-                  {isFlagged && <span className="flag-corner" aria-hidden="true" />}
-                  {isCurrent && <span className="sheet-btn-marker current-marker" aria-hidden="true">•</span>}
-                  {isAnswered && !isUnresolved && <span className="sheet-btn-marker answered-marker" aria-hidden="true">✓</span>}
-                  {isUnresolved && <span className="sheet-btn-marker unresolved-marker" aria-hidden="true">!</span>}
-                </button>
-              );
-            })}
+            {questions.map((q, idx) => (
+              <QuestionNumberButton
+                key={q.snapshotId}
+                number={idx + 1}
+                state={questionNumberState(q.snapshotId, idx, currentIndex, selectedOptions, saveStates, flags)}
+                onSelect={() => handleSelect(idx)}
+              />
+            ))}
           </div>
           <ExamMessageList messages={messages} />
         </div>
@@ -223,16 +205,14 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
           </div>
 
           <div className="sheet-footer-action">
-            <button
-              type="button"
-              className="btn btn-primary sheet-submit-btn"
+            <Button
+              className="w-full"
               onClick={handleOpenSubmit}
               disabled={hasUnresolvedSaves}
               aria-haspopup="dialog"
               aria-label="Selesaikan Ujian"
             >
               <svg
-                className="dock-icon"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
@@ -242,11 +222,12 @@ export const QuestionNavigatorSheet: React.FC<QuestionNavigatorSheetProps> = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden="true"
+                className="size-4"
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <span>Selesaikan Ujian</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

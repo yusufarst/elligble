@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { LOCKED_PARTICIPANT_STATUS, participantStatus } from '../lib/status.ts';
@@ -190,20 +191,17 @@ export const ExamMonitoringView: React.FC<{
   const wholeExam = data.scope === 'TEACHER' || !exam.roomBased;
 
   return (
-    <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
+    <Page>
       {back}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examMonitoring}</h1>
-          <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
-          <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
-            Diperbarui {formatClockTime(data.serverTime)}. Diperbarui otomatis.
-          </p>
-        </div>
-        {supervised && (
-          <Button className="self-start sm:self-auto" onClick={() => setComposerOpen(true)}>Kirim Pesan</Button>
-        )}
-      </header>
+      <PageHeader
+        title={SCREEN_TITLE.examMonitoring}
+        actions={supervised && <Button onClick={() => setComposerOpen(true)}>Kirim Pesan</Button>}
+      >
+        <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
+        <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
+          Diperbarui {formatClockTime(data.serverTime)}. Diperbarui otomatis.
+        </p>
+      </PageHeader>
 
       {exam.lifecycleState === 'PAUSED' && (
         <Alert variant="warning">
@@ -391,6 +389,6 @@ export const ExamMonitoringView: React.FC<{
           </DialogContent>
         )}
       </Dialog>
-    </main>
+    </Page>
   );
 };

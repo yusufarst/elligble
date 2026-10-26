@@ -14,6 +14,7 @@ import { formatTime } from '../lib/format.ts';
 import type { ExamRunState } from '../exam/answer-sync-engine.ts';
 import { SubmitConfirmModal } from './SubmitConfirmModal.tsx';
 import { QuestionNavigatorSheet } from './QuestionNavigatorSheet.tsx';
+import { QuestionNumberButton, questionNumberState } from './QuestionNumberButton.tsx';
 import { ExamMessageList, ExamMessageNotice } from './ExamMessages.tsx';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { IconAlertCircle, IconInfo } from '@/components/icons';
@@ -908,7 +909,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         {discardedText && (
           <div className="discarded-banner" role="alert">
             <span>{discardedText}</span>
-            <button type="button" className="discarded-banner-dismiss" onClick={() => setDiscardedIds([])}>Mengerti</button>
+            <Button variant="secondary" size="sm" onClick={() => setDiscardedIds([])}>Mengerti</Button>
           </div>
         )}
         {(degraded || !isOnline) && (
@@ -936,35 +937,14 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
           </div>
 
           <div className="navigator-grid" role="group" aria-label="Nomor Soal">
-            {questions.map((q, idx) => {
-              const isAnswered = !!selectedOptions[q.snapshotId];
-              const isCurrent = idx === currentIndex;
-              const qState = saveStates[q.snapshotId];
-              const isUnresolved = qState?.status === 'saving' || qState?.status === 'failed';
-
-              const isFlagged = !!review.flags[q.snapshotId];
-
-              let statusText = isAnswered ? 'sudah dijawab' : 'belum dijawab';
-              if (isUnresolved) statusText = 'sedang disinkronisasi atau gagal';
-              if (isFlagged) statusText += ', ditandai ragu-ragu';
-
-              return (
-                <button
-                  key={q.snapshotId}
-                  type="button"
-                  className={`nav-btn ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isUnresolved ? 'unresolved' : ''} ${isFlagged ? 'flagged' : ''}`}
-                  onClick={() => setCurrentIndex(idx)}
-                  aria-label={`Pindah ke soal nomor ${idx + 1}, status ${statusText}`}
-                  aria-current={isCurrent ? 'true' : undefined}
-                >
-                  <span className="nav-btn-num">{idx + 1}</span>
-                  {isFlagged && <span className="flag-corner" aria-hidden="true" />}
-                  {isAnswered && !isUnresolved && <span className="nav-btn-dot answered-dot" aria-hidden="true" />}
-                  {isCurrent && <span className="nav-btn-dot current-dot" aria-hidden="true" />}
-                  {isUnresolved && <span className="nav-btn-dot unresolved-dot" aria-hidden="true" />}
-                </button>
-              );
-            })}
+            {questions.map((q, idx) => (
+              <QuestionNumberButton
+                key={q.snapshotId}
+                number={idx + 1}
+                state={questionNumberState(q.snapshotId, idx, currentIndex, selectedOptions, saveStates, review.flags)}
+                onSelect={() => setCurrentIndex(idx)}
+              />
+            ))}
           </div>
 
           <div className="navigator-summary-box">
@@ -1059,16 +1039,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
 
             {/* Workstation Actions: Persistent Bottom Bar on Mobile, Grid-aligned on Desktop */}
             <footer className="workstation-actions">
-              <div className="action-buttons-group">
-                <button
-                  type="button"
-                  className="btn btn-secondary action-btn action-btn-prev nav-btn-prev"
+              <div className="action-dock-group">
+                <Button
+                  variant="secondary"
+                  size="dock"
                   onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentIndex === 0}
                   aria-label="Soal Sebelumnya"
                 >
                   <svg
-                    className="dock-icon"
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
@@ -1078,23 +1057,23 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
+                    className="size-4"
                   >
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
-                  <span className="btn-label-mobile">Sebelum</span>
-                  <span className="btn-label-desktop">Sebelum</span>
-                </button>
-                <button
+                  <span>Sebelum</span>
+                </Button>
+                <Button
                   ref={navSheetTriggerRef}
-                  type="button"
-                  className="btn btn-secondary action-btn action-btn-nav mobile-nav-trigger"
+                  variant="secondary"
+                  size="dock"
+                  className="lg:hidden"
                   onClick={() => setIsNavSheetOpen(true)}
                   aria-haspopup="dialog"
                   aria-expanded={isNavSheetOpen}
                   aria-label="Daftar Soal"
                 >
                   <svg
-                    className="dock-icon"
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
@@ -1104,26 +1083,24 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
+                    className="size-4"
                   >
                     <rect x="3" y="3" width="7" height="7" rx="1.5" />
                     <rect x="14" y="3" width="7" height="7" rx="1.5" />
                     <rect x="14" y="14" width="7" height="7" rx="1.5" />
                     <rect x="3" y="14" width="7" height="7" rx="1.5" />
                   </svg>
-                  <span className="btn-label-mobile">Daftar</span>
-                  <span className="btn-label-desktop">Daftar Soal</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary action-btn action-btn-next nav-btn-next"
+                  <span>Daftar</span>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="dock"
+                  className="lg:flex-row-reverse"
                   onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
                   disabled={currentIndex === totalQuestions - 1}
                   aria-label="Soal Berikutnya"
                 >
-                  <span className="btn-label-mobile">Berikut</span>
-                  <span className="btn-label-desktop">Soal Berikutnya</span>
                   <svg
-                    className="dock-icon"
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
@@ -1133,20 +1110,22 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
+                    className="size-4"
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary action-btn action-btn-submit workstation-submit-btn"
+                  <span className="lg:hidden">Berikut</span>
+                  <span className="hidden lg:inline">Soal Berikutnya</span>
+                </Button>
+                <Button
+                  size="dock"
+                  className="lg:ml-auto"
                   onClick={() => setIsSubmitModalOpen(true)}
                   disabled={hasUnresolvedSaves}
                   aria-haspopup="dialog"
                   aria-label="Selesaikan Ujian"
                 >
                   <svg
-                    className="dock-icon"
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
@@ -1156,12 +1135,13 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
+                    className="size-4"
                   >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  <span className="btn-label-mobile">Selesai</span>
-                  <span className="btn-label-desktop">Selesaikan Ujian</span>
-                </button>
+                  <span className="lg:hidden">Selesai</span>
+                  <span className="hidden lg:inline">Selesaikan Ujian</span>
+                </Button>
               </div>
             </footer>
           </section>

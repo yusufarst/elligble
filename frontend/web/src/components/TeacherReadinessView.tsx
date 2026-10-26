@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { ActionGroup } from '@/components/ui/action-group';
 import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
@@ -162,7 +163,7 @@ export const TeacherReadinessView: React.FC<{
 
   const shownNotice = statusNotice ?? (notice ? { failed: false, text: notice } : null);
   const noticeBanner = shownNotice ? (
-    <Alert variant={shownNotice.failed ? 'destructive' : 'success'} role={shownNotice.failed ? 'alert' : 'status'} className="mb-4">
+    <Alert variant={shownNotice.failed ? 'destructive' : 'success'} role={shownNotice.failed ? 'alert' : 'status'}>
       <IconInfo aria-hidden="true" />
       <AlertDescription>{shownNotice.text}</AlertDescription>
     </Alert>
@@ -171,24 +172,24 @@ export const TeacherReadinessView: React.FC<{
   // The notice and the header keep their places in every state, so the header's buttons are
   // not replaced (nor their focus lost) while the page moves from loading to the list.
   const header = (
-    <div className="teacher-readiness-header">
-      <h1 className="teacher-readiness-title">{SCREEN_TITLE.teacherExams}</h1>
-      {error !== 'forbidden' && (
-        <div className="flex flex-wrap gap-2">
+    <PageHeader
+      title={SCREEN_TITLE.teacherExams}
+      actions={error !== 'forbidden' && (onCreateExam || data) && (
+        <>
           {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
           {data && (
             <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
               {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
             </Button>
           )}
-        </div>
+        </>
       )}
-    </div>
+    />
   );
 
   if (loading || error === 'forbidden' || !data) {
     return (
-      <main className="teacher-readiness-container">
+      <Page>
         {noticeBanner}
         {header}
         {loading ? (
@@ -202,7 +203,7 @@ export const TeacherReadinessView: React.FC<{
             Periksa koneksi internet Anda, lalu coba lagi.
           </LoadErrorState>
         )}
-      </main>
+      </Page>
     );
   }
 
@@ -211,26 +212,26 @@ export const TeacherReadinessView: React.FC<{
   const exams = allExams.filter(exam => !exam.cancellation);
   const cancelledExams = allExams.filter(exam => exam.cancellation);
 
-  const staleNotice = error === 'failed' ? <div className="mb-4"><StaleDataNotice /></div> : null;
+  const staleNotice = error === 'failed' ? <StaleDataNotice /> : null;
 
   if (allExams.length === 0) {
     return (
-      <main className="teacher-readiness-container">
+      <Page>
         {noticeBanner}
         {header}
         {staleNotice}
         <EmptyState title="Belum Ada Ujian Terjadwal">Anda belum memiliki ujian yang dijadwalkan saat ini.</EmptyState>
-      </main>
+      </Page>
     );
   }
 
   return (
-    <main className="teacher-readiness-container">
+    <Page>
       {noticeBanner}
       {header}
       {staleNotice}
 
-      {exams.length === 0 && <p className="m-0 mb-4 text-muted-foreground">Tidak ada ujian yang terjadwal atau berlangsung.</p>}
+      {exams.length === 0 && <p className="m-0 text-muted-foreground">Tidak ada ujian yang terjadwal atau berlangsung.</p>}
       <ExamList>
         {exams.map((exam: TeacherExamReadinessProjection) => {
 
@@ -416,7 +417,7 @@ export const TeacherReadinessView: React.FC<{
       </ExamList>
 
       {cancelledExams.length > 0 && (
-        <section aria-labelledby="cancelled-exams-title" className="mt-8 flex flex-col gap-3">
+        <section aria-labelledby="cancelled-exams-title" className="mt-3 flex flex-col gap-3">
           <h2 id="cancelled-exams-title" className="m-0 text-lg font-semibold">Ujian Dibatalkan</h2>
           <ExamList>
             {cancelledExams.map(exam => {
@@ -496,6 +497,6 @@ export const TeacherReadinessView: React.FC<{
           </DialogContent>
         )}
       </Dialog>
-    </main>
+    </Page>
   );
 };

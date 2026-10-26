@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
@@ -89,16 +90,15 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   const context = [exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ');
 
   return (
-    <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
+    <Page>
       {back}
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examResults}</h1>
+      <PageHeader title={SCREEN_TITLE.examResults}>
         <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
         {context && <p className="m-0 text-sm text-muted-foreground">{context}</p>}
         {exam.windowStartsAt && exam.windowEndsAt && (
           <p className="m-0 text-sm text-muted-foreground">{formatWindow(exam.windowStartsAt, exam.windowEndsAt)}</p>
         )}
-      </header>
+      </PageHeader>
 
       {final ? (
         <Alert variant="success" role="note">
@@ -206,6 +206,6 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
         Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.
       </p>
-    </main>
+    </Page>
   );
 };

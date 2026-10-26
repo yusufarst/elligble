@@ -4,6 +4,7 @@ import type { TeacherExamPreview } from '../types/assessment.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { LoadErrorState, LoadingState, PageStateFrame } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { IconChevronLeft, IconChevronRight, IconInfo } from '@/components/icons';
 import { formatWindow } from '../lib/format.ts';
 import { formatScore } from '../lib/question-import.ts';
@@ -69,10 +70,9 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
   const question = questions[current];
 
   return (
-    <main className="mx-auto flex w-full max-w-[960px] flex-col gap-5 px-4 py-6 md:px-6">
+    <Page>
       {back}
-      <header className="flex flex-col gap-1">
-        <h1 className="m-0 text-2xl font-semibold">{SCREEN_TITLE.examPreview}</h1>
+      <PageHeader title={SCREEN_TITLE.examPreview}>
         <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
         {context && <p className="m-0 text-sm text-muted-foreground">{context}</p>}
         {exam.windowStartsAt && exam.windowEndsAt && (
@@ -80,7 +80,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             {formatWindow(exam.windowStartsAt, exam.windowEndsAt)}{exam.durationMinutes ? ` · Durasi ${exam.durationMinutes} menit` : ''}
           </p>
         )}
-      </header>
+      </PageHeader>
 
       <Alert variant="info" role="note">
         <IconInfo aria-hidden="true" />
@@ -168,6 +168,6 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           </div>
         </>
       )}
-    </main>
+    </Page>
   );
 };

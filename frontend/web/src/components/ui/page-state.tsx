@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { IconAlertCircle, IconInbox, IconInfo } from '@/components/icons';
+import { Page, PageHeader } from '@/components/ui/page';
 
 // One loading, error, empty and stale-data pattern for every screen (plan §10.1.6, UI-SYSTEM-003
 // part 2; FRONTEND_DESIGN_SYSTEM §31, §33, §34): loading is an announced line, never a blocking
@@ -81,11 +82,11 @@ function StaleDataNotice({ title = 'Gagal memperbarui data', children }: { title
  */
 function PageStateFrame({ title, back, children }: { title: string; back?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <main data-slot="page-state-frame" className="mx-auto flex w-full max-w-[960px] flex-col gap-4 px-4 py-6 md:px-6">
+    <Page data-slot="page-state-frame">
       {back}
-      <h1 className="m-0 text-2xl font-semibold">{title}</h1>
+      <PageHeader title={title} />
       {children}
-    </main>
+    </Page>
   );
 }
 

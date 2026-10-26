@@ -5,6 +5,7 @@ import type { ProctorMonitoringResponse, ProctorMonitoringExamProjection, Procto
 import { formatDateTime, formatWindow } from '../lib/format.ts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/components/ui/page-state';
+import { Page, PageHeader } from '@/components/ui/page';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Metric, MetricList } from '@/components/ui/metric';
 import { ActionGroup } from '@/components/ui/action-group';
@@ -46,19 +47,19 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
   }, [initialLoad]);
 
   const header = (
-    <div className="proctor-monitoring-header">
-      <h1 className="proctor-monitoring-title">{SCREEN_TITLE.proctorExams}</h1>
-      {data && error !== 'forbidden' && (
+    <PageHeader
+      title={SCREEN_TITLE.proctorExams}
+      actions={data && error !== 'forbidden' && (
         <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
           {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
         </Button>
       )}
-    </div>
+    />
   );
 
   if (loading || error === 'forbidden' || !data) {
     return (
-      <main className="proctor-monitoring-container">
+      <Page>
         {header}
         {loading ? (
           <LoadingState>Memuat daftar ujian...</LoadingState>
@@ -71,25 +72,25 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
             Periksa koneksi internet Anda, lalu coba lagi.
           </LoadErrorState>
         )}
-      </main>
+      </Page>
     );
   }
 
   const assignments = data.assignments || [];
-  const staleNotice = error === 'failed' ? <div className="mb-4"><StaleDataNotice /></div> : null;
+  const staleNotice = error === 'failed' ? <StaleDataNotice /> : null;
 
   if (assignments.length === 0) {
     return (
-      <main className="proctor-monitoring-container">
+      <Page>
         {header}
         {staleNotice}
         <EmptyState title="Belum Ada Ujian yang Diawasi">Anda belum ditugaskan untuk mengawasi ujian apa pun saat ini.</EmptyState>
-      </main>
+      </Page>
     );
   }
 
   return (
-    <main className="proctor-monitoring-container">
+    <Page>
       {header}
       {staleNotice}
 
@@ -142,6 +143,6 @@ export const ProctorMonitoringView: React.FC<{ onOpenExam?(examInstanceId: strin
           </li>
         ))}
       </ExamList>
-    </main>
+    </Page>
   );
 };

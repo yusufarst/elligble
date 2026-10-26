@@ -2,59 +2,11 @@
 /* Warm Monochrome / ElevenLabs-inspired Institutional Design (DEC-039 + DEC-040) */
 
 /* ==========================================================================
-   1. Base Buttons & Utility Classes
+   1. Utility Classes (every button is the shared Button, UI-SYSTEM-002 part 2)
    ========================================================================== */
 :focus-visible {
   outline: 2px solid #09090b !important;
   outline-offset: 2px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  min-width: 42px;
-  padding: 8px 16px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: background-color 0.15s ease-out, border-color 0.15s ease-out, opacity 0.15s ease-out, color 0.15s ease-out, box-shadow 0.15s ease-out;
-  box-sizing: border-box;
-  text-decoration: none;
-  font-family: inherit;
-  line-height: 1.25;
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Warm Monochrome: Solid black primary action */
-.btn-primary {
-  background-color: #09090b;
-  color: #ffffff;
-  border-color: #09090b;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #27272a;
-  border-color: #27272a;
-}
-
-/* Warm Monochrome: Crisp white surface secondary button */
-.btn-secondary {
-  background-color: #ffffff;
-  color: #18181b;
-  border: 1px solid #e4e4e7;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: #f4f4f5;
-  border-color: #d4d4d8;
 }
 
 /* Screen reader only utility */
@@ -494,7 +446,7 @@
   width: 100%;
 }
 
-.action-buttons-group {
+.action-dock-group {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
@@ -504,102 +456,14 @@
   box-sizing: border-box;
 }
 
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: 44px;
-  padding: 4px 2px;
-  border-radius: 8px;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: #52525b;
-  background-color: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease-out;
-  white-space: nowrap;
-  line-height: 1;
-  box-sizing: border-box;
-}
-
-.action-btn.btn-secondary {
-  background-color: transparent;
-  border-color: transparent;
-  color: #52525b;
-}
-
-.action-btn:hover:not(:disabled),
-.action-btn.btn-secondary:hover:not(:disabled) {
-  background-color: #f4f4f5;
-  border-color: transparent;
-  color: #09090b;
-}
-
-.action-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.dock-icon {
-  flex-shrink: 0;
-  stroke-width: 1.75;
-}
-
-.btn-label-mobile {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.btn-label-desktop {
-  display: none;
-}
-
-/* Selesai button: Confident black primary emphasis with clean geometry */
-.action-btn-submit {
-  background-color: #09090b;
-  color: #ffffff;
-  border: 1px solid #09090b;
-  font-weight: 600;
-}
-
-.action-btn-submit .dock-icon {
-  stroke-width: 2.25;
-}
-
-.action-btn-submit .btn-label-mobile {
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.action-btn-submit:hover:not(:disabled) {
-  background-color: #27272a;
-  border-color: #27272a;
-}
-
 /* 320px - 359px stress layout */
 @media (max-width: 359px) {
   .workstation-actions {
     padding-left: 6px;
     padding-right: 6px;
   }
-  .action-buttons-group {
+  .action-dock-group {
     gap: 4px;
-  }
-  .action-btn {
-    min-height: 42px;
-    padding: 3px 2px;
-  }
-  .btn-label-mobile {
-    font-size: 0.625rem;
-  }
-  .dock-icon {
-    width: 14px;
-    height: 14px;
   }
 }
 
@@ -609,13 +473,9 @@
     max-width: 680px;
     padding: 28px 24px calc(80px + env(safe-area-inset-bottom)) 24px;
   }
-  .action-buttons-group {
+  .action-dock-group {
     max-width: 460px;
     gap: 10px;
-  }
-  .action-btn {
-    min-height: 46px;
-    padding: 6px;
   }
 }
 
@@ -717,68 +577,6 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
-  }
-
-  .nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 42px;
-    min-height: 42px;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid #e4e4e7;
-    background-color: #ffffff;
-    color: #18181b;
-    position: relative;
-    transition: all 0.15s ease-out;
-  }
-
-  .nav-btn:hover:not(:disabled) {
-    border-color: #a1a1aa;
-    background-color: #fafaf9;
-  }
-
-  .nav-btn.active {
-    border: 1.5px solid #09090b;
-    font-weight: 700;
-    outline: none;
-  }
-
-  .nav-btn.answered {
-    background-color: #ecfdf5;
-    color: #064e3b;
-    border-color: #a7f3d0;
-  }
-
-  .nav-btn.unresolved {
-    border-color: #fca5a5;
-    background-color: #fef2f2;
-    color: #991b1b;
-  }
-
-  .nav-btn-dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-  }
-
-  .nav-btn-dot.answered-dot {
-    background-color: #10b981;
-  }
-
-  .nav-btn-dot.current-dot {
-    background-color: #09090b;
-  }
-
-  .nav-btn-dot.unresolved-dot {
-    background-color: #ef4444;
   }
 
   /* Integrated Navigator Summary Widget */
@@ -898,7 +696,7 @@
     box-sizing: border-box;
   }
 
-  .action-buttons-group {
+  .action-dock-group {
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -908,51 +706,6 @@
     gap: 12px;
   }
 
-  /* Desktop explicitly hides mobile navigator drawer trigger */
-  .workstation-actions .action-btn-nav {
-    display: none;
-  }
-
-  .action-btn {
-    flex-direction: row;
-    width: auto;
-    min-height: 40px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    padding: 8px 16px;
-    gap: 6px;
-    border-radius: 8px;
-  }
-
-  .action-btn.btn-secondary {
-    background-color: #ffffff;
-    border: 1px solid #e4e4e7;
-    color: #18181b;
-  }
-
-  .action-btn.btn-secondary:hover:not(:disabled) {
-    background-color: #fafaf9;
-    border-color: #d4d4d8;
-  }
-
-  .action-btn-submit {
-    width: auto;
-    margin-left: auto;
-    background-color: #09090b;
-    color: #ffffff;
-    border-color: #09090b;
-    font-weight: 600;
-    padding: 8px 20px;
-  }
-
-  .btn-label-mobile {
-    display: none;
-  }
-
-  .btn-label-desktop {
-    display: inline;
-    font-size: 0.8125rem;
-  }
 }
 
 /* ==========================================================================
@@ -1034,32 +787,6 @@
   letter-spacing: -0.01em;
 }
 
-.sheet-close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 0;
-  color: #71717a;
-  background: #f4f4f5;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: color 0.15s ease-out, background-color 0.15s ease-out;
-}
-
-.sheet-close-btn:hover {
-  background-color: #e4e4e7;
-  color: #09090b;
-}
-
-.sheet-close-svg {
-  display: block;
-}
-
 .sheet-middle-region {
   flex: 1 1 auto;
   min-height: 0;
@@ -1083,69 +810,6 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   padding: 2px 0 8px 0;
-}
-
-.sheet-nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 46px;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid #e4e4e7;
-  background-color: #ffffff;
-  color: #18181b;
-  position: relative;
-  transition: all 0.15s ease-out;
-}
-
-.sheet-nav-btn:hover:not(:disabled) {
-  border-color: #a1a1aa;
-  background-color: #fafaf9;
-}
-
-.sheet-nav-btn.active {
-  border: 1.5px solid #09090b;
-  font-weight: 700;
-}
-
-.sheet-nav-btn.answered {
-  background-color: #ecfdf5;
-  color: #064e3b;
-  border-color: #a7f3d0;
-}
-
-.sheet-nav-btn.unresolved {
-  border-color: #fca5a5;
-  background-color: #fef2f2;
-  color: #991b1b;
-}
-
-.sheet-btn-marker {
-  position: absolute;
-  bottom: 3px;
-  right: 5px;
-  font-size: 0.625rem;
-  line-height: 1;
-}
-
-.sheet-btn-marker.current-marker {
-  color: #09090b;
-  font-size: 0.6875rem;
-  font-weight: 700;
-}
-
-.sheet-btn-marker.answered-marker {
-  color: #10b981;
-  font-weight: 700;
-}
-
-.sheet-btn-marker.unresolved-marker {
-  color: #ef4444;
-  font-weight: 700;
 }
 
 .sheet-bottom-region {
@@ -1202,21 +866,6 @@
   width: 100%;
 }
 
-.sheet-submit-btn {
-  width: 100%;
-  min-height: 44px;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  background-color: #09090b;
-  color: #ffffff;
-  border: 1px solid #09090b;
-  gap: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Time reminder (D04.5-32): informative only, disappears by itself. */
 .time-reminder-banner {
   padding: var(--space-2) var(--space-4);
@@ -1267,23 +916,6 @@
   text-align: center;
 }
 
-.discarded-banner-dismiss {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-warning-border);
-  border-radius: var(--radius-md);
-  background-color: #ffffff;
-  color: var(--color-text-primary);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.discarded-banner-dismiss:focus-visible {
-  outline: var(--border-focus);
-  outline-offset: 2px;
-}
-
 /* Supervisor message (D04.1-77C): compact, in the header area, never over the question,
    the choices, the timer, the navigation or the save state; to the right on wide screens. */
 .broadcast-banner {
@@ -1325,24 +957,6 @@
 
 .broadcast-banner-more {
   font-size: 0.75rem;
-}
-
-.broadcast-banner-dismiss {
-  flex-shrink: 0;
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-info-border);
-  border-radius: var(--radius-md);
-  background-color: #ffffff;
-  color: var(--color-text-primary);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.broadcast-banner-dismiss:focus-visible {
-  outline: var(--border-focus);
-  outline-offset: 2px;
 }
 
 @media (min-width: 768px) {
