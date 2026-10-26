@@ -85,7 +85,7 @@ No vendor, production dependency or recurring production cost change. Five small
 
 2026-10-27 entry: expected previous branch and clean physical tree verified. Owner Git identity matched. gh API user `yusufarst`; remote main `b5c2ae7`, PR #7 merged, main CI #67 attempt 1 eight SUCCESS verified. Existing main fast-forwarded and the authorized Task branch created at `b5c2ae7`; clean at entry. No application edits before baseline. The Owner subsequently approved exactly the one-file third-question expansion after the initial fixture STOP.
 
-Baseline commit/CI/artifact retrieval: PENDING. Application remediation: NOT STARTED. Final content SHA/CI: PENDING. Independent Second Reviewer: PENDING. Actual Owner visual review: PENDING. Final evidence commit: NOT AUTHORIZED UNTIL THOSE GATES PASS. Part 2 is not DONE.
+Baseline commit `2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`: CI #68 FAILED; complete evidence below. Owner-authorized targeted correction is being verified; baseline screenshot/manifest evidence remains PENDING. Application remediation: NOT STARTED. Final content SHA/CI: PENDING. Independent Second Reviewer: PENDING. Actual Owner visual review: PENDING. Final evidence commit: NOT AUTHORIZED UNTIL THOSE GATES PASS. Part 2 is NOT DONE.
 
 ### 5.1 Lightweight baseline preconditions
 
@@ -94,3 +94,26 @@ Fixture gate PASS using the application's actual `parseQuestionFile` under Node.
 Workflow validation: actionlint is unavailable on this workstation; do not install a dependency for this Task. Exact diff review and a guard removing the one approved success-upload block must reproduce the original workflow byte-for-byte after line-ending normalization. It adds only PNG/JSON workspace artifacts with success condition, missing-files error and seven-day retention; the original failure artifacts remain. GitHub's automatic workflow acceptance/execution is still required.
 
 Engineering skill selected/verified: existing `react-typescript-vite` (SHA-256 `450285288fba41f497991f074f100a43ed2d714e51818caae3294663e5ccd558`); canonical skill-stack roles and locked repository authority take precedence. No package installed during this Task.
+
+### 5.2 Baseline CI #68 failure and exact corrective authorization
+
+[CI #68](https://github.com/yusufarst/elligble/actions/runs/40392077771), databaseId `40392077771`, push event, attempt **1**, head **`2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`**, terminal **COMPLETED / FAILURE**, independently rechecked before this correction. Every job ran on `ubuntu-24.04`.
+
+| Job | Job ID | Actual result |
+|---|---|---|
+| Web typecheck, unit, build | 121815357560 | SUCCESS; 34 test files, 344 tests PASS |
+| Runtime typecheck, unit, real PostgreSQL integration | 121815357675 | SUCCESS |
+| Container image build and smoke | 121815907311 | SUCCESS |
+| E2E mobile-360 | 121815907671 | FAILURE |
+| E2E tablet-768 | 121815907425 | FAILURE |
+| E2E desktop-1280 | 121815907548 | FAILURE |
+| E2E firefox-1280 | 121815907594 | FAILURE |
+| E2E webkit-390 | 121815907540 | FAILURE |
+
+Root cause: the new capture helper requested `git rev-parse b5c2ae7bf35b04e6610cd2c0f6c51ced8ad5191f:frontend/web/src`, but the unchanged checkout used `git fetch ... --depth=1` for the candidate commit. The historical base commit object was absent. E2E collection failed in helpers.ts; these are failed jobs, not evidence that browser assertions executed or passed. Successful visual uploads were skipped, so the required five before artifacts are not available from #68. Failure artifacts remain historical evidence. Nothing is reclassified as PASS.
+
+The main baseline and candidate frontend source tree is **`73b4d38c74363c8f765446f6a0028899c3b4b89f`**, verified locally for both refs and independently by the Second Reviewer through GitHub Git Trees. The unchanged third-fixture capture SHA-256 is **`3a1aa51907bed05ea4687094534e3983f8ffaf52b5752d804aaea7669f9727fb`**. No application implementation started.
+
+Owner explicitly approved one targeted corrective content commit, then confirmed that the terminal-status gate was resolved. Exactly three paths: this record, the living plan and `e2e/tests/helpers.ts`. Exactly one helper-line substitution: replace the unavailable historical tree lookup with the independently verified immutable tree literal. Keep WORKSPACE_BASE, candidate HEAD tree lookup, phase comparison, SHA assertion, fixture hash, screenshot logic and every assertion unchanged. No workflow change, additional correction, retry, rerun, dispatch, branch, PR or merge. Reuse PR #8 and normal push only. The earlier stop while #68 was still running is preserved as a correct pre-push stop; the run has now completed without cancellation.
+
+The corrective content SHA is the commit carrying this section, a direct child of `2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`; report its actual SHA after creation and record it at the next authorized checkpoint (a commit cannot embed its own resulting SHA). Its automatic CI must be attempt 1 on that exact SHA, all eight jobs SUCCESS, all five PNG/JSON artifacts actually retrievable with the expected tree, fixture hash and `before` classification. Until then baseline exit gate remains STOP and UI implementation is prohibited. Any further material failure means STOP; no automatic additional corrective commit. Only full baseline PASS permits resuming the previously authorized bounded UI work.

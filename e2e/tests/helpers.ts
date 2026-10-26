@@ -13,7 +13,7 @@ export const state = readState();
 const WORKSPACE_BASE = 'b5c2ae7bf35b04e6610cd2c0f6c51ced8ad5191f';
 const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 const workspaceCommit = git('rev-parse', 'HEAD');
-const workspaceBaselineTree = git('rev-parse', `${WORKSPACE_BASE}:frontend/web/src`);
+const workspaceBaselineTree = '73b4d38c74363c8f765446f6a0028899c3b4b89f';
 const workspaceApplicationTree = git('rev-parse', 'HEAD:frontend/web/src');
 const workspacePhase = workspaceApplicationTree === workspaceBaselineTree ? 'before' : 'after';
 const workspaceFixture = readFileSync(new URL('../global-setup.ts', import.meta.url), 'utf8')
