@@ -20,7 +20,7 @@ const HARD_CODED_COLOR_CEILING: Record<string, number> = {
   'styles/globals.css': 1,
   // The exam focus workspace still carries its own palette, mostly equal to token values;
   // it converges with the token convergence task (UI-SYSTEM-005).
-  'styles/workstation.css': 147,
+  'styles/workstation.css': 80,
 };
 
 function hardCodedColors(path: string, text: string): number {
@@ -88,6 +88,33 @@ describe('design system guard (§10.1)', () => {
       .filter(s => s.path.endsWith('.css') && s.path !== 'styles/workstation.css')
       .flatMap(s => [...s.text.matchAll(/\.([a-z0-9-]*(?:-card|-stat|-metric|-progress|-actions)[a-z0-9-]*)\s*[{,.:>\s]/g)].map(m => `${s.path}: .${m[1]}`));
     expect(pageCards).toEqual([]);
+  });
+
+  it('buttons come from the shared Button, never from page stylesheets', () => {
+    // The exam focus shell included (UI-SYSTEM-002 part 2): its action dock, question list and sheet.
+    const pageButtons = sources
+      .filter(s => s.path.endsWith('.css'))
+      .flatMap(s => [...s.text.matchAll(/\.([a-z0-9-]*(?:btn|button)[a-z0-9-]*)\s*[{,.:>\s]/g)].map(m => `${s.path}: .${m[1]}`));
+    expect(pageButtons).toEqual([]);
+  });
+
+  it('the exam focus shell draws no button of its own', () => {
+    // Launch, workspace, question list, messages and submit confirmation: the shared Button, or
+    // the one question number button of the question list (UI-SYSTEM-002 part 2).
+    const focusShell = ['components/AttemptLaunch.tsx', 'components/StudentExamWorkstation.tsx', 'components/QuestionNavigatorSheet.tsx', 'components/ExamMessages.tsx', 'components/SubmitConfirmModal.tsx'];
+    const rawButtons = sources.filter(s => focusShell.includes(s.path) && /<button[\s>]/.test(s.text)).map(s => s.path);
+    expect(rawButtons).toEqual([]);
+  });
+
+  it('page widths and page frames come from the shared Page, never from a screen', () => {
+    // One width per variant (narrow, focused, standard; audit C3); the exam focus shell and the
+    // centered status page keep their own frames.
+    const ownFrames = new Set(['components/ui/page.tsx', 'components/ui/status-page.tsx', 'components/StudentExamWorkstation.tsx']);
+    const screenMains = sources.filter(s => s.path.endsWith('.tsx') && !ownFrames.has(s.path) && s.text.includes('<main')).map(s => s.path);
+    const cssWidths = sources
+      .filter(s => s.path.endsWith('.css') && s.path !== 'styles/workstation.css')
+      .flatMap(s => [...s.text.matchAll(/max-width\s*:/g)].map(() => s.path));
+    expect([...screenMains, ...cssWidths]).toEqual([]);
   });
 
   it('text and action colors of the tokens keep WCAG AA contrast', () => {

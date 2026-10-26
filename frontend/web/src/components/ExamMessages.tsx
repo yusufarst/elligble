@@ -1,6 +1,7 @@
 import React from 'react';
 import type { InboxMessage } from '../types/assessment.ts';
 import { formatTime } from '../lib/format.ts';
+import { Button } from '@/components/ui/button';
 
 // Supervisor messages on the student's exam screen (D04.1-77C/G, D04.5-58/59): a compact
 // notice in the header area that never takes the focus or covers the question, the choices,
@@ -19,7 +20,7 @@ export const ExamMessageNotice: React.FC<{
           <span className="broadcast-banner-more">{notice.more} pesan lain dapat dibaca di Daftar Soal.</span>
         )}
       </div>
-      <button type="button" className="broadcast-banner-dismiss" onClick={onDismiss}>Tutup</button>
+      <Button variant="secondary" size="sm" className="shrink-0" onClick={onDismiss}>Tutup</Button>
     </div>
   </div>
 );

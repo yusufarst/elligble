@@ -1,25 +1,3 @@
-.teacher-readiness-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.teacher-readiness-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: 24px;
-}
-
-.teacher-readiness-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
 .teacher-readiness-details {
   display: grid;
   grid-template-columns: 1fr;
