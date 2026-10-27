@@ -1201,7 +1201,7 @@
 
 .workstation-container .question-prompt {
   max-width: 72ch;
-  margin: 0;
+  margin: 0 0 var(--space-6);
   font-size: 1.125rem;
   font-weight: 400;
   line-height: 1.5;
@@ -1342,6 +1342,7 @@
     max-width: 75rem;
     grid-template-columns: 280px minmax(0, 1fr);
     padding: 0;
+    gap: 0;
   }
 
   .workstation-container .header-workspace-region {

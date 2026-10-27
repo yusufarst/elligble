@@ -6,7 +6,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN_PROGRESS: baseline exit PASS (CI #70); bounded presentation candidate prepared, final CI/rendered review pending |
+| Status | VERIFYING: baseline #70 PASS; first presentation #71 eight SUCCESS; final spacing/alignment candidate and required human reviews pending |
 | Release | CBT-R1; Secure Assessment only (DEC-044) |
 | Risk | STANDARD while presentation-only; stop on any material CBT defect or business-logic change |
 | Owner approval | GRANTED 2026-10-27: corrected minimum scope, Task-specific CI-first order, baseline capture before UI changes, narrow successful-artifact upload, guarded commits/normal push/one PR; MERGE NO |
@@ -161,3 +161,13 @@ The Owner explicitly authorized direct continuation after baseline PASS. Current
 - Existing 640/1024 breakpoints, 1200px assessment cap and 680px reading composition; wrapping legends/actions, restrained flat surfaces and 150ms sheet entry, with existing reduced-motion override. Header/dock refs measure only chrome height via ResizeObserver into two local geometry properties, preventing sticky/sidebar offsets or fixed-dock spacing from assuming a single header height when text/notices wrap. No React exam state is written by this effect. Safe-area insets stay explicit; physical notch-device validation is not claimed.
 
 Lightweight source-isolation, CSS-scope/color-ceiling and TSX syntax/transpile checks PASS (syntax only, not typecheck); full final CI and actual after images remain PENDING on this content candidate's own SHA. Before/after reuse the unchanged fixture, capture helpers and five browser profiles. No material visual PASS, Reviewer PASS, Owner PASS or DONE is claimed before those gates. After content CI/evidence, present the actual pairs for the two required human reviews; do not create the final record-only evidence commit before their approvals.
+
+### 6.1 Rendered refinement of the first presentation candidate
+
+First presentation content **`b412d6c4807016fcc014800e166b80917fa9f058`**, source tree **`093c8a88b30290969911899bac9cdd031a741f39`**, [CI #71](https://github.com/yusufarst/elligble/actions/runs/40430856364) (40430856364), push attempt 1, terminal **COMPLETED / SUCCESS**. All eight jobs on ubuntu-24.04: web 344/344/typecheck/build, runtime/PostgreSQL, image and mobile/tablet/desktop/Firefox/WebKit **22/22 each**. WebKit's installation was allowed to finish; no subsequent push, cancellation or rerun occurred while #71 was active.
+
+All five actual after artifacts were retrieved to `UI-SYSTEM-004/ci-71-after`: **96 PNG/JSON pairs** (desktop 38, mobile 15, tablet 14, Firefox 15, WebKit 14). Comparison against baseline #70 verifies exact browser/version, viewport, fixture, radio accessibility snapshot (names and checked states) and expected immutable baseline tree; candidate SHA/tree and after classification match. All measured document/text overflow checks are clear, targets >=44px, keyboard option-label outline solid 2px; questions 18px/27px, choices 16px/24px, warning RGB 146/64/14 (7.09:1 on white). These are measured subset results and producing-agent visual inspection, not the two required human approvals or a blanket WCAG certification.
+
+Actual renders identified two small in-scope composition refinements: the main grid inherited a 24px gap while the header grid had none, offsetting the desktop reading column by 12px; fieldset gap does not separate its legend, leaving question/choice spacing too tight after removing the old legend margin. This final candidate changes only the Student-scoped desktop grid gap to 0 and legend bottom margin to the existing 24px spacing token, plus the two records. No test, fixture, capture logic, component callback or token changes. This is the authorized iterative visual refinement, not a CI rerun; the resulting new content SHA needs its own complete CI and after evidence. The #71 terminal-success pre-push gate was checked before publication. Final candidate SHA/results must be reported after creation; it cannot embed its own SHA. Task and both human reviews remain pending.
+
+Full-page PNGs preserve the sticky header at the capture's current scroll offset; use the matched viewport images to assess actual on-screen header/dock overlap. No screenshot is retouched or substituted. Emulation, physical-device/screen-reader limits and the absent supplementary paired screenshots remain explicitly qualified above. Task NOT DONE; human reviews and final record-only evidence remain pending.
