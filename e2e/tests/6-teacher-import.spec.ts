@@ -1,4 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
 import { login, shotName, wib, withDatabase } from './helpers.ts';
 
 // The teacher prepares an exam without platform staff (ASSESS-TEACHER-001; D04.4-26A,
@@ -17,6 +20,143 @@ const PASSWORD = 'bintang-kejora-2026';
 const HEADER = 'no;prompt;option_a;option_b;option_c;option_d;option_e;correct;score';
 const BROKEN = [HEADER, '1;Lambang unsur oksigen adalah;O;Os;Ok;Og;Ox;A;1', '2;Rumus air adalah;H2O;HO2;H2O2;OH;H3O;A dan B;1'].join('\r\n');
 const FIXED = [HEADER, '1;Lambang unsur oksigen adalah;O;Os;Ok;Og;Ox;A;1', '2;Rumus air adalah;HO2;H2O;H2O2;OH;H3O;B;1,5'].join('\r\n') + '\r\n';
+
+// UI-SYSTEM-004 Part 3: actual Teacher Preview evidence, independent of the Student helper.
+// An immutable tree works in the existing shallow CI checkout; the candidate is always HEAD.
+const PREVIEW_BASE = '5f7a018e9e5f95ff14af7b11413ad07b29b1f405';
+const PREVIEW_BASE_TREE = 'bd628231c9f5a00a6a103a89dd3a40cb8bdbba6f';
+const previewGit = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const previewCommit = previewGit('rev-parse', 'HEAD');
+const previewSourceTree = previewGit('rev-parse', 'HEAD:frontend/web/src');
+const previewPhase = previewSourceTree === PREVIEW_BASE_TREE ? 'before' : 'after';
+if (process.env['GITHUB_SHA']) expect(previewCommit).toBe(process.env['GITHUB_SHA']);
+
+async function captureTeacherPreview(page: Page, info: TestInfo, keysShown: boolean) {
+    const originalViewport = page.viewportSize();
+    if (!originalViewport) throw new Error('Teacher Preview requires a recorded viewport');
+    const viewports = [originalViewport, { width: 360, height: 640 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]
+        .filter((size, i, all) => all.findIndex(other => other.width === size.width && other.height === size.height) === i);
+    const selected = page.getByRole('radio', { name: 'H2O2', exact: true });
+    const keyToggle = page.getByLabel('Tampilkan kunci jawaban dan skor');
+    const failures: unknown[] = [];
+    let crashed = false;
+    const onCrash = () => { crashed = true; };
+    page.on('crash', onCrash);
+    try {
+        for (const viewport of viewports) {
+            await page.setViewportSize(viewport);
+            for (const textScale of [1, 2]) {
+                // Actual per-element text-size emulation, not a root-rem-only or native zoom claim.
+                const styles = await page.evaluateHandle(scale => {
+                    const saved = Array.from(document.querySelectorAll<HTMLElement>('main, main *')).map(element => ({
+                        element, style: element.getAttribute('style'), size: parseFloat(getComputedStyle(element).fontSize),
+                    }));
+                    if (scale === 2) for (const item of saved) item.element.style.fontSize = `${item.size * 2}px`;
+                    return saved;
+                }, textScale);
+                try {
+                    await expect(selected).toBeChecked();
+                    await expect(keyToggle).toBeChecked({ checked: keysShown });
+                    await expect(page.getByText('Kunci jawaban', { exact: true })).toHaveCount(keysShown ? 1 : 0);
+                    let correctKeyFocus = null;
+                    if (keysShown) {
+                        const correct = page.getByRole('radio', { name: 'H2O Kunci jawaban', exact: true });
+                        await correct.focus();
+                        await expect(correct).toBeFocused();
+                        correctKeyFocus = await correct.evaluate(input => {
+                            const label = input.closest('label');
+                            if (!label) throw new Error('Missing correct-answer label');
+                            const style = getComputedStyle(label);
+                            return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth, outlineOffset: style.outlineOffset };
+                        });
+                    }
+                    await selected.focus();
+                    await expect(selected).toBeFocused();
+                    const metrics = await page.evaluate(() => {
+                        const main = document.querySelector('main');
+                        if (!main) throw new Error('Missing Teacher Preview main landmark');
+                        const targets = Array.from(main.querySelectorAll<HTMLElement>('button, .option-item-label, label:has(input[type="checkbox"])')).map(element => {
+                            const box = element.getBoundingClientRect();
+                            return { name: element.getAttribute('aria-label') ?? element.innerText.trim(), x: box.x, y: box.y, width: box.width, height: box.height };
+                        });
+                        const overlaps: string[] = [];
+                        for (let i = 0; i < targets.length; i++) for (let j = i + 1; j < targets.length; j++) {
+                            const a = targets[i], b = targets[j];
+                            if (Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 1
+                                && Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 1) overlaps.push(`${a.name} / ${b.name}`);
+                        }
+                        const clippedText: string[] = [];
+                        const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+                        while (walker.nextNode()) {
+                            const node = walker.currentNode;
+                            if (!node.textContent?.trim()) continue;
+                            const range = document.createRange(); range.selectNodeContents(node);
+                            for (const box of Array.from(range.getClientRects())) {
+                                if (box.width && (box.left < -1 || box.right > document.documentElement.clientWidth + 1)) {
+                                    clippedText.push(node.textContent.trim()); break;
+                                }
+                            }
+                        }
+                        const focusedLabel = document.activeElement?.closest('label');
+                        if (!focusedLabel) throw new Error('Expected native answer radio focus');
+                        const focus = getComputedStyle(focusedLabel);
+                        return {
+                            clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth,
+                            targets, overlaps, clippedText,
+                            focusedOption: { outlineStyle: focus.outlineStyle, outlineWidth: focus.outlineWidth, outlineOffset: focus.outlineOffset },
+                        };
+                    });
+                    if (previewPhase === 'after') {
+                        expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
+                        expect(metrics.clippedText).toEqual([]);
+                        expect(metrics.overlaps).toEqual([]);
+                        for (const target of metrics.targets) {
+                            expect(target.width, target.name).toBeGreaterThanOrEqual(44);
+                            expect(target.height, target.name).toBeGreaterThanOrEqual(44);
+                        }
+                        expect(metrics.focusedOption.outlineStyle).toBe('solid');
+                        expect(parseFloat(metrics.focusedOption.outlineWidth)).toBeGreaterThanOrEqual(2);
+                        if (correctKeyFocus) {
+                            expect(correctKeyFocus.outlineStyle).toBe('solid');
+                            expect(parseFloat(correctKeyFocus.outlineWidth)).toBeGreaterThanOrEqual(2);
+                            expect(parseFloat(correctKeyFocus.outlineOffset)).toBeGreaterThanOrEqual(2);
+                        }
+                    }
+                    const scenario = `keys-${keysShown ? 'shown' : 'hidden'}-keyboard-text-${textScale * 100}`;
+                    const stem = `workspace-teacher-preview-${scenario}-${viewport.width}x${viewport.height}-${info.project.name}`;
+                    await page.screenshot({ path: info.outputPath(`${stem}.png`), fullPage: true });
+                    await writeFile(info.outputPath(`${stem}.json`), JSON.stringify({
+                        task: 'UI-SYSTEM-004 Part 3', phase: previewPhase, commit: previewCommit,
+                        applicationBaseline: { ref: PREVIEW_BASE, sourceTree: PREVIEW_BASE_TREE }, applicationSourceTree: previewSourceTree,
+                        fixture: { id: 'teacher-import-chemistry-two-questions-v1', sha256: createHash('sha256').update(FIXED).digest('hex'), synthetic: true },
+                        browser: { engine: page.context().browser()?.browserType().name(), version: page.context().browser()?.version(), project: info.project.name },
+                        viewport, deviceScaleFactor: await page.evaluate(() => devicePixelRatio), scenario, textScale,
+                        screenshot: `${stem}.png`, fullPage: true, masking: [], variableFields: ['school window timestamps'],
+                        environment: { platform: process.platform, ci: !!process.env['CI'], physicalDevice: false, textResizeEmulation: true },
+                        metrics, correctKeyFocus, accessibilitySnapshot: await page.getByRole('radiogroup', { name: 'Pilihan Jawaban' }).ariaSnapshot(),
+                    }, null, 2));
+                } catch (error) { failures.push(error); }
+                finally {
+                    if (!crashed && !page.isClosed()) {
+                        try { await styles.evaluate(saved => { for (const item of saved) {
+                            if (item.style === null) item.element.removeAttribute('style'); else item.element.setAttribute('style', item.style);
+                        } }); } catch (error) { failures.push(error); }
+                    }
+                    try { await styles.dispose(); } catch (error) { failures.push(error); }
+                }
+                if (failures.length) throw failures[0];
+            }
+        }
+    } catch (error) { if (!failures.includes(error)) failures.push(error); }
+    finally {
+        if (!crashed && !page.isClosed()) {
+            try { await page.setViewportSize(originalViewport); } catch (error) { failures.push(error); }
+        }
+        page.off('crash', onCrash);
+    }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length > 1) throw new AggregateError(failures, 'Teacher Preview capture and restoration failed', { cause: failures[0] });
+}
 
 function seconds(clock: string): number {
     return clock.split(':').map(Number).reduce((total, part) => total * 60 + part, 0);
@@ -79,9 +219,24 @@ test('a teacher schedules an exam from a question file, and an included student 
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
     await expect(page.getByText('Rumus air adalah')).toBeVisible();
     await expect(page.getByText('Kunci jawaban', { exact: true })).toHaveCount(0);
+    // Reach the native radio group by Tab, then use its browser-provided arrow behavior.
+    const previewNumbers = page.getByRole('navigation', { name: 'Daftar soal pratinjau' });
+    await previewNumbers.getByRole('button', { name: 'Soal 2', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByLabel('Tampilkan kunci jawaban dan skor')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('radio', { name: 'HO2', exact: true })).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('radio', { name: 'H2O', exact: true })).toBeChecked();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('radio', { name: 'H2O2', exact: true })).toBeChecked();
+    await captureTeacherPreview(page, test.info(), false);
     await page.getByLabel('Tampilkan kunci jawaban dan skor').check();
     await expect(page.locator('label').filter({ has: page.getByText('Kunci jawaban', { exact: true }) })).toContainText('H2O');
     await expect(page.getByText('Skor 1,5')).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('radio', { name: 'H2O2', exact: true })).toBeFocused();
+    await captureTeacherPreview(page, test.info(), true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(shotName('teacher-exam-preview')), fullPage: true });
     // No attempt exists for the new exam (answers need one): the preview created nothing.

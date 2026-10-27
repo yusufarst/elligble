@@ -41,7 +41,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
   }, [load]);
 
   const back = (
-    <Button variant="ghost" size="sm" className="-ml-3 self-start" onClick={onBack}>
+    <Button variant="ghost" size="sm" className="-ml-3 h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left" onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       Kembali ke Pelaksanaan Ujian
     </Button>
@@ -102,7 +102,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
                   onClick={() => setCurrent(i)}
                   aria-current={i === current ? 'step' : undefined}
                   aria-label={`Soal ${q.no}${q.valid ? '' : ' (tidak valid)'}`}
-                  className={`inline-flex size-10 items-center justify-center rounded-md border text-sm font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                  className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border text-sm font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                     i === current ? 'border-foreground bg-foreground text-background' : q.valid ? 'border-border bg-background hover:bg-accent' : 'border-danger-line bg-danger-surface text-danger-ink'
                   }`}
                 >
@@ -136,7 +136,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
                   const key = showKey && option.id === question.correctOptionId;
                   const inputId = `preview-${question.snapshotId}-${i}`;
                   return (
-                    <label key={option.id} htmlFor={inputId} className={`option-item-label ${selected ? 'selected' : ''} ${key ? 'outline outline-2 outline-foreground' : ''}`}>
+                    <label key={option.id} htmlFor={inputId} className={`option-item-label min-w-0 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${selected ? 'selected' : ''} ${key ? 'outline outline-2 outline-foreground' : ''}`}>
                       <input
                         type="radio"
                         id={inputId}
@@ -156,12 +156,12 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           </section>
 
           {/* Short visible labels keep both buttons on one line at 360 px; the names stay complete. */}
-          <div className="flex justify-between gap-2">
-            <Button variant="secondary" aria-label="Soal Sebelumnya" onClick={() => setCurrent(i => Math.max(0, i - 1))} disabled={current === 0}>
+          <div className="flex flex-wrap justify-between gap-2">
+            <Button variant="secondary" className="h-auto min-h-11 max-w-full whitespace-normal py-2" aria-label="Soal Sebelumnya" onClick={() => setCurrent(i => Math.max(0, i - 1))} disabled={current === 0}>
               <IconChevronLeft aria-hidden="true" />
               Sebelumnya
             </Button>
-            <Button variant="secondary" aria-label="Soal Berikutnya" onClick={() => setCurrent(i => Math.min(questions.length - 1, i + 1))} disabled={current === questions.length - 1}>
+            <Button variant="secondary" className="h-auto min-h-11 max-w-full whitespace-normal py-2" aria-label="Soal Berikutnya" onClick={() => setCurrent(i => Math.min(questions.length - 1, i + 1))} disabled={current === questions.length - 1}>
               Berikutnya
               <IconChevronRight aria-hidden="true" />
             </Button>

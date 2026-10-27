@@ -1,5 +1,7 @@
 # UI-SYSTEM-004 Part 2 — Student Exam Workspace, Reading and Responsive Accessibility
 
+> Part 2 remains DONE. The separately authorized Part 3 contract and status start at §8.
+
 > PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE. This record covers Part 2 only. It does not complete the rest of UI-SYSTEM-004 or unblock UI-SYSTEM-005.
 
 ## 1. Contract and authority
@@ -218,3 +220,149 @@ The Owner's explicit final-evidence instruction on 2026-10-27 confirms **Indepen
 That instruction authorizes exactly one controlled final evidence commit changing **only this Task record**, after verifying branch, expected HEAD, clean entry tree, Owner author/committer identity, exact diff and unchanged application/workflow/fixture/tests. The live plan is intentionally not edited in this final record-only commit. All content outside this file must remain byte-identical to the verified final content parent. The commit's actual SHA is reported after creation rather than embedded in its own contents. Inspect its fuller log and raw message, then normal push to the existing Task branch and [PR #8](https://github.com/yusufarst/elligble/pull/8).
 
 Per 00.12 §5, the evidence commit is verified locally and deterministically; its own automatic CI is not a prerequisite for Part 2 DONE and does not require another evidence commit. No workflow dispatch/rerun, source change, new branch/PR or merge. PR #8 remains for Owner review and squash merge; no next Task is started.
+
+
+## 8. Part 3 — Teacher Exam Preview Keyboard and Touch Accessibility
+
+| Field | Value |
+|---|---|
+| Task / classification | UI-SYSTEM-004 Part 3; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE |
+| Status | DONE: Part 3 only; final content dcf6f88, CI #77 attempt 1 eight SUCCESS, 68 matched before/after pairs, Independent Second Review PASS and Owner Visual Review PASS on 2026-10-27 |
+| Risk | STANDARD, presentation-only; STOP on business semantics or material defect |
+| Owner authorization | GRANTED 2026-10-27 for the exact five-file scope and Task-specific CI-first order in this section; push YES, one PR YES, MERGE NO |
+| Base / predecessor | main `5f7a018e9e5f95ff14af7b11413ad07b29b1f405`; Part 2 DONE, PR #8 MERGED at that SHA; [main CI #74](https://github.com/yusufarst/elligble/actions/runs/40479321925), attempt 1, eight SUCCESS on ubuntu-24.04 |
+| Immutable baseline frontend tree | `bd628231c9f5a00a6a103a89dd3a40cb8bdbba6f` |
+| Branch | `task/ui-system-004-teacher-preview-accessibility` |
+| Reviews / completion | Independent Second Review PASS and Owner Visual Review PASS confirmed by the Owner on 2026-10-27 ("Visual PASS Part 3"); exactly one final Task-record-only evidence commit authorized; Part 3 DONE, Owner merges |
+
+### 8.1 Objective, exact scope and invariants
+
+Remedy only Teacher Preview's 36px back control, 40px question-number controls and invisible native-radio label focus. Preserve Part 2 DONE and Student source byte-for-byte; do not reopen its scope. Maintain the same locked ELLIGBLE design system, existing shared Button and native input/label contracts. No palette, font, token, shared primitive or global CSS change. This accessibility remediation does not claim new DesainPakeAI alignment or unblock UI-SYSTEM-005.
+
+Exact maximum allowlist (all other paths forbidden):
+
+1. `frontend/web/src/components/TeacherExamPreviewView.tsx`: presentation/classes only for back/question targets, visible >=2px answer-label focus including when keys are shown, and responsive wrapping necessary for those controls. Preserve all callbacks, labels, roles, state and conditions.
+2. `frontend/web/src/__tests__/teacherExamPreview.test.tsx`: meaningful preview regression coverage if needed; keep existing tests/assertions. The Owner's formatted tests-path denotes this existing file, not a new folder.
+3. `e2e/tests/6-teacher-import.spec.ts`: private Teacher capture/JSON inside this existing spec, actual keyboard/geometry checks and original journey preserved. Do not edit the shared Student capture helper or fixtures.
+4. `docs/production/tasks/UI-SYSTEM-004.md`: append Part 3 registration/status/evidence separately; retain Part 2 DONE and historical failures.
+5. `docs/production/PRODUCTION_COMPLETION_PLAN.md`: record PR #8/main CI #74 landing and synchronize stale §6/§14 in this Task; keep remaining work separate.
+
+Native radios and browser Tab/arrow behavior, accessible names, question/option order/identity, local selection, key/score opt-in and no-attempt semantics stay unchanged. Existing `expect(attempts).toBe(0)` and every other original spec assertion remain intact. No API/database/runtime, answer persistence, lifecycle, timer, submission, authentication, session/device or tenant/security change. No Student screen, shared CSS/primitives, workflow, dependency, fixture, other role screen or UI-SYSTEM-005 work. No local heavy tests, npm ci, build, Docker, database, ports or global-process/environment operations; preserve all other projects.
+
+### 8.2 Acceptance and evidence
+
+- Back/question-number targets >=44x44 CSS px. Native answer labels show >=2px solid focus outline; correct-key label focus also has >=2px offset, distinguishing focus from the unfocused key outline. Keep the key marker and names visible.
+- All loaded Preview controls remain usable without clipping, overlap or horizontal overflow at 360/768/1280 CSS px and 200% per-element text-size emulation. Text-size emulation is not native zoom or physical-device certification. Unrelated shared error-state retry controls are outside this bounded remediation.
+- Browser Tab reaches the radio group; ArrowRight selects the next native radio without changing question identity. Key/score remain hidden until requested; local choices do not create an attempt or save answers. Existing complete journey assertions remain unchanged.
+- Capture actual production Teacher Preview in all five existing browser projects, at its original viewport plus 360x640, 768x1024 and 1280x800 (deduplicated), both normal/200% text sizes and keys hidden/shown, with keyboard focus. Two scenarios times two text sizes yield 12 pairs for desktop/tablet/Firefox and 16 for mobile/WebKit: **68 screenshot/JSON pairs per phase**. Metadata records capture SHA, HEAD frontend tree, immutable baseline, phase, existing CSV fixture SHA, browser/version, viewport/DPR, scenario, accessibility snapshot and measured geometry/focus. No masks; school timestamps are variable fields.
+- Use only the existing workflow's workspace-* PNG/JSON success-upload convention, within current five artifacts. Teacher metadata is distinct from Student Part 2 captures. No workflow or helper edits. Compare identical fixture/browser/scenario metadata before/after; inspect actual images and refine only within scope.
+- Preserve all existing tests; no skip, weakened assertion or retry. Actual complete test inventory must be read from the candidate CI, not assumed from the previous 344/22 baseline. Full eight-job CI: web typecheck/unit/build, runtime typecheck/unit/real PostgreSQL, image smoke and all five browser projects on ubuntu-24.04.
+
+### 8.3 Own verification-order and publication contract
+
+1. Verify clean physical main at the approved SHA, Owner author/committer identity, remote main, merged PR #8 and eight main CI #74 jobs. Register Part 3 and synchronize the predecessor landing in the same Task.
+2. Baseline changes ONLY this record, the living plan and Teacher E2E spec. Candidate frontend tree must equal bd628231 (full above); the fixture and original assertions must be unchanged. Lightweight syntax/integrity/diff guards only locally. Capture records known baseline geometry/focus defects without falsely declaring them PASS; native behavior and original journey still must PASS.
+3. Guarded baseline content commit, normal push, one PR to main. Require that exact SHA's automatic push CI attempt 1 eight SUCCESS and all five success artifacts retrieved/validated, including all 68 Teacher before pairs, BEFORE any UI source edit. STOP on failed verification; no rerun, dispatch or automatic corrective commit.
+4. After full baseline PASS, implement only the approved presentation changes and run complete automatic CI on that new content SHA. After-source captures enforce the new geometry/focus/reflow acceptance checks. Inspect all matched before/after evidence and retain actual counts. No local heavy suites or Docker.
+5. Present evidence for required human visual reviews. Do not award their PASS. After both approvals and all technical gates PASS, exactly one final evidence commit changes only this Task record; inspect identity/raw message and normal push. Evidence commit's own CI is not a DONE prerequisite (00.12 §5). Owner squash-merges; no new Task is started.
+
+Before each commit: exact expected HEAD/branch/base ancestry, Owner author AND committer name/email, exact allowed staged/working paths, no unknown untracked files, reviewed diff, no secrets/attribution, git diff --cached --check. After: fuller log/raw message; never rewrite history. gh uses only the ELLIGBLE-specific GH_CONFIG_DIR in child-process environment. No force push or destructive cleanup. STOP on unexpected state, scope expansion, failed gate or material semantics/security regression. No vendor/dependency/recurring production cost change; only existing CI/artifact quota, seven-day retention.
+
+## 9. Part 3 execution evidence
+
+### 9.1 Entry and baseline registration
+
+2026-10-27: physical main, local/remote origin/main and HEAD all `5f7a018e9e5f95ff14af7b11413ad07b29b1f405`; CLEAN. Frontend source tree bd628231 (full §8). Configured author/committer Yusuf Arif Setiawan, `134618411+yusufarst@users.noreply.github.com`; gh user yusufarst. PR #8 merged at the approved baseline, CI #74 attempt 1 terminal eight SUCCESS; no open PR at entry. The existing main was already synchronized; only the exact new Owner-authorized Part 3 branch was created. No application implementation started.
+
+Existing purpose-fit engineering skill react-typescript-vite SHA-256 450285288fba41f497991f074f100a43ed2d714e51818caae3294663e5ccd558 and responsive skill frontend-responsive-ui SHA-256 d72a56fa99d64b54c9af01037802006ebe9e1c711f4cfc75a2fb0f34a2904ec1 are verified against the canonical inventory. No installation/dependency change.
+
+The E2E addition preserves original CSV strings and assertions. It captures actual Teacher state, exercises native keyboard selection and reveals keys only through the existing checkbox. Per-element style and viewport restoration preserve any primary error; crashes are not swallowed. Baseline/after source comparison uses immutable tree literals and current HEAD, avoiding the earlier shallow-checkout failure. The baseline commit cannot contain its own SHA; its actual commit/PR/CI and downloaded artifact results will be recorded at the next authorized checkpoint. Baseline gate PENDING; Part 3 NOT DONE.
+
+
+### 9.2 Baseline exit PASS before UI implementation
+
+Baseline content **`1d2fcea8961ef1e19c920e6fff0601ae5d5f7951`**, [PR #9](https://github.com/yusufarst/elligble/pull/9), [CI #75](https://github.com/yusufarst/elligble/actions/runs/40482951720) (40482951720), automatic push attempt **1**, terminal **COMPLETED / SUCCESS**. All eight jobs on ubuntu-24.04 SUCCESS: web typecheck/**344/344 tests in 34 files**/build (122117568816); runtime typecheck/unit/real PostgreSQL (122117569232); container build/smoke (122117915143); mobile (122117915190), tablet (122117915368), desktop (122117915281), Firefox (122117915374) and WebKit (122117915238) each **22/22 PASS**. The desktop browser installation took longer; the original run was allowed to complete without cancellation, rerun or further push. No skipped tests/retries or heavy local suites.
+
+All five actual successful artifacts were retrieved to ELLIGBLE-only scratch `UI-SYSTEM-004-PART3/ci-75-before` and inspected/validated before any application edit:
+
+| Artifact | ID | Teacher PNG/JSON pairs |
+|---|---|---|
+| workspace-visual-desktop-1280 | 12724033080 | 12 |
+| workspace-visual-mobile-360 | 12724330285 | 16 |
+| workspace-visual-tablet-768 | 12723583410 | 12 |
+| workspace-visual-firefox-1280 | 12724310507 | 12 |
+| workspace-visual-webkit-390 | 12724271384 | 16 |
+
+**68 before pairs**, in addition to the existing Student captures, all labeled UI-SYSTEM-004 Part 3 / before, exact baseline commit and source tree `bd628231c9f5a00a6a103a89dd3a40cb8bdbba6f`. Existing Teacher CSV SHA-256 **`11d4920fd5bed0eab02db6884f0437e498c2202cd090bdea6432dc7abdbd1c71`** is unchanged. Browser versions: Chromium 141.0.7390.37, Firefox 142.0.1, WebKit 26.0. Native viewport plus all three primary sizes, hidden/shown keys and normal/200% text sizes are present; real PNG dimensions account for recorded device scale and baseline horizontal overflow. PNG/JSON identity, fixture, phase, keyboard selection and radio accessibility snapshots verified. The original no-attempt assertion still PASS.
+
+Actual normal/mobile images and DOM metrics confirm 36px back and 40px question-number targets; the focused non-key answer label has no outline, while a correct-key label retains its existing 2px outline with 0px offset. At 360px/200% text size, measured horizontal overflow is **109px** with back/next text outside the viewport across all five engines/projects. These are baseline defects, not failed baseline journey assertions or a false accessibility PASS. Full-page images can place sticky shared chrome at the capture's current scroll offset; this rendering limitation is recorded, no image is edited or substituted and no claim of physical-device/native-zoom certification is made.
+
+### 9.3 Bounded presentation candidate
+
+Only after the entire §9.2 gate PASS, TeacherExamPreviewView.tsx receives class-only edits:
+
+- Existing shared back Button keeps its ghost/small typography and callback, but uses auto height, canonical 44px minimum, bounded width and wrapping.
+- Existing question-number buttons use canonical 44px minimum height/width, preserving numbers, aria-current, accessible names and handlers.
+- Native-radio labels gain the existing 2px focus outline/ring with 2px offset through focus-within. The key's existing marker/outline stays intact; focusing the correct key adds offset and focusing a different answer remains independently visible. No JavaScript focus behavior is changed.
+- Existing previous/next shared Buttons allow text wrapping/auto height with 44px minimum, and their row wraps when text is enlarged. This directly addresses the observed 200% overflow. Disabled conditions and navigation callbacks are unchanged.
+
+A reversible source guard must recover the entire original component by removing only those exact presentation strings. The inherited Student source, shared CSS/primitives, tokens, workflow, fixture, helper, types, hooks and runtime remain unchanged. No additional unit tests merely mirror class strings: existing preview semantic tests remain intact and the approved E2E checks exercise actual native keyboard behavior, painted focus and target/reflow geometry. Syntax/transpile-only and exact-diff guards are local checks; they do not claim typecheck or rendered PASS.
+
+The new content commit's own automatic attempt-1 CI, complete actual test counts and all 68 matched after pairs are PENDING. Do not reuse baseline or another SHA's PASS. Inspect actual after images for material defects, then present paired evidence for the required Independent Second Reviewer and Owner approvals. Part 3 remains VERIFYING / NOT DONE; no final evidence commit before those approvals, no merge and no next Task.
+
+
+### 9.4 CI #76 failure, read-only assessment and targeted corrective authorization
+
+UI content **`d1ac5da16b9c2e44c1efe14416cc5ac35d14796c`**, frontend source tree **`042bd29f7fba6cff4b05c7be67544a602b7664c3`**, [CI #76](https://github.com/yusufarst/elligble/actions/runs/40485141852) (40485141852), push attempt **1**, terminal **COMPLETED / FAILURE**. Web job 122124934679: npm ci/typecheck SUCCESS, **343 PASS / 1 FAIL across 34 files**; build SKIPPED after the unit failure. Runtime/PostgreSQL job 122124935081 SUCCESS; browser matrix and image dependency jobs SKIPPED, so no final after evidence or eight-job PASS exists for #76. The failed case is participantTime.test.tsx, “says it on the paused screen too, next to the frozen time”, original line 301: missing exact 3-minute notification. Log SHA-256: `3849dd38b7958adda7ccb743b19ed31ee73b1b732a783597f5d83d8f8ba79e53`. The failure remains historical evidence; it is not reclassified or rerun.
+
+The Owner authorized a read-only targeted assessment, then explicitly authorized **one** corrective commit on the existing branch/PR #9. This amends §8.1 only by adding the existing `frontend/web/src/__tests__/participantTime.test.tsx` for synchronization of this single paused testcase. The exact correction allowlist is that test plus this record and the living plan. No other original Task path may change in this correction. Student production behavior, Teacher UI content, E2E captures, baseline #75, original fixture, workflows and dependencies remain unchanged. No additional correction, baseline restart, skip/retry/sleep, timeout increase or CI #76 rerun/dispatch is authorized.
+
+Assessment evidence: all relevant Student/test/timer/time-added/answer-manager/config/lockfile Git blobs are identical between #75 PASS and #76 FAILURE. The failure DOM shows **42:10**, the initial remaining time, not the expected **45:10**: the fresh added-time response was not applied, rather than only the notification being suppressed. The paused timer hook deliberately disables ticking/resync; the separate visible-state checker subscribes in an effect and otherwise polls after about 4–6 seconds. The old test waits only for a heading, dispatches online immediately inside act and waits about one second for its message. An initialization/listener-readiness race is the strongest supported explanation; #76 has no per-request/listener trace proving the exact interleaving. Shared map/storage are cleared before the test, and deduplication alone would not keep the remaining time at 42:10. No new production defect or causal link to Teacher styling is proven.
+
+The approved test-only correction: await async act around initial render; retain the original heading assertion and additionally await the existing ready/answers-saved UI, assert visible-document precondition, snapshot existing timer-request count, mutate only the original synthetic added=180 state, dispatch the original online helper **once**, and assert exactly one new timer request before the unchanged 3-minute notice and **45:10** assertions. No production timer mock, data fixture change, direct API invocation or assertion weakening. The extra request assertion exposes a missing state check rather than accepting a coincidental heading. Only this testcase body changes; all other tests/helpers/assertions remain intact, inventory remains 344 tests.
+
+Entry was reverified CLEAN on exact d1ac5da (full above), expected branch/PR #9, Owner configured author/committer and gh user yusufarst, #76 terminal failure. Review exact three-file diff; perform lightweight syntax/assertion/source-isolation guards only. The corrective commit cannot embed its own SHA; report it after creation and record final results at the next authorized evidence checkpoint. Normal push only after guards PASS. Require that exact new SHA's automatic attempt-1 CI **eight SUCCESS**, complete tests and all five retrieved after artifacts matching the original 68 baseline Teacher pairs. On any further failed verification or different material root cause: STOP, no automatic further corrective commit or retry. If technical gates PASS, present actual paired evidence for required human reviews, then one Task-record-only final evidence commit after approvals. Part 3 remains NOT DONE; Part 2 remains DONE; MERGE NO.
+
+
+### 9.5 Final Part 3 completion, verification and review approval
+
+**UI-SYSTEM-004 Part 3: DONE (2026-10-27).** PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE. This section resolves the earlier pending checkpoint statements in §9.1–§9.4 without erasing their history. Part 1 remains completed (`3cfefc4`); Part 2 remains DONE/merged as `5f7a018e9e5f95ff14af7b11413ad07b29b1f405`, PR #8/main CI #74. Other unfinished UI-SYSTEM-004 scope is not marked DONE, and **UI-SYSTEM-005 remains BLOCKED** on its documented dependency.
+
+Final content and Owner-authorized correction: **`dcf6f88e5a34738b12f2f7dfd21b1559b8f790d0`**, frontend source tree **`a39d5a05aab6a81755b899cd0fd9dd007d383dad`** (includes the authorized test correction). [CI #77](https://github.com/yusufarst/elligble/actions/runs/40487676185), run ID 40487676185, automatic push attempt **1**, exact final content SHA, terminal **COMPLETED / SUCCESS**, all **eight jobs on ubuntu-24.04 SUCCESS**. Exact remote branch/PR head, CI SHA/attempt and job results were reverified before this evidence commit.
+
+| Final CI job | Job ID | Result |
+|---|---|---|
+| Web client | 122133457753 | SUCCESS: typecheck, **344/344 tests in 34 files**, build; all nine participantTime cases PASS |
+| Runtime | 122133457526 | SUCCESS: typecheck, unit, real PostgreSQL integration |
+| Container image | 122133863044 | SUCCESS: build and smoke |
+| E2E mobile-360 | 122133863206 | SUCCESS: **22/22** |
+| E2E tablet-768 | 122133863168 | SUCCESS: **22/22** |
+| E2E desktop-1280 | 122133863222 | SUCCESS: **22/22** |
+| E2E firefox-1280 | 122133863459 | SUCCESS: **22/22** |
+| E2E webkit-390 | 122133863108 | SUCCESS: **22/22** |
+
+Final web log SHA-256: `7ae4cc6b12bd0c7af3607ffb9e67566471d549dc9c9c43fcafa58876f868c8ea`. Final tests were not skipped, retried or weakened. Heavy verification used GitHub runners; no heavy local tests or Docker/global-resource operations. Baseline **CI #75**, content `1d2fcea8961ef1e19c920e6fff0601ae5d5f7951`, remains the eight-job PASS before any UI edit (§9.2); it was not repeated. Historical **CI #76 FAILURE** on `d1ac5da16b9c2e44c1efe14416cc5ac35d14796c` remains intact (§9.4): 343 PASS/1 FAIL, remaining downstream jobs skipped as recorded. The Owner approved only the paused-test synchronization correction plus two records; #76 was not rerun. The correction leaves all production code and E2E/fixture/workflow content identical to d1ac5da, keeps the original 3-minute/45:10 assertions, and proves one fresh timer request after the single online event. The passing correction supports the readiness assessment; it does not retrospectively prove an unlogged #76 scheduling interleaving or a production timer defect.
+
+All five final after artifacts were retrieved to ELLIGBLE-only scratch `UI-SYSTEM-004-PART3/ci-77-after`, compared against preserved `ci-75-before`, and **all 68 matched before/after visual pairs** validated. Each phase has 68 actual PNGs with matching JSON manifests:
+
+| Project | Baseline #75 artifact ID | Final #77 artifact ID | Matched pairs |
+|---|---|---|---|
+| desktop-1280 | 12724033080 | 12725688397 | 12 |
+| mobile-360 | 12724330285 | 12726635129 | 16 |
+| tablet-768 | 12723583410 | 12725568792 | 12 |
+| firefox-1280 | 12724310507 | 12726725038 | 12 |
+| webkit-390 | 12724271384 | 12726311011 | 16 |
+
+Exact capture SHA/source tree, immutable baseline reference/tree, before/after phase, browser/version/project, viewport/DPR, scenario, fixture and unchanged accessible radio names/checked states were verified. Teacher CSV SHA-256 remains **`11d4920fd5bed0eab02db6884f0437e498c2202cd090bdea6432dc7abdbd1c71`**. Coverage: 360/768/1280 CSS px in all five projects plus native viewport where distinct, normal/200% per-element text-size emulation, keys hidden/shown and native keyboard focus. Final measured target sizes are at least **44x44 CSS px**, non-key and correct-key answer focus is solid **2px with 2px offset**, and all measured clipping/Preview-target overlap/horizontal-overflow checks PASS. Baseline 109px horizontal overflow at 360px/200% becomes **0px**. Native Tab/arrow selection, opt-in key/score and the original `attempts === 0` assertion PASS in the complete browser journey.
+
+Actual paired images, manifests and complete 68-pair index were presented in `UI-SYSTEM-004-PART3-REVIEW-dcf6f88.md` in the same Task-only scratch directory. Existing qualifications remain: full-page capture can place sticky shared chrome at its scroll offset and obscure header/context or key-toggle regions; the overlap measurement covers Preview controls, not every shared-chrome position. These are unmasked, unretouched captures; timestamps vary. No physical-device, native-browser-zoom, screen-reader or blanket WCAG certification is claimed, and not every visual concern is declared fixed.
+
+The Owner's explicit final-evidence authorization on **2026-10-27** confirms **Independent Second Review: PASS** and **Owner Visual Review: PASS**, including the statement **"Visual PASS Part 3"**, for final content dcf6f88 (full above), CI #77 attempt 1, the 68 matched pairs and open PR #9. These are Owner-confirmed human review results, not self-awarded approvals. Both required review gates and all final content verification gates are PASS.
+
+Publication: exactly **one** final evidence commit changes **only this Task record**. The live plan is intentionally not edited in this record-only commit. Pre-commit guards verify expected branch/parent, Owner author/committer identity, exact reviewed diff, no unknown work/secrets/attribution and unchanged content outside this record; local deterministic diff/evidence guards only. The three preceding content commits' fuller logs/raw software-only messages were inspected under Owner identity. Inspect the evidence commit's own fuller log/raw message after creation, report its actual SHA outside its own contents, and normal push to the same branch/[PR #9](https://github.com/yusufarst/elligble/pull/9). Per 00.12 §5, its own automatic CI is not a DONE prerequisite and does not require another evidence commit. No new PR, history rewrite, force push, merge or next Task.
+
+### 9.6 Owner-approved production prioritization — 2026-10-27
+
+The Owner prioritizes accelerating **CBT-R1 toward production**. Further visual polish, redesign and cosmetic sticky-header work that does not interfere with function or minimum accessibility is deferred to an appropriate later stage or post-production. This is an **Owner-approved prioritization/deferment**, not a claim that every visual issue, sticky-header concern or unfinished UI-SYSTEM-004 item has been fixed, and not a design supersession or authorization to expand scope/create another visual Task.
+
+After Part 3 completion and **Owner merge of PR #9**, subsequent Task selection must follow the canonical repository's production critical path: CBT functionality, security, reliability, release blockers, deployment and UAT. Every security, answer-integrity and production-readiness gate remains mandatory; material functional/accessibility defects are not waived by cosmetic deferment. UI-SYSTEM-005 retains its BLOCKED dependency. The next Task records the landing SHA/checkpoint under 00.12 and still requires its own Owner authorization by ID. This evidence action starts no new Task and changes no design.
