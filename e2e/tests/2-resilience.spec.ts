@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { STAFF_SCREEN_FILE, activate, captureWorkspace, captureWorkspaceTimer, closeQuestionList, continueExam, login, open, openQuestionList, option, reloadPage, saveStatus, serverAnswers, shotName, startExam, state } from './helpers.ts';
 
@@ -18,7 +19,23 @@ test('answers given offline are kept honestly and delivered when the connection 
     await expect(saveStatus(page)).toHaveText('Tersimpan', { timeout: 30_000 });
     await expect(page.locator('.connection-banner')).toHaveCount(0);
     expect(await serverAnswers(page, attemptId)).toHaveLength(1);
+});
+
+test('the server timer has warning and urgent visual evidence online without replacing the document', async ({ page }) => {
+    test.setTimeout(30_000);
+    await login(page, 'siswa.e2e.02', 'bintang-kejora-2026');
+    const attemptId = await continueExam(page);
+    await expect(saveStatus(page)).toHaveText('Tersimpan');
+    const before = await serverAnswers(page, attemptId);
+    const url = page.url();
+    const documentToken = await page.evaluate(token => {
+        (window as unknown as Record<string, unknown>)['__workspaceTimerDocument'] = token;
+        return token;
+    }, randomUUID());
     await captureWorkspaceTimer(page, attemptId);
+    expect(await serverAnswers(page, attemptId)).toEqual(before);
+    expect(await page.evaluate(() => (window as unknown as Record<string, unknown>)['__workspaceTimerDocument'])).toBe(documentToken);
+    await expect(page).toHaveURL(url);
 });
 
 test('a reload while saves fail restores the unsynced choice from this device and syncs it later', async ({ page }) => {

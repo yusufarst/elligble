@@ -363,32 +363,81 @@ export async function expireAttemptOf(elligbleId: string): Promise<void> {
     ));
 }
 
-/** Timer presentation fixtures on the disposable CI database, using the actual server calculation.
- * Like expireAttemptOf, this changes fixture time only, never the application clock or response.
- * The original start is restored before any later lifecycle/scoring test runs.
+/** Existing production focus handler -> real timer API -> rendered countdown, without navigation. */
+async function resyncWorkspaceTimer(page: Page, attemptId: string, startedAt: string) {
+    const [request] = await Promise.all([
+        page.waitForRequest(request => {
+            const url = new URL(request.url());
+            return request.method() === 'GET' && url.origin === new URL(state.baseUrl).origin
+                && url.pathname === '/api/v1/assessment/timer' && url.searchParams.get('attemptId') === attemptId;
+        }, { timeout: 10_000 }),
+        page.evaluate(() => window.dispatchEvent(new Event('focus'))),
+    ]);
+    const response = await request.response();
+    if (!response) throw new Error('The production timer request returned no response.');
+    expect(response.status()).toBe(200);
+    const data: unknown = await response.json();
+    if (typeof data !== 'object' || data === null
+        || !('status' in data) || data.status !== 'active'
+        || !('startedAt' in data) || typeof data.startedAt !== 'string'
+        || !('effectiveRemainingSeconds' in data) || typeof data.effectiveRemainingSeconds !== 'number'
+        || !Number.isInteger(data.effectiveRemainingSeconds) || data.effectiveRemainingSeconds <= 0) {
+        throw new Error('The server did not return an active, positive timer.');
+    }
+    expect(new Date(data.startedAt).getTime(), 'server read the current database fixture').toBe(new Date(startedAt).getTime());
+    const remaining = data.effectiveRemainingSeconds;
+    const receivedAt = performance.now();
+    await expect.poll(async () => {
+        const parts = (await page.locator('.timer-value').innerText()).split(':').map(Number);
+        if (parts.length < 2 || parts.length > 3 || parts.some(p => !Number.isInteger(p) || p < 0)) return false;
+        const displayed = parts.reduce((total, part) => total * 60 + part, 0);
+        const elapsed = Math.ceil((performance.now() - receivedAt) / 1000) + 1;
+        return displayed <= remaining && displayed >= Math.max(0, remaining - elapsed);
+    }, { timeout: 5_000, message: 'Rendered countdown follows the actual server response' }).toBe(true);
+    return remaining;
+}
+
+/** Online-only visual fixture; restore the exact timer row even if the browser crashes.
+ * No page operation after a capture failure; preserve it as the primary exception.
  */
 export async function captureWorkspaceTimer(page: Page, attemptId: string): Promise<void> {
-    const original = await withDatabase(async client => (await client.query<{ started_at: string }>(
-        'SELECT started_at::text FROM secure_assessment_timer_state WHERE exam_attempt_id = $1 AND tenant_id = $2',
+    const original = await withDatabase(async client => (await client.query<{ started_at: string; fixture: unknown }>(
+        'SELECT started_at::text, to_jsonb(t) AS fixture FROM secure_assessment_timer_state t WHERE exam_attempt_id = $1 AND tenant_id = $2',
         [attemptId, state.tenantId]
     )).rows[0]);
     if (!original) throw new Error('Timer fixture does not belong to the isolated student attempt.');
+    let captureFailed = false;
+    let captureError: unknown;
     try {
         for (const [seconds, scenario, status] of [[240, 'timer-warning', 'warning'], [45, 'timer-urgent', 'urgent']] as const) {
-            await withDatabase(client => client.query(
+            const changed = await withDatabase(client => client.query<{ started_at: string }>(
                 `UPDATE secure_assessment_timer_state
                  SET started_at = statement_timestamp() - (configured_duration_seconds - $3) * interval '1 second'
-                 WHERE exam_attempt_id = $1 AND tenant_id = $2`, [attemptId, state.tenantId, seconds]
+                 WHERE exam_attempt_id = $1 AND tenant_id = $2 RETURNING started_at::text`, [attemptId, state.tenantId, seconds]
             ));
-            await reloadPage(page);
+            expect(changed.rowCount).toBe(1);
+            const remaining = await resyncWorkspaceTimer(page, attemptId, changed.rows[0].started_at);
+            expect(remaining).toBeLessThanOrEqual(seconds);
+            if (status === 'warning') expect(remaining).toBeGreaterThanOrEqual(60);
             await expect(page.locator('.timer-display')).toHaveClass(new RegExp(status));
             await captureWorkspace(page, scenario);
         }
-    } finally {
-        await withDatabase(client => client.query(
-            'UPDATE secure_assessment_timer_state SET started_at = $3::timestamptz WHERE exam_attempt_id = $1 AND tenant_id = $2',
+    } catch (error) {
+        captureFailed = true;
+        captureError = error;
+    }
+    try {
+        const restored = await withDatabase(client => client.query<{ fixture: unknown }>(
+            `UPDATE secure_assessment_timer_state AS t SET started_at = $3::timestamptz
+             WHERE exam_attempt_id = $1 AND tenant_id = $2 RETURNING to_jsonb(t) AS fixture`,
             [attemptId, state.tenantId, original.started_at]
         ));
-        await reloadPage(page);
+        expect(restored.rowCount).toBe(1);
+        expect(restored.rows[0].fixture, 'the entire original timer fixture row is restored').toEqual(original.fixture);
+    } catch (restoreError) {
+        if (captureFailed) throw new AggregateError([captureError, restoreError], 'Timer capture and fixture restoration failed', { cause: captureError });
+        throw restoreError;
     }
+    if (captureFailed) throw captureError;
+    await resyncWorkspaceTimer(page, attemptId, original.started_at);
 }
