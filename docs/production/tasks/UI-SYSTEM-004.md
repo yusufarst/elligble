@@ -6,7 +6,7 @@
 
 | Field | Value |
 |---|---|
-| Status | IN_PROGRESS: baseline evidence preparation; no application change yet |
+| Status | IN_PROGRESS: baseline exit PASS (CI #70); bounded presentation candidate prepared, final CI/rendered review pending |
 | Release | CBT-R1; Secure Assessment only (DEC-044) |
 | Risk | STANDARD while presentation-only; stop on any material CBT defect or business-logic change |
 | Owner approval | GRANTED 2026-10-27: corrected minimum scope, Task-specific CI-first order, baseline capture before UI changes, narrow successful-artifact upload, guarded commits/normal push/one PR; MERGE NO |
@@ -85,7 +85,7 @@ No vendor, production dependency or recurring production cost change. Five small
 
 2026-10-27 entry: expected previous branch and clean physical tree verified. Owner Git identity matched. gh API user `yusufarst`; remote main `b5c2ae7`, PR #7 merged, main CI #67 attempt 1 eight SUCCESS verified. Existing main fast-forwarded and the authorized Task branch created at `b5c2ae7`; clean at entry. No application edits before baseline. The Owner subsequently approved exactly the one-file third-question expansion after the initial fixture STOP.
 
-Baseline commit `2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`: CI #68 FAILED; tree correction `9585d2e83223506f6ff2b829fa907b4b7c0ad57d`: CI #69 FAILED in WebKit. Complete evidence and the subsequent Owner-authorized four-file harness remediation are below. Baseline screenshot/manifest exit gate remains PENDING. Application remediation: NOT STARTED. Final content SHA/CI: PENDING. Independent Second Reviewer: PENDING. Actual Owner visual review: PENDING. Final evidence commit: NOT AUTHORIZED UNTIL THOSE GATES PASS. Part 2 is NOT DONE.
+Baseline commit `2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`: CI #68 FAILED; tree correction `9585d2e83223506f6ff2b829fa907b4b7c0ad57d`: CI #69 FAILED in WebKit. Owner-approved harness correction **`dbe626535d363f02ffc13db0b83d035b24f994c8`**, CI #70, now has baseline exit **PASS**, with all eight jobs SUCCESS and five retrieved/validated visual artifacts. Historical failures remain below. Bounded UI presentation was started only after that full gate. Final content SHA/CI: PENDING. Independent Second Reviewer: PENDING. Actual Owner visual review: PENDING. Final evidence commit: NOT AUTHORIZED UNTIL THOSE GATES PASS. Part 2 is NOT DONE.
 
 ### 5.1 Lightweight baseline preconditions
 
@@ -131,3 +131,33 @@ Implementation contract: remove only the added timer call from the offline test,
 Timer helper: keep 240-second warning and 45-second urgent synthetic fixtures, read the full original timer row, and replace document reloads with the production focus-event listener's actual timer API request. Correlate a newly issued same-origin GET with its response, assert HTTP 200, active/positive timer and matching database startedAt, and verify the rendered countdown and warning/urgent class before the unchanged capture function. The original started_at is restored and the entire returned row must equal the original snapshot. After a capture failure, perform database cleanup only, then throw the same exception; if restoration also fails, AggregateError retains the original as cause. Only a successful capture gets a final focus resync to the restored server timer. No crash is swallowed and no page is reused after failure. Generic reloadPage/replaceDocument and all metadata, baseline-tree, candidate-tree, fixture-hash and before/after guards stay unchanged.
 
 New automatic push CI on the commit carrying this section must be attempt 1, eight SUCCESS on ubuntu-24.04, all tests without skip/retry, and all five workspace PNG/JSON artifacts retrievable and validated against that exact SHA, immutable source tree `73b4d38c74363c8f765446f6a0028899c3b4b89f`, unchanged fixture hash `3a1aa51907bed05ea4687094534e3983f8ffaf52b5752d804aaea7669f9727fb` and before phase. A new material failure means STOP, no automatic further correction. Full baseline PASS directly authorizes resuming the previously approved UI scope without another permission request. No UI implementation has started at this checkpoint. Task remains NOT DONE; PR #8 stays open, MERGE NO.
+
+### 5.4 Baseline exit PASS before UI implementation
+
+Harness correction **`dbe626535d363f02ffc13db0b83d035b24f994c8`**, [CI #70](https://github.com/yusufarst/elligble/actions/runs/40427880516) (40427880516), push attempt **1**, COMPLETED / SUCCESS. All eight job labels verified as ubuntu-24.04: web typecheck/344 tests in 34 files/build; runtime typecheck/unit/real PostgreSQL; image build/smoke; mobile, tablet, desktop, Firefox and WebKit each **22/22 PASS**. The new online timer case verifies unchanged answers/document, real warning/urgent timer responses and exact timer-row restoration. No reruns, skipped tests or local heavy suites.
+
+All five artifacts were downloaded to ELLIGBLE-only scratch `UI-SYSTEM-004/ci-70-before` and checked, not merely listed:
+
+| Artifact | Artifact ID | PNG/JSON pairs |
+|---|---|---|
+| workspace-visual-desktop-1280 | 12700459464 | 38 |
+| workspace-visual-mobile-360 | 12700388384 | 15 |
+| workspace-visual-tablet-768 | 12699994454 | 14 |
+| workspace-visual-firefox-1280 | 12700242780 | 15 |
+| workspace-visual-webkit-390 | 12699934754 | 14 |
+
+**96 pairs**: capture SHA dbe6265 (full above), before classification, immutable base/candidate source tree 73b4d38c (full §5.2), fixture hash 3a1aa519 (full §5.3), browser/version, viewport and matching real PNG verified. All projects have pending/saved/failed/offline/flagged/focus and both timer states. Desktop contains all seven primary viewports plus 320×568, 568×320, 360×480 and 1280×360 stress captures, full-page reading and 200% text-resize/reduced-motion frames. WebKit's existing iPhone 13 profile uses DPR 3 (390 CSS px -> 1170 PNG pixels); other projects use DPR 1. A first external PNG-dimension check used CSS pixels directly and was corrected to verify device pixels against the locked profile; neither screenshots nor harness were changed for this unit correction.
+
+Rendered before evidence confirms a dense all-bold passage with collapsed paragraph breaks, 15px choices, invisible option-label keyboard outline, 40px desktop dock targets and a clipped desktop legend at 200% text emulation. Warning text is RGB 217/119/6 on white. These are baseline observations, not baseline accessibility PASS claims. Actual bundled inventory is the 96 core captures above; supplementary pause/lock/message/Teacher-preview PNG copies intended in §3 were not present in these successful uploads. No paired supplementary visual PASS is claimed. Their real browser functional journeys did pass; the UI candidate must preserve their application markup and all non-Student CSS.
+
+## 6. Bounded presentation candidate and pending final verification
+
+The Owner explicitly authorized direct continuation after baseline PASS. Current application paths are only StudentExamWorkstation.tsx, ExamMessages.tsx and workstation.css, plus this record and the living plan. No test, workflow, dependency, global token or other-role file changes after the baseline gate.
+
+- Native inputs, labels, accessible names, callbacks, disabled conditions, timer/answer/session/submission/lifecycle code remain unchanged. A reversible source guard removes only the documented presentation edits and recovers the original workstation source exactly.
+- Body-large stimulus uses locked 18px/1.5/400 with authored paragraph breaks; its first line remains emphasized. Choices use body 16px/1.5 with wrapping and top-aligned A–E markers; a reserved check slot and stable text weight avoid reflow when selected. Selection remains immediate selection, not an ACK. Focus has the existing 2px primary outline on the visible label.
+- Shared Button dock callsites compose canonical 44px minimum at desktop and allow text wrapping; shared Button definition is unchanged. Mengerti/Tutup use its existing default 44px size. No page-local button primitive.
+- Warning text/flags and selected borders use existing accessible semantic inks. No new color/font/palette tokens; the existing 80-color ceiling stays unchanged, with no guard weakening. New styles are fenced by `.workstation-container`; existing CSS prefix remains byte-equivalent after line-ending normalization, preserving Teacher preview.
+- Existing 640/1024 breakpoints, 1200px assessment cap and 680px reading composition; wrapping legends/actions, restrained flat surfaces and 150ms sheet entry, with existing reduced-motion override. Header/dock refs measure only chrome height via ResizeObserver into two local geometry properties, preventing sticky/sidebar offsets or fixed-dock spacing from assuming a single header height when text/notices wrap. No React exam state is written by this effect. Safe-area insets stay explicit; physical notch-device validation is not claimed.
+
+Lightweight source-isolation, CSS-scope/color-ceiling and TSX syntax/transpile checks PASS (syntax only, not typecheck); full final CI and actual after images remain PENDING on this content candidate's own SHA. Before/after reuse the unchanged fixture, capture helpers and five browser profiles. No material visual PASS, Reviewer PASS, Owner PASS or DONE is claimed before those gates. After content CI/evidence, present the actual pairs for the two required human reviews; do not create the final record-only evidence commit before their approvals.

@@ -605,6 +605,29 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     }
   }, [attemptId, hasUnresolvedSaves, isSubmitting, completeAttempt, handleExpire, handleExamPausedBySave, handleAttemptLockedBySave]);
 
+  // UI-SYSTEM-004: measured chrome reserves space at text zoom and when notices wrap.
+  // Geometry only: no exam state, timer, answer or focus behavior is changed.
+  const headerLayoutRef = useRef<HTMLElement>(null);
+  const dockLayoutRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = headerLayoutRef.current;
+    const dock = dockLayoutRef.current;
+    const workspace = header?.closest<HTMLElement>('.workstation-container');
+    if (!header || !dock || !workspace) return;
+    const measure = () => {
+      const headerHeight = header.getBoundingClientRect().height;
+      const dockHeight = dock.getBoundingClientRect().height;
+      if (headerHeight > 0) workspace.style.setProperty('--workstation-header-height', `${headerHeight}px`);
+      if (dockHeight > 0) workspace.style.setProperty('--workstation-dock-height', `${dockHeight}px`);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, [phase, examState, lockedAt]);
+
   // Render Phase States: every full-screen state is the shared status page (UI-SYSTEM-002).
   if (phase === 'invalid_attempt') {
     return (
@@ -837,7 +860,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   return (
     <div className="workstation-container">
       {/* Compact Assessment Focus Header: Content-First, Zero Generic Branding */}
-      <header className="workstation-header">
+      <header ref={headerLayoutRef} className="workstation-header">
         <div className="workstation-header-inner">
           <div className="header-rail-region" aria-hidden="true" />
           <div className="header-workspace-region">
@@ -909,7 +932,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         {discardedText && (
           <div className="discarded-banner" role="alert">
             <span>{discardedText}</span>
-            <Button variant="secondary" size="sm" onClick={() => setDiscardedIds([])}>Mengerti</Button>
+            <Button variant="secondary" onClick={() => setDiscardedIds([])}>Mengerti</Button>
           </div>
         )}
         {(degraded || !isOnline) && (
@@ -1038,11 +1061,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             </label>
 
             {/* Workstation Actions: Persistent Bottom Bar on Mobile, Grid-aligned on Desktop */}
-            <footer className="workstation-actions">
+            <footer ref={dockLayoutRef} className="workstation-actions">
               <div className="action-dock-group">
                 <Button
                   variant="secondary"
                   size="dock"
+                  className="whitespace-normal lg:min-h-11"
                   onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                   disabled={currentIndex === 0}
                   aria-label="Soal Sebelumnya"
@@ -1067,7 +1091,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   ref={navSheetTriggerRef}
                   variant="secondary"
                   size="dock"
-                  className="lg:hidden"
+                  className="whitespace-normal lg:hidden lg:min-h-11"
                   onClick={() => setIsNavSheetOpen(true)}
                   aria-haspopup="dialog"
                   aria-expanded={isNavSheetOpen}
@@ -1095,7 +1119,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                 <Button
                   variant="secondary"
                   size="dock"
-                  className="lg:flex-row-reverse"
+                  className="whitespace-normal lg:min-h-11 lg:flex-row-reverse"
                   onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
                   disabled={currentIndex === totalQuestions - 1}
                   aria-label="Soal Berikutnya"
@@ -1119,7 +1143,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                 </Button>
                 <Button
                   size="dock"
-                  className="lg:ml-auto"
+                  className="whitespace-normal lg:min-h-11 lg:ml-auto"
                   onClick={() => setIsSubmitModalOpen(true)}
                   disabled={hasUnresolvedSaves}
                   aria-haspopup="dialog"
