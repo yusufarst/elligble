@@ -6,7 +6,7 @@
 
 | Field | Value |
 |---|---|
-| Status | VERIFYING: baseline #70 PASS; first presentation #71 eight SUCCESS; final spacing/alignment candidate and required human reviews pending |
+| Status | DONE: Part 2 only; final content 5ba9fb4, CI #72 attempt 1 eight SUCCESS, Independent Second Review PASS and Owner Visual Review PASS; final evidence authorized 2026-10-27 |
 | Release | CBT-R1; Secure Assessment only (DEC-044) |
 | Risk | STANDARD while presentation-only; stop on any material CBT defect or business-logic change |
 | Owner approval | GRANTED 2026-10-27: corrected minimum scope, Task-specific CI-first order, baseline capture before UI changes, narrow successful-artifact upload, guarded commits/normal push/one PR; MERGE NO |
@@ -85,7 +85,7 @@ No vendor, production dependency or recurring production cost change. Five small
 
 2026-10-27 entry: expected previous branch and clean physical tree verified. Owner Git identity matched. gh API user `yusufarst`; remote main `b5c2ae7`, PR #7 merged, main CI #67 attempt 1 eight SUCCESS verified. Existing main fast-forwarded and the authorized Task branch created at `b5c2ae7`; clean at entry. No application edits before baseline. The Owner subsequently approved exactly the one-file third-question expansion after the initial fixture STOP.
 
-Baseline commit `2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`: CI #68 FAILED; tree correction `9585d2e83223506f6ff2b829fa907b4b7c0ad57d`: CI #69 FAILED in WebKit. Owner-approved harness correction **`dbe626535d363f02ffc13db0b83d035b24f994c8`**, CI #70, now has baseline exit **PASS**, with all eight jobs SUCCESS and five retrieved/validated visual artifacts. Historical failures remain below. Bounded UI presentation was started only after that full gate. Final content SHA/CI: PENDING. Independent Second Reviewer: PENDING. Actual Owner visual review: PENDING. Final evidence commit: NOT AUTHORIZED UNTIL THOSE GATES PASS. Part 2 is NOT DONE.
+Baseline commit `2097232268d8d26cd90e861ef52ebfa2bb0ee1c2`: CI #68 FAILED; tree correction `9585d2e83223506f6ff2b829fa907b4b7c0ad57d`: CI #69 FAILED in WebKit. Owner-approved harness correction **`dbe626535d363f02ffc13db0b83d035b24f994c8`**, CI #70, now has baseline exit **PASS**, with all eight jobs SUCCESS and five retrieved/validated visual artifacts. Historical failures remain below. Bounded UI presentation was started only after that full gate. Final content and completion: see §7. CI #72 attempt 1 eight SUCCESS; Independent Second Review PASS and Owner Visual Review PASS confirmed by the Owner on 2026-10-27. The Owner authorizes exactly one final Task-record-only evidence commit and normal push. Part 2 is DONE; the remaining UI-SYSTEM-004 work and UI-SYSTEM-005 are not completed by this record.
 
 ### 5.1 Lightweight baseline preconditions
 
@@ -150,7 +150,7 @@ All five artifacts were downloaded to ELLIGBLE-only scratch `UI-SYSTEM-004/ci-70
 
 Rendered before evidence confirms a dense all-bold passage with collapsed paragraph breaks, 15px choices, invisible option-label keyboard outline, 40px desktop dock targets and a clipped desktop legend at 200% text emulation. Warning text is RGB 217/119/6 on white. These are baseline observations, not baseline accessibility PASS claims. Actual bundled inventory is the 96 core captures above; supplementary pause/lock/message/Teacher-preview PNG copies intended in §3 were not present in these successful uploads. No paired supplementary visual PASS is claimed. Their real browser functional journeys did pass; the UI candidate must preserve their application markup and all non-Student CSS.
 
-## 6. Bounded presentation candidate and pending final verification
+## 6. Bounded presentation candidate and verification history
 
 The Owner explicitly authorized direct continuation after baseline PASS. Current application paths are only StudentExamWorkstation.tsx, ExamMessages.tsx and workstation.css, plus this record and the living plan. No test, workflow, dependency, global token or other-role file changes after the baseline gate.
 
@@ -171,3 +171,50 @@ All five actual after artifacts were retrieved to `UI-SYSTEM-004/ci-71-after`: *
 Actual renders identified two small in-scope composition refinements: the main grid inherited a 24px gap while the header grid had none, offsetting the desktop reading column by 12px; fieldset gap does not separate its legend, leaving question/choice spacing too tight after removing the old legend margin. This final candidate changes only the Student-scoped desktop grid gap to 0 and legend bottom margin to the existing 24px spacing token, plus the two records. No test, fixture, capture logic, component callback or token changes. This is the authorized iterative visual refinement, not a CI rerun; the resulting new content SHA needs its own complete CI and after evidence. The #71 terminal-success pre-push gate was checked before publication. Final candidate SHA/results must be reported after creation; it cannot embed its own SHA. Task and both human reviews remain pending.
 
 Full-page PNGs preserve the sticky header at the capture's current scroll offset; use the matched viewport images to assess actual on-screen header/dock overlap. No screenshot is retouched or substituted. Emulation, physical-device/screen-reader limits and the absent supplementary paired screenshots remain explicitly qualified above. Task NOT DONE; human reviews and final record-only evidence remain pending.
+
+## 7. Final completion evidence and review approval
+
+**UI-SYSTEM-004 Part 2: DONE (2026-10-27).** PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE. This completes only the approved Student workspace remediation. It does not mark all UI-SYSTEM-004 or UI-SYSTEM-005 DONE, waive the inaccessible design dependency, authorize another Task or permit a merge. The pending statements in §6 describe earlier candidate checkpoints; this section records their final resolution. Historical CI #68/#69 failures and their evidence remain unchanged.
+
+### 7.1 Final content and exact CI
+
+Final content **`5ba9fb43802b0e81f094295e96d3b725893c5f9d`**, frontend source tree **`bd628231c9f5a00a6a103a89dd3a40cb8bdbba6f`**, [CI #72](https://github.com/yusufarst/elligble/actions/runs/40433037289) (40433037289), automatic push event, attempt **1**, terminal **COMPLETED / SUCCESS**. The run's head SHA and all eight ubuntu-24.04 job results were reverified before the final evidence commit.
+
+| Job | Job ID | Final result |
+|---|---|---|
+| Web client | 121955067852 | SUCCESS; typecheck, **344/344 web tests in 34 files**, build |
+| Runtime | 121955067553 | SUCCESS; typecheck, unit, real PostgreSQL integration |
+| Container image | 121955380822 | SUCCESS; build and smoke |
+| E2E mobile-360 | 121955380996 | SUCCESS; **22/22** |
+| E2E tablet-768 | 121955380946 | SUCCESS; **22/22** |
+| E2E desktop-1280 | 121955380910 | SUCCESS; **22/22** |
+| E2E firefox-1280 | 121955380833 | SUCCESS; **22/22** |
+| E2E webkit-390 | 121955380872 | SUCCESS; **22/22** |
+
+All five existing browser projects retain their assertions; no failed/skipped/retried tests, CI rerun, manual dispatch or test-count reduction. Heavy verification ran on GitHub runners, without local heavy suites, Docker, ports, database or global-process operations. All five content commits, including the final content above, use the configured Owner author/committer identity; their fuller logs and raw software-only messages were inspected without unexpected attribution. No history was rewritten.
+
+### 7.2 Final actual visual evidence
+
+Before: approved harness commit `dbe626535d363f02ffc13db0b83d035b24f994c8`, CI #70, eight SUCCESS before any application styling change. After: final content SHA above, CI #72. All five final artifacts were retrieved to ELLIGBLE-only scratch `UI-SYSTEM-004/ci-72-after` and compared with `UI-SYSTEM-004/ci-70-before`.
+
+| Final after artifact | Artifact ID | Matched before/after screenshot pairs |
+|---|---|---|
+| workspace-visual-desktop-1280 | 12702937508 | 38 |
+| workspace-visual-mobile-360 | 12702203767 | 15 |
+| workspace-visual-tablet-768 | 12702208799 | 14 |
+| workspace-visual-firefox-1280 | 12702299788 | 15 |
+| workspace-visual-webkit-390 | 12702199251 | 14 |
+
+**96 matched visual before/after pairs**: 96 actual PNGs with JSON manifests per phase. Verified exact capture SHA/source tree, immutable baseline reference/tree, before/after classification, browser/version/project, viewport, fixture ID/hash and unchanged radio accessibility names/checked states. Real PNG dimensions account for WebKit DPR 3. Fixture SHA-256 remains **`3a1aa51907bed05ea4687094534e3983f8ffaf52b5752d804aaea7669f9727fb`**; baseline application tree remains **`73b4d38c74363c8f765446f6a0028899c3b4b89f`**.
+
+Rendered evidence covers the seven approved primary widths, four narrow/short/landscape stress sizes, long questions/options, 200% text-resize emulation, reduced motion, native keyboard focus, unanswered/selected/pending/saved/failed/offline/flagged states, confirmation and actual server-calculated warning/urgent timer states. Final measured targets are at least 44×44 CSS px, option-label focus is solid 2px, document/text horizontal-overflow checks are clear, question typography is 18px/27px and choices 16px/24px. Warning ink measures 7.09:1 on white. Actual final images show corrected column alignment and prompt-to-choice separation. Original images are unmasked and unretouched; countdown/timestamps are documented variable fields.
+
+The actual paired review gallery is `UI-SYSTEM-004-REVIEW-5ba9fb4.md` in the same ELLIGBLE-only scratch directory. The supplementary pause/lock/message/Teacher paired-image limitation and viewport/full-page, emulation, physical-device and screen-reader qualifications in §5.4/§6.1 remain explicit. No blanket WCAG certification or absent supplementary screenshot evidence is claimed.
+
+### 7.3 Required human reviews and final publication authorization
+
+The Owner's explicit final-evidence instruction on 2026-10-27 confirms **Independent Second Review: PASS** and **Owner Visual Review: PASS** for final content `5ba9fb43802b0e81f094295e96d3b725893c5f9d`, CI #72 attempt 1 eight SUCCESS, PR #8. These review results are recorded from the Owner's authorization, not self-awarded by the executor. The technical and required human review gates are therefore PASS.
+
+That instruction authorizes exactly one controlled final evidence commit changing **only this Task record**, after verifying branch, expected HEAD, clean entry tree, Owner author/committer identity, exact diff and unchanged application/workflow/fixture/tests. The live plan is intentionally not edited in this final record-only commit. All content outside this file must remain byte-identical to the verified final content parent. The commit's actual SHA is reported after creation rather than embedded in its own contents. Inspect its fuller log and raw message, then normal push to the existing Task branch and [PR #8](https://github.com/yusufarst/elligble/pull/8).
+
+Per 00.12 §5, the evidence commit is verified locally and deterministically; its own automatic CI is not a prerequisite for Part 2 DONE and does not require another evidence commit. No workflow dispatch/rerun, source change, new branch/PR or merge. PR #8 remains for Owner review and squash merge; no next Task is started.
