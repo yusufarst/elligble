@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { STAFF_SCREEN_FILE, activate, option, reloadPage, requestedPaths, saveStatus, startExam, state } from './helpers.ts';
+import { STAFF_SCREEN_FILE, activate, captureWorkspace, captureWorkspaceReading, option, reloadPage, requestedPaths, saveStatus, startExam, state } from './helpers.ts';
 
 // The pilot journey: provisioning CLI -> activation cards -> teacher opens the exam ->
 // proctor monitors -> a student answers, reloads, submits once.
@@ -33,9 +33,25 @@ test('a student answers, the answers survive a reload, and the exam is submitted
     await expect(page.getByText(/\d{2}\.\d{2} WIB/).first()).toBeVisible();
     await expect(page.getByText(/UTC/)).toHaveCount(0);
     const attemptId = await startExam(page);
+    await captureWorkspace(page, 'unanswered');
 
-    await option(page, 1).click();
+    // Hold the real request, then deliver it unchanged: selected does not imply server ACK.
+    const pending = Promise.withResolvers<void>();
+    await page.route('**/api/v1/assessment/answer/save', async route => {
+        await pending.promise;
+        await route.continue();
+    });
+    try {
+        await option(page, 1).click();
+        await expect(saveStatus(page)).toHaveText('Menyimpan...');
+        await expect(page.getByRole('button', { name: 'Selesaikan Ujian' })).toBeDisabled();
+        await captureWorkspace(page, 'selected-pending-ack');
+    } finally {
+        pending.resolve();
+    }
     await expect(saveStatus(page)).toHaveText('Tersimpan');
+    await page.unroute('**/api/v1/assessment/answer/save');
+    await captureWorkspace(page, 'selected-saved');
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
     await expect(page.getByText('Bilangan prima terkecil adalah')).toBeVisible();
     await option(page, 2).click();
@@ -47,7 +63,15 @@ test('a student answers, the answers survive a reload, and the exam is submitted
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
     await expect(page.locator('.options-list input[type=radio]').nth(2)).toBeChecked();
 
+    // Read the longer third question without answering it: the original 2/3 score is unchanged.
+    await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
+    await expect(page.getByText('Akar kuadrat dari 81 adalah')).toBeVisible();
+    await captureWorkspaceReading(page);
+    await expect(page.locator('.options-list input[type=radio]:checked')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Soal Sebelumnya' }).click();
+
     await page.getByRole('button', { name: 'Selesaikan Ujian' }).click();
+    await captureWorkspace(page, 'submission-confirmation');
     await page.getByRole('dialog').getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Kirim Jawaban Sekarang' }).click();
     await expect(page.getByText('Ujian Berhasil Dikumpulkan')).toBeVisible();

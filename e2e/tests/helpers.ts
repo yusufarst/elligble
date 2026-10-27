@@ -1,9 +1,167 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { errors, expect, test, type Locator, type Page } from '@playwright/test';
 import pg from 'pg';
 import { readState } from '../state.ts';
 
 export const state = readState();
+
+// UI-SYSTEM-004 part 2: evidence from the production client and real isolated CI server.
+// The same fixture and capture code is used before and after the presentation change.
+const WORKSPACE_BASE = 'b5c2ae7bf35b04e6610cd2c0f6c51ced8ad5191f';
+const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const workspaceCommit = git('rev-parse', 'HEAD');
+const workspaceBaselineTree = '73b4d38c74363c8f765446f6a0028899c3b4b89f';
+const workspaceApplicationTree = git('rev-parse', 'HEAD:frontend/web/src');
+const workspacePhase = workspaceApplicationTree === workspaceBaselineTree ? 'before' : 'after';
+const workspaceFixture = readFileSync(new URL('../global-setup.ts', import.meta.url), 'utf8')
+    .split('\n').find(line => line.trimStart().startsWith("'3,"));
+if (!workspaceFixture) throw new Error('The third workspace fixture is missing.');
+const workspaceFixtureHash = createHash('sha256').update(workspaceFixture.trim()).digest('hex');
+if (process.env['GITHUB_SHA'] && process.env['GITHUB_SHA'] !== workspaceCommit) {
+    throw new Error('Workspace capture SHA differs from the checked-out candidate.');
+}
+
+function workspaceMetadata(page: Page, scenario: string) {
+    const browser = page.context().browser();
+    if (!browser) throw new Error('A real browser is required for workspace evidence.');
+    return {
+        task: 'UI-SYSTEM-004 part 2', phase: workspacePhase, commit: workspaceCommit,
+        applicationBaseline: { ref: WORKSPACE_BASE, sourceTree: workspaceBaselineTree },
+        applicationSourceTree: workspaceApplicationTree,
+        fixture: { id: 'operator-math-three-questions-long-third-v1', sha256: workspaceFixtureHash, synthetic: true },
+        browser: { engine: browser.browserType().name(), version: browser.version(), project: test.info().project.name },
+        viewport: page.viewportSize(), scenario, masking: [],
+        variableFields: ['server-authoritative countdown', 'server timestamps'],
+        environment: { platform: process.platform, ci: !!process.env['CI'], physicalDevice: false },
+    };
+}
+
+/** Records baseline defects without blessing them. After remediation, enforces the new gates. */
+export async function captureWorkspace(page: Page, scenario: string, fullPage = false): Promise<void> {
+    await expect(page.locator('.timer-value')).toHaveCount(1);
+    await expect(page.locator('.options-list input[type=radio]')).toHaveCount(5);
+    await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
+    const metrics = await page.evaluate(() => {
+        const visible = (el: Element) => {
+            const box = el.getBoundingClientRect();
+            return box.width > 0 && box.height > 0;
+        };
+        const targets = [...document.querySelectorAll<HTMLElement>(
+            '.workstation-actions button, .option-item-label, .review-flag-toggle, .navigator-grid button, .sheet-dialog button, .broadcast-banner button'
+        )].filter(visible).map(el => {
+            const box = el.getBoundingClientRect();
+            return { name: el.getAttribute('aria-label') ?? el.innerText, width: box.width, height: box.height };
+        });
+        const textOverflow = [...document.querySelectorAll('.question-prompt, .option-text, .exam-context-subtitle, .broadcast-banner-text')]
+            .filter(visible).filter(el => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                return [...range.getClientRects()].some(box => box.left < -1 || box.right > document.documentElement.clientWidth + 1);
+            }).map(el => el.className);
+        const textStyles = [...document.querySelectorAll('.question-prompt, .option-text, .timer-display, .save-status-text, .exam-context-subtitle')]
+            .filter(visible).map(el => {
+                const style = getComputedStyle(el);
+                return { role: el.className, color: style.color, fontSize: style.fontSize, lineHeight: style.lineHeight };
+            });
+        const focusedOption = document.querySelector('.option-item-label:focus-within');
+        return {
+            scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth,
+            textOverflow, targets, textStyles,
+            timer: document.querySelector('.timer-value')?.textContent,
+            saveStatus: document.querySelector('.save-status-text')?.textContent,
+            reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+            focusedOption: focusedOption ? {
+                outlineStyle: getComputedStyle(focusedOption).outlineStyle,
+                outlineWidth: getComputedStyle(focusedOption).outlineWidth,
+            } : null,
+        };
+    });
+    const viewport = page.viewportSize();
+    const name = `workspace-${scenario}-${viewport?.width}x${viewport?.height}-${test.info().project.name}`;
+    const screenshot = `${name}.png`;
+    await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
+    writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
+        ...workspaceMetadata(page, scenario), screenshot, fullPage, metrics,
+        accessibilitySnapshot: await page.locator('.options-list').ariaSnapshot(),
+    }, null, 2));
+    // Baseline captures describe known defects; these thresholds become mandatory for the UI candidate.
+    if (workspacePhase === 'after') {
+        expect(metrics.scrollWidth, `${scenario}: document overflow`).toBeLessThanOrEqual(metrics.clientWidth);
+        expect(metrics.textOverflow, `${scenario}: clipped/wide text`).toEqual([]);
+        expect(metrics.targets.filter(t => t.width < 43.99 || t.height < 43.99), `${scenario}: targets below 44px`).toEqual([]);
+        if (scenario.includes('keyboard')) {
+            expect(metrics.focusedOption?.outlineStyle).toBe('solid');
+            expect(parseFloat(metrics.focusedOption?.outlineWidth ?? '0')).toBeGreaterThanOrEqual(2);
+        }
+    }
+}
+
+/** Primary matrix plus short/landscape/reflow stress. Other engines keep their existing project viewport. */
+export async function captureWorkspaceReading(page: Page): Promise<void> {
+    const original = page.viewportSize();
+    if (!original) throw new Error('Workspace captures require a viewport.');
+    const sizes = test.info().project.name === 'desktop-1280' ? [
+        { width: 360, height: 640 }, { width: 390, height: 844 }, { width: 430, height: 932 },
+        { width: 768, height: 1024 }, { width: 1024, height: 768 }, { width: 1280, height: 720 },
+        { width: 1440, height: 900 }, { width: 320, height: 568 }, { width: 568, height: 320 },
+        { width: 360, height: 480 }, { width: 1280, height: 360 },
+    ] : [original];
+    for (const size of sizes) {
+        await page.setViewportSize(size);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await captureWorkspace(page, 'long-reading');
+        await page.locator('.option-item-label').last().scrollIntoViewIfNeeded();
+        await captureWorkspace(page, 'long-options');
+        if (size.width === 360 || size.width === 1280) await captureWorkspace(page, 'long-full', true);
+    }
+    await page.setViewportSize(original);
+    // Explicit 200% text-resize emulation, not a claim of native browser zoom or a physical device.
+    // Compute all sizes first to avoid multiplying inherited sizes more than once. Restore every style.
+    await page.evaluate(() => {
+        const entries = [...document.querySelectorAll<HTMLElement>('.workstation-container, .workstation-container *')]
+            .map(el => ({ el, style: el.getAttribute('style'), size: parseFloat(getComputedStyle(el).fontSize) * 2 }));
+        for (const { el, style, size } of entries) {
+            el.dataset['workspaceOriginalStyle'] = JSON.stringify(style);
+            el.style.setProperty('font-size', `${size}px`, 'important');
+        }
+    });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await captureWorkspace(page, 'text-resize-200-percent');
+    await page.evaluate(() => {
+        for (const el of document.querySelectorAll<HTMLElement>('[data-workspace-original-style]')) {
+            const style: string | null = JSON.parse(el.dataset['workspaceOriginalStyle']!);
+            if (style === null) el.removeAttribute('style'); else el.setAttribute('style', style);
+            delete el.dataset['workspaceOriginalStyle'];
+        }
+    });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.keyboard.press('Tab');
+    await page.locator('.options-list input[type=radio]').first().focus();
+    await captureWorkspace(page, 'keyboard-reduced-motion');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.evaluate(() => window.scrollTo(0, 0));
+}
+
+// Preserve existing pause/lock/message/Teacher-preview captures as supplementary evidence.
+// Their existing assertions and capture sites remain untouched; no new screenshot is fabricated.
+test.afterEach(async ({ page }, info) => {
+    if (!existsSync(info.outputDir)) return;
+    for (const file of readdirSync(info.outputDir).filter(name => /^(paused|locked|broadcast-student|teacher-exam-preview)-.*\.png$/.test(name))) {
+        const screenshot = `workspace-existing-${file}`;
+        copyFileSync(path.join(info.outputDir, file), info.outputPath(screenshot));
+        writeFileSync(info.outputPath(screenshot.replace(/\.png$/, '.json')), JSON.stringify({
+            ...workspaceMetadata(page, file.replace(/\.png$/, '')), screenshot,
+            capture: 'existing E2E screenshot; project viewport; no new layout measurements',
+            test: info.title,
+        }, null, 2));
+    }
+});
 
 /**
  * Opens the client in a page that has not shown it yet. Every page of the client sends
@@ -203,4 +361,83 @@ export async function expireAttemptOf(elligbleId: string): Promise<void> {
          WHERE t.exam_attempt_id = a.id AND c.username = $1`,
         [elligbleId]
     ));
+}
+
+/** Existing production focus handler -> real timer API -> rendered countdown, without navigation. */
+async function resyncWorkspaceTimer(page: Page, attemptId: string, startedAt: string) {
+    const [request] = await Promise.all([
+        page.waitForRequest(request => {
+            const url = new URL(request.url());
+            return request.method() === 'GET' && url.origin === new URL(state.baseUrl).origin
+                && url.pathname === '/api/v1/assessment/timer' && url.searchParams.get('attemptId') === attemptId;
+        }, { timeout: 10_000 }),
+        page.evaluate(() => window.dispatchEvent(new Event('focus'))),
+    ]);
+    const response = await request.response();
+    if (!response) throw new Error('The production timer request returned no response.');
+    expect(response.status()).toBe(200);
+    const data: unknown = await response.json();
+    if (typeof data !== 'object' || data === null
+        || !('status' in data) || data.status !== 'active'
+        || !('startedAt' in data) || typeof data.startedAt !== 'string'
+        || !('effectiveRemainingSeconds' in data) || typeof data.effectiveRemainingSeconds !== 'number'
+        || !Number.isInteger(data.effectiveRemainingSeconds) || data.effectiveRemainingSeconds <= 0) {
+        throw new Error('The server did not return an active, positive timer.');
+    }
+    expect(new Date(data.startedAt).getTime(), 'server read the current database fixture').toBe(new Date(startedAt).getTime());
+    const remaining = data.effectiveRemainingSeconds;
+    const receivedAt = performance.now();
+    await expect.poll(async () => {
+        const parts = (await page.locator('.timer-value').innerText()).split(':').map(Number);
+        if (parts.length < 2 || parts.length > 3 || parts.some(p => !Number.isInteger(p) || p < 0)) return false;
+        const displayed = parts.reduce((total, part) => total * 60 + part, 0);
+        const elapsed = Math.ceil((performance.now() - receivedAt) / 1000) + 1;
+        return displayed <= remaining && displayed >= Math.max(0, remaining - elapsed);
+    }, { timeout: 5_000, message: 'Rendered countdown follows the actual server response' }).toBe(true);
+    return remaining;
+}
+
+/** Online-only visual fixture; restore the exact timer row even if the browser crashes.
+ * No page operation after a capture failure; preserve it as the primary exception.
+ */
+export async function captureWorkspaceTimer(page: Page, attemptId: string): Promise<void> {
+    const original = await withDatabase(async client => (await client.query<{ started_at: string; fixture: unknown }>(
+        'SELECT started_at::text, to_jsonb(t) AS fixture FROM secure_assessment_timer_state t WHERE exam_attempt_id = $1 AND tenant_id = $2',
+        [attemptId, state.tenantId]
+    )).rows[0]);
+    if (!original) throw new Error('Timer fixture does not belong to the isolated student attempt.');
+    let captureFailed = false;
+    let captureError: unknown;
+    try {
+        for (const [seconds, scenario, status] of [[240, 'timer-warning', 'warning'], [45, 'timer-urgent', 'urgent']] as const) {
+            const changed = await withDatabase(client => client.query<{ started_at: string }>(
+                `UPDATE secure_assessment_timer_state
+                 SET started_at = statement_timestamp() - (configured_duration_seconds - $3) * interval '1 second'
+                 WHERE exam_attempt_id = $1 AND tenant_id = $2 RETURNING started_at::text`, [attemptId, state.tenantId, seconds]
+            ));
+            expect(changed.rowCount).toBe(1);
+            const remaining = await resyncWorkspaceTimer(page, attemptId, changed.rows[0].started_at);
+            expect(remaining).toBeLessThanOrEqual(seconds);
+            if (status === 'warning') expect(remaining).toBeGreaterThanOrEqual(60);
+            await expect(page.locator('.timer-display')).toHaveClass(new RegExp(status));
+            await captureWorkspace(page, scenario);
+        }
+    } catch (error) {
+        captureFailed = true;
+        captureError = error;
+    }
+    try {
+        const restored = await withDatabase(client => client.query<{ fixture: unknown }>(
+            `UPDATE secure_assessment_timer_state AS t SET started_at = $3::timestamptz
+             WHERE exam_attempt_id = $1 AND tenant_id = $2 RETURNING to_jsonb(t) AS fixture`,
+            [attemptId, state.tenantId, original.started_at]
+        ));
+        expect(restored.rowCount).toBe(1);
+        expect(restored.rows[0].fixture, 'the entire original timer fixture row is restored').toEqual(original.fixture);
+    } catch (restoreError) {
+        if (captureFailed) throw new AggregateError([captureError, restoreError], 'Timer capture and fixture restoration failed', { cause: captureError });
+        throw restoreError;
+    }
+    if (captureFailed) throw captureError;
+    await resyncWorkspaceTimer(page, attemptId, original.started_at);
 }

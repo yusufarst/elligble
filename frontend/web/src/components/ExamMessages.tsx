@@ -20,7 +20,7 @@ export const ExamMessageNotice: React.FC<{
           <span className="broadcast-banner-more">{notice.more} pesan lain dapat dibaca di Daftar Soal.</span>
         )}
       </div>
-      <Button variant="secondary" size="sm" className="shrink-0" onClick={onDismiss}>Tutup</Button>
+      <Button variant="secondary" className="shrink-0" onClick={onDismiss}>Tutup</Button>
     </div>
   </div>
 );
