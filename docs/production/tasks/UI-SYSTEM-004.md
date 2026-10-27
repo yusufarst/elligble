@@ -227,7 +227,7 @@ Per 00.12 §5, the evidence commit is verified locally and deterministically; it
 | Field | Value |
 |---|---|
 | Task / classification | UI-SYSTEM-004 Part 3; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE |
-| Status | IN_PROGRESS: registered; baseline capture candidate only, UI implementation NOT STARTED |
+| Status | VERIFYING: baseline #75 and all 68 Teacher before captures PASS; bounded class-only UI candidate implemented, own final CI/after evidence and human reviews pending |
 | Risk | STANDARD, presentation-only; STOP on business semantics or material defect |
 | Owner authorization | GRANTED 2026-10-27 for the exact five-file scope and Task-specific CI-first order in this section; push YES, one PR YES, MERGE NO |
 | Base / predecessor | main `5f7a018e9e5f95ff14af7b11413ad07b29b1f405`; Part 2 DONE, PR #8 MERGED at that SHA; [main CI #74](https://github.com/yusufarst/elligble/actions/runs/40479321925), attempt 1, eight SUCCESS on ubuntu-24.04 |
@@ -277,3 +277,35 @@ Before each commit: exact expected HEAD/branch/base ancestry, Owner author AND c
 Existing purpose-fit engineering skill react-typescript-vite SHA-256 450285288fba41f497991f074f100a43ed2d714e51818caae3294663e5ccd558 and responsive skill frontend-responsive-ui SHA-256 d72a56fa99d64b54c9af01037802006ebe9e1c711f4cfc75a2fb0f34a2904ec1 are verified against the canonical inventory. No installation/dependency change.
 
 The E2E addition preserves original CSV strings and assertions. It captures actual Teacher state, exercises native keyboard selection and reveals keys only through the existing checkbox. Per-element style and viewport restoration preserve any primary error; crashes are not swallowed. Baseline/after source comparison uses immutable tree literals and current HEAD, avoiding the earlier shallow-checkout failure. The baseline commit cannot contain its own SHA; its actual commit/PR/CI and downloaded artifact results will be recorded at the next authorized checkpoint. Baseline gate PENDING; Part 3 NOT DONE.
+
+
+### 9.2 Baseline exit PASS before UI implementation
+
+Baseline content **`1d2fcea8961ef1e19c920e6fff0601ae5d5f7951`**, [PR #9](https://github.com/yusufarst/elligble/pull/9), [CI #75](https://github.com/yusufarst/elligble/actions/runs/40482951720) (40482951720), automatic push attempt **1**, terminal **COMPLETED / SUCCESS**. All eight jobs on ubuntu-24.04 SUCCESS: web typecheck/**344/344 tests in 34 files**/build (122117568816); runtime typecheck/unit/real PostgreSQL (122117569232); container build/smoke (122117915143); mobile (122117915190), tablet (122117915368), desktop (122117915281), Firefox (122117915374) and WebKit (122117915238) each **22/22 PASS**. The desktop browser installation took longer; the original run was allowed to complete without cancellation, rerun or further push. No skipped tests/retries or heavy local suites.
+
+All five actual successful artifacts were retrieved to ELLIGBLE-only scratch `UI-SYSTEM-004-PART3/ci-75-before` and inspected/validated before any application edit:
+
+| Artifact | ID | Teacher PNG/JSON pairs |
+|---|---|---|
+| workspace-visual-desktop-1280 | 12724033080 | 12 |
+| workspace-visual-mobile-360 | 12724330285 | 16 |
+| workspace-visual-tablet-768 | 12723583410 | 12 |
+| workspace-visual-firefox-1280 | 12724310507 | 12 |
+| workspace-visual-webkit-390 | 12724271384 | 16 |
+
+**68 before pairs**, in addition to the existing Student captures, all labeled UI-SYSTEM-004 Part 3 / before, exact baseline commit and source tree `bd628231c9f5a00a6a103a89dd3a40cb8bdbba6f`. Existing Teacher CSV SHA-256 **`11d4920fd5bed0eab02db6884f0437e498c2202cd090bdea6432dc7abdbd1c71`** is unchanged. Browser versions: Chromium 141.0.7390.37, Firefox 142.0.1, WebKit 26.0. Native viewport plus all three primary sizes, hidden/shown keys and normal/200% text sizes are present; real PNG dimensions account for recorded device scale and baseline horizontal overflow. PNG/JSON identity, fixture, phase, keyboard selection and radio accessibility snapshots verified. The original no-attempt assertion still PASS.
+
+Actual normal/mobile images and DOM metrics confirm 36px back and 40px question-number targets; the focused non-key answer label has no outline, while a correct-key label retains its existing 2px outline with 0px offset. At 360px/200% text size, measured horizontal overflow is **109px** with back/next text outside the viewport across all five engines/projects. These are baseline defects, not failed baseline journey assertions or a false accessibility PASS. Full-page images can place sticky shared chrome at the capture's current scroll offset; this rendering limitation is recorded, no image is edited or substituted and no claim of physical-device/native-zoom certification is made.
+
+### 9.3 Bounded presentation candidate
+
+Only after the entire §9.2 gate PASS, TeacherExamPreviewView.tsx receives class-only edits:
+
+- Existing shared back Button keeps its ghost/small typography and callback, but uses auto height, canonical 44px minimum, bounded width and wrapping.
+- Existing question-number buttons use canonical 44px minimum height/width, preserving numbers, aria-current, accessible names and handlers.
+- Native-radio labels gain the existing 2px focus outline/ring with 2px offset through focus-within. The key's existing marker/outline stays intact; focusing the correct key adds offset and focusing a different answer remains independently visible. No JavaScript focus behavior is changed.
+- Existing previous/next shared Buttons allow text wrapping/auto height with 44px minimum, and their row wraps when text is enlarged. This directly addresses the observed 200% overflow. Disabled conditions and navigation callbacks are unchanged.
+
+A reversible source guard must recover the entire original component by removing only those exact presentation strings. The inherited Student source, shared CSS/primitives, tokens, workflow, fixture, helper, types, hooks and runtime remain unchanged. No additional unit tests merely mirror class strings: existing preview semantic tests remain intact and the approved E2E checks exercise actual native keyboard behavior, painted focus and target/reflow geometry. Syntax/transpile-only and exact-diff guards are local checks; they do not claim typecheck or rendered PASS.
+
+The new content commit's own automatic attempt-1 CI, complete actual test counts and all 68 matched after pairs are PENDING. Do not reuse baseline or another SHA's PASS. Inspect actual after images for material defects, then present paired evidence for the required Independent Second Reviewer and Owner approvals. Part 3 remains VERIFYING / NOT DONE; no final evidence commit before those approvals, no merge and no next Task.
