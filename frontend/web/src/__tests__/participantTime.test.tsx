@@ -293,11 +293,20 @@ describe('time added, on the student device', () => {
 
   it('says it on the paused screen too, next to the frozen time', async () => {
     const state = { added: 0, examState: 'PAUSED' };
-    globalThis.fetch = server(state) as unknown as typeof fetch;
-    render(<StudentExamWorkstation />);
+    const fetchMock = server(state);
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    await act(async () => {
+      render(<StudentExamWorkstation />);
+    });
     expect(await screen.findByRole('heading', { name: 'Ujian Dijeda' })).toBeTruthy();
+    // Wait for initialization/effects before the single reconnect event, not just the heading.
+    expect(await screen.findByText('Semua jawaban yang Anda pilih sebelum ujian dijeda sudah tersimpan.')).toBeTruthy();
+    expect(document.visibilityState).toBe('visible');
+    const timerRequests = () => fetchMock.mock.calls.filter(([url]) => url.includes('/api/v1/assessment/timer'));
+    const requestsBeforeOnline = timerRequests().length;
     state.added = 180;
     await checkNow();
+    expect(timerRequests()).toHaveLength(requestsBeforeOnline + 1);
     expect(await screen.findByText('Waktu pengerjaan Anda ditambah 3 menit.')).toBeTruthy();
     expect(screen.getByText('45:10')).toBeTruthy();
   });
