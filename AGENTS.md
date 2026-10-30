@@ -38,7 +38,7 @@ LEGACY       → reference only until audited
 - If the working tree is non-clean, execute the working-state reconstruction protocol in `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` before acting.
 - Never use a stale state file alone to overwrite or restart in-progress work.
 
-Architecture, API and UI work is authorized when it serves the critical path in the living plan and respects the LOCKED decisions it touches.
+Architecture, API and UI work must serve the critical path in the living plan and respect the LOCKED decisions it touches. Actual execution requires explicit Owner authorization of one bounded READY Task by ID under DEC-045 (00.12 §4–§5); critical-path relevance alone is not authorization.
 
 ## Product Guardrails
 
@@ -88,7 +88,7 @@ DROP
 Follow `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (execution model) and the non-superseded parts of `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` (baseline-first priority, Baseline Completion Gate).
 
 - **AUTHORIZED TASK ONLY (DEC-045):** implement only the Task the Owner authorized, within its contract; the critical path is the P11 Task baseline.
-- **PRODUCT COMPLETION FIRST:** Work the shortest safe production critical path recorded in `docs/production/PRODUCTION_COMPLETION_PLAN.md`. Keep that plan current in the same change.
+- **PRODUCT COMPLETION FIRST:** Prioritize the shortest safe production critical path recorded in `docs/production/PRODUCTION_COMPLETION_PLAN.md`. Execute only the bounded Task explicitly authorized by the Owner under DEC-045; keep the plan current in the same change. This product priority does not authorize autonomous Task selection or continuation.
 - **NO NEW BUILD UNITS:** Do not create BU-091 or later, Stage-1..5 lifecycle records, Controller stage audits, or lifecycle-close / navigation-correction commits. BU-001..BU-090 are historical construction assets: do not reopen or rewrite them.
 - **BASELINE PRIORITY:** `IN — CORE` + `IN — MANDATORY BASELINE` first. `OPTIONAL` / `FUTURE` stay deferred until the Baseline Completion Gate passes.
 - **REUSE PROVEN CAPABILITIES:** Compose and extend existing runtime/schema capabilities; do not duplicate them. Fix them when evidence shows a defect.
