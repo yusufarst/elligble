@@ -610,4 +610,28 @@ Scope Change: NO, complete DEC-044 R01–R31/G1–G10 retained
 Owner Approval Required: YES, final P11 approval NOT GRANTED
 ```
 
-Required exit: exact-content automatic attempt-1 eight-job CI SUCCESS; Independent HIGH-risk Review of completeness/bounds/dependencies/P1 prerequisites; explicit Owner review and final P11 decision only after applicable prerequisites. Until then **NOT APPROVED / NOT ACTIVE**, no evidence commit or implementation. This document never self-approves by passing deterministic checks or CI.
+**Owner-approved Task-local closure amendment — 2026-10-31:** the following replaces the former combined “Required exit” paragraph only. It separates completion of GOV-REALIGN-006's PRE-P11 candidate-preparation outcome from final P11 approval. DEC-044, DEC-045, P1 §8 and every other LOCKED/FROZEN decision remain unchanged.
+
+### GATE A: PRE-P11 CANDIDATE TASK CLOSURE
+
+GOV-REALIGN-006 may become DONE strictly for candidate preparation and acceptance when all of these are satisfied:
+
+- One complete finite P11 candidate, with its required scope, traceability and deterministic verification.
+- Required automatic exact-content CI PASS, attempt 1, all eight jobs SUCCESS on the latest corrective content SHA.
+- Independent HIGH-risk Review PASS for that content, including targeted review of this closure-contract amendment.
+- Explicit Owner candidate acceptance applicable to the candidate content.
+- Candidate-preparation evidence recorded and required Task closure/evidence-commit requirements satisfied under DEC-045 and explicit Owner authority.
+
+Final P11 baseline approval, including P5/O09 and P6/O07 final-approval prerequisites, is **NOT a prerequisite for this PRE-P11 Task's candidate-only DONE**. GOV-REALIGN-006 remains excluded from baseline DONE/counters. This corrective content commit keeps GOV-REALIGN-006 **VERIFYING / NOT DONE**; after its CI, STOP for targeted Independent HIGH-risk Review. No evidence commit or DONE is authorized at this checkpoint.
+
+### GATE B: FINAL P11 BASELINE APPROVAL
+
+Final P11 approval and tracker activation remain blocked until all of these are satisfied:
+
+- P1 §8 applicable prerequisites are satisfied.
+- Detailed P5/O09 is explicitly approved.
+- Numeric P6 workload/budgets O07 are explicitly approved.
+- Other applicable P1–P10 planning sufficiency is reviewed.
+- The Owner gives **separate, explicit final P11 baseline approval**.
+
+Only after Gate B may TASK_PLAN.md become the active execution tracker under DEC-045. **GATE A does not imply GATE B.** Candidate acceptance or Task closure does not approve O01–O09, close PB05/other blockers, authorize implementation/deployment or make production ready. This document remains **CANDIDATE / NOT APPROVED / NOT ACTIVE**; implementation still requires separate Owner authorization of a bounded READY Task.
