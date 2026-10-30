@@ -6,8 +6,8 @@
 |---|---|
 | Classification | BUILD / PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE |
 | Risk | HIGH: finite release execution/dependency/approval control; documentation only |
-| Status | VERIFYING / NOT DONE; Owner-authorized closure-contract amendment prepared under §7. Its exact-content CI and fresh targeted Independent HIGH-risk Review remain pending; no evidence commit or DONE authorized now. Gate B final-P11 prerequisites remain separate. |
-| Owner authorization | Original candidate preparation and targeted lifecycle correction authorizations are preserved in §5/§6. Owner explicitly authorizes the narrow two-file candidate-only closure-contract amendment on 2026-10-31 (§7): one corrective content commit/normal push/automatic CI, then STOP for targeted amendment review. |
+| Status | DONE — PRE-P11 CANDIDATE PREPARATION ONLY (2026-10-31). Gate A satisfied with final evidence/Owner authority in §8; excluded from baseline DONE. Gate B NOT SATISFIED; final P11 remains NOT APPROVED / NOT ACTIVE. |
+| Owner authorization | Original preparation/correction/amendment authorities remain in §5–§7. Owner final Gate-A authorization dated 2026-10-31 permits exactly one Task-record-only evidence commit and normal push to existing PR #13 for candidate-only closure (§8); no final P11 approval, implementation, merge or successor. |
 | Objective | One finite candidate covering all P1 R01–R31 and DEC-044 G1–G10 with bounded outcomes, dependencies, external approval/unblock conditions, evidence, risks, proposed execution scopes and mechanically consistent counters |
 | Base | main `77756e38ff4e289e7b6ebcda63d753749854756d`; PR #12 MERGED; GOV-REALIGN-005 DONE planning only; main CI #89 exact-SHA attempt 1 eight SUCCESS |
 | Branch | `task/gov-realign-006-p11-baseline` |
@@ -15,12 +15,12 @@
 | Parallel safe | NO; one active authorized Task |
 | DB/API/UI/localization impact | NONE implemented. Candidate describes future impacts/scopes and existing invariants only; no UI polish, role/route/schema or language change |
 | Cost/vendor impact | No dependency, provider, package or paid service introduced; existing automatic CI only. Actual school cost facts remain UNKNOWN |
-| Independent HIGH-risk Review | Original 69f1564 STOP; targeted re-review PASS on 1bb8531, confirmed by Owner 2026-10-31. Fresh targeted HIGH-risk Review of this closure-contract amendment PENDING; no prior PASS transferred to new content. |
-| Owner review / final P11 approval | Owner candidate acceptance APPROVED on prior content 1bb8531, 2026-10-31 (§7). Final P11 NOT APPROVED; P1 §8 P5/O09 and P6/O07 prerequisites remain required for Gate B, not candidate-only Task closure. This amendment remains subject to its own review/closure gates. |
-| Content / CI / PR | Original 69f156433832f849fa0d136b743cb004a9d90422 / CI #90 eight SUCCESS; lifecycle correction 1bb85318cf2de5a9db4042a5606c412e8a872075 / CI #91 (41041174471), attempt 1 eight SUCCESS; PR #13 OPEN / NOT MERGED. New amendment SHA/CI resolved after publication, never self-recorded; no evidence commit now. |
-| Definition of DONE | Gate A (§7; TASK_PLAN.md §11): one complete finite candidate, required verified exact-content CI, Independent HIGH-risk Review PASS including the amendment, explicit Owner candidate acceptance, recorded candidate-preparation evidence and required Task closure/evidence-commit controls. GOV-REALIGN-006 may then close strictly for that PRE-P11 outcome. Final P11 approval and its P5/O09/P6/O07 prerequisites are NOT prerequisites for candidate-only Task DONE; they remain Gate B activation requirements. This content commit keeps VERIFYING / NOT DONE. |
+| Independent HIGH-risk Review | Original 69f1564 STOP retained; lifecycle 1bb8531 re-review PASS; targeted closure-amendment Review PASS on bc2619d, expressly confirmed by Owner final Gate-A authority (§8). No executor self-approval. |
+| Owner review / final P11 approval | Owner candidate acceptance APPROVED on 2026-10-31 remains applicable to the completed reviewed candidate under explicit final Gate-A closure authority. Final P11 NOT APPROVED; P1 §8/P5/O09/P6/O07 and separate final Owner approval remain Gate B requirements (§8). |
+| Content / CI / PR | Final approved content bc2619d65553b10d912c61703ce4c82520c5c8cc / CI #92 (41101115895), attempt 1, eight SUCCESS on ubuntu-24.04. Original 69f1564/CI #90 and lifecycle 1bb8531/CI #91 history retained in §8. PR #13 OPEN / NOT MERGED; this evidence commit never records its own SHA. |
+| Definition of DONE | Gate A (§7; TASK_PLAN.md §11): one complete finite candidate, required verified exact-content CI, Independent HIGH-risk Review PASS including the amendment, explicit Owner candidate acceptance, recorded candidate-preparation evidence and required Task closure/evidence-commit controls. GOV-REALIGN-006 may then close strictly for that PRE-P11 outcome. Final P11 approval and its P5/O09/P6/O07 prerequisites are NOT prerequisites for candidate-only Task DONE; they remain Gate B activation requirements. Gate A satisfaction and candidate-only DONE are recorded in §8; Gate B remains NOT SATISFIED. |
 
-### Original candidate-publication allowlist (historical; corrective scopes in §6/§7)
+### Original candidate-publication allowlist (historical; corrections §6/§7, final one-file evidence scope §8)
 
 1. `docs/production/TASK_PLAN.md`
 2. `docs/production/tasks/GOV-REALIGN-006.md`
@@ -40,7 +40,7 @@ No fifth file, P1–P10 artifact edit, application/runtime/frontend/test/workflo
 - Record actual PR #12 landing and CI #89; synchronize living-plan active/checkpoint fields and document index in same change, preserving historical verification, completed UI states/cosmetic deferment and all OPEN decisions.
 - Lightweight local gates: exact four-file unstaged/staged scope, source/reference/ID/coverage checks, cycle/counter/status consistency, immutable P1–P10/application/test/workflow integrity, whitespace, Owner identity and secrets/attribution.
 - Task-specific verification order: lightweight preconditions → one content commit → normal push/one PR → automatic unchanged existing CI on exact SHA, attempt 1, eight jobs SUCCESS on ubuntu-24.04. Read actual logs/test inventory; do not freeze future suites to historical counts or skip/weaken/rerun tests.
-- Candidate-only Task closure follows Gate A, separately from final-P11 approval/activation under Gate B (§7; TASK_PLAN.md §11), by explicit Owner-approved supersession of the conflicting Task-local closure wording. This amendment needs its own exact-content CI, then STOP for targeted Independent HIGH-risk Review; no evidence commit or DONE is authorized now. Final P11/O09/O07 approvals remain separate mandatory Gate B requirements.
+- Candidate-only Task closure follows Gate A, separately from final-P11 approval/activation under Gate B (§7; TASK_PLAN.md §11), by the recorded Owner-approved Task-local amendment. Amendment CI #92 and targeted HIGH-risk Review PASS, applicable Owner candidate acceptance and final one-file evidence authority are recorded in §8. Final P11/O09/O07 approvals remain separate mandatory Gate B requirements; no implementation or activation follows from this Task DONE.
 
 ## 2. Physical entry and predecessor landing
 
@@ -184,3 +184,75 @@ Candidate content is preserved: **33** Tasks, **33 BLOCKED**, **0 READY**, **0 D
 Local deterministic guards **PASS**, before staging/publication: exactly two authorized modified paths; TASK_PLAN.md before the former §11 exit byte-preserved, including all candidate contracts, counters and histories; Task-record §2–§6 historical body byte-preserved. Recomputed **33** stable Task IDs, **33 BLOCKED**, **0 READY**, **0 DONE**, **0%** progress, **78** unchanged internal edges/acyclic graph, **33** unchanged external definitions/**94** references, **31** requirement rows and **10** release gates. Gate A candidate-only closure and Gate B final approval are distinct; P1 §8/P5/O09/P6/O07 prerequisites and NOT APPROVED / NOT ACTIVE protections remain. **15** local Markdown links resolve. All files outside the two-file allowlist are unchanged; whitespace, Owner configured/effective identity, secret-shaped-content and attribution-trailer checks PASS; exact diff reviewed. Final staged scope/whitespace/tree/identity checks and new exact-content CI remain required; no heavy local tests or unrun CI PASS is claimed.
 
 Create exactly one controlled corrective content commit after guards PASS; inspect fuller/raw metadata and normal push to existing PR #13. Record its actual SHA/new automatic attempt-1 eight-job CI outside its own commit. Any failed CI or scope/state conflict stops the work; no automatic second correction or CI rerun. After CI SUCCESS, **STOP for targeted Independent HIGH-risk Review of this amendment**. Keep **VERIFYING / NOT DONE**. Do not create an evidence commit, merge, approve final P11, implement or start another Task.
+
+## 8. Final Gate-A candidate-preparation completion — 2026-10-31
+
+### 8.1 Explicit final evidence authority and verified entry
+
+The Owner's **FINAL GATE-A CANDIDATE ACCEPTANCE EVIDENCE** authorization received 2026-10-31 explicitly permits exactly **one controlled Task-record-only evidence commit** and normal push to existing PR #13, to close GOV-REALIGN-006 as a **PRE-P11 candidate-preparation Task only** after final Gate-A verification. The sole modification path is `docs/production/tasks/GOV-REALIGN-006.md`. No TASK_PLAN, living-plan, manifest, policy, blocker, application/test/workflow or other file modification is authorized.
+
+Physical entry reverified: root `C:/Projects/ELLIGBLE`; branch `task/gov-realign-006-p11-baseline`; HEAD and upstream both `bc2619d65553b10d912c61703ce4c82520c5c8cc`; CLEAN with no staged/untracked work. Owner configured/effective author and committer **Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>**; identity unchanged. GitHub user yusufarst through the dedicated ELLIGBLE GH_CONFIG_DIR; PR #13 OPEN / NOT MERGED at exact content SHA. CI #92/run 41101115895 independently reverified COMPLETED/SUCCESS, attempt 1, exact SHA; all eight jobs individually SUCCESS on ubuntu-24.04.
+
+The Owner confirms **targeted Independent HIGH-risk Review PASS on closure amendment bc2619d**, the earlier lifecycle re-review PASS on 1bb8531, and **Owner candidate acceptance APPROVED on 2026-10-31 remains applicable** to this completed, reviewed candidate. This final authorization explicitly finds Gate A eligible subject to final evidence verification. These are Owner-confirmed review/acceptance results, not executor self-approval; no reviewer identity or external report is invented.
+
+### 8.2 Complete content and review history
+
+| Content checkpoint | Automatic CI / recorded result | Independent review / disposition |
+|---|---|---|
+| Original candidate `69f156433832f849fa0d136b743cb004a9d90422` | [CI #90](https://github.com/yusufarst/elligble/actions/runs/41035113018), run 41035113018, attempt 1, eight SUCCESS | **STOP**: READY/DONE external gate conflation. Passing CI did not resolve the governance defect; original finding preserved in §6 |
+| Lifecycle correction `1bb85318cf2de5a9db4042a5606c412e8a872075` | [CI #91](https://github.com/yusufarst/elligble/actions/runs/41041174471), run 41041174471, attempt 1, eight SUCCESS | Independent HIGH-risk re-review **PASS**, confirmed by Owner. Candidate acceptance **APPROVED 2026-10-31**, with final P11 NOT APPROVED, O01–O09/PB05 OPEN; original quote preserved in §7 |
+| Closure-contract amendment `bc2619d65553b10d912c61703ce4c82520c5c8cc` | [CI #92](https://github.com/yusufarst/elligble/actions/runs/41101115895), run 41101115895, attempt 1, eight SUCCESS, exact approved content | Targeted Independent HIGH-risk Review **PASS on bc2619d**, expressly confirmed by the Owner's final Gate-A evidence authorization |
+
+All three content checkpoints retain their historical findings and verification. The content commits' configured Owner attribution and software-only raw messages are checked before this evidence publication; no history is rewritten. Earlier §5–§7 pending/stop statements describe their original publication checkpoints. Their Gate-A review/evidence waits are resolved by this authorized completion record; no Gate-A or Gate-B condition is amended here.
+
+### 8.3 Final approved-content CI evidence
+
+CI #92 belongs to exact `bc2619d65553b10d912c61703ce4c82520c5c8cc`, automatic push, **attempt 1**, **COMPLETED / SUCCESS**. All eight jobs were individually reverified with runner label **ubuntu-24.04**:
+
+| Job | Job ID | Verified result |
+|---|---|---|
+| Web client | 124218358107 | SUCCESS: typecheck, **344/344 tests in 34 files**, production build |
+| Runtime | 124218358228 | SUCCESS: typecheck, unit tests and real PostgreSQL integration |
+| Container image | 124220048967 | SUCCESS: image build and smoke test |
+| Browser tablet-768 | 124220049002 | SUCCESS: **22/22 E2E** |
+| Browser mobile-360 | 124220049009 | SUCCESS: **22/22 E2E** |
+| Browser desktop-1280 | 124220049023 | SUCCESS: **22/22 E2E** |
+| Browser firefox-1280 | 124220049057 | SUCCESS: **22/22 E2E** |
+| Browser webkit-390 | 124220049081 | SUCCESS: **22/22 E2E** |
+
+Actual web/browser inventory comes from the exact CI #92 job logs verified at amendment publication; the immutable run/SHA/attempt and all eight conclusions were reverified for this final evidence. Existing complete suites were retained; no tests, assertions, fixture, dependencies or workflow were changed, skipped, weakened or rerun to obtain PASS. No heavy local test, Docker, database, port, global-process or other-project operation was performed. CI verifies existing scope, not new load, physical-device, restore, UAT or production readiness.
+
+### 8.4 Gate A verification and completed bounded outcome
+
+| Gate-A requirement | Completion evidence |
+|---|---|
+| Complete finite candidate | TASK_PLAN.md reverified identical to approved bc2619d; **33** unique finite Tasks, **all 33 BLOCKED**, **0 READY**, **0 DONE**, **0% progress**; **78** internal dependencies, acyclic; **33** external definitions; all **R01–R31** and **G1–G10** mapped |
+| Exact-content CI PASS | CI #92/run 41101115895, exact approved SHA, attempt 1, eight SUCCESS on ubuntu-24.04 (§8.3) |
+| Independent HIGH-risk Review PASS | Original 69f1564 STOP preserved; lifecycle 1bb8531 re-review PASS and closure-amendment bc2619d targeted Review PASS confirmed by Owner (§8.2) |
+| Explicit Owner candidate acceptance | APPROVED on 2026-10-31; Owner's final Gate-A authorization reaffirms applicability to this reviewed candidate and authorizes candidate-only closure |
+| Evidence and Task closure controls | Content/CI/review/acceptance evidence recorded here; exactly one Task-record-only evidence commit under DEC-045, subject to final deterministic diff/identity/publication guards |
+
+**GOV-REALIGN-006: DONE — PRE-P11 CANDIDATE PREPARATION ONLY**, 2026-10-31. This is completion of the bounded candidate-preparation/acceptance outcome under Gate A, not completion or activation of the final P11 baseline. No baseline DONE is added. Existing completed work/history is preserved; no completed Task is reopened.
+
+### 8.5 Gate B and unresolved release boundaries preserved
+
+```text
+FINAL P11: NOT APPROVED
+TASK_PLAN.md: CANDIDATE / NOT ACTIVE
+33 BASELINE TASKS: BLOCKED
+BASELINE DONE: 0
+O01–O09: OPEN
+PB05: OPEN
+P5/O09 APPROVAL: REQUIRED
+P6/O07 APPROVAL: REQUIRED
+IMPLEMENTATION: NOT AUTHORIZED
+PRODUCTION: NOT READY
+```
+
+Gate B is **NOT SATISFIED**. P1 §8 applicable prerequisites, detailed P5/O09 approval, numeric P6 workload/budget O07 approval, other applicable planning sufficiency review and separate explicit final Owner P11 approval remain mandatory. All other applicable OPEN blockers remain OPEN; P6 numerical budgets remain PROPOSED and actual school operating facts UNKNOWN. No new policy/ADR, release-gate PASS, load capacity/device/restore/UAT result, deployment, design-governance implementation or successor authorization is inferred. DEC-044/045, P1 §8 and all other LOCKED/FROZEN decisions remain unchanged.
+
+### 8.6 One-file evidence-publication gate
+
+Local deterministic evidence guards **PASS**, before staging/publication: exactly this one modified Task record; TASK_PLAN.md identical to approved bc2619d and every other file unchanged; historical §2–§7 body byte-preserved and Gate-A/Gate-B closure contract unchanged. Recomputed **33** candidate Tasks/all BLOCKED, **0 READY**, **0 baseline DONE**, **0%** progress, **78** internal edges/acyclic graph, **31** requirement rows, **10** release gates and **33** external definitions. Complete original/corrective/amendment CI, Owner-confirmed reviews/acceptance and explicit final evidence authority are recorded; Gate B and all OPEN boundaries remain. All three content commits were rechecked for exact Owner author/committer identity and software-only raw messages without attribution. Exact diff reviewed; whitespace, secret-shaped-content/attribution and configured/effective Owner checks PASS; no broken local Markdown link introduced. Final staged one-file scope, whitespace, tree and identity checks remain required before the controlled commit. No heavy local tests or recursive evidence-CI prerequisite is introduced.
+
+Create exactly **one** controlled Task-record-only evidence commit, inspect `git log -1 --format=fuller` and raw `git log -1 --format=%B`, normal push to existing branch/PR #13, then verify the remote PR head. The evidence commit never records its own SHA; report its actual SHA outside its contents. Under DEC-045 §5, its own automatic CI is **not a DONE prerequisite** and does not require a second evidence commit. Owner reviews and squash-merges separately. STOP after reporting; no merge, final P11 activation/approval, implementation or successor Task.
