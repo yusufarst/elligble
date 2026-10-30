@@ -14,7 +14,7 @@ Before doing anything:
 8. Verify work before `DONE` (00.10 §4).
 9. Do not reuse legacy CBT code/migrations/RLS/RPC without audit.
 10. Do not introduce paid AI dependencies into baseline ELLIGBLE.
-11. Do not create Build Units or Stage lifecycle records. Work the critical path and keep the living plan current.
+11. Do not create Build Units or Stage lifecycle records. Prioritize the production critical path, but execute only one bounded READY Task explicitly authorized by the Owner by ID under DEC-045 (00.12 §4–§5); keep the living plan current. Do not autonomously select or start another Task.
 
 Current high-level phase truth:
 

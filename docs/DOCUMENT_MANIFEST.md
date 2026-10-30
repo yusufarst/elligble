@@ -1,7 +1,8 @@
 **Status:** ACTIVE / CANONICAL DOCUMENT INDEX
-**Version:** 1.2.1
+**Version:** 1.2.2
 **Canonical:** CANONICAL DOCUMENT INDEX
-**Supersedes:** 1.2.0
+**Supersedes:** 1.2.1
+> **Administrative Note:** v1.2.2 registers the derived P1 `docs/production/CBT_RELEASE_DEFINITION.md` (submitted, approval pending) and PRE-P11 HIGH-risk Task record GOV-REALIGN-003; records the Owner-authorized limited DEC-045 execution-wording alignment. No new policy, P11 baseline or production gate closure.
 > **Administrative Note:** v1.2.1 registers `docs/production/EXECUTION_CONTEXT.md` and `docs/production/TOOLCHAIN.md` (P0 under DEC-045; GOV-REALIGN-002).
 > **Administrative Note:** v1.2.0 registers `00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (DEC-044), `00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (DEC-045), the AICWDF v4.3 reference copy, `docs/decisions/ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md` (DEC-046) and the Task records folder `docs/production/tasks/`, and updates the living plan and decision log descriptors.
 > **Administrative Note:** v1.1.3 registers `docs/design/UI_CONSISTENCY_AUDIT.md`, the working record of the UI consistency audit (UI-SYSTEM-001) under the Owner's UI/UX consistency contract (plan §10.1).
@@ -90,6 +91,8 @@ NEVER_DEFAULT
 | `docs/00-governance/reference/AICWDF_v4.3_EN.md` | Reference copy of the AI-First Complex Web Application Delivery Framework v4.3 (external framework, unchanged, read-only); authority per 00.12 §1. | Reference | On demand |
 | `docs/production/PRODUCTION_COMPLETION_PLAN.md` | Living production completion plan: capabilities, P0/P1 gaps, critical path, Owner decisions, verification evidence, blockers, deployment readiness, next work. Live production state, evidence and continuity; Task status moves to TASK_PLAN.md at P11 approval (DEC-045). | LIVING PLAN (DEC-042) | ALWAYS |
 | `docs/production/tasks/` | Task contracts and records (AICWDF §23; DEC-045): one file per Task with status history, evidence and independent review. GOV-REALIGN-001 is a pre-baseline governance Task, not counted in the P11 baseline. | Live Task records | When executing or reviewing a Task |
+| `docs/production/CBT_RELEASE_DEFINITION.md` | Derived P1 CBT-R1 scope, roles, requirement/evidence/gap map, G1–G10, PB01–PB12 and P2–P11 prerequisites under DEC-044/045 and ADR-001; not release or baseline approval. | DERIVED P1 / SUBMITTED FOR REVIEW | CBT-R1 planning and release review |
+| `docs/production/tasks/GOV-REALIGN-003.md` | Owner-authorized PRE-P11 HIGH-risk six-file P1/execution-guard contract, status and evidence; Independent Review and explicit Owner P1 approval required before DONE. | Live Task record (DEC-045) | When executing or reviewing GOV-REALIGN-003 |
 | `docs/production/EXECUTION_CONTEXT.md` | Executor and reviewer navigation aid (00.12 §4): what ELLIGBLE is now, where the live state is, the read path and the rules that stop work, each as a pointer to its authority; holds no live state. | ACTIVE (DEC-045), non-canonical | ALWAYS/Agent setup |
 | `docs/production/TOOLCHAIN.md` | Verified toolchain state (00.12 §8): the executor machine, CI (runner pinned to ubuntu-24.04, E2E-003) and the development container, each with its evidence. | ACTIVE (DEC-045) | When executing a Task |
 | `docs/production/OPERATIONS_RUNBOOK.md` | Operations runbook: deployment shape, release and migration procedure, health and log fields, rollback, backup and restore drill, incident basics, pilot school provisioning with the audited operator CLI, local development and the browser end-to-end suite. | ACTIVE (DEC-042) | WHEN DEPLOYING OR OPERATING |
