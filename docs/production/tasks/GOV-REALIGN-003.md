@@ -6,7 +6,7 @@
 |---|---|
 | Classification | BUILD / PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE |
 | Risk | HIGH: governance execution-guard alignment; no new governance policy or product semantics |
-| Status | VERIFYING; not DONE |
+| Status | DONE (2026-10-30); final content/reviews/evidence in §6 |
 | Owner authorization | Explicit GOV-REALIGN-003 bounded six-file contract, received 2026-10-30; branch/docs/content commit/normal push/one PR YES; squash merge/deployment NO |
 | Objective | One complete derived P1 scope/acceptance/evidence/gap map for CBT-R1, and only the legacy execution wording carried by GOV-REALIGN-002 §2.2 aligned to DEC-045 |
 | Base | `8f51c77c081a5aa06ecbeedf054ebb3c310d4fbb` on main; PR #9 merged; main CI #79 attempt 1, eight SUCCESS |
@@ -16,9 +16,9 @@
 | Database / API / route / UI / localization impact | NONE; existing application, tests, fixtures and workflow immutable in this Task |
 | Cost/vendor impact | No new vendor or recurring dependency; existing GitHub Actions usage only; no production action |
 | Required tools | Git/Node/gh (dedicated ELLIGBLE GH_CONFIG_DIR), source inspection; existing automatic CI. Graphify consulted as derived navigation only |
-| Independent review | PENDING, required HIGH-risk independent review, not self-awarded |
-| Owner P1 approval | PENDING; execution authorization does not approve the completed artifact |
-| PR / content SHA / own CI | Resolved after publication; a commit never records its own SHA. Final evidence commit records the exact content SHA/run/results |
+| Independent review | PASS, Owner-confirmed Independent HIGH-risk Review of final content 6c9d311; recorded 2026-10-30 (§6) |
+| Owner P1 approval | PASS, 2026-10-30: "P1 APPROVED — GOV-REALIGN-003 — SHA 6c9d311" (§6) |
+| PR / content SHA / own CI | [PR #10](https://github.com/yusufarst/elligble/pull/10) OPEN; final content `6c9d3111674230dfafd78a152f10ba3b16ce9985`; CI #81 (41007229824), attempt 1, eight SUCCESS on ubuntu-24.04 (§6). This evidence commit never records its own SHA |
 
 ### Exact allowlist
 
@@ -82,6 +82,7 @@ STOP for unexpected working/remote state, identity mismatch, invalid references/
 | 2026-10-30 | IN_PROGRESS | Exact authorized branch created; canonical sources and targeted implementation evidence re-read; P1 artifact and carried guard alignment prepared |
 | 2026-10-30 | VERIFYING | Six-file content prepared for deterministic guards and publication; own CI and both required human approvals pending |
 | 2026-10-30 | VERIFYING | Owner authorizes one targeted two-file corrective content commit for the Independent HIGH-risk Review finding in living plan §1; new exact-SHA CI, targeted independent re-review and Owner P1 approval required. No evidence commit authorized in this correction |
+| 2026-10-30 | DONE | Final content 6c9d311, CI #81 attempt 1 eight SUCCESS, Independent HIGH-risk Review PASS and explicit Owner P1 Approval PASS; Owner authorizes exactly one final Task-record-only evidence commit and normal push to existing PR #10 (§6) |
 
 ### Local content verification
 
@@ -102,3 +103,44 @@ The Owner explicitly authorizes **one corrective content commit**, normal push t
 Entry reverified CLEAN at exact eef796e (full above), expected branch, remote PR #10 OPEN at that SHA, configured Owner identity and gh user yusufarst, and terminal CI #80 eight SUCCESS. Review the exact two-file diff and run lightweight scope/whitespace/identity/attribution guards only before commit. After creation inspect the raw commit and report its actual SHA outside its own contents; no commit records its own SHA. Require new automatic CI on the corrective SHA, attempt 1, all eight jobs SUCCESS on ubuntu-24.04 with the complete existing inventories. No source/test/workflow/dependency/fixture or unrelated document edit, local heavy test, CI #80 rerun, force push, evidence commit, merge or next Task.
 
 **Exit: STOP for targeted Independent HIGH-risk re-review and explicit Owner P1 approval after the new CI PASS.** Both remain PENDING; Task remains VERIFYING / NOT DONE. Any CI failure or unexpected repository state stops publication/continuation as applicable. The corrective content SHA and its actual CI result are resolved after publication and reported; no prospective PASS or review approval is fabricated.
+
+## 6. Final completion evidence and P1 approval — 2026-10-30
+
+**GOV-REALIGN-003: DONE.** HIGH risk, PRE-P11 / PRE-BASELINE, **NOT COUNTED IN P11 BASELINE**. This final section resolves the earlier PENDING/VERIFYING checkpoints in §1–§5 without deleting their historical evidence. The Owner explicitly authorizes exactly one final evidence commit changing only this Task record, normal push to the existing branch/PR #10, no new PR and no merge.
+
+### 6.1 Final content and complete CI
+
+Approved final content: **`6c9d3111674230dfafd78a152f10ba3b16ce9985`**, subject `docs(production): correct CBT-R1 readiness qualification`, parent `eef796e41589ffe7a13834be77074118a9b530a8`. [CI #81](https://github.com/yusufarst/elligble/actions/runs/41007229824), run **41007229824**, automatic push, **attempt 1**, exact final content SHA, terminal **COMPLETED / SUCCESS**, all **eight jobs SUCCESS on ubuntu-24.04**. Run SHA, attempt, job conclusions/runner labels and the existing logs were re-read before this evidence edit.
+
+| Job | Job ID | Verified result |
+|---|---|---|
+| Web client | 123904775830 | SUCCESS: typecheck, **344/344 tests in 34 files**, production build |
+| Runtime | 123904775618 | SUCCESS: typecheck, unit tests, real PostgreSQL integration |
+| Container image | 123905060934 | SUCCESS: image build and smoke test |
+| Browser mobile-360 | 123905060977 | SUCCESS: **22/22 E2E** |
+| Browser tablet-768 | 123905060982 | SUCCESS: **22/22 E2E** |
+| Browser webkit-390 | 123905060991 | SUCCESS: **22/22 E2E** |
+| Browser desktop-1280 | 123905061033 | SUCCESS: **22/22 E2E** |
+| Browser firefox-1280 | 123905061052 | SUCCESS: **22/22 E2E** |
+
+The complete existing suites were retained; no tests/assertions/workflows/dependencies were changed, skipped, retried or weakened by this Task. No heavy local tests or Docker/global-resource operations were performed. Previous content `eef796e41589ffe7a13834be77074118a9b530a8`, its successful CI #80 (40992238686, attempt 1, eight SUCCESS) and the Independent Review finding remain preserved in §5. Passing CI #80 did not resolve its documentation overstatement. The single Owner-authorized corrective content commit above changes only living plan §1 and this record: the teacher-managed single-choice journey is implemented/tested, not proof of CBT-R1 production or supervised-pilot readiness; full DEC-044 §3 and G1–G10 remain mandatory. CI #80 was not rerun.
+
+Both content commits were inspected with `git log --format=fuller` and their raw messages: author and committer **Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>**, descriptive software-only subjects, no trailers or attribution. Initial content changed exactly the six approved paths; the authorized correction changed exactly its two approved paths. Deterministic guards verified exact scope, local references/requirement coverage and whitespace for the initial content, and unchanged living-plan content outside §1/historical record preservation for the correction.
+
+### 6.2 Independent review and explicit Owner P1 approval
+
+The Owner's final evidence authorization dated **2026-10-30** explicitly confirms **Independent HIGH-risk Review: PASS** and **Owner P1 Approval: PASS** for final content `6c9d3111674230dfafd78a152f10ba3b16ce9985`, CI #81 attempt 1 and existing open PR #10, after the targeted review remediation. These are Owner-confirmed review results, not executor self-approval; no reviewer identity or external report is invented. The explicit final approval is:
+
+> P1 APPROVED — GOV-REALIGN-003 — SHA 6c9d311
+
+The approved P1 scope remains **derived from DEC-044, DEC-045 and ADR-001**, with no policy supersession or scope reduction. Its R01–R31 requirement/evidence/gap map, roles, G1–G10, PB01–PB12 and P2–P11 prerequisites are accepted as P1 planning, not as delivery of the missing capabilities. Approval is durably established by this Task record, as provided in the unchanged P1 artifact §9; its earlier submitted-state header and other documents are not edited in this record-only commit.
+
+### 6.3 Preserved release boundaries and final publication gate
+
+- **All OPEN production blockers remain OPEN**; PB04 remains CLOSED. No blocker is closed by this evidence commit.
+- Full DEC-044 §3 scope and **G1–G10 remain mandatory**, without a release-gate PASS claim.
+- **P11 baseline NOT APPROVED; TASK_PLAN.md NOT CREATED; production readiness NOT ACHIEVED.** P1 approval alone does not authorize P11 or another Task.
+- All previously completed Tasks retain their completed states; remaining unfinished scope and the Owner's cosmetic deferment remain unchanged.
+- Living plan/manifest/P1 artifact/application/tests/fixtures/workflow/dependencies and all other files remain identical to approved content. The living plan's pre-evidence checkpoint is historical; this Task record supplies the completion state under DEC-045. The next separately authorized Task records the Owner's eventual landing SHA.
+
+Pre-evidence entry was CLEAN on the expected Task branch with local HEAD, remote-tracking HEAD and actual PR #10 head equal to approved content; Owner author/committer identity and gh user yusufarst verified, PR #10 OPEN, exact-SHA CI #81 verified above. Final local deterministic gate requires exactly this one-file staged diff, preserved history/release boundaries, `git diff --cached --check`, no unknown changes/secrets/attribution, and unchanged content outside this record. Inspect the evidence commit's fuller log and raw software-only message after creation, report its actual SHA outside its own contents, then normal push to the same branch/PR #10. **Exactly one evidence commit; its own automatic CI is not a DONE prerequisite under 00.12 §5 and does not require another evidence commit.** Owner squash-merges separately. No merge, production deployment or next Task is performed here.
