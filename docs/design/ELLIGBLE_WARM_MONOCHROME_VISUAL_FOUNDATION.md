@@ -1,4 +1,4 @@
-**Status:** LOCKED
+**Status:** LOCKED baseline; proposed color amendment §25 NOT EFFECTIVE
 **Version:** 1.0.0
 **Canonical:** YES
 **Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, DEC-040, FRONTEND_DESIGN_SYSTEM.md, UI_CONTENT_AND_COPY_STYLE.md, SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md
@@ -371,3 +371,13 @@ Mobile navigation adheres to the ElevenLabs-inspired component grammar:
 - **Command Invocation:** When NeedMCP is installed in a future controlled execution, commands such as `npx needmcp style set elevenlabs` or prompts invoking `style:elevenlabs` provide assistive code suggestions.
 - **Subordination:** NeedMCP suggestions must conform to this document and the locked Frontend Design System. If NeedMCP proposes proprietary assets, brand marks, arbitrary dependencies, or conflicting colors, the repository canonical rules win absolutely.
 - **Current Status:** **NEEDMCP: NOT YET INSTALLED / NOT YET ACTIVATED.**
+
+## 25. Proposed limited Calm Progress color amendment (not effective)
+
+**Status:** PENDING exact-content review/Owner acceptance and controlled landing under [GOV-DESIGN-002](../production/tasks/GOV-DESIGN-002.md). The LOCKED v1.0.0 text above is preserved original history and remains the active color baseline until [DEC-047](../decisions/DECISION_LOG.md#dec-047) activates. No production token is changed by this document.
+
+DEC-047 CP01–CP06 enumerate the exact color-only replacements for §2/§4/§5/§11/§14/§15/§16/§21/§22/§23: Deep Sage #365E54 primary/action/active/focus, Warm Ivory #F7F8F4 canvas, Forest Slate #26342F text/headings/default content icons, Soft Sage #B7CCBF restrained non-exam accents, Mist Teal #DCE7E6 supporting surfaces. White #FFFFFF cards and foreground on Deep Sage remain. CP08 identifies the derivative exam-workspace black role references explicitly; no layout or DEC-039 supersession.
+
+The monochrome/semantic-only identity restriction is proposed to change only as listed; it does not repurpose semantic success/warning/error/info. §6 navy prohibition, §7–§10 typography/spacing/geometry/elevation, §11–§13 icon structure/ownership, §17 selection, §18 ACK/save and §19–§24 behavior/accessibility/tooling remain intact except the enumerated color bindings. Focus remains >=2px with existing offset; new color must contrast with every applicable adjacent surface. No font, dependency or component system changes.
+
+Use DEC-047's unrounded contrast tests and state restrictions, not an assumption that five selected colors make every pair accessible. Existing semantic/border deficiencies are not silently superseded. Owner cosmetic deferral has only the exact palette exception CP09; no frontend implementation in this Task.

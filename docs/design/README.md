@@ -1,5 +1,5 @@
 **Status:** ACTIVE
-**Version:** 1.0.3
+**Version:** 1.0.4
 **Canonical:** CANONICAL DESIGN INDEX
 **Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, DEC-040, FRONTEND_DESIGN_SYSTEM.md, ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md, UI_CONTENT_AND_COPY_STYLE.md, FRONTEND_AGENT_SKILL_STACK.md, SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md
 **Used By:** All frontend Build Units, design system reviews, and UI implementations
@@ -31,3 +31,9 @@ This directory serves as the canonical design and user experience index for the 
 4. **[FRONTEND_AGENT_SKILL_STACK.md](file:///c:/Projects/ELLIGBLE/docs/design/FRONTEND_AGENT_SKILL_STACK.md):** The canonical frontend agent skill stack defining purpose, operational authority hierarchy, installed skill provenance/hashes, division of responsibilities, non-authority rules for external skills/tooling, and rendered visual QA requirements (LOCKED v1.0.1).
 5. **[SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md](file:///c:/Projects/ELLIGBLE/docs/design/SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md):** The canonical Secure Assessment Exam Focus Workspace design specification defining the content-first active exam workspace, Subject -> Exam Room -> Omit context resolution, upper info save-state separation, immediate green answer selection, authoritative timer presentation, mobile command dock, and successor dependencies (LOCKED v1.1.0 / DEC-039, DEC-040).
 6. **[UI_CONSISTENCY_AUDIT.md](UI_CONSISTENCY_AUDIT.md):** Working record of the UI consistency audit (UI-SYSTEM-001) under the Owner's UI/UX consistency contract (plan §10.1): findings with their class and resolution, the automated design system guard, and the token convergence proposal toward the DesainPakeAI direction (ACTIVE v1.0.0).
+
+## Pending Calm Progress color-only proposal
+
+[DEC-047](../decisions/DECISION_LOG.md#dec-047) and [GOV-DESIGN-002](../production/tasks/GOV-DESIGN-002.md) register the Owner-selected five-color proposal: Warm Ivory #F7F8F4, Deep Sage #365E54, Soft Sage #B7CCBF, Mist Teal #DCE7E6 and Forest Slate #26342F; white cards/primary foreground remain. Exact matrix, accessibility pair restrictions and activation gate live in DEC-047. Foundation §25 and design system §61 are explicitly pending addenda; original LOCKED versions above remain active until exact-content approval and controlled landing. No code/token implementation or whole-system supersession.
+
+The [Calm Progress intent](ELLIGBLE_CALM_PROGRESS_OWNER_DESIGN_INTENT.md) was accepted through GOV-DESIGN-001/PR #14, main 6c0135879d76d0f5867b148f62dcc382bef9f107 and CI #98 eight SUCCESS. Its §7 records the subsequent exact values as a canonical proposal, not effective tokens. DEC-039, shadcn/ui/DEC-043 DesainPakeAI authority, semantic statuses/ACK integrity and compatible geometry/accessibility remain. Only the exact palette has an Owner-authorized cosmetic-deferral exception; no unrelated redesign. UI-SYSTEM-005 BLOCKED; no reference access claimed.

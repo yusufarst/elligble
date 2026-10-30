@@ -1,9 +1,9 @@
 **Status:** ACTIVE  
-**Version:** 1.2.0
+**Version:** 1.2.1 (DEC-047 proposal registered; active decisions unchanged)
 **Canonical:** YES  
-**Supersedes:** 1.1.0
+**Supersedes:** 1.2.0 (register revision only)
 **Used By:** Governance, Discovery, Architecture  
-**Last Reviewed:** 2026-10-06
+**Last Reviewed:** 2026-10-31 (proposal registration)
 
 # ELLIGBLE — Decision Log
 
@@ -57,6 +57,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-044 | Current release scope | The current release is Secure Assessment / CBT only (CBT-R1) for one school; non-CBT domains are deferred, not deleted; the CBT Release Gate is the current release criterion; CBT-R1 policy decisions OD-05 to OD-09 in 00.11 §12 | LOCKED | Owner / 00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md |
 | DEC-045 | Planning and execution framework | AICWDF v4.3 adopted and adapted; one Owner-authorized bounded Task at a time; Task records in docs/production/tasks/; finite P11 Task baseline | LOCKED | Owner / 00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md |
 | DEC-046 | Stack and topology | As-built stack recorded; self-hosted on the school's VPS; InsForge not used in the current release; provider-agnostic principle retained | LOCKED | Owner / ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md |
+| DEC-047 | Calm Progress limited palette | Exact-clause color-only supersession proposal; Owner-selected five values, preserved non-color DEC-040 and DEC-043 authority | PROPOSED / NOT EFFECTIVE | Owner 2026-10-31 / GOV-DESIGN-002 / DEC-047 below |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -436,3 +437,73 @@ Does NOT supersede: 00.02; the rest of DEC-042 (no new Build Units, verification
 - InsForge is not used in the current release; DEC-009's provider-agnostic principle and modular-monolith direction remain.
 - No Redis or Valkey, queue, broker, Kubernetes or microservices without evidence and a new ADR.
 - Capacity for about 1,000 concurrent students is not claimed until P6 load evidence exists.
+
+<a id="dec-047"></a>
+
+### DEC-047 — Calm Progress limited color supersession PROPOSAL (2026-10-31)
+
+**Status:** PROPOSED / PENDING EXACT-CONTENT APPROVAL AND CONTROLLED LANDING; NOT EFFECTIVE
+**Owner direction:** Five palette values and a limited color-only exception authorized 2026-10-31.
+**Task:** [GOV-DESIGN-002](../production/tasks/GOV-DESIGN-002.md), HIGH, PRE-P11 / PRE-BASELINE.
+**Activation:** Independent HIGH-risk Review PASS, explicit Owner approval of the exact supersession, final evidence under DEC-045 and Owner-controlled landing are required. Until then DEC-040/043 and their existing production bindings remain in force. CI or approval of direction alone does not activate this proposal. No frontend implementation is authorized by this Task, including after documentation acceptance.
+
+#### Selected palette and role boundaries
+
+| Owner-selected value | Proposed shared role | Boundary |
+|---|---|---|
+| Warm Ivory #F7F8F4 | Primary application canvas | Light mode only; white content cards remain |
+| Deep Sage #365E54 | Primary actions, brand interaction, active navigation and focus | White foreground for filled actions; distinguish active/selected/focused states by shape/text/native state as well as color |
+| Soft Sage #B7CCBF | Subtle brand accents and non-exam progress surfaces | No low-contrast body text, critical control boundary or active-exam progress decoration |
+| Mist Teal #DCE7E6 | Calm supporting surfaces | Not a status signal, critical boundary or substitute for readable text |
+| Forest Slate #26342F | Primary text and headings | Text role separated from action role; do not keep headings coupled to the action token |
+| Retained white #FFFFFF | Cards, sheets/dialogs and foreground on Deep Sage | No white text on Soft Sage or Mist Teal |
+
+This is one shared ELLIGBLE system for all authorized roles, not role/page themes. Future roles/domains still need separate release and execution authority. No new font, geometry, component suite, motion pattern, asset or vendor is selected.
+
+#### Exact-clause supersession matrix (proposed, effective only after activation)
+
+Original provisions below remain preserved in full in their source files. Only the identified color bindings/exclusivity change; no blanket repeal of DEC-040 or DEC-043.
+
+| ID | Original clause / before | Proposed after and applicability | Preserved invariants |
+|---|---|---|---|
+| CP01 | DEC-040 Palette Foundation and Component Grammar; foundation §2 item 1, §4 adopted monochrome/black-primary bullets, §5 Primary/Action row; design system §10, §17 Primary | Primary actions/brand interaction/active navigation: #000000 → Deep Sage #365E54; primary action foreground stays #FFFFFF. Primary text/headings formerly grouped with action become Forest Slate #26342F. Applies to shared role bindings, not semantics | Component hierarchy, restrained emphasis, shared primitives, no navy dominance |
+| CP02 | DEC-040 Palette Foundation; foundation §2 item 1, §4 white-background characteristic, §5 Canvas row and light-mode monochrome-only constraint, §15 dominant surfaces; design system §10 background and §12 Surface 0 | Primary canvas #FFFFFF → Warm Ivory #F7F8F4. White #FFFFFF retained for cards/sheets/dialogs and primary foreground. Light mode remains the target | Content-first hierarchy, white readable content surfaces, no dark-mode decision |
+| CP03 | Foundation §2 item 5 semantic-only accents, §4 monochrome-only characteristic, §5 usage restriction as applied to nonsemantic identity; design system §10 identity palette | Permit Soft Sage #B7CCBF for restrained accents/non-exam progress surfaces and Mist Teal #DCE7E6 for calm supporting surfaces; Deep Sage carries brand interaction. Semantic-only restriction remains for success/warning/error/info meanings, not brand identity | No expansive saturated decoration, no active-CBT gamification or progress rewards, semantic distinctions |
+| CP04 | Foundation §23 black focus; design system §13 active/focus border, §37 historical primary-600 focus alias | Focus #000000 (and obsolete navy alias) → Deep Sage #365E54, minimum 2px with existing 2px offset. Use white separation on a Deep Sage control so the indicator is not Deep Sage against itself. No runtime token rename here | Visible keyboard focus, required adjacent contrast, geometry/keyboard behavior |
+| CP05 | Foundation §5 primary-heading binding, §11 default black icon color, §14 Secondary foreground, §15 primary text; design system §10 grouped headings and §17 Secondary foreground | Primary text/headings and default content icons/secondary-button foreground → Forest Slate #26342F. Interactive brand icons may use Deep Sage only where contrast passes. Existing #4E4E4E supporting text retained | Icon family/strokes/sizes, secondary hierarchy, typography, no new icon package |
+| CP06 | Foundation §14 Primary, §16 Selesai color, §21 footer primary-black label, §22 desktop white/black identity; design system §17 Primary/Secondary, §18 historical navy link binding, §50 white/gray-only viewport | Apply CP01/CP02/CP05 consistently to dock/sheet/desktop: Deep Sage primary, white foreground, Warm Ivory canvas, white cards, Forest Slate text. Brand links use Deep Sage with underline, not historical navy. No changes to action order/layout/copy | DEC-039 focus composition, touch/responsive rules, confirmation behavior, desktop/mobile parity |
+| CP07 | DEC-043 bullet requiring themed locked ELLIGBLE warm-monochrome tokens | Replace only the old color-reference phrase with “current canonical ELLIGBLE tokens, including the limited DEC-047 palette when activated.” All non-color DEC-040 requirements continue | shadcn/ui and required dependencies remain approved; generic defaults prohibited; DesainPakeAI project/CLI authority and conflict procedure unchanged |
+| CP08 | DEC-040-derived literal black bindings in exam workspace §11 Current indicator and §12 desktop primary/dock/sheet examples | On DEC-047 activation, these same primary/active role references resolve to Deep Sage under CP01/CP06. They are explicitly enumerated derivative color references, not a repeal of DEC-039. That source file remains untouched in this eight-file Task | Current/answered/flagged semantics, source-of-truth context, focus/keyboard, all DEC-039 structure and behavior |
+| CP09 | Owner cosmetic deferral, 2026-10-27, recorded in UI-SYSTEM-004 §9.6 and living plan | Owner authorizes a limited exception for this exact Calm Progress palette proposal and later separately authorized palette-only convergence; no unrelated redesign, sticky-header polish or new visual Task authority | Deferral remains for other cosmetics; production critical path and functional accessibility/security/integrity remain mandatory |
+| CP10 | Foundation §5 semantic palette, §17 selection and §18 save rules; design system §11/§21/§53 | NO SUPERSESSION: retain success/warning/error/info and selected-answer contracts. Brand sage/teal cannot mean saved, correct or ACK. No semantic success/error value is newly approved | Immediate selected answer versus server ACK, truthful offline/pending/refused, timer/submission authority |
+
+CP08 explicitly reconciles the color-only reference chain; it does not authorize editing that ninth path or override DEC-039. Original black examples are historical color bindings only after activation, not competing authority. No other clause is superseded. Institution-navy dominance remains prohibited. DEC-039, DEC-044 CBT-R1 and G1–G10, DEC-045 and all compatible LOCKED/FROZEN decisions remain authoritative.
+
+#### Contrast and component-state disposition
+
+Deterministic sRGB calculation: normalize 8-bit channels; linearize c <= 0.04045 as c/12.92, otherwise ((c+0.055)/1.055)^2.4; luminance = 0.2126R + 0.7152G + 0.0722B; ratio = (lighter+0.05)/(darker+0.05). Display rounds to two decimals; pass/fail uses unrounded values. References: [W3C text contrast](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html) and [W3C non-text contrast](https://www.w3.org/WAI/WCAG21/Understanding/non-text-contrast.html). Normal text requires 4.5:1; large text and essential graphical/control information require 3:1 against applicable adjacent colors. The whole interface is not certified by these pairs.
+
+| Pair / proposed use | Ratio | Disposition |
+|---|---|---|
+| White / Deep Sage, filled primary label | 7.28:1 | PASS normal text |
+| Forest Slate / Warm Ivory, body/headings | 12.19:1 | PASS normal text |
+| Forest Slate / White, content cards | 13.01:1 | PASS normal text |
+| Forest Slate / Soft Sage; / Mist Teal | 7.68:1; 10.29:1 | PASS text on these surfaces |
+| Deep Sage / Warm Ivory; / White; / Mist Teal | 6.82:1; 7.28:1; 5.76:1 | PASS text and essential indicators |
+| Deep Sage / Soft Sage | 4.30:1 | FAIL normal text; use Forest Slate for body labels |
+| White / Soft Sage; / Mist Teal | 1.69:1; 1.26:1 | FAIL text; prohibited pairings |
+| Soft Sage / Warm Ivory; Mist Teal / Warm Ivory | 1.59:1; 1.18:1 | FAIL essential boundary/indicator; decorative/supporting surfaces only |
+| Retained #4E4E4E / Warm Ivory | 7.80:1 | PASS secondary text |
+| Retained #E5E5E5 / White | 1.26:1 | Decorative dividers only; not the sole essential control/state boundary |
+
+Primary hover/pressed may retain the same tested Deep Sage/white pairing using existing non-color feedback, native state and reduced-motion rules. No new hover hex/alpha/opacity is approved; any different composite must be measured before adoption. Focus must remain distinct on Deep Sage, white, Ivory and supporting surfaces, including a contrasting separation layer; do not fade text or essential controls below the threshold. Active navigation uses underline/shape/weight plus accessible current state, not a green “saved” signal.
+
+Semantic palette preservation is not blanket contrast approval. Existing success/warning base versus white is only 2.54:1/2.15:1; white on existing danger/info base is only 3.76:1/3.68:1 for normal text. Do not use those combinations for normal text or essential cues below their applicable threshold. Retain existing darker semantic text on subtle status surfaces with text/icon/native-state redundancy; component/state review must check the actual pairs, including error, warning, pending, selected, refused and disabled presentation. This proposal changes no selected-answer border, danger-button rule or semantic token. Any needed change to those locked semantic rules requires explicit additional scope/Owner authority, not a silent fix here. These inherited constraints are recorded review gates, not claims of rendered conformance.
+
+#### Preservation, implementation gate and unresolved work
+
+Preserve typography/fallback delivery, spacing, radii, elevation, icon geometry, responsive layouts/safe areas, >=44px targets, reduced motion, keyboard/screen-reader behavior and no horizontal overflow. Active CBT stays distraction-free: no XP/streak/rewards/celebration; server timer, selection/persistence separation, matching server ACK, offline/refused honesty and security/tenant/session/answer integrity unchanged.
+
+DesainPakeAI project b5a22aa4-7b38-49d2-9448-443eab6e8075 remains the DEC-043 reference via dpai CLI only. No access, revision or palette agreement is claimed. Resolve any verified reference conflict explicitly before future implementation; do not infer approval or copy another project. UI-SYSTEM-005 remains BLOCKED.
+
+Canonical adoption review must accept the exact matrix and permitted/prohibited state pairings. Future implementation needs its own bounded Owner authorization, verified reference reconciliation and full component-state/contrast plus actual rendered mobile/tablet/desktop and regression evidence. This documentation Task changes no CSS/token/TSX/test/asset. No final P11, O01–O09 policy, PB05/blocker closure, release-scope reduction, production-ready or deployment authority. Final P11 NOT APPROVED / NOT ACTIVE; 33 candidate Tasks BLOCKED, baseline DONE 0; P5/O09 and P6/O07 approvals remain mandatory.

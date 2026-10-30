@@ -1,4 +1,4 @@
-**Status:** LOCKED
+**Status:** LOCKED baseline; proposed color amendment §61 NOT EFFECTIVE
 **Version:** 1.1.0
 **Canonical:** YES
 **Depends On:** DEC-036, DEC-037, DEC-038, DEC-039, DEC-040, ELLIGBLE_WARM_MONOCHROME_VISUAL_FOUNDATION.md, 00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md, 04.01_SECURE_ASSESSMENT.md, SECURE_ASSESSMENT_EXAM_FOCUS_WORKSPACE.md
@@ -424,3 +424,20 @@ Restrained multi-layer low-opacity shadows (3% to 8% total opacity) providing su
 
 - Individual Build Units must strictly reuse tokens and components defined in this Design System.
 - Adding ad-hoc colors, custom fonts, non-standard button sizes, or independent design systems in any Build Unit is strictly prohibited.
+
+## 61. Proposed Calm Progress color-only amendment (not effective)
+
+[DEC-047](../decisions/DECISION_LOG.md#dec-047), prepared by [GOV-DESIGN-002](../production/tasks/GOV-DESIGN-002.md), is PENDING exact-content approval and controlled landing. The LOCKED v1.1.0 body above remains the original active baseline until activation; no runtime token edit is made.
+
+| Exact existing role | Proposed color-only binding after activation |
+|---|---|
+| §10 primary/action; §13 active border; §17 Primary; §18 brand link; §37 focus | Deep Sage #365E54; primary foreground stays white #FFFFFF. Historical primary-600 navy reference is not restored |
+| §10 background and §12 Surface 0; §50 base viewport | Warm Ivory #F7F8F4; cards/elevated content remain white |
+| §10 primary text/headings; §17 Secondary foreground; default content icons | Forest Slate #26342F; separate content foreground from action color |
+| §10 identity accents / supporting surfaces | Soft Sage #B7CCBF for subtle accents/non-exam progress; Mist Teal #DCE7E6 for calm supporting surfaces, not semantic status |
+
+DEC-047 CP01–CP10 are the exact original→proposed matrix and preservation authority; no blanket replacement of this system. §2 shadcn/ui foundation, typography/fallbacks, spacing/geometry, breakpoints/layout, iconography, keyboard/native controls, >=44px touch targets, reduced motion and responsive evidence remain mandatory. §11/§21 selected-answer and §53 server-ACK/save semantics are not superseded.
+
+Primary rest/hover/pressed can retain Deep Sage/white with existing non-color feedback; no hover colors, opacity reductions or disabled-state values are newly selected. Focus retains >=2px and existing 2px offset, using contrasting separation on a Deep Sage control. Border #E5E5E5 is not sufficient as a sole essential boundary. Soft Sage/Mist Teal are not essential boundaries; Forest Slate provides readable labels on them. Deep Sage text on Soft Sage fails normal-text AA. Follow the complete DEC-047 contrast/disallowed-pair table and review actual supporting/semantic/component states before adoption; no rendered AA claim.
+
+DEC-043's old warm-monochrome color reference alone is proposed to reconcile with the activated palette; shadcn/ui and verified DesainPakeAI authority remain. Active exam focus, answer/ACK integrity and all security semantics are unchanged. This Task authorizes documentation only, not frontend convergence or UI-SYSTEM-005 work.
