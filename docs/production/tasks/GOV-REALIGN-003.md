@@ -81,6 +81,7 @@ STOP for unexpected working/remote state, identity mismatch, invalid references/
 | 2026-10-30 | READY | Owner authorizes this exact HIGH-risk six-file contract; entry guards PASS on clean main 8f51c77 |
 | 2026-10-30 | IN_PROGRESS | Exact authorized branch created; canonical sources and targeted implementation evidence re-read; P1 artifact and carried guard alignment prepared |
 | 2026-10-30 | VERIFYING | Six-file content prepared for deterministic guards and publication; own CI and both required human approvals pending |
+| 2026-10-30 | VERIFYING | Owner authorizes one targeted two-file corrective content commit for the Independent HIGH-risk Review finding in living plan §1; new exact-SHA CI, targeted independent re-review and Owner P1 approval required. No evidence commit authorized in this correction |
 
 ### Local content verification
 
@@ -89,3 +90,15 @@ Review the exact staged diff and require: six allowed paths only; no untracked/u
 ### Completion evidence / Independent HIGH-risk Review / Owner P1 approval
 
 PENDING. No DONE claim. After exact content CI PASS, submit the P1 artifact and PR for independent review and explicit Owner P1 approval. After both are received and verified against this content, record exact SHA/run/job/test evidence, guard outcomes, review reference/date/result and Owner approval in one Task-record-only evidence commit. The evidence commit does not record its own SHA and does not require a second evidence commit or its own CI as a DONE prerequisite (00.12 §5). Owner squash-merges separately; the next authorized Task records landing.
+
+## 5. Owner-authorized targeted review remediation — 2026-10-30
+
+The Owner reports an **Independent HIGH-risk Review finding** against content `eef796e41589ffe7a13834be77074118a9b530a8` on existing [PR #10](https://github.com/yusufarst/elligble/pull/10): living plan §1 still says the product is ready for a supervised pilot once infrastructure/legal blockers are satisfied. That retained sentence overstates readiness and can imply that those blockers are the only remaining conditions, despite the full DEC-044 scope and release gates. This is a documentation finding, not evidence of a new application defect. No Independent Review PASS or Owner P1 approval is claimed.
+
+Historical content verification remains intact: [CI #80](https://github.com/yusufarst/elligble/actions/runs/40992238686), run 40992238686, automatic push attempt 1, exact eef796e content SHA above, COMPLETED / SUCCESS, all eight jobs on ubuntu-24.04. Web typecheck, 344/344 tests in 34 files and build; runtime typecheck/unit/real PostgreSQL; image build/smoke; 22/22 E2E in each of desktop-1280, mobile-360, tablet-768, firefox-1280 and webkit-390 PASS. This successful CI does not resolve the review finding or approve P1; #80 is not rerun.
+
+The Owner explicitly authorizes **one corrective content commit**, normal push to the same branch/PR #10, changing only `docs/production/PRODUCTION_COMPLETION_PLAN.md` and this Task record. The correction qualifies the implemented/tested journey as teacher-managed single-choice, removes the supervised-pilot readiness claim, states that this bounded journey does not prove CBT-R1 production readiness, and explicitly preserves the entire DEC-044 §3 scope and mandatory G1–G10 with their required evidence. Infrastructure/legal blockers are not an exhaustive release checklist. All historical evidence, blocker states, completed predecessors and LOCKED decisions are preserved; the rest of the living plan and the P1 artifact are unchanged.
+
+Entry reverified CLEAN at exact eef796e (full above), expected branch, remote PR #10 OPEN at that SHA, configured Owner identity and gh user yusufarst, and terminal CI #80 eight SUCCESS. Review the exact two-file diff and run lightweight scope/whitespace/identity/attribution guards only before commit. After creation inspect the raw commit and report its actual SHA outside its own contents; no commit records its own SHA. Require new automatic CI on the corrective SHA, attempt 1, all eight jobs SUCCESS on ubuntu-24.04 with the complete existing inventories. No source/test/workflow/dependency/fixture or unrelated document edit, local heavy test, CI #80 rerun, force push, evidence commit, merge or next Task.
+
+**Exit: STOP for targeted Independent HIGH-risk re-review and explicit Owner P1 approval after the new CI PASS.** Both remain PENDING; Task remains VERIFYING / NOT DONE. Any CI failure or unexpected repository state stops publication/continuation as applicable. The corrective content SHA and its actual CI result are resolved after publication and reported; no prospective PASS or review approval is fabricated.
