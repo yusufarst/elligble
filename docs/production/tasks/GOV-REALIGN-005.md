@@ -6,7 +6,7 @@
 |---|---|
 | Classification | BUILD / PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE |
 | Risk | HIGH: release/security/answer-integrity/device/operations planning; no implementation/deployment |
-| Status | VERIFYING / NOT DONE; four phase documents DRAFT / SUBMITTED FOR REVIEW |
+| Status | DONE (2026-10-30), integrated P7–P10 planning-package outcome only; original phase draft headers historical/unchanged and all unresolved boundaries preserved (§5) |
 | Owner authorization | Integrated P7–P10 bounded Task, received 2026-10-30; one branch/content publication/PR/integrated independent review/consolidated Owner review. Seven-file documentation package, controlled content commit/normal push/one PR YES; implementation/new policy/merge/deployment/next Task NO |
 | Objective | One coherent P7 functional inventory, P8 verification/DoD, P9 school operations and P10 staging/UAT/recovery plan using accepted P1/P2–P6 assets, actual gaps/UNKNOWN facts and no fabricated readiness |
 | Base | `a16cbf59265b7d6c2dae1b1c90c9e0b3eb10439e`, PR #11 MERGED; GOV-REALIGN-004 DONE and P2–P6 planning package APPROVED; O01–O09/PB05 remain OPEN |
@@ -15,9 +15,9 @@
 | Parallel safe | NO; one active Owner-authorized integrated Task, not four disconnected Tasks |
 | Application / database / API / UI / localization impact | NONE implemented; existing routes/semantics/tokens/copy/accessibility authority reused; no cosmetic design work |
 | Cost/vendor impact | No new service/dependency/paid vendor; existing automatic CI usage only. Actual production cost and resources UNKNOWN pending Owner/school facts |
-| Independent HIGH-risk Review | PENDING: one integrated review of P7–P10 and cross-phase traceability |
-| Consolidated Owner review | PENDING; execution authorization is not approval of draft plans, Oxx/P6 budgets, PB closure, P11 or production |
-| Content SHA / CI / PR | Resolved after publication; no commit records its own SHA. Exact-SHA automatic CI and both review results required before final evidence/DONE |
+| Independent HIGH-risk Review | PASS on exact approved content `c5866da6988be47f43f3e2745cb70c05c9fa2e47`, confirmed by Owner final evidence authorization 2026-10-30 (§5) |
+| Consolidated Owner review | APPROVED 2026-10-30 for the P7–P10 planning package only; O01–O09/PB05 OPEN, P6 budgets PROPOSED, actual school facts UNKNOWN, P11 NOT APPROVED (§5) |
+| Content SHA / CI / PR | Approved content `c5866da6988be47f43f3e2745cb70c05c9fa2e47`; [PR #12](https://github.com/yusufarst/elligble/pull/12) OPEN; CI #87 (41025163174), attempt 1, eight SUCCESS on ubuntu-24.04 (§5). This evidence commit never records its own SHA |
 
 ### Exact seven-file allowlist
 
@@ -76,5 +76,75 @@ STOP on failed predecessor/own verification, canonical conflict, missing require
 | 2026-10-30 | READY | Owner authorizes GOV-REALIGN-005; physical/main/predecessor/CI #86 guards PASS; O01–O09 and OPEN blockers preserved |
 | 2026-10-30 | IN_PROGRESS | Exact branch from verified clean main; selective canonical/source/runbook/design/test review; four integrated phase drafts prepared |
 | 2026-10-30 | VERIFYING | Seven-file content ready for deterministic guards and publication; own CI and both consolidated reviews pending, Task NOT DONE |
+| 2026-10-30 | DONE | Exact content c5866da (full SHA §5), CI #87 attempt 1 eight SUCCESS, Independent HIGH-risk Review PASS and explicit Owner planning-package approval; one final Task-record-only evidence commit/normal push authorized, unresolved boundaries preserved |
 
 Four new phase files are DRAFT / SUBMITTED FOR REVIEW. Baseline evidence reused, no new executed device/load/browser/restore/UAT/a11y result. School facts/signatories/recovery objectives/target remain UNKNOWN; P6 budgets PROPOSED; no legal/security/policy/ADR approval or blocker closure. P11 NOT APPROVED, TASK_PLAN.md absent, production readiness NOT ACHIEVED. Content SHA/CI/PR and actual guard results resolved after publication and reported; no prospective PASS or own-SHA embedding. Required Independent HIGH-risk Review PENDING; Owner consolidated review PENDING. No final evidence commit or successor in this execution.
+
+## 5. Final P7–P10 planning-package acceptance and completion — 2026-10-30
+
+**GOV-REALIGN-005: DONE for its integrated planning-package outcome only.** HIGH risk; PRE-P11 / PRE-BASELINE; **NOT COUNTED IN P11 BASELINE**. This final section resolves earlier PENDING/VERIFYING statements in §1–§4 as historical checkpoints, preserving the original contract, authorization, predecessor landing and evidence. The Owner authorizes exactly one final Task-record-only evidence commit and normal push on the existing branch/PR #12. No additional PR, merge, feature implementation, P11 or successor Task.
+
+### 5.1 Approved content, PR and exact-SHA CI evidence
+
+Approved content **`c5866da6988be47f43f3e2745cb70c05c9fa2e47`**, parent/main baseline **`a16cbf59265b7d6c2dae1b1c90c9e0b3eb10439e`**, subject `docs(production): prepare integrated CBT-R1 P7-P10 readiness planning`. Before this evidence edit, physical root/branch were correct, working tree CLEAN, local HEAD/remote-tracking/actual remote branch synchronized at the approved SHA, and [PR #12](https://github.com/yusufarst/elligble/pull/12) **OPEN / NOT MERGED** at that SHA. Configured Owner author/committer identity and gh user yusufarst were verified; remote main remained the stated baseline.
+
+[CI #87](https://github.com/yusufarst/elligble/actions/runs/41025163174), run **41025163174**, automatic push, **attempt 1**, exact approved content SHA: terminal **COMPLETED / SUCCESS**, all **eight jobs SUCCESS on ubuntu-24.04**. Run metadata, actual job conclusions/runner labels and existing web/five-browser logs were re-read before recording this evidence.
+
+| Job | Job ID | Verified result |
+|---|---|---|
+| Runtime | 123961445257 | SUCCESS: typecheck, unit tests and real PostgreSQL integration |
+| Web client | 123961445623 | SUCCESS: typecheck, **344/344 tests in 34 files**, production build |
+| Container image | 123961766776 | SUCCESS: image build and smoke test |
+| Browser firefox-1280 | 123961766782 | SUCCESS: **22/22 E2E** |
+| Browser desktop-1280 | 123961766787 | SUCCESS: **22/22 E2E** |
+| Browser mobile-360 | 123961766895 | SUCCESS: **22/22 E2E** |
+| Browser tablet-768 | 123961766915 | SUCCESS: **22/22 E2E** |
+| Browser webkit-390 | 123961766927 | SUCCESS: **22/22 E2E** |
+
+The complete unchanged suites passed; no source/test/workflow/fixture/dependency/database change, skipped test, assertion weakening or retry-to-PASS was introduced by this Task. No local heavy suites, browser/device/load tests, Docker, database or production operations were run. CI regression success is evidence for existing implementation only, not completion of future planned tests or real-device/load/restore/UAT/release gates.
+
+### 5.2 Exact original content scope and deterministic evidence
+
+The controlled content publication changed exactly the seven Owner-approved paths below, as verified against its parent. This final evidence commit changes **only this Task record**, not the other six files.
+
+```text
+docs/production/CBT_UX_SCREEN_AND_INTERACTION_INVENTORY.md
+docs/production/CBT_VERIFICATION_AND_RELEASE_DOD_PLAN.md
+docs/production/SCHOOL_VPS_OPERATIONS_READINESS_PLAN.md
+docs/production/CBT_RELEASE_UAT_ROLLBACK_PLAN.md
+docs/production/tasks/GOV-REALIGN-005.md
+docs/production/PRODUCTION_COMPLETION_PLAN.md
+docs/DOCUMENT_MANIFEST.md
+```
+
+Lightweight deterministic content guards **PASS**: exact seven paths and no unrelated/untracked work; **41 local references**; table/ID/cross-phase consistency; **24** Cxx screens, **7** Uxx profiles, all **31** P1 Rxx rows, **18** Vxx verification groups, **16** Sxx UNKNOWN facts, **10** OIxx checks, **8** RTxx restore steps, **8** RRxx rehearsal steps, **8** UAxx UAT groups and all **10** Gxx dispositions. P3 Wxx/Fxx and P5 Axx references resolve, original P2 O01–O09 definitions remain unchanged, and `git diff --cached --check` was clean before content publication. Before this evidence edit, exact original scope, references and the counts above plus `git diff HEAD^ HEAD --check` were reverified **PASS**; TASK_PLAN.md absent. No new policy, budget, permission or release readiness was inferred from those structural checks.
+
+The content commit was inspected with `git log -1 --format=fuller` and raw `%B`: author/committer **Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>**, software-only subject above, no attribution/trailers. Final publication is gated on exactly this one-file staged diff, preserved contract/history, whitespace, configured Owner identity and no unknown work/secrets/attribution. All four phase documents, living plan, manifest and every other path remain identical to the approved content.
+
+### 5.3 Independent review and explicit Owner package approval
+
+The Owner's final evidence authorization dated **2026-10-30** confirms **Independent HIGH-risk Review: PASS on exact approved content** and **Owner consolidated package approval: APPROVED**. These are Owner-confirmed review/approval results, not executor self-approval; no reviewer identity or external report is invented. The explicit approval is:
+
+> P7–P10 PACKAGE APPROVED — GOV-REALIGN-005 — SHA c5866da — O01–O09 REMAIN OPEN — PB05 REMAINS OPEN — P11 NOT APPROVED
+
+Accepted planning outcomes form **one integrated package**:
+
+| Phase | Accepted artifact | Planning outcome |
+|---|---|---|
+| P7 | `docs/production/CBT_UX_SCREEN_AND_INTERACTION_INVENTORY.md` | Functional screen/interaction inventory **C01–C24**, **U01–U07**, complete **P1 R01–R31** traceability, existing/missing scope and minimum functional UX/accessibility requirements |
+| P8 | `docs/production/CBT_VERIFICATION_AND_RELEASE_DOD_PLAN.md` | Verification/DoD **V01–V18**, real-device **PB06** and Zero-Lost-Answer **PB07** protocols; future execution/evidence required, no closure |
+| P9 | `docs/production/SCHOOL_VPS_OPERATIONS_READINESS_PLAN.md` | School-VPS readiness specification **S01–S16**, **OI01–OI10**, **RT01–RT08**; actual facts UNKNOWN, checks/drills not executed |
+| P10 | `docs/production/CBT_RELEASE_UAT_ROLLBACK_PLAN.md` | Staging/UAT/recovery/rollback/release planning **RR01–RR08**, **UA01–UA08**, explicit **G1–G10** unmet dispositions; no release approval |
+
+Approved planning status is durably established by **this final Task record**. Original draft/submitted headers in the four artifacts remain historical and unchanged in this evidence-only commit. Acceptance does not separately approve unresolved policy/ADR/budget decisions or claim the planned capabilities, operating environment or tests delivered. Existing completed Tasks and all non-superseded LOCKED/FROZEN decisions, including DEC-044/045 and ADR-001, remain unchanged.
+
+### 5.4 Preserved unresolved boundaries and final publication
+
+- **O01–O09 remain OPEN / OWNER DECISION REQUIRED. PB05 remains OPEN**; all other applicable OPEN blockers are unchanged, conditional PB08/09 remain inactive for CBT-R1, PB04 remains CLOSED.
+- **P6 numeric budgets remain PROPOSED / OWNER APPROVAL REQUIRED**. No new policy, ADR, permission expansion, cost/vendor or blocker closure is approved.
+- Actual school **VPS/device/RPO/RTO/signatory facts remain UNKNOWN**, including actual operating/recovery targets and contacts as specified in the accepted plan; no factual values or signatories are fabricated.
+- No new real-device, load/capacity, restore, school UAT or release PASS is claimed. Full DEC-044 scope and **G1–G10 remain mandatory**, with no additional release-gate PASS from this evidence commit.
+- **P11 NOT APPROVED; TASK_PLAN.md NOT CREATED; production readiness NOT ACHIEVED**. No deployment, production command, feature implementation or successor/P11 execution authorization.
+- All previously completed Task states/history remain preserved. Earlier phase headers/living-plan checkpoints are historical; completion is recorded here without editing phase files, plan or manifest. A later separately authorized Task may record eventual Owner landing under DEC-045, but is not started here.
+
+Create exactly **one** controlled evidence commit changing only `docs/production/tasks/GOV-REALIGN-005.md`; inspect its fuller log and raw software-only message after creation, report its actual SHA outside its own contents, then normal push to the existing Task branch/PR #12. A commit never records its own SHA. Under **DEC-045 / 00.12 §5**, its own automatic CI is **not a DONE prerequisite** and **no second evidence commit** is created. Owner reviews and squash-merges separately. No new PR, force push, merge, production action or another Task is performed here.
