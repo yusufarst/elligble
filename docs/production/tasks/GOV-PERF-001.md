@@ -5,15 +5,15 @@
 | Field | Value |
 |---|---|
 | Classification / risk | HIGH; BUILD / PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE. Risk: quantitative approval and release/capacity evidence boundaries |
-| Status | VERIFYING / NOT DONE; exact-content publication/CI, Independent HIGH-risk/performance Review and explicit Owner numeric approval pending |
+| Status | DONE — BOUNDED NUMERIC APPROVAL PREPARATION ONLY (2026-10-31); HIGH / PRE-P11 / PRE-BASELINE; final evidence §7; NOT COUNTED IN P11 BASELINE |
 | Owner authority | 2026-10-31 attached GOV-PERF-001 instruction: exact five documentation paths, safe main fast-forward, exact Task branch, one content commit/normal push/one PR and Task-specific CI-first; content preparation/publication only |
 | Base / branch | main 067713afe23cad0d9712ef5acafb4000f5642db8; task/gov-perf-001-p6-numeric-budget |
 | Objective | Exact approval envelope around existing P6 numeric profile/budgets, preserving every L/B row, number and integrity/recovery oracle; no new performance plan or measurement |
 | Dependencies / READY | GOV-POLICY-001 DONE/landed, main CI #104 exact-SHA attempt-1 eight SUCCESS, Owner bounded preparation authority, original P6 accessible and numeric/default sources consistent, ID unused, no conflicting active work. Unknown facts are explicit exclusions, not invented inputs |
 | Parallel safe | NO; sole active Owner-authorized Task |
 | Impacts | Documentation only; no API/DB/schema/UI/test/workflow/configuration implementation or localization change. No new tool, package, vendor, infrastructure/cost or real-data operation |
-| Approval scope | Existing L01–L10 offered numeric profile and calibration, B01–B08 limits, B10 isolation expectation subject to O08/O06. B09/media provisional numbers and unknown school/runner/tool facts EXCLUDED. No O07 approval/closure by executor |
-| Independent / Owner review | PENDING on exact content; prior policy review does not transfer |
+| Approval scope | Owner APPROVED unchanged L01–L10 numeric profiles/timing, existing calibration and B01–B08; B10 CONDITIONALLY subject to O06/O08 and other prerequisites. B09 and conditional facts/configuration EXCLUDED; full O07 remains unresolved, no capacity/execution/P11/PB approval (§7) |
+| Independent / Owner review | Independent HIGH-risk/Performance Review PASS on exact 94fb79f; Owner exact-content numeric approval and one-file final evidence authority dated 2026-10-31 recorded in §7 |
 | DONE boundary | Complete exact numeric submission/classification, deterministic guards, exact-content attempt-1 eight-job CI SUCCESS, Independent HIGH-risk/performance PASS and explicit Owner exact-content decision recorded, followed only by separately authorized Task-record evidence. No capacity, load execution, P11 or release outcome implied |
 
 ### Exact five-path allowlist
@@ -63,3 +63,73 @@ PASS before staging: exact five authorized paths (four tracked edits and this ne
 P2 restoration guard removes only the O07 row/associated annotation to reproduce the baseline exactly; O01–O06/O08/O09 rows identical. Twenty-seven local reference/source paths and explicit O07 anchor resolve. Current critical path/§6/§13/§14 and manifest consistently identify this Task and landed predecessor, retaining bounded P5 approval and conditional exclusions.
 
 Exact diff reviewed. Owner configured/effective identity, whitespace and secret/attribution-shaped additions PASS; all application/tests/workflow/database/dependencies/decision/locked design/P5/TASK_PLAN and other paths unchanged. No load or local heavy test, tool installation, provisioning or production operation. Final staged exact-scope/content/whitespace/identity gates and post-commit fuller/raw inspection remain mandatory. Own CI/Independent HIGH-risk/performance/Owner numeric decision pending; no evidence commit, DONE or approval claimed.
+
+## 7. Final bounded numeric Owner approval and evidence — 2026-10-31
+
+### Closure authority and status history
+
+This final record completes bounded numeric approval preparation under DEC-045 §5. Earlier pending statements in §1–§6 and unchanged P6/P2/plan/manifest are historical submission checkpoints. The exact Owner decision below approves the stated numeric scope only; it does not approve unknown facts, close full O07, authorize load execution or establish final-P11 sufficiency. The original Task history and the approved performance plan remain unchanged.
+
+| Stage | Exact evidence / outcome |
+|---|---|
+| Content publication | 94fb79f3fd23930877b346ffa55f73512a22fa89, parent 067713afe23cad0d9712ef5acafb4000f5642db8; five-file documentation package; [PR #17](https://github.com/yusufarst/elligble/pull/17) OPEN / NOT MERGED |
+| Content CI | [CI #105](https://github.com/yusufarst/elligble/actions/runs/41160600020), run 41160600020, exact content SHA, attempt 1, COMPLETED/SUCCESS; eight SUCCESS jobs, all ubuntu-24.04 |
+| Independent review | Independent HIGH-risk/Performance Review PASS for exact 94fb79f3fd23930877b346ffa55f73512a22fa89, supplied/confirmed by Owner in the final authorization |
+| Owner exact-content decision | GRANTED 2026-10-31, exact SHA 94fb79f3fd23930877b346ffa55f73512a22fa89, with approved numeric scope and conditional exclusions below |
+| Final evidence authorization | Exactly ONE Task-record-only evidence commit modifying only docs/production/tasks/GOV-PERF-001.md, using Owner existing identity, normal push to existing branch/PR #17 after all guards PASS; no second file or evidence commit |
+| Completion | DONE — BOUNDED NUMERIC APPROVAL PREPARATION ONLY; HIGH / PRE-P11 / PRE-BASELINE, NOT COUNTED IN P11 BASELINE; no load/capacity/release outcome |
+
+### Exact Owner decision
+
+| Scope | Owner disposition — 2026-10-31 |
+|---|---|
+| Existing L01–L10 numeric workload profiles and timing | APPROVED, unchanged exact content |
+| Existing calibration sequence | APPROVED, unchanged |
+| Existing B01–B08 numeric acceptance thresholds | APPROVED, unchanged |
+| B10 workload-isolation expectation | CONDITIONALLY APPROVED, subject to O06/O08 and all other applicable prerequisites; not approval of their missing contracts |
+| B09 media limits | NOT APPROVED / PROVISIONAL |
+| O06 media policy and O08 signals/incident policy | NOT APPROVED / OPEN |
+| School NAT peak, network, VPS, device and resource facts | NOT APPROVED / UNKNOWN |
+| Production-equivalent infrastructure | NOT APPROVED / unresolved |
+| Load-tool, generator, runner, access and cost configuration | NOT APPROVED / unresolved |
+| Actual capacity certification, load execution or deployment | NOT APPROVED |
+| Full O07 closure, PB closure, final P11 activation or implementation | NOT APPROVED |
+
+No number, scenario, threshold, rate model, duration, restart/recovery or integrity oracle is changed by this approval or evidence commit. Observed defaults remain descriptive, not tuning approval or school configuration. Unknown conditional inputs remain prerequisites to future scenario execution and capacity/release evidence; no scenario is silently dropped. Established zero unauthorized access/no silent acknowledged-answer loss and all answer/timer/session/submission invariants remain mandatory regardless of performance thresholds.
+
+### Exact-content CI and attribution evidence
+
+| CI #105 job | Result |
+|---|---|
+| Web client (typecheck, tests, build) | SUCCESS; typecheck/build PASS, 34 test files / 344 tests PASS |
+| Runtime (typecheck, unit, PostgreSQL integration) | SUCCESS |
+| Container image (build and smoke test) | SUCCESS |
+| Browser end-to-end: webkit-390 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: desktop-1280 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: firefox-1280 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: mobile-360 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: tablet-768 | SUCCESS; 22 tests PASS |
+
+Actual test counts were read from this exact run's existing logs; exact run/SHA/attempt, eight job conclusions and ubuntu-24.04 labels were reverified for finalization. This is regression evidence only, not load testing or capacity certification. No local heavy tests, rerun, dispatch, provisioning or Docker operation.
+
+Physical finalization entry: C:/Projects/ELLIGBLE; branch task/gov-perf-001-p6-numeric-budget; HEAD/upstream 94fb79f3fd23930877b346ffa55f73512a22fa89, origin/main 067713afe23cad0d9712ef5acafb4000f5642db8; working tree CLEAN; PR #17 OPEN at exact content; no conflicting active Task/PR found. Content author and committer verified locally and by GitHub Git Commit API as Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>. Configured/effective evidence identity is the same Owner identity; no identity/global configuration changed. Fuller/raw content metadata: “docs(performance): prepare exact P6 numeric approval package”, no attribution trailer.
+
+### Evidence-only verification and preserved gates
+
+Final local guards verify exactly this one-file diff, retained historical content, approval-versus-exclusion consistency, local references/anchor, unchanged P6/P2/manifest/living plan/P5/TASK_PLAN/decision/locked design/application/tests/database/workflow/configuration and all other tracked paths, correct Owner identity, whitespace and no secrets/attribution trailers. Final staged scope/content and git diff --cached --check are verified before the single controlled commit; parent must equal the approved content SHA. After commit inspect fuller/raw metadata, verify no self-SHA was recorded and verify CLEAN synchronized remote PR head after normal push. The evidence commit's SHA is reported externally, never recursively recorded; its own CI is not a DONE prerequisite under DEC-045 §5. No second evidence commit.
+
+| Control | Preserved final state |
+|---|---|
+| B09 | PROVISIONAL / NOT APPROVED |
+| O06/O08 | OPEN / NOT APPROVED |
+| School facts / production equivalence / tool-runner-access-cost | UNKNOWN or unresolved / NOT APPROVED |
+| O07 overall | Conditional requirements unresolved; full closure NOT GRANTED |
+| G4 capacity | NOT PASS; no capacity certification or load evidence claimed |
+| PBs | Remaining applicable PBs including PB05 OPEN; previously closed statuses unchanged |
+| Final P11 | NOT APPROVED / NOT ACTIVE |
+| 33 candidate Tasks / baseline DONE | BLOCKED / 0 |
+| Existing P5/O09 bounded Owner approval | PRESERVED; established K intact, excluded C default-deny |
+| Full CBT-R1 release requirements | G1–G10 remain mandatory, not declared satisfied |
+| Implementation / SEC-001 / deployment / load execution | NOT AUTHORIZED |
+
+DEC-039/043, effective limited DEC-047 and all other compatible LOCKED/FROZEN decisions remain preserved. No performance-plan edit, resource claim, tool installation, production/other-project action, blocker closure, successor, history rewrite, force push or merge. STOP after normal push and remote synchronization verification; next action is Owner-controlled merge of PR #17.
