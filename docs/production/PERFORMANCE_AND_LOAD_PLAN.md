@@ -1,6 +1,7 @@
 **Status:** DRAFT / SUBMITTED FOR REVIEW; NOT APPROVED; NO LOAD EXECUTION OR CAPACITY RESULT
-**Task:** GOV-REALIGN-004; HIGH; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE
-**Baseline:** `2c6a4860a71a40b5cfb344eae3b964dd5b983125`; verified 2026-10-30
+**Task:** GOV-PERF-001; HIGH; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE
+**History:** GOV-REALIGN-004 accepted P6 planning only; original §1–§5 and every L/B numeric row preserved. Exact O07 approval submission in §6, NOT APPROVED.
+**Original package baseline:** `2c6a4860a71a40b5cfb344eae3b964dd5b983125`; verified 2026-10-30
 **Numeric budgets/workloads:** PROPOSED / OWNER APPROVAL REQUIRED (P2 O07)
 
 # CBT-R1 performance, concurrency and integrity plan
@@ -70,3 +71,80 @@ Budget failure means FAIL or EVIDENCE PENDING with named missing input; not "clo
 7. Produce one candidate-specific report: scenario coverage/status, approved limits, exact SHA/image/config/fixture, rates/distributions/error denominators/resource plots, integrity comparisons for all users, limitations, failures and G3/G4 gate recommendation. Independent review and Owner acceptance required; report alone does not close PBs or authorize production.
 
 P7 supplies realistic interaction/media behavior; P8 device/PB07 protocols and P9 infrastructure complete the measurement inputs; P10 stages/rehearses release and school UAT. G1–G10 remain mandatory; P11 not approved, TASK_PLAN.md not created, no production capacity/readiness demonstrated by this plan or this Task's automatic regression CI.
+
+<a id="o07-submission"></a>
+
+## 6. Exact P6/O07 numeric approval submission — GOV-PERF-001
+
+**Status:** PROPOSED FOR OWNER O07 APPROVAL / NOT APPROVED; NO LOAD EXECUTION OR CAPACITY RESULT.
+**Submission baseline:** 067713afe23cad0d9712ef5acafb4000f5642db8, 2026-10-31.
+**Authority:** This is the approval envelope of the existing §1–§5 plan, not a new performance plan. L01–L10 and B01–B10, all numeric cells/rate models/durations and the restart/recovery/integrity protocol above are retained unchanged. The original package's final “TASK_PLAN.md not created” statement is historical: a finite candidate now exists, NOT APPROVED / NOT ACTIVE, with 33 BLOCKED Tasks and baseline DONE 0.
+
+### 6.1 Classification and exact numerical authority
+
+Each applicable original number/requirement is governed by these classes:
+
+- **ESTABLISHED — CANONICAL:** approximate 1,000 concurrent Students is the release target under [DEC-044 §9–§10](../00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md), not measured capacity. Zero unauthorized access, no silent acknowledged-answer loss, immutable snapshots, one logical submission per Attempt and current active-session authority remain mandatory regardless of budget approval.
+- **ESTABLISHED — OBSERVED DEFAULT:** actual baseline configuration/polling/reference values in §2–§3 are descriptive only. They are neither a school fact nor an approved tuning/performance budget. Pin and observe the future candidate; do not silently replace its rates with assumptions.
+- **PROPOSED FOR OWNER O07 APPROVAL:** unchanged numeric offered workload/timing in L01–L10, explicit calibration steps in §5, and acceptance thresholds B01–B08; B10 only as the workload-isolation expectation tied to those budgets and subject to its C inputs. This submission grants no execution authority.
+- **CONDITIONAL / DEFERRED:** actual school/VPS/NAT/device/network facts, production-equivalent hardware/access/cost, exact offered NAT peak envelope, implementation/type/media/signal contracts, actual timer/inbox/resume/retry request mix and load-tool/version/configuration. B09 numbers remain PROVISIONAL / NOT APPROVED; O06/O08 and all other unresolved policy stay open.
+
+The original blanket “proposed” labels are read with these explicit distinctions: canonical invariants and observed defaults are not new tuning approvals, and conditional/provisional inputs are not approved merely by accepting this package.
+
+| Original location / number or requirement | Exact classification and disposition |
+|---|---|
+| §1 and §3 approximate 1,000-Student target | ESTABLISHED — CANONICAL target. Offered synthetic concurrency/counts in scenarios are PROPOSED; no achieved-capacity claim |
+| §2 pool max10, connect timeout5000ms, expiry sweep15s | ESTABLISHED — OBSERVED DEFAULT, checked at [config.ts](../../runtime/secure-assessment/src/config.ts). No tuning approval or production configuration claim |
+| §3 active/paused state checks15s/5s and derived ~66.7/~200 requests/s, monitoring20s | ESTABLISHED — OBSERVED DEFAULT/reference arithmetic at the stated concurrency; checked in [StudentExamWorkstation](../../frontend/web/src/components/StudentExamWorkstation.tsx) and [ExamMonitoringView](../../frontend/web/src/components/ExamMonitoringView.tsx). Actual candidate and combined request mix remain CONDITIONAL |
+| §3 reference nginx auth10r/s and API300r/s, configured bursts | ESTABLISHED — OBSERVED REFERENCE, checked in [nginx configuration](../../deploy/nginx/elligble.conf). No NAT exemption, unlimited rate or new burst envelope approved |
+| §3 type/media distribution, 90–180min exam lengths, school timetable/network assumptions | CONDITIONAL inputs to confirm; not actual school facts. L02's explicit 180min soak remains an unchanged PROPOSED test duration, distinct from a claim about school exams |
+| §5 calibration at50/250/500 before approved1,000 | PROPOSED FOR OWNER O07 APPROVAL; unchanged escalation sequence, phase failure stops escalation. No calibration run performed |
+| §§1–§2 and §5 versions, resource ceilings/topology, generator/target separation and fixture/config reproducibility | Isolation/integrity/disclosure requirements preserved; exact hardware/software/device/NAT/tool settings and equivalence are CONDITIONAL facts/authority, not supplied by this Task |
+| §4 zero security/data violations and §5 every-participant integrity/recovery checks | ESTABLISHED mandatory invariants, not relaxable numeric budgets. Performance percentiles/error allowance cannot excuse unauthorized access, silent ACK loss, duplicate submission or altered timer truth |
+| §5 first-failure evidence, no retry-to-PASS, stop/independent-review/Owner acceptance | Preserved protocol obligations; no extra run, infrastructure change, report acceptance or release PASS granted |
+
+### 6.2 L01–L10 offered-load and timing approval boundary
+
+This table incorporates each original L row's offered counts, rates, percentages, durations, sequence and oracle **verbatim by reference to §3**. No alternative numeric profile is proposed. Conditional inputs do not remove a scenario: they block its future execution or full G4 acceptance until resolved.
+
+| Scenario | PROPOSED FOR OWNER O07 APPROVAL from unchanged row | ESTABLISHED / CONDITIONAL boundary and future obligation |
+|---|---|---|
+| L01 | Login/start counts and windows, valid-throughput model | Real credential/session path and one intended Attempt required. Short NAT peak remains CONDITIONAL: exact school peak envelope is unknown and must be separately pinned/approved; no guessed peak or bypass |
+| L02 | Active count, mean answer interval/rate, simultaneous-change share and soak duration | Every acknowledged final choice matches DB; actual all-source poll/retry/type/media mix and O02/O06/O08 inputs CONDITIONAL. Do not replace full workload with one account or single choice |
+| L03 | Save cohort/window/rate and controlled contention/finalization mix | Exactly applied logical writes and immutable snapshots mandatory; full-type/grading/export contracts must exist and remain scoped |
+| L04 | Offline cohort/duration/change count/reconnect window and separate full-client case | Real latest-intent/backoff/version reconciliation. Queue count is not an instruction for blind writes; O04 refusal/late-delivery boundary unchanged, no fabricated acceptance |
+| L05 | Submit cohort/window, duplicate/lost-ACK share and separate expiry convergence | One durable submission/result, accepted-answer stability and authoritative timer resync remain invariants |
+| L06 | Proctor/Teacher/School Operator counts, accompanying scenarios and scope-change share | Tenant/current room/assignment checks mandatory. Future paging/risk/institution capabilities and actual refresh/fanout are CONDITIONAL, not validated by current dashboards |
+| L07 | Single-address/split-address synthetic comparison and linked scenario runs | Synthetic topology is not observed school NAT. Existing security/rate settings retained; actual NAT envelope/network facts and measured recovery CONDITIONAL. No rate exemption or universal capacity inference |
+| L08 | Controlled graceful restart and separate abrupt loss under stated workloads | Only future isolated authorized runner, intact DB and retained intents. Target/resource authorization CONDITIONAL; no restart on laptop/production. ACK truth, same Attempt/timer/submission preserved |
+| L09 | Running transfer cohort and duplicate/opposed/session/state races | O05/P4 transfer technical contract and implementation readiness CONDITIONAL; preserve answer/time/snapshot/randomization, no retake/extra time. Missing feature blocks execution, not scenario scope |
+| L10 | Simultaneous image-option cohort plus bounded signal abuse cadence/duration | O06 media and O08 ingress/dedupe/retention/drop contracts unresolved; stress shape is not an approved normal signal rate or signal limit. Retain all image/answer/readiness/authorization and isolation obligations |
+
+### 6.3 B01–B10 acceptance-budget approval boundary
+
+The **exact threshold text in unchanged §4 is the approval candidate**. Every percentile, inequality, time, failure denominator, percentage and resource/wait/recovery limit remains unchanged; no rounding or “close enough” acceptance is introduced.
+
+| Budget | Approval class and preserved interpretation |
+|---|---|
+| B01 | PROPOSED O07: exact save/timer/resume latency percentiles and stated steady/burst applicability; all proxy/queue/timeout samples retained |
+| B02 | PROPOSED O07: exact login/start/submit latency limits per operation, authoritative result receipt rather than HTTP send |
+| B03 | PROPOSED O07: exact response/freshness limits with stale indication; polling reference is OBSERVED, actual candidate behavior CONDITIONAL |
+| B04 | PROPOSED O07: exact unexpected-failure allowance per scenario/endpoint; separate expected negatives/deliberate outages. ESTABLISHED zero security/data violations overrides any percentage allowance |
+| B05 | PROPOSED O07: exact convergence percentages/windows from stable connectivity. ESTABLISHED any unexplained residual or silently discarded eligible intent fails integrity |
+| B06 | PROPOSED O07: exact service readiness/reconciliation windows. ESTABLISHED no acknowledged loss, duplicate submission or timer reset |
+| B07 | PROPOSED O07: exact CPU/RAM/DB/disk percentages/window/headroom limits. Actual allocated resources/ceilings/equivalence and school topology CONDITIONAL; original no-OOM/no-sustained-swap and safe-resource conditions unchanged |
+| B08 | PROPOSED O07: exact pool wait/timeout/event-loop limits; preserve no unresolved deadlock/retry-loop/unbounded queue growth. Actual missing instrumentation must be supplied in future scope, not assumed |
+| B09 | CONDITIONAL / PROVISIONAL / NOT APPROVED: unchanged preferred image/ceiling/total-question numbers are evaluation inputs only. No hard limit, destructive compression, rendition/legibility or media-byte/latency policy approved; O06 and later applicable approval still required |
+| B10 | PROPOSED O07: workload isolation expectation, with exact B01–B08 obligations retained during L10. O08 ingress/drop/retention and O06 media inputs CONDITIONAL; never authorize silent signal loss/infinite queues/automatic sanctions |
+
+### 6.4 Offered-versus-achieved evidence, exclusions and stop gate
+
+Future reports must disclose offered and achieved arrivals/concurrency/endpoint mix, all latency/error denominators (including timeouts and unplanned negative responses), generator saturation, target resources, stop events and missing coverage. A run that fails to offer the accepted profile cannot claim capacity merely because the successful subset is fast. Keep intended negative traffic and deliberate outages labelled separately; never reclassify unplanned failure as expected. Preserve raw first-failure evidence and every-participant intent→ACK/version/payload→DB/snapshot/session→receipt comparison in §5. No silent acknowledged-answer loss, unauthorized access or duplicate finalization is permissible.
+
+CONDITIONAL exclusions: actual school NAT peak envelope/address behavior, devices/network/bandwidth/VPS resources and production equivalence; scenario-ready application features and O02/O04/O05/O06/O08 contracts; actual all-source polling/retry/focus mix; staging/access/cost/observer/incident/stop authority; load-tool/version/generator configuration and capacity; required media/device/restore/load evidence. No school facts, tool selection, measured result or new numeric setting is invented. B09 and O06/O08 are not approved. All L scenarios remain mandatory future obligations with their unresolved inputs visible, not silently skipped.
+
+Submit the unchanged numeric profile/acceptance text with the exact ESTABLISHED/PROPOSED/CONDITIONAL envelope above for Independent HIGH-risk/performance Review and explicit Owner exact-content numeric decision. Approval, if later granted, is not execution authorization, school-specific capacity certification or closure of O07's unknown facts. If conditional inputs prevent unconditional sufficiency at final P11/G4, retain named blockers and request the exact missing authority; no blanket approval or final-P11 activation inferred.
+
+STOP future scenario/escalation on any integrity/security mismatch, OOM, generator saturation, unexpected contention/outage, unsafe headroom, missing/incorrect scope or unauthorized resource touched, as §5 already requires. Preserve logs/state; no automatic tuning, destructive cleanup or retest-to-PASS. These are protocol obligations only: this Task runs no load, provisions nothing and changes no application/security/rate settings.
+
+Bounded Owner-approved P5/O09 P decisions from [GOV-POLICY-001 §7](tasks/GOV-POLICY-001.md) remain effective; K rules preserved and C/O01–O08 exclusions remain default-deny. Full DEC-044 scope/G1–G10 and security/answer-integrity gates remain unmet. P6/O07 numeric approval pending; school facts UNKNOWN; final P11 NOT APPROVED / NOT ACTIVE; 33 candidate Tasks BLOCKED, baseline DONE 0. No PB closure, production readiness/deployment, evidence commit/DONE, successor or implementation is authorized.
