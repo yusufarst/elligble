@@ -28,11 +28,16 @@ export class TenantAccessRuntime {
    * Derives person_id ONLY from a successfully resolved Identity session.
    * Fails closed if multiple ambiguous memberships match.
    */
-  async resolveAuthenticatedMembershipContext(
-    sessionId: string,
-    sessionSecretAttempt: string,
-    requestedTenantId: string
-  ): Promise<MembershipContext | null> {
+  async resolveAuthenticatedMembershipContext(sessionId: string, sessionSecretAttempt: string, requestedTenantId: string): Promise<MembershipContext | null> {
+    return this.#resolveMembership(sessionId, sessionSecretAttempt, requestedTenantId, false);
+  }
+
+  /** Uses Identity's owning guard and locks Membership on the same transaction client. */
+  async resolveAuthenticatedMembershipContextForMutation(sessionId: string, sessionSecretAttempt: string, requestedTenantId: string): Promise<MembershipContext | null> {
+    return this.#resolveMembership(sessionId, sessionSecretAttempt, requestedTenantId, true);
+  }
+
+  async #resolveMembership(sessionId: string, sessionSecretAttempt: string, requestedTenantId: string, lockForMutation: boolean): Promise<MembershipContext | null> {
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     
     if (!sessionId || typeof sessionId !== 'string' || 
@@ -46,7 +51,9 @@ export class TenantAccessRuntime {
     }
 
     // 1. Resolve authentication through the real BU-088 IdentityRuntime contract
-    const session = await this.#identityRuntime.resolveSession(sessionId, sessionSecretAttempt);
+    const session = lockForMutation
+      ? await this.#identityRuntime.resolveSessionForMutation(sessionId, sessionSecretAttempt)
+      : await this.#identityRuntime.resolveSession(sessionId, sessionSecretAttempt);
     if (!session) {
       return null; // Deny: invalid/revoked/expired/idle-expired session
     }
@@ -59,6 +66,7 @@ export class TenantAccessRuntime {
       FROM tenant_memberships m
       JOIN tenant_tenants t ON t.id = m.tenant_id
       WHERE m.tenant_id = $1 AND m.person_id = $2
+      ${lockForMutation ? 'FOR SHARE OF m' : ''}
     `, [requestedTenantId, session.personId]);
 
     // 3. Fail closed if no membership or unknown tenant

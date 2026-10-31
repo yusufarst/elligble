@@ -35,7 +35,7 @@ test('result finalization (real PostgreSQL, production wiring)', { skip: skipWit
     };
     const teacherClient = await loggedIn(teacher);
     const act = (examInstanceId: string, action: string, c: BrowserLikeClient = teacherClient) =>
-        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
     const results = async (examInstanceId: string) => (await teacherClient.request(`/api/v1/assessment/teacher-exams/results?examInstanceId=${examInstanceId}`)).body;
 
     async function student(exam: string, name: string, options: { startTimer?: boolean; start?: boolean } = {}) {

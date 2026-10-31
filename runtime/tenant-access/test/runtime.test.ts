@@ -274,3 +274,20 @@ test('TenantAccessRuntime - read-only / no mutation (no non-SELECT queries execu
     assert.ok(q.text.trim().toUpperCase().startsWith('SELECT'), 'Only SELECT queries allowed');
   }
 });
+
+
+test('SEC-001 mutation membership guard uses owning Identity method and holds actual membership', async () => {
+  const { pg, identity, runtime } = setup();
+  const sessionId = '00000000-0000-0000-0000-000000000001';
+  const tenantId = '10000000-0000-0000-0000-000000000001';
+  const personId = '20000000-0000-0000-0000-000000000001';
+  let guarded = 0;
+  Object.assign(identity, { resolveSessionForMutation: async () => { guarded++; return { personId }; } });
+  pg.mockRows = [{ id: '30000000-0000-0000-0000-000000000001', tenant_id: tenantId, person_id: personId }];
+  const result = await runtime.resolveAuthenticatedMembershipContextForMutation(sessionId, 'secret', tenantId);
+  assert.strictEqual(result?.personId, personId);
+  assert.strictEqual(guarded, 1);
+  assert.ok(pg.queries.some(q => q.text.includes('FOR SHARE OF m')));
+  pg.mockRows = [];
+  assert.strictEqual(await runtime.resolveAuthenticatedMembershipContextForMutation(sessionId, 'secret', tenantId), null);
+});

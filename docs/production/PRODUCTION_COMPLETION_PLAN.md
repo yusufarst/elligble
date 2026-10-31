@@ -109,11 +109,11 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** SEC-001 IN_PROGRESS under explicit Owner execution/CI-first authorization on the existing branch, exact 56 paths/C01–C16. First checkpoint is baseline-only actual staff-dialog/results capture with immutable application trees/fixtures; require automatic exact-content attempt-1 eight-job CI and five retrievable artifact sets before application changes. Preserve four registration documents and READY history. Official counters: 33 Tasks, SEC-001 IN_PROGRESS 1/READY 0/BLOCKED 32/DONE 0/progress 0%; 78 edges/R01–R31/G1–G10 unchanged. PB05/other applicable PBs and excluded C unchanged. Final implementation verification precedes STOP for Independent HIGH-risk/Security Review and Owner acceptance; no evidence finalization/merge/deployment/successor.
+**CRITICAL PATH:** SEC-001 VERIFYING under explicit Owner exact 56-path/C01–C16 authority. Baseline a4d9a16/CI #111 attempt 1 eight SUCCESS and all five artifact sets (250 before pairs) PASS before implementation. Current guarded implementation must pass exact-content automatic full CI and matching after evidence, then Independent HIGH-risk/Security Review and Owner acceptance. Counters: 33 Tasks, VERIFYING 1/IN_PROGRESS 0/READY 0/BLOCKED 32/DONE 0/progress 0%; 78 edges/R01–R31/G1–G10 unchanged. PB05/excluded C remain unchanged. No final evidence commit, merge, release, deployment or successor is authorized.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | SEC-001 only; Owner-authorized exact-contract execution; baseline capture/CI gate before application changes |
+| IN PROGRESS | NONE; SEC-001 is VERIFYING, baseline gate PASS and implementation verification/review pending |
 | READY QUEUE (by value) | NONE; SEC-001 moved READY -> IN_PROGRESS on Owner execution authorization; 32 other Tasks remain BLOCKED |
 | BLOCKED | The other 32 implementation Tasks retain their exact blockers/dependencies in TASK_PLAN. UI-SYSTEM-005 remains separately BLOCKED on approved design-reference access/deferred cosmetic priority; no blocker or capability silently closed |
 | RECENTLY COMPLETED | GOV-P11-001 (controlled tracker preparation/evidence DONE, PR #18/main 1653fc5/CI #110; tracker active, no implementation grant), GOV-PERF-001 (bounded numeric preparation DONE, PR #17/main 885a91d/CI #107; B09 excluded/B10 conditional/residual O07 unresolved), GOV-POLICY-001 (bounded P5/O09 preparation DONE, approved P/K preserved/C excluded, PR #16/main 067713a/CI #104), GOV-DESIGN-002 (limited documentation DONE, PR #15/main fffab09/CI #101; DEC-047 effective, no implementation), GOV-DESIGN-001 (accepted intent only, PR #14/main 6c01358/CI #98; no token supersession), GOV-REALIGN-006 (candidate-only DONE; PR #13/main 9b11ec5/CI #94; Gate B unsatisfied at its historical closure), GOV-REALIGN-005 (P7–P10 planning accepted, PR #12/main 77756e3/CI #89; O01–O09/PB05 OPEN, P6 PROPOSED), GOV-REALIGN-004 (P2–P6 planning accepted, PR #11/main CI #86, unresolved inputs preserved), GOV-REALIGN-003 (P1 approved, PR #10/main CI #83), UI-SYSTEM-004 Part 3 (PR #9, main CI #79), UI-SYSTEM-004 Part 2 (PR #8, main CI #74), UI-SYSTEM-002 Part 2 (PR #7, main CI #67), WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-003, UI-SYSTEM-001, ASSESS-SYNC-002, ASSESS-TEACHER-004, ASSESS-TEACHER-003 cancellation, ASSESS-TEACHER-003 rescheduling, ASSESS-PROCTOR-004, ASSESS-TEACHER-002, ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
@@ -1037,7 +1037,7 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 ## 13. Next engineering work
 > DEC-045: one Owner-authorized bounded Task at a time; planning acceptance is not feature/deployment authority.
 
-Current Task **SEC-001 IN_PROGRESS**: Owner authorizes exact 56-path/C01–C16 implementation and Task-specific CI-first controlled publication. Baseline evidence with unchanged application/fixtures must PASS full CI and artifact retrieval before source implementation. Preserve registration/READY history and existing reviewer assignment. No final evidence commit, merge, PB closure, production or successor before their required gates.
+Current Task **SEC-001 VERIFYING**: baseline #111/five artifact sets PASS; owning guards/atomic audit/replay/export and bounded functional UI candidate prepared within exact 56-path authority. Implementation full CI, matched rendered evidence, Independent HIGH-risk/Security Review and Owner acceptance pending. No DONE, PB05 closure or successor.
 
 Historical registration of **GOV-REALIGN-006**, HIGH, PRE-P11 / PRE-BASELINE, NOT COUNTED IN P11 BASELINE: one finite unapproved/inactive P11 candidate. Four-file contract in `tasks/GOV-REALIGN-006.md`; candidate `TASK_PLAN.md` registers 33 BLOCKED Tasks, no implementation READY or baseline DONE. Final P11 approval remains BLOCKED on P1 §8 applicable gates, explicitly P5/O09 and P6 numeric/workload O07 approval, plus Independent HIGH-risk and Owner reviews. Own exact-content CI/publication pending; after CI STOP for those reviews/final P11 decision, no evidence commit or successor authorization.
 
@@ -1059,7 +1059,7 @@ UI-SYSTEM-004 Part 3 targeted correction: content `d1ac5da16b9c2e44c1efe14416cc5
 
 ## 14. Continuity checkpoint
 
-Physical Git and final Task records resolve older registration checkpoints. The Owner-approved TASK_PLAN.md is ACTIVE after PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919. SEC-001 contract/READY registration is an authorized, uncommitted working change; no implementation grant is inferred. No commit records its own SHA.
+Physical Git and final Task records resolve older registration checkpoints. The Owner-approved TASK_PLAN.md is ACTIVE after PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919. SEC-001 READY registration/history was preserved in a4d9a16/PR #19, baseline CI #111 PASS. Separate Owner execution authority now governs the bounded implementation candidate; final verification/review pending. No commit records its own SHA.
 
 | Item | State (2026-10-31) |
 |---|---|

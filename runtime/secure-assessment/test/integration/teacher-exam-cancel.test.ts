@@ -42,9 +42,18 @@ test('cancelling an exam before it opens (real PostgreSQL, production wiring)', 
     };
     const teacherClient = await loggedIn(teacher);
     const cancel = (c: BrowserLikeClient, body: Record<string, unknown>) =>
-        c.request('/api/v1/assessment/teacher-exams/cancel', { method: 'POST', body });
+        c.request('/api/v1/assessment/teacher-exams/cancel', { method: 'POST', body: { confirmed: true, ...(body) } }).then(response => {
+            if (response.status >= 200 && response.status < 300) {
+                const { audit, ...business } = response.body;
+                assert.match(audit.id, /^[0-9a-f-]{36}$/);
+                assert.ok(['APPLIED','NO_OP'].includes(audit.outcome));
+                assert.equal(typeof audit.replayed, 'boolean');
+                return { ...response, body: business };
+            }
+            return response;
+        });
     const transition = (examInstanceId: string, action: string) =>
-        teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
     const cancellations = async (exam: string) => (await pool.query(
         `SELECT id, previous_lifecycle_state, reason, cancelled_by_person_id, action_key, cancelled_at
          FROM secure_assessment_exam_cancellations WHERE exam_instance_id = $1`,

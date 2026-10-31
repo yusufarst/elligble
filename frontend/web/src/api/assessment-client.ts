@@ -147,10 +147,11 @@ export async function getProctorMonitoring(): Promise<ProctorMonitoringResponse>
 
 export async function postTeacherExamTransition(
   examInstanceId: string,
-  action: import('../types/assessment.ts').TeacherExamAction
+  action: import('../types/assessment.ts').TeacherExamAction,
+  intent?: import('../types/assessment.ts').PermissionIntent
 ): Promise<import('../types/assessment.ts').TeacherExamTransitionResponse> {
   const url = '/api/v1/assessment/teacher-exams/transition';
-  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, action } });
+  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, action, ...intent } });
   return handleResponse<import('../types/assessment.ts').TeacherExamTransitionResponse>(res);
 }
 
@@ -169,16 +170,17 @@ export async function getExamMonitoring(examInstanceId: string): Promise<ExamMon
 export async function postParticipantLock(
   examInstanceId: string,
   participantId: string,
-  action: ParticipantLockAction
+  action: ParticipantLockAction,
+  intent: import('../types/assessment.ts').PermissionIntent
 ): Promise<ParticipantLockResponse> {
   const url = '/api/v1/assessment/exam-monitoring/participant-lock';
-  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, participantId, action } });
+  const res = await apiFetch(url, { method: 'POST', json: { examInstanceId, participantId, action, ...intent } });
   return handleResponse<ParticipantLockResponse>(res);
 }
 
 /** Adds working time for one participant; a retry with the same action key adds nothing twice. */
 export async function postParticipantTime(input: TimeAdditionInput): Promise<TimeAdditionResponse> {
-  const res = await apiFetch('/api/v1/assessment/exam-monitoring/add-time', { method: 'POST', json: input });
+  const res = await apiFetch('/api/v1/assessment/exam-monitoring/add-time', { method: 'POST', json: { ...input, confirmed: true } });
   return handleResponse<TimeAdditionResponse>(res);
 }
 
@@ -220,7 +222,7 @@ export async function postTeacherExamAddParticipants(input: TeacherExamAddPartic
 }
 
 export async function postTeacherExamCancel(input: TeacherExamCancelInput): Promise<TeacherExamCancelResult> {
-  const res = await apiFetch('/api/v1/assessment/teacher-exams/cancel', { method: 'POST', json: input });
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/cancel', { method: 'POST', json: { ...input, confirmed: true } });
   return handleResponse<TeacherExamCancelResult>(res);
 }
 
@@ -253,4 +255,10 @@ export async function getTeacherExamPreview(examInstanceId: string): Promise<Tea
   const url = `/api/v1/assessment/teacher-exams/preview?examInstanceId=${encodeURIComponent(examInstanceId)}`;
   const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<TeacherExamPreview>(res);
+}
+
+/** Server authorizes and records intent before any local CSV/download or print request. */
+export async function postTeacherResultsExport(examInstanceId: string, format: 'csv' | 'print', actionKey: string): Promise<TeacherExamResultsResponse & { audit: { id: string; outcome: 'ISSUED'; replayed: boolean }; issuedAt: string }> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/results', { method: 'POST', json: { examInstanceId, format, actionKey } });
+  return handleResponse(res);
 }

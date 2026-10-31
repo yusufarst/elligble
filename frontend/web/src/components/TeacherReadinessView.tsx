@@ -1,3 +1,5 @@
+import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
+import { newActionKey } from '../lib/action-key.ts';
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTeacherReadiness, postTeacherExamTransition, ApiError } from '../api/assessment-client.ts';
 import type { TeacherReadinessResponse, TeacherExamReadinessProjection, TeacherExamAction } from '../types/assessment.ts';
@@ -108,6 +110,7 @@ export const TeacherReadinessView: React.FC<{
   /** Shown once above the list, for example after an exam was scheduled. */
   notice?: string | null;
 }> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, notice }) => {
+  const [reason, setReason] = useState('');
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
@@ -115,6 +118,7 @@ export const TeacherReadinessView: React.FC<{
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<{ exam: TeacherExamReadinessProjection; action: ConfirmableAction } | null>(null);
+  useEffect(() => { setReason(''); }, [confirm]);
   const [rescheduleFor, setRescheduleFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [cancelFor, setCancelFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [addFor, setAddFor] = useState<TeacherExamReadinessProjection | null>(null);
@@ -151,7 +155,8 @@ export const TeacherReadinessView: React.FC<{
     setPendingAction(examInstanceId);
     setActionErrors(prev => ({ ...prev, [examInstanceId]: '' }));
     try {
-      await postTeacherExamTransition(examInstanceId, action);
+      if (action === 'mark_ready') await postTeacherExamTransition(examInstanceId, action);
+      else await postTeacherExamTransition(examInstanceId, action, { reason, confirmed: true, actionKey: newActionKey() });
     } catch (err) {
       setActionErrors(prev => ({ ...prev, [examInstanceId]: transitionFailureMessage(err) }));
     } finally {
@@ -478,18 +483,19 @@ export const TeacherReadinessView: React.FC<{
 
       <Dialog open={confirm !== null} onOpenChange={open => { if (!open) setConfirm(null); }}>
         {confirm && (
-          <DialogContent aria-describedby="exam-action-description">
+          <DialogContent className={permissionDialogClass} aria-describedby="exam-action-description">
             <DialogHeader>
               <DialogTitle>{CONFIRM_COPY[confirm.action].title}</DialogTitle>
               <DialogDescription id="exam-action-description">{CONFIRM_COPY[confirm.action].description}</DialogDescription>
             </DialogHeader>
             <p className="m-0 font-medium">{confirm.exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
+            <ActionReasonField value={reason} onChange={setReason} disabled={pendingAction !== null} />
             <DialogFooter>
               <Button variant="secondary" onClick={() => setConfirm(null)}>Batal</Button>
               <Button
                 variant={CONFIRM_COPY[confirm.action].destructive ? 'destructive' : 'default'}
                 onClick={() => runTransition(confirm.exam.examInstanceId, confirm.action)}
-                disabled={pendingAction !== null}
+                disabled={pendingAction !== null || !validActionReason(reason)}
               >
                 {CONFIRM_COPY[confirm.action].confirm}
               </Button>

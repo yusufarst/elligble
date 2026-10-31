@@ -1,5 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ApiError, getTeacherExamResults } from '../api/assessment-client.ts';
+import { flushSync } from 'react-dom';
+import { newActionKey } from '../lib/action-key.ts';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ApiError, getTeacherExamResults, postTeacherResultsExport } from '../api/assessment-client.ts';
 import type { ParticipantResult, TeacherExamResultsResponse } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,11 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   const [data, setData] = useState<TeacherExamResultsResponse | null>(null);
   const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const activeExam = useRef(examInstanceId);
+  activeExam.current = examInstanceId;
+  const [exportPending, setExportPending] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const exportKeys = useRef<Partial<Record<'csv' | 'print', string>>>({});
   const [showScores, setShowScores] = useState(false);
 
   const load = useCallback(async () => {
@@ -62,8 +69,29 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
     setRefreshing(false);
   };
 
+  const exportResults = async (format: 'csv' | 'print') => {
+    if (exportPending) return;
+    setExportPending(true); setExportError(null);
+    try {
+      const key = exportKeys.current[format] ??= newActionKey();
+      const result = await postTeacherResultsExport(examInstanceId, format, key);
+      if (activeExam.current !== examInstanceId) return;
+      flushSync(() => setData(result));
+      if (format === 'csv') downloadTextFile(buildResultsCsv(result), resultsCsvFileName(result));
+      else window.print();
+      delete exportKeys.current[format];
+    } catch (err) {
+      const terminal = err instanceof ApiError && ['export_data_changed', 'action_key_reused'].includes(err.code);
+      if (terminal) delete exportKeys.current[format];
+      setExportError(err instanceof ApiError && err.code === 'forbidden'
+        ? 'Akses ekspor ditolak. Tidak ada berkas atau cetakan dibuat.'
+        : terminal ? 'Data atau permintaan berubah. Periksa hasil terbaru sebelum meminta ekspor lagi.'
+        : 'Izin ekspor belum diterima. Periksa koneksi, lalu coba lagi. Tidak ada berkas atau cetakan dibuat.');
+    } finally { setExportPending(false); }
+  };
+
   const back = (
-    <Button variant="ghost" size="sm" className="-ml-3 self-start print:hidden" onClick={onBack}>
+    <Button variant="ghost" size="sm" className="-ml-3 min-h-11 min-w-11 self-start whitespace-normal print:hidden" onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       Kembali ke Pelaksanaan Ujian
     </Button>
@@ -139,14 +167,16 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
         <Button variant="secondary" onClick={refresh} disabled={refreshing}>
           {refreshing ? 'Memperbarui...' : 'Perbarui Data'}
         </Button>
-        <Button variant="secondary" onClick={() => downloadTextFile(buildResultsCsv(data), resultsCsvFileName(data))} disabled={participants.length === 0}>
+        <Button variant="secondary" onClick={() => void exportResults('csv')} disabled={exportPending || participants.length === 0}>
           Unduh CSV
         </Button>
-        <Button variant="secondary" onClick={() => window.print()}>Cetak</Button>
+        <Button variant="secondary" onClick={() => void exportResults('print')} disabled={exportPending}>Cetak</Button>
       </div>
       <p className="m-0 text-xs text-muted-foreground print:hidden">
         Berkas CSV memakai titik koma sebagai pemisah kolom dan koma sebagai tanda desimal, sesuai pengaturan Indonesia pada Excel dan Google Sheets. Berkas berisi nilai; simpan hanya di perangkat sekolah.
       </p>
+      {exportError && <p role="alert" className="m-0 text-sm text-danger-ink print:hidden">{exportError}</p>}
+      {exportPending && <p role="status" className="m-0 text-sm print:hidden">Meminta izin ekspor...</p>}
       {error === 'failed' && <StaleDataNotice />}
       {!scoring.available && (
         <Alert variant="warning">
@@ -159,7 +189,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       {participants.length === 0 ? (
         <p className="m-0 text-muted-foreground">Ujian ini belum memiliki peserta.</p>
       ) : (
-        <div className="overflow-hidden rounded-md border border-border">
+        <div className="min-w-0 overflow-x-auto rounded-md border border-border">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">Hasil per peserta, diurutkan menurut ELLIGBLE ID</caption>
             <thead className="bg-[var(--color-neutral-50)] text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">

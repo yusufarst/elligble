@@ -343,6 +343,8 @@ test('a teacher schedules an exam from a question file, and an included student 
     await move.getByLabel('Durasi pengerjaan (menit)').fill('40');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(shotName('reschedule')), fullPage: true });
+    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
     await capturePermissionSurface(page, 'reschedule-confirm', FIXED);
     await move.getByRole('button', { name: 'Simpan Jadwal' }).click();
     await expect(page.getByRole('status').filter({ hasText: /durasi 40 menit\. Ujian kembali terjadwal; tandai siap lagi sebelum dibuka\.$/ })).toBeVisible();
@@ -350,6 +352,7 @@ test('a teacher schedules an exam from a question file, and an included student 
     await expect(card).toContainText('Jadwal diubah');
     await card.getByRole('button', { name: 'Tandai Siap' }).click();
     await card.getByRole('button', { name: 'Buka Ujian' }).click();
+    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
     await page.getByRole('dialog').getByRole('button', { name: 'Buka Ujian' }).click();
     await expect(card).toContainText('Berlangsung');
 

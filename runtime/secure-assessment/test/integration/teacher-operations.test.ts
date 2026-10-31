@@ -33,7 +33,7 @@ test('teacher-managed exam operations (real PostgreSQL, production wiring)', { s
     };
     const teacherClient = await clientFor(teacher);
     const transition = (c: BrowserLikeClient, examInstanceId: string, action: string) =>
-        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
 
     // Each exam gets its own participant: one student in two overlapping exams is a
     // participant schedule conflict (D04.2-39) and correctly blocks READY.

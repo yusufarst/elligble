@@ -1,7 +1,7 @@
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
 **Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
 **Completed transition:** GOV-P11-001 DONE for controlled tracker preparation/evidence only; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919, CI #110; excluded from the 33 implementation Tasks
-**Current Task:** SEC-001 IN_PROGRESS, exact 56-path execution/CI-first authorized; baseline evidence gate before application changes
+**Current Task:** SEC-001 VERIFYING, exact implementation candidate; baseline #111/artifacts PASS, implementation CI/review pending
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
 **Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
 **Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
@@ -10,7 +10,7 @@
 
 ## 1. Authority and activation boundary
 
-The Owner explicitly approved FINAL P11 Gate B on 2026-10-31 for the exact main and original candidate blob above. This is the finite CBT-R1 baseline; P11 approval alone authorizes no implementation. SEC-001 passed READY and is now IN_PROGRESS under separate Owner execution authorization; 32 other Tasks remain BLOCKED. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this document became the official live Task-status tracker on controlled Owner merge of GOV-P11-001 as main 1653fc5d63be5e6e62c34f2099eb82d66af03919, PR #18, CI #110. The [living plan](PRODUCTION_COMPLETION_PLAN.md) retains production evidence/continuity; [SEC-001](tasks/SEC-001.md) now holds the registered technical contract. Each implementation still needs its own concrete bounded contract, satisfied READY gate and separate Owner authorization. Registration of the existing SEC-001 contract under Owner 2026-10-31 authority is recorded in §11.2; no implementation is started.
+The Owner explicitly approved FINAL P11 Gate B on 2026-10-31 for the exact main and original candidate blob above. This is the finite CBT-R1 baseline; P11 approval alone authorizes no implementation. SEC-001 passed READY, executed under separate Owner authorization and is now VERIFYING; 32 other Tasks remain BLOCKED. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this document became the official live Task-status tracker on controlled Owner merge of GOV-P11-001 as main 1653fc5d63be5e6e62c34f2099eb82d66af03919, PR #18, CI #110. The [living plan](PRODUCTION_COMPLETION_PLAN.md) retains production evidence/continuity; [SEC-001](tasks/SEC-001.md) now holds the registered technical contract. Each implementation still needs its own concrete bounded contract, satisfied READY gate and separate Owner authorization. Registration history is preserved in §11.2; current execution/checkpoint evidence is in SEC-001 §11.
 
 Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md), not a single-choice pilot. [P1](CBT_RELEASE_DEFINITION.md) acceptance is established by [GOV-REALIGN-003 §6](tasks/GOV-REALIGN-003.md); [GOV-REALIGN-004 §5](tasks/GOV-REALIGN-004.md) accepts P2–P6 planning and [GOV-REALIGN-005 §5](tasks/GOV-REALIGN-005.md) accepts P7–P10 planning. Historical draft headers do not erase those accepted planning outcomes or approve unresolved policies.
 
@@ -26,18 +26,18 @@ Only the unique rows in §3 are counted. All are unstarted baseline work. Every 
 | Current Total | 33 |
 | DONE | 0 |
 | READY | 0 |
-| IN_PROGRESS | 1 |
-| VERIFYING | 0 |
+| IN_PROGRESS | 0 |
+| VERIFYING | 1 |
 | BLOCKED | 32 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
 | Progress % | 0% |
 
-These are the Owner-approved finite baseline totals, unchanged from the accepted candidate. Progress is DONE / Current Total = 0 / 33. Completed GOV-P11-001 is outside these counters. No historical DONE is re-counted. SEC-001 READY history is preserved; it is now IN_PROGRESS under the explicit execution grant, with baseline evidence required before application changes.
+These are the Owner-approved finite baseline totals, unchanged from the accepted candidate. Progress is DONE / Current Total = 0 / 33. Completed GOV-P11-001 is outside these counters. No historical DONE is re-counted. SEC-001 READY history is preserved; it is now VERIFYING after authorized implementation; baseline #111/five artifacts PASS, implementation verification/review pending.
 
 - BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; the 32 presently BLOCKED rows qualify.
 - TODO: included unstarted work without a currently identified blocker, still needing full contract readiness; none currently classified.
-- READY: dependencies DONE, all policies/contracts/scope/impacts/tests/tools/cost known and no ambiguity. No Task is queued READY now; SEC-001 passed the gate and moved IN_PROGRESS on explicit Owner authority. READY alone is not execution authorization.
+- READY: dependencies DONE, all policies/contracts/scope/impacts/tests/tools/cost known and no ambiguity. No Task is queued READY now; SEC-001 passed READY and IN_PROGRESS on explicit Owner authority, now VERIFYING. READY alone is not execution authorization.
 - IN_PROGRESS/VERIFYING/DONE/SUPERSEDED retain DEC-045 meanings; only reviewed evidence supports DONE. No checkbox is checked.
 - Priorities indicate production ordering, not estimates or a waiver. Independent school/Owner decisions can be obtained without authorizing parallel executor Tasks. PARALLEL SAFE: NO for all rows unless a later explicit contract/Owner approval changes that.
 
@@ -47,7 +47,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 
 | Task ID | Bounded outcome | Status | Priority / path position | Risk | Depends on | External lifecycle gates (§8) |
 |---|---|---|---|---|---|---|
-| SEC-001 | Enforce approved CBT permissions on existing routes | IN_PROGRESS | P0 / first implementation candidate | HIGH | NONE | O09 |
+| SEC-001 | Enforce approved CBT permissions on existing routes | VERIFYING | P0 / first implementation candidate | HIGH | NONE | O09 |
 | AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | BLOCKED | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
 | ADMIN-001 | School Operator authoritative roster import | BLOCKED | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
 | AUTH-002 | Student claim and scoped verification/activation | BLOCKED | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
@@ -137,7 +137,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### SEC-001 — Enforce approved CBT permissions on existing routes
 
-- **Requirements / status / priority / risk:** R07, R21, R23; IN_PROGRESS; P0 / first implementation candidate; HIGH. Technical contract/entry evidence: [SEC-001](tasks/SEC-001.md). Owner execution authorized; baseline evidence gate pending.
+- **Requirements / status / priority / risk:** R07, R21, R23; VERIFYING; P0 / first implementation candidate; HIGH. Technical contract/entry evidence: [SEC-001](tasks/SEC-001.md). Owner execution authorized; baseline #111/all five artifacts PASS, exact implementation CI/security/visual review pending.
 - **Dependencies and approvals:** No internal predecessor; external O09. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Approved P5 A01–A14 scopes are applied to existing actions without granting missing institution/identity features. Prove tenant/assignment/exam/room/object denial with unchanged denied-request state; close existing high-risk reason/confirmation/audit gaps, including lock/unlock, within approved policy. Preserve Teacher/Proctor distinction and no School Operator grading power.
 - **Required tests/evidence:** P5 N01–N10; P8 V11/V12; existing auth, supervision, lock and monitoring integration plus real-browser positive/negative cases. Any required schema detail remains a READY blocker. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.

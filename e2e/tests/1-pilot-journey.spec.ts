@@ -98,6 +98,8 @@ test('the teacher activates their account and opens the imported exam', async ({
     await expect(page.getByText('Terjadwal')).toBeVisible();
     await page.getByRole('button', { name: 'Tandai Siap' }).click();
     await page.getByRole('button', { name: 'Buka Ujian' }).first().click();
+    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
     await capturePermissionSurface(page, 'activate-confirm');
     await page.getByRole('dialog').getByRole('button', { name: 'Buka Ujian' }).click();
     await expect(page.getByText('Berlangsung').first()).toBeVisible();

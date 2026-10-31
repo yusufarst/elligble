@@ -159,6 +159,8 @@ test('a teacher adds a student left out of a scheduled exam, who then finds it',
     await dialog.getByRole('checkbox', { name: 'siswa.e2e.06' }).check();
     expect(await noOverflow(page)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(shotName('add-participants')), fullPage: true });
+    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
     await capturePermissionSurface(page, 'add-participants-confirm', QUESTIONS);
     await dialog.getByRole('button', { name: 'Tambahkan 1 Peserta' }).click();
     await expect(page.getByRole('status').filter({ hasText: '1 peserta ditambahkan ke ujian Matematika Wajib. Tandai siap lagi sebelum membuka ujian.' })).toBeVisible();

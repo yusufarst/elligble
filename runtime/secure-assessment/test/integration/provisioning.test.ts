@@ -204,7 +204,7 @@ test('pilot onboarding through the provisioning CLI (real PostgreSQL)', { skip: 
         const examId = readiness.body.exams[0].examInstanceId;
         assert.equal(readiness.body.exams[0].lifecycleState, 'SCHEDULED');
         for (const action of ['mark_ready', 'activate']) {
-            const res = await teacher.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId: examId, action } });
+            const res = await teacher.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId: examId, action }) } });
             assert.equal(res.status, 200, `${action}: ${JSON.stringify(res.body)}`);
         }
 

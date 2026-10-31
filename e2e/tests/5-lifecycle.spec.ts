@@ -125,6 +125,8 @@ function seconds(clock: string): number {
 async function teacherAction(page: Page, button: string, confirm: string): Promise<void> {
     await page.getByRole('button', { name: button }).click();
     await expect(page.getByRole('heading', { name: confirm })).toBeVisible();
+    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
     await capturePermissionSurface(page, 'transition-' + button.replace(/[^a-z0-9]+/gi, '-').toLowerCase());
     await page.getByRole('dialog').getByRole('button', { name: button }).click();
 }
@@ -231,6 +233,8 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     await lock.click();
     await expect(proctor.getByRole('heading', { name: 'Kunci Pengerjaan Peserta?' })).toBeVisible();
     await proctor.screenshot({ path: test.info().outputPath('lock-confirm-360.png') });
+    await proctor.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
     await capturePermissionSurface(proctor, 'lock-confirm');
     await proctor.getByRole('dialog').getByRole('button', { name: 'Kunci Pengerjaan' }).click();
     await expect(proctor.getByText(/^Pengerjaan siswa\.e2e\.03 dikunci sejak \d{2}\.\d{2} WIB\.$/)).toBeVisible();
@@ -265,6 +269,8 @@ test('the proctor locks one participant: questions hidden, time running, the ans
 
     // Direct unlock by the proctor, recorded with who and when.
     await proctorRow.getByRole('button', { name: 'Buka Kunci pengerjaan siswa.e2e.03' }).click();
+    await proctor.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
     await capturePermissionSurface(proctor, 'unlock-confirm');
     await proctor.getByRole('dialog').getByRole('button', { name: 'Buka Kunci' }).click();
     await expect(proctor.getByText('Kunci pengerjaan siswa.e2e.03 dibuka.')).toBeVisible();
