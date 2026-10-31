@@ -57,7 +57,7 @@ This file records concise canonical decisions. Detailed rationale remains in Rec
 | DEC-044 | Current release scope | The current release is Secure Assessment / CBT only (CBT-R1) for one school; non-CBT domains are deferred, not deleted; the CBT Release Gate is the current release criterion; CBT-R1 policy decisions OD-05 to OD-09 in 00.11 §12 | LOCKED | Owner / 00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md |
 | DEC-045 | Planning and execution framework | AICWDF v4.3 adopted and adapted; one Owner-authorized bounded Task at a time; Task records in docs/production/tasks/; finite P11 Task baseline | LOCKED | Owner / 00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md |
 | DEC-046 | Stack and topology | As-built stack recorded; self-hosted on the school's VPS; InsForge not used in the current release; provider-agnostic principle retained | LOCKED | Owner / ADR-001_AS_BUILT_STACK_AND_SELF_HOSTED_TOPOLOGY.md |
-| DEC-047 | Calm Progress limited palette | Exact-clause color-only supersession proposal; Owner-selected five values, preserved non-color DEC-040 and DEC-043 authority | PROPOSED / NOT EFFECTIVE | Owner 2026-10-31 / GOV-DESIGN-002 / DEC-047 below |
+| DEC-047 | Calm Progress limited palette | Exact-clause color-only supersession proposal; Owner-selected five values, preserved non-color DEC-040 and DEC-043 authority | OWNER-APPROVED / EFFECTIVE; limited CP01–CP10 only | Owner 2026-10-31 / GOV-DESIGN-002 §7 / PR #15 landing; DEC-047 below |
 
 ### DEC-029 — Discovery 01 Finalized (2026-08-14)
 
@@ -442,7 +442,8 @@ Does NOT supersede: 00.02; the rest of DEC-042 (no new Build Units, verification
 
 ### DEC-047 — Calm Progress limited color supersession PROPOSAL (2026-10-31)
 
-**Status:** PROPOSED / PENDING EXACT-CONTENT APPROVAL AND CONTROLLED LANDING; NOT EFFECTIVE
+**Status:** OWNER-APPROVED / EFFECTIVE — limited CP01–CP10 color supersession only
+**Activation evidence (metadata reconciliation by GOV-POLICY-001, 2026-10-31):** Approved content 431a8d9bf56ebc7b16588b51fcd5dd61012c74ec, Independent HIGH-risk PASS, Owner exact approval and final evidence 3081782be4d6f4a5fe0eaf320a0f4772c254d0c3 recorded in GOV-DESIGN-002 §7; Owner merged PR #15 as fffab096f21fa96d2b2cad7c866fb3b64dece3a6; exact-main CI #101 (41153414191), attempt 1, eight SUCCESS on ubuntu-24.04 verified. The original proposal heading and conditional activation rule below are preserved history; their conditions are satisfied. No change to CP01–CP10, palette or implementation prohibition.
 **Owner direction:** Five palette values and a limited color-only exception authorized 2026-10-31.
 **Task:** [GOV-DESIGN-002](../production/tasks/GOV-DESIGN-002.md), HIGH, PRE-P11 / PRE-BASELINE.
 **Activation:** Independent HIGH-risk Review PASS, explicit Owner approval of the exact supersession, final evidence under DEC-045 and Owner-controlled landing are required. Until then DEC-040/043 and their existing production bindings remain in force. CI or approval of direction alone does not activate this proposal. No frontend implementation is authorized by this Task, including after documentation acceptance.
