@@ -41,7 +41,9 @@ const offer = (over: Partial<TeacherExamParticipantCandidates> = {}): TeacherExa
 
 async function openDialog() {
   fireEvent.click(await screen.findByRole('button', { name: 'Tambah Peserta' }));
-  return screen.findByRole('dialog', { name: 'Tambah Peserta' });
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.change(within(dialog).getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
+  return dialog;
 }
 const addButton = (dialog: HTMLElement) =>
   within(dialog).getByRole('button', { name: /^(Tambahkan( \d+)? Peserta|Menambahkan\.\.\.)$/ }) as HTMLButtonElement;
@@ -84,7 +86,7 @@ describe('adding participants on the teacher screen', () => {
 
     expect(await screen.findByText('2 peserta ditambahkan ke ujian Biologi.')).toBeTruthy();
     const sent = vi.mocked(postTeacherExamAddParticipants).mock.calls[0][0];
-    expect({ ...sent, actionKey: undefined }).toEqual({ examInstanceId: EXAM, enrollmentIds: [E1, E2], actionKey: undefined });
+    expect({ ...sent, actionKey: undefined }).toEqual({ reason: 'Pelaksanaan ujian terjadwal', confirmed: true, examInstanceId: EXAM, enrollmentIds: [E1, E2], actionKey: undefined });
     expect(sent.actionKey).toMatch(UUID);
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(vi.mocked(getTeacherReadiness).mock.calls.length).toBeGreaterThanOrEqual(2));

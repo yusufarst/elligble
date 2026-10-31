@@ -356,6 +356,15 @@ export class IdentityRuntime {
    * Fails closed on wrong secret, malformed ID, unknown session, or revoked session.
    */
   async resolveSession(sessionId: string, secretAttempt: string): Promise<SessionData | null> {
+    return this.#resolveSession(sessionId, secretAttempt, false);
+  }
+
+  /** Caller owns the transaction; row locks fence revocation until its commit/rollback. */
+  async resolveSessionForMutation(sessionId: string, secretAttempt: string): Promise<SessionData | null> {
+    return this.#resolveSession(sessionId, secretAttempt, true);
+  }
+
+  async #resolveSession(sessionId: string, secretAttempt: string, lockForMutation: boolean): Promise<SessionData | null> {
     if (!sessionId || typeof sessionId !== 'string' || !secretAttempt || typeof secretAttempt !== 'string') {
       return null;
     }
@@ -364,8 +373,7 @@ export class IdentityRuntime {
       return null;
     }
 
-    const now = this.#clock.now();
-    const nowMs = now.getTime();
+    const requestedAt = this.#clock.now();
 
     const res = await this.#pg.query(`
       SELECT
@@ -377,6 +385,8 @@ export class IdentityRuntime {
       WHERE s.id = $1
     `, [sessionId]);
 
+    const now = lockForMutation ? this.#clock.now() : requestedAt;
+    const nowMs = now.getTime();
     if (res.rowCount === 0) return null; // Unknown session
 
     const session = res.rows[0];

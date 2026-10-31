@@ -552,3 +552,23 @@ test('IdentityRuntime - bounded last-activity update cannot exceed absolute expi
   const sessionRow = pg.sessions.get(auth.session.sessionId)!;
   assert.ok(sessionRow.last_activity_at.getTime() <= sessionRow.expires_at.getTime());
 });
+
+
+test('SEC-001 owning mutation session guard locks credentials, preserves projection and rechecks time after lock wait', async () => {
+  const { runtime, password, pg, clock } = setupHarness();
+  const auth = await runtime.authenticate('student.user', password);
+  assert.strictEqual(auth.success, true);
+  if (!auth.success) throw new Error('Fixture login failed');
+  const before = pg.queries.length;
+  const result = await runtime.resolveSessionForMutation(auth.session.sessionId, auth.session.secret);
+  assert.strictEqual(result?.sessionId, auth.session.sessionId);
+  assert.ok(pg.queries.slice(before).some(q => q.text.includes('FOR UPDATE OF s FOR SHARE OF a')));
+  assert.ok(!pg.queries.slice(before).some(q => ['BEGIN','COMMIT','ROLLBACK'].includes(q.text.trim())));
+  assert.strictEqual(await runtime.resolveSessionForMutation(auth.session.sessionId, 'incorrect'), null);
+  const query = pg.query.bind(pg);
+  pg.query = async (sql, params = []) => {
+    if (sql.includes('FOR UPDATE OF s FOR SHARE OF a')) clock.advance(POLICY.ABSOLUTE_EXPIRY_MS + 1);
+    return query(sql, params);
+  };
+  assert.strictEqual(await runtime.resolveSessionForMutation(auth.session.sessionId, auth.session.secret), null);
+});

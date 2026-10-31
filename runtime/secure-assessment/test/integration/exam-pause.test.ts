@@ -39,7 +39,7 @@ test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: 
     };
     const teacherClient = await loggedIn(teacher);
     const act = (examInstanceId: string, action: string, c: BrowserLikeClient = teacherClient) =>
-        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
 
     async function activeExam(questions = 3) {
         const exam = await createExamInstance(pool, tenant, teaching);

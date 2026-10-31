@@ -1,3 +1,5 @@
+import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
+import { newActionKey } from '../lib/action-key.ts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, getExamMonitoring, postParticipantLock } from '../api/assessment-client.ts';
 import type { ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus, ParticipantLockAction, ParticipantLockResponse } from '../types/assessment.ts';
@@ -100,8 +102,10 @@ export const ExamMonitoringView: React.FC<{
   const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [reason, setReason] = useState('');
   const [query, setQuery] = useState('');
   const [confirmLock, setConfirmLock] = useState<{ participant: MonitoredParticipant; action: ParticipantLockAction } | null>(null);
+  useEffect(() => { setReason(''); }, [confirmLock]);
   const [lockPending, setLockPending] = useState(false);
   const [notice, setNotice] = useState<{ failed: boolean; text: string } | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -144,7 +148,7 @@ export const ExamMonitoringView: React.FC<{
     const id = participant.elligbleId ?? 'peserta';
     setLockPending(true);
     try {
-      const result = await postParticipantLock(examInstanceId, participant.participantId, action);
+      const result = await postParticipantLock(examInstanceId, participant.participantId, action, { reason, confirmed: true, actionKey: newActionKey() });
       setNotice({ failed: false, text: lockOutcomeMessage(id, result) });
     } catch (err) {
       setNotice({ failed: true, text: lockFailureMessage(err) });
@@ -374,15 +378,16 @@ export const ExamMonitoringView: React.FC<{
 
       <Dialog open={confirmLock !== null} onOpenChange={open => { if (!open && !lockPending) setConfirmLock(null); }}>
         {confirmLock && (
-          <DialogContent aria-describedby="participant-lock-description">
+          <DialogContent className={permissionDialogClass} aria-describedby="participant-lock-description">
             <DialogHeader>
               <DialogTitle>{LOCK_COPY[confirmLock.action].title}</DialogTitle>
               <DialogDescription id="participant-lock-description">{LOCK_COPY[confirmLock.action].description}</DialogDescription>
             </DialogHeader>
             <p className="m-0 font-mono text-sm font-medium [overflow-wrap:anywhere]">{confirmLock.participant.elligbleId ?? 'Tanpa ELLIGBLE ID'}</p>
+            <ActionReasonField value={reason} onChange={setReason} disabled={lockPending} />
             <DialogFooter>
               <Button variant="secondary" onClick={() => setConfirmLock(null)} disabled={lockPending}>Batal</Button>
-              <Button onClick={() => runLockAction(confirmLock.participant, confirmLock.action)} disabled={lockPending}>
+              <Button onClick={() => runLockAction(confirmLock.participant, confirmLock.action)} disabled={lockPending || !validActionReason(reason)}>
                 {lockPending ? 'Memproses...' : LOCK_COPY[confirmLock.action].confirm}
               </Button>
             </DialogFooter>

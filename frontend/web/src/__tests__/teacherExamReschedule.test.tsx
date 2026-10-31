@@ -34,7 +34,9 @@ const moved = {
 
 async function openDialog() {
   fireEvent.click(await screen.findByRole('button', { name: 'Ubah Jadwal' }));
-  return screen.findByRole('dialog', { name: 'Ubah Jadwal Ujian' });
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.change(within(dialog).getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
+  return dialog;
 }
 
 describe('rescheduling on the teacher screen', () => {
@@ -65,7 +67,7 @@ describe('rescheduling on the teacher screen', () => {
 
     expect(await screen.findByText('Jadwal Ekonomi diubah menjadi 5 Oktober 2026, 10.00 sampai 12.00 WIB, durasi 60 menit.')).toBeTruthy();
     const sent = vi.mocked(postTeacherExamReschedule).mock.calls[0][0];
-    expect({ ...sent, actionKey: undefined }).toEqual({
+    expect({ ...sent, actionKey: undefined }).toEqual({ reason: 'Pelaksanaan ujian terjadwal', confirmed: true,
       examInstanceId: EXAM, windowStartsAt: '2026-10-05T10:00', windowEndsAt: '2026-10-05T12:00', durationMinutes: 60, latestStartPolicy: 'REMAINING_WINDOW_ONLY', actionKey: undefined,
     });
     expect(sent.actionKey).toMatch(UUID);

@@ -1,6 +1,88 @@
+import { execFileSync as permissionExec } from 'node:child_process';
+import { createHash as permissionHash } from 'node:crypto';
+import { readFileSync as permissionRead, writeFileSync as permissionWrite } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { closeQuestionList, continueExam, expireAttemptOf, login, openQuestionList, option, reloadPage, saveStatus, shotName, state, withDatabase } from './helpers.ts';
+
+// SEC-001: identical capture protocol on the immutable baseline and implementation.
+const permissionGit = (...args: string[]) => permissionExec('git', args, { encoding: 'utf8' }).trim();
+const permissionCommit = permissionGit('rev-parse', 'HEAD');
+const permissionFrontend = permissionGit('rev-parse', 'HEAD:frontend/web/src');
+const permissionRuntime = permissionGit('rev-parse', 'HEAD:runtime');
+const permissionPhase = permissionFrontend === 'a39d5a05aab6a81755b899cd0fd9dd007d383dad'
+    && permissionRuntime === '6879523c9c915cdd84f18de5c10b22f2bdb14d7a' ? 'before' : 'after';
+if (process.env['GITHUB_SHA'] && process.env['GITHUB_SHA'] !== permissionCommit) throw new Error('SEC-001 capture SHA mismatch');
+
+async function capturePermissionSurface(page: Page, scenario: string, fixture = 'operator-math-three-questions-long-third-v1'): Promise<void> {
+    const original = page.viewportSize();
+    const browser = page.context().browser();
+    if (!browser || !original) throw new Error('Real browser/viewport required for SEC-001 evidence');
+    const variants = [
+        { width: 360, height: 780, textScale: 1 }, { width: 768, height: 1024, textScale: 1 },
+        { width: 1280, height: 800, textScale: 1 }, { width: 360, height: 780, textScale: 2 },
+        { width: 640, height: 360, textScale: 1 },
+    ];
+    try {
+        for (const variant of variants) {
+            await page.setViewportSize({ width: variant.width, height: variant.height });
+            const dialog = page.getByRole('dialog');
+            const root = await dialog.count() ? dialog : page.locator('main').first();
+            await expect(root).toBeVisible();
+            if (variant.textScale === 2) await root.evaluate(element => {
+                const elements = [element, ...element.querySelectorAll<HTMLElement>('*')];
+                const styles = elements.map(node => ({ node, font: parseFloat(getComputedStyle(node).fontSize), line: parseFloat(getComputedStyle(node).lineHeight) }));
+                for (const { node, font, line } of styles) {
+                    if (!(node instanceof HTMLElement)) continue;
+                    node.dataset.sec001OriginalStyle = JSON.stringify(node.getAttribute('style'));
+                    node.style.fontSize = String(font * 2) + 'px';
+                    if (Number.isFinite(line)) node.style.lineHeight = String(line * 2) + 'px';
+                }
+            });
+            try {
+                await page.evaluate(async () => { await document.fonts.ready; await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))); });
+                const metrics = await root.evaluate(element => {
+                    const targets = [...element.querySelectorAll<HTMLElement>('button, input, textarea, select')].filter(node => {
+                        const b = node.getBoundingClientRect(); return b.width > 0 && b.height > 0;
+                    }).map(node => {
+                        const target = node instanceof HTMLInputElement && ['checkbox', 'radio'].includes(node.type) ? node.closest('label') ?? node : node;
+                        const box = target.getBoundingClientRect();
+                        return { name: node.getAttribute('aria-label') ?? node.textContent?.trim() ?? node.tagName, width: box.width, height: box.height };
+                    });
+                    return { scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, targets, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches };
+                });
+                const name = ['workspace-sec001', permissionPhase, scenario, variant.width + 'x' + variant.height, 'text' + variant.textScale, test.info().project.name].join('-');
+                const screenshot = name + '.png';
+                await page.screenshot({ path: test.info().outputPath(screenshot), fullPage: !(await dialog.count()), animations: 'disabled', caret: 'hide' });
+                permissionWrite(test.info().outputPath(name + '.json'), JSON.stringify({
+                    task: 'SEC-001', phase: permissionPhase, commit: permissionCommit,
+                    baseline: { commit: '1653fc5d63be5e6e62c34f2099eb82d66af03919', frontendTree: 'a39d5a05aab6a81755b899cd0fd9dd007d383dad', runtimeTree: '6879523c9c915cdd84f18de5c10b22f2bdb14d7a' },
+                    frontendTree: permissionFrontend, runtimeTree: permissionRuntime,
+                    fixture: { globalSetupSha256: permissionHash('sha256').update(permissionRead(new URL('../global-setup.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n')).digest('hex'), scenarioSha256: permissionHash('sha256').update(fixture).digest('hex'), synthetic: true },
+                    browser: { project: test.info().project.name, engine: browser.browserType().name(), version: browser.version() },
+                    viewport: page.viewportSize(), textScale: variant.textScale, resizeMethod: 'computed font-size and line-height only', scenario,
+                    screenshot, screenshotSha256: permissionHash('sha256').update(permissionRead(test.info().outputPath(screenshot))).digest('hex'),
+                    masking: [], variableFields: ['server timestamps/countdown', 'synthetic runtime dates/IDs'], accessibilitySnapshot: await root.ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
+                }, null, 2));
+                if (permissionPhase === 'after') {
+                    expect(metrics.scrollWidth, scenario + ': document overflow').toBeLessThanOrEqual(metrics.clientWidth);
+                    for (const target of metrics.targets) {
+                        expect(target.width, scenario + ': target width').toBeGreaterThanOrEqual(43.5);
+                        expect(target.height, scenario + ': target height').toBeGreaterThanOrEqual(43.5);
+                    }
+                }
+            } finally {
+                if (variant.textScale === 2) await page.evaluate(() => {
+                    for (const node of document.querySelectorAll<HTMLElement>('[data-sec001-original-style]')) {
+                        const original: string | null = JSON.parse(node.dataset.sec001OriginalStyle ?? 'null');
+                        if (original === null) node.removeAttribute('style'); else node.setAttribute('style', original);
+                        delete node.dataset.sec001OriginalStyle;
+                    }
+                });
+            }
+        }
+    } finally { await page.setViewportSize(original); }
+}
 
 // Pause, resume and end on the real production process (Owner decision 2026-09-30). Runs
 // last: it ends the shared exam. A paused exam hides the questions and freezes the time;
@@ -43,6 +125,9 @@ function seconds(clock: string): number {
 async function teacherAction(page: Page, button: string, confirm: string): Promise<void> {
     await page.getByRole('button', { name: button }).click();
     await expect(page.getByRole('heading', { name: confirm })).toBeVisible();
+    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
+    await capturePermissionSurface(page, 'transition-' + button.replace(/[^a-z0-9]+/gi, '-').toLowerCase());
     await page.getByRole('dialog').getByRole('button', { name: button }).click();
 }
 
@@ -148,6 +233,9 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     await lock.click();
     await expect(proctor.getByRole('heading', { name: 'Kunci Pengerjaan Peserta?' })).toBeVisible();
     await proctor.screenshot({ path: test.info().outputPath('lock-confirm-360.png') });
+    await proctor.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
+    await capturePermissionSurface(proctor, 'lock-confirm');
     await proctor.getByRole('dialog').getByRole('button', { name: 'Kunci Pengerjaan' }).click();
     await expect(proctor.getByText(/^Pengerjaan siswa\.e2e\.03 dikunci sejak \d{2}\.\d{2} WIB\.$/)).toBeVisible();
     await expect(proctorRow).toContainText('Dikunci');
@@ -181,6 +269,9 @@ test('the proctor locks one participant: questions hidden, time running, the ans
 
     // Direct unlock by the proctor, recorded with who and when.
     await proctorRow.getByRole('button', { name: 'Buka Kunci pengerjaan siswa.e2e.03' }).click();
+    await proctor.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+
+    await capturePermissionSurface(proctor, 'unlock-confirm');
     await proctor.getByRole('dialog').getByRole('button', { name: 'Buka Kunci' }).click();
     await expect(proctor.getByText('Kunci pengerjaan siswa.e2e.03 dibuka.')).toBeVisible();
     await expect(proctorRow).not.toContainText('Dikunci');
@@ -320,6 +411,8 @@ test('the teacher finalizes once every attempt is finished; the results are fina
     await expect(row('siswa.e2e.01')).toContainText('66,67');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(shotName('final-results')), fullPage: true });
+
+    await capturePermissionSurface(page, 'final-results');
 
     // Export (D04.8-52/53): one self-describing row per participant, Indonesian spreadsheet form.
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Unduh CSV' }).click()]);

@@ -76,19 +76,21 @@ function sortByElligbleId(list: ParticipantResult[]): void {
 export async function readTeacherExamResults(
     pool: pg.Pool,
     actor: { tenantId: string; personId: string },
-    examInstanceId: string
+    examInstanceId: string,
+    transaction?: pg.PoolClient
 ): Promise<TeacherExamResultsOutcome> {
     if (!UUID_REGEX.test(examInstanceId) || !UUID_REGEX.test(actor.tenantId) || !UUID_REGEX.test(actor.personId)) {
         return { type: 'forbidden' };
     }
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+        if (!transaction) await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
         const exam = await client.query(
             `SELECT i.id, i.lifecycle_state, i.window_starts_at, i.window_ends_at,
                     s.display_label AS subject_label, g.display_label AS group_label, at.display_label AS assessment_type_label
@@ -107,7 +109,7 @@ export async function readTeacherExamResults(
             [examInstanceId, actor.tenantId, actor.personId]
         );
         if (exam.rows.length !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const examRow = exam.rows[0];
@@ -124,7 +126,7 @@ export async function readTeacherExamResults(
         const finalized = await readFinalizedResults(client, actor.tenantId, examInstanceId);
         if (finalized) {
             const ids = await listElligbleIds(client, finalized.rows.map(row => row.personId));
-            await client.query('COMMIT');
+            if (!transaction) await client.query('COMMIT');
             const list: ParticipantResult[] = finalized.rows.map(row => ({
                 elligbleId: ids.get(row.personId) ?? null,
                 status: row.standing === 'SUBMITTED' ? 'SUBMITTED' : 'ABSENT',
@@ -200,7 +202,7 @@ export async function readTeacherExamResults(
         }
 
         const elligbleIds = await listElligbleIds(client, participants.rows.map(row => row.person_id as string));
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
 
         const probe = scoreBaselineAttempt(questions, new Map());
         const scoringAvailable = probe.type === 'scored';
@@ -241,10 +243,11 @@ export async function readTeacherExamResults(
                 participants: results,
             },
         };
-    } catch {
-        await client.query('ROLLBACK').catch(() => {});
+    } catch (transactionError) {
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

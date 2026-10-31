@@ -91,26 +91,28 @@ async function readTotals(client: pg.PoolClient, tenantId: string, timerStateId:
 export async function addParticipantTime(
     pool: pg.Pool,
     actor: { tenantId: string; personId: string },
-    request: TimeAdditionRequest
+    request: TimeAdditionRequest,
+    transaction?: pg.PoolClient
 ): Promise<TimeAdditionResult> {
     const { examInstanceId, participantId, minutes, reason, actionKey } = request;
     if (!UUID_REGEX.test(actor.tenantId) || !UUID_REGEX.test(actor.personId)) return { type: 'forbidden' };
     const seconds = minutes * 60;
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         // Requests with one action key are decided one at a time: a retry that overtakes the
         // original waits for it and then finds its addition.
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`sa-add-time:${actor.tenantId}:${actionKey}`]);
         // Exam row before attempt row, the order every attempt writer uses.
         const supervision = await resolveSupervisionScope(client, actor, examInstanceId, { lockExam: true });
         if (!supervision || !supervision.managingTeacher) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const participant = await client.query(
@@ -118,7 +120,7 @@ export async function addParticipantTime(
             [actor.tenantId, examInstanceId, participantId]
         );
         if (participant.rows.length !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
 
@@ -135,11 +137,11 @@ export async function addParticipantTime(
             const same = row.exam_participant_id === participantId && row.actor_person_id === actor.personId
                 && Number(row.adjustment_seconds) === seconds && row.reason === reason;
             if (!same) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'action_key_reused' };
             }
             const totals = await readTotals(client, actor.tenantId, row.timer_state_id);
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return {
                 type: 'ok', participantId, addedSeconds: seconds, ...totals,
                 addedAt: new Date(row.created_at).toISOString(), replayed: true,
@@ -147,7 +149,7 @@ export async function addParticipantTime(
         }
 
         if (!TIME_STATES.has(supervision.lifecycleState)) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: supervision.lifecycleState };
         }
         // The participant's open (first unsubmitted) attempt, locked against its writers.
@@ -161,7 +163,7 @@ export async function addParticipantTime(
             [actor.tenantId, participantId]
         );
         if (attempt.rows.length !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'no_active_attempt' };
         }
         // Read after the attempt lock, in a statement of its own: a submission committed while
@@ -176,15 +178,15 @@ export async function addParticipantTime(
         );
         const state = timer.rows[0];
         if (state?.submitted) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'no_active_attempt' };
         }
         if (!state?.started_at) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'not_started' };
         }
         if (Number(state.remaining) <= 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'time_up' };
         }
         const created = await client.query(
@@ -194,17 +196,18 @@ export async function addParticipantTime(
             [actor.tenantId, state.id, seconds, reason, actor.personId, actionKey]
         );
         const totals = await readTotals(client, actor.tenantId, state.id);
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return {
             type: 'ok', participantId, addedSeconds: seconds, ...totals,
             addedAt: new Date(created.rows[0].created_at).toISOString(), replayed: false,
         };
     } catch (err) {
-        await client.query('ROLLBACK').catch(() => {});
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
         // The same key used at the same moment for another participant: the index decides.
         if ((err as { code?: string })?.code === '23505') return { type: 'action_key_reused' };
+        if (transaction) throw err;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

@@ -26,7 +26,7 @@ export async function resolveSupervisionScope(
     client: pg.PoolClient,
     actor: { tenantId: string; personId: string },
     examInstanceId: string,
-    options: { lockExam?: boolean } = {}
+    options: { lockExam?: boolean; lockAuthority?: boolean } = {}
 ): Promise<SupervisionScope | null> {
     const res = await client.query(
         `SELECT i.lifecycle_state, COALESCE(i.room_based_operations_enabled, FALSE) AS room_based,
@@ -49,6 +49,41 @@ export async function resolveSupervisionScope(
     const row = res.rows[0];
     if (!row || (!row.proctor_assignment_id && !row.is_teacher)) return null;
     const scope: 'PROCTOR' | 'TEACHER' = row.proctor_assignment_id ? 'PROCTOR' : 'TEACHER';
+    if (options.lockAuthority) {
+        if (scope === 'PROCTOR') {
+            const assignment = await client.query(
+                `SELECT id FROM secure_assessment_proctor_assignments
+                 WHERE id = $1 AND tenant_id = $2 AND exam_instance_id = $3 AND person_id = $4 AND revoked_at IS NULL
+                 FOR SHARE`, [row.proctor_assignment_id, actor.tenantId, examInstanceId, actor.personId]
+            );
+            if (assignment.rows.length !== 1) return null;
+            if (row.room_based) {
+                await client.query(
+                    `SELECT id FROM secure_assessment_exam_proctor_room_assignments
+                     WHERE tenant_id = $1 AND exam_instance_id = $2 AND proctor_assignment_id = $3
+                     ORDER BY id FOR SHARE`, [actor.tenantId, examInstanceId, row.proctor_assignment_id]
+                );
+                await client.query(
+                    `SELECT pra.id FROM secure_assessment_exam_participant_room_assignments pra
+                     JOIN secure_assessment_exam_proctor_room_assignments epra ON epra.tenant_id = pra.tenant_id
+                       AND epra.exam_instance_id = pra.exam_instance_id AND epra.exam_room_id = pra.exam_room_id
+                     WHERE pra.tenant_id = $1 AND pra.exam_instance_id = $2 AND epra.proctor_assignment_id = $3
+                     ORDER BY pra.id FOR SHARE OF pra`, [actor.tenantId, examInstanceId, row.proctor_assignment_id]
+                );
+            }
+        } else {
+            const assignment = await client.query(
+                `SELECT ata.id FROM academic_core_teaching_assignments ata
+                 JOIN tenant_teacher_assignments tta ON tta.id = ata.teacher_assignment_id AND tta.tenant_id = ata.tenant_id
+                 JOIN tenant_memberships tm ON tm.id = tta.membership_id AND tm.tenant_id = tta.tenant_id
+                 JOIN secure_assessment_exam_instances i ON i.teaching_assignment_id = ata.id AND i.tenant_id = ata.tenant_id
+                 WHERE i.id = $1 AND i.tenant_id = $2 AND tm.person_id = $3
+                   AND ata.revoked_at IS NULL AND tta.revoked_at IS NULL FOR SHARE OF ata, tta, tm`,
+                [examInstanceId, actor.tenantId, actor.personId]
+            );
+            if (assignment.rows.length !== 1) return null;
+        }
+    }
     return {
         lifecycleState: row.lifecycle_state,
         roomBased: Boolean(row.room_based),

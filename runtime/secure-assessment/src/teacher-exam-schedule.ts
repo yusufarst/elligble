@@ -102,7 +102,8 @@ function scheduleOf(startsAt: unknown, endsAt: unknown, durationSeconds: unknown
 export async function rescheduleTeacherExam(
     pool: pg.Pool,
     actor: { tenantId: string; personId: string },
-    request: RescheduleRequest
+    request: RescheduleRequest,
+    transaction?: pg.PoolClient
 ): Promise<RescheduleOutcome> {
     if (!UUID.test(actor.tenantId) || !UUID.test(actor.personId)) return { type: 'forbidden' };
     const problems: Array<{ code: RescheduleProblemCode }> = [];
@@ -113,17 +114,18 @@ export async function rescheduleTeacherExam(
 
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         // The managing teacher's exam, locked like every lifecycle transition: requests for one
         // exam are decided one at a time, so a retry that overtakes the original finds its change.
         const row = await lockManagedExam(client, actor, request.examInstanceId);
         if (!row) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const timeZone: string | null = row.time_zone ?? null;
@@ -157,7 +159,7 @@ export async function rescheduleTeacherExam(
                 && new Date(change.new_window_ends_at).getTime() === endsAt.getTime()
                 && Number(change.new_duration_seconds) === durationSeconds
                 && change.new_latest_start_policy === request.latestStartPolicy;
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             if (!same) return { type: 'action_key_reused' };
             return {
                 type: 'rescheduled', examInstanceId: request.examInstanceId, lifecycleState: row.lifecycle_state,
@@ -167,7 +169,7 @@ export async function rescheduleTeacherExam(
         }
 
         if (!RESCHEDULABLE_STATES.has(row.lifecycle_state)) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: row.lifecycle_state };
         }
         if (startsAt && endsAt) {
@@ -175,7 +177,7 @@ export async function rescheduleTeacherExam(
             else if (!(endsAt.getTime() > new Date(row.db_now).getTime())) problems.push({ code: 'window_ended' });
         }
         if (problems.length > 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid', problems };
         }
 
@@ -185,7 +187,7 @@ export async function rescheduleTeacherExam(
             && Number(row.configured_attempt_duration_seconds) === durationSeconds
             && row.latest_start_policy === request.latestStartPolicy;
         if (unchanged) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return {
                 type: 'rescheduled', examInstanceId: request.examInstanceId, lifecycleState: row.lifecycle_state,
                 schedule: scheduleOf(startsAt, endsAt, durationSeconds, request.latestStartPolicy),
@@ -221,7 +223,7 @@ export async function rescheduleTeacherExam(
             throw new Error('readiness unavailable');
         }
         if (problems.length > 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid', problems };
         }
 
@@ -238,18 +240,19 @@ export async function rescheduleTeacherExam(
                 startsAt, endsAt, durationSeconds, request.latestStartPolicy,
             ]
         );
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return {
             type: 'rescheduled', examInstanceId: request.examInstanceId, lifecycleState: 'SCHEDULED',
             schedule: scheduleOf(startsAt, endsAt, durationSeconds, request.latestStartPolicy),
             changed: true, replayed: false, changedAt: iso(recorded.rows[0].changed_at),
         };
     } catch (err) {
-        await client.query('ROLLBACK').catch(() => {});
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
         // The same key used at the same moment for another exam: the unique key decides.
         if ((err as { code?: string })?.code === '23505') return { type: 'action_key_reused' };
+        if (transaction) throw err;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

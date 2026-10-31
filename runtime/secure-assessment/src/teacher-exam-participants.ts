@@ -230,22 +230,24 @@ export async function readParticipantCandidates(
 export async function addTeacherExamParticipants(
     pool: pg.Pool,
     actor: { tenantId: string; personId: string },
-    request: ParticipantAdditionRequest
+    request: ParticipantAdditionRequest,
+    transaction?: pg.PoolClient
 ): Promise<ParticipantAdditionOutcome> {
     if (!UUID.test(actor.tenantId) || !UUID.test(actor.personId)) return { type: 'forbidden' };
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         // Locked like every lifecycle transition: additions to one exam are decided one at a
         // time, so a retry that overtakes the original finds what it added.
         const exam = await lockManagedExam(client, actor, request.examInstanceId);
         if (!exam) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
 
@@ -269,11 +271,11 @@ export async function addTeacherExamParticipants(
             const same = first.exam_instance_id === request.examInstanceId && first.added_by_person_id === actor.personId
                 && recorded.length === requested.length && recorded.every((entry, i) => entry.enrollmentId === requested[i]);
             if (!same) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'action_key_reused' };
             }
             const ids = await listElligbleIds(client, recorded.map(entry => entry.personId));
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return {
                 type: 'added', examInstanceId: request.examInstanceId, lifecycleState: exam.lifecycle_state, addedAt: iso(first.added_at),
                 added: recorded.map(entry => ({ enrollmentId: entry.enrollmentId, elligbleId: ids.get(entry.personId) ?? null })),
@@ -282,13 +284,13 @@ export async function addTeacherExamParticipants(
         }
 
         if (!ADDABLE_STATES.has(exam.lifecycle_state)) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: exam.lifecycle_state };
         }
         const context = await readClassContext(client, actor.tenantId, request.examInstanceId);
         const problems: Array<{ code: ParticipantAdditionProblemCode; count?: number }> = examProblems(exam, context);
         if (problems.length > 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid', problems };
         }
 
@@ -314,7 +316,7 @@ export async function addTeacherExamParticipants(
         const conflicting = await conflictingPersons(client, actor.tenantId, request.examInstanceId, exam, fresh.map(s => s.personId));
         if (conflicting.size > 0) problems.push({ code: 'schedule_conflict', count: conflicting.size });
         if (problems.length > 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid', problems };
         }
 
@@ -352,14 +354,14 @@ export async function addTeacherExamParticipants(
                 [actor.tenantId, request.examInstanceId, actor.personId, addedAt]
             );
         }
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return {
             type: 'added', examInstanceId: request.examInstanceId, lifecycleState: 'SCHEDULED', addedAt: iso(addedAt),
             added: fresh.map(s => ({ enrollmentId: s.enrollmentId, elligbleId: s.elligbleId })),
             replayed: false,
         };
     } catch (err) {
-        await client.query('ROLLBACK').catch(() => {});
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
         const failure = err as { code?: string; constraint?: string };
         if (failure?.code === '23505') {
             // The same key used at the same moment for another exam: the unique key decides.
@@ -368,8 +370,9 @@ export async function addTeacherExamParticipants(
                 return { type: 'invalid', problems: [{ code: 'already_participant' }] };
             }
         }
+        if (transaction) throw err;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

@@ -89,29 +89,31 @@ export async function sendExamBroadcast(
     actor: { tenantId: string; personId: string },
     examInstanceId: string,
     target: BroadcastTarget,
-    message: string
+    message: string,
+    transaction?: pg.PoolClient
 ): Promise<SendBroadcastResult> {
     if (!UUID_REGEX.test(examInstanceId) || !UUID_REGEX.test(actor.tenantId) || !UUID_REGEX.test(actor.personId)) {
         return { type: 'forbidden' };
     }
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         // No exam row lock: a message never waits for, or holds up, answer saving.
         const supervision = await resolveSupervisionScope(client, actor, examInstanceId);
         if (!supervision) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const roomFilter = supervision.roomFilter;
         // A proctor limited to rooms cannot address the entire exam (D04.1-77B).
         if (target.scope === 'EXAM' && roomFilter !== null) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         if (target.scope === 'ROOM') {
@@ -126,7 +128,7 @@ export async function sendExamBroadcast(
                 [actor.tenantId, examInstanceId, target.roomId, roomFilter]
             );
             if (room.rows.length !== 1 || !supervision.roomBased) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'forbidden' };
             }
         }
@@ -139,12 +141,12 @@ export async function sendExamBroadcast(
             );
             // Every selected participant must be in the sender's scope: nothing is sent partially.
             if (inScope.rows[0].n !== target.participantIds.length) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'forbidden' };
             }
         }
         if (!SUPERVISED_STATES.has(supervision.lifecycleState)) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: supervision.lifecycleState };
         }
 
@@ -162,11 +164,11 @@ export async function sendExamBroadcast(
         );
         const limits = recent.rows[0];
         if (limits.since_last !== null && Number(limits.since_last) < BROADCAST_MIN_INTERVAL_SECONDS) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'rate_limited', retryAfterSeconds: Math.max(1, Math.ceil(BROADCAST_MIN_INTERVAL_SECONDS - Number(limits.since_last))) };
         }
         if (Number(limits.last_hour) >= BROADCAST_MAX_PER_HOUR) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'rate_limited', retryAfterSeconds: Math.max(1, Math.ceil(Number(limits.hour_frees_in ?? 1))) };
         }
 
@@ -203,16 +205,17 @@ export async function sendExamBroadcast(
                 broadcastId]
         );
         if ((recipients.rowCount ?? 0) === 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'no_recipients' };
         }
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return { type: 'ok', broadcastId, sentAt: new Date(created.rows[0].sent_at).toISOString(), recipients: recipients.rowCount ?? 0 };
-    } catch {
-        await client.query('ROLLBACK').catch(() => {});
+    } catch (transactionError) {
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }
 

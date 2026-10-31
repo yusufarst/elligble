@@ -1,3 +1,6 @@
+/** Explicit staff confirmation; one key is retained for the same intended action. */
+export interface PermissionIntent { reason: string; confirmed: true; actionKey: string }
+
 export interface StudentSafeOption {
   id: string;
   content: string;
@@ -294,7 +297,7 @@ export interface TeacherExamParticipantCandidates {
   problems: Array<{ code: ExamAdditionProblemCode }>;
 }
 
-export interface TeacherExamAddParticipantsInput {
+export interface TeacherExamAddParticipantsInput extends PermissionIntent {
   examInstanceId: string;
   enrollmentIds: string[];
   /** Chosen by the device once per dialog; a retry reuses it. */
@@ -327,7 +330,7 @@ export interface TeacherExamCancelResult {
 }
 
 /** A new schedule for a scheduled or ready exam (ASSESS-TEACHER-003, D04.2-45). */
-export interface TeacherExamRescheduleInput {
+export interface TeacherExamRescheduleInput extends PermissionIntent {
   examInstanceId: string;
   /** Wall-clock date and time in the school's zone, `YYYY-MM-DDTHH:MM`. */
   windowStartsAt: string;

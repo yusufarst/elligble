@@ -131,10 +131,11 @@ describe('ExamMonitoringView', () => {
     expect(within(dialog).getByText(/Waktu ujian peserta tetap berjalan/)).toBeTruthy();
     expect(within(dialog).getByText('siswa.b')).toBeTruthy();
     expect(postParticipantLock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Kunci Pengerjaan' }));
 
     expect(await screen.findByText('Pengerjaan siswa.b dikunci sejak 08.20 WIB.')).toBeTruthy();
-    expect(postParticipantLock).toHaveBeenCalledWith(EXAM, PARTICIPANT.b, 'lock');
+    expect(postParticipantLock).toHaveBeenCalledWith(EXAM, PARTICIPANT.b, 'lock', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) });
     expect(screen.queryByRole('dialog')).toBeNull();
     // The list is read again, so the row shows the server's lock.
     await waitFor(() => expect(vi.mocked(getExamMonitoring).mock.calls.length).toBeGreaterThanOrEqual(2));
@@ -154,9 +155,10 @@ describe('ExamMonitoringView', () => {
     fireEvent.click(within(b).getByRole('button', { name: 'Buka Kunci pengerjaan siswa.b' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/Waktu yang berjalan selama dikunci tidak dikembalikan/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Buka Kunci' }));
     expect(await screen.findByText('Kunci pengerjaan siswa.b dibuka.')).toBeTruthy();
-    expect(postParticipantLock).toHaveBeenCalledWith(EXAM, PARTICIPANT.b, 'unlock');
+    expect(postParticipantLock).toHaveBeenCalledWith(EXAM, PARTICIPANT.b, 'unlock', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) });
   });
 
   it('explains a lock the server refused and offers no lock once results are final', async () => {
@@ -165,6 +167,7 @@ describe('ExamMonitoringView', () => {
     const view = render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
     await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'Kunci pengerjaan siswa.b' }));
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Kunci Pengerjaan' }));
     expect(await screen.findByText('Peserta ini sudah tidak memiliki pengerjaan yang berjalan. Data ditampilkan ulang.')).toBeTruthy();
     view.unmount();
