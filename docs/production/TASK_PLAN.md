@@ -1,21 +1,23 @@
-**Status:** P11 BASELINE CANDIDATE / NOT APPROVED / NOT ACTIVE AS EXECUTION TRACKER
-**Task:** GOV-REALIGN-006; HIGH; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE
+**Status:** FINAL P11 OWNER APPROVED / OFFICIAL TRACKER ACTIVATION PENDING CONTROLLED OWNER MERGE
+**Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
+**Transition Task:** GOV-P11-001; HIGH; P11 TRANSITION / GOVERNANCE DOCUMENTATION ONLY; VERIFYING / NOT DONE; NOT COUNTED among the 33 implementation Tasks
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
-**Authority:** Derived execution proposal under DEC-044/045, ADR-001 and accepted P1–P10; no policy or release approval
+**Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
+**Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
 
-# CBT-R1 finite P11 implementation baseline candidate
+# CBT-R1 finite P11 implementation baseline
 
 ## 1. Authority and activation boundary
 
-This is one finite **candidate**, authorized for preparation/publication only. It is not the live Task-status tracker and does not authorize any listed implementation Task. [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md) transfers live tracking here only after explicit P11 approval. Until then the [living plan](PRODUCTION_COMPLETION_PLAN.md) and actual active [Task record](tasks/GOV-REALIGN-006.md) remain controlling. No future Task record is created by this candidate. Each later execution requires its own concrete bounded contract, Owner authorization and READY gate.
+The Owner explicitly approved FINAL P11 Gate B on 2026-10-31 for the exact main and original candidate blob above. This is the finite CBT-R1 baseline; approval does not authorize execution or change any of its 33 BLOCKED Tasks. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this document becomes the official live Task-status tracker **after controlled Owner merge of GOV-P11-001**. Until that landing, the [living plan](PRODUCTION_COMPLETION_PLAN.md) and active [transition Task record](tasks/GOV-P11-001.md) control this publication. Each implementation still needs its own concrete bounded contract, satisfied READY gate and separate Owner authorization. No implementation Task record or execution is created here.
 
 Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md), not a single-choice pilot. [P1](CBT_RELEASE_DEFINITION.md) acceptance is established by [GOV-REALIGN-003 §6](tasks/GOV-REALIGN-003.md); [GOV-REALIGN-004 §5](tasks/GOV-REALIGN-004.md) accepts P2–P6 planning and [GOV-REALIGN-005 §5](tasks/GOV-REALIGN-005.md) accepts P7–P10 planning. Historical draft headers do not erase those accepted planning outcomes or approve unresolved policies.
 
-**Final P11 approval readiness: BLOCKED.** DEC-045 permits BLOCKED Tasks in a finite baseline, but P1 §8 explicitly requires an **approved detailed P5 matrix** and **approved P6 numeric workload/budgets** at the applicable pre-baseline gate. O09 and the numeric/workload part of O07 are still OPEN: package acceptance cannot substitute. No waiver or supersession is proposed. Other Oxx/Axx/actual-school facts remain explicit blocked inputs; Independent HIGH-risk Review and Owner must assess the remaining P1 §8 sufficiency before final approval. This candidate does not certify P2/P4/P9/P10 prerequisites fully satisfied while exact contracts/facts are unresolved. Load/device/restore/UAT PASS is still required later at release gates, not fabricated as a planning prerequisite already met.
+**Final P11 Gate B: OWNER APPROVED, 2026-10-31; tracker activation pending controlled landing.** The Owner accepts P1–P10 planning sufficiency for baseline approval only. The approved detailed P5 scope is bounded by [GOV-POLICY-001 §7](tasks/GOV-POLICY-001.md): P01–P05 and proposal P in A01–A14 approved, K authority preserved, excluded C/O01–O08 default-deny. Approved P6 numeric scope is bounded by [GOV-PERF-001 §7](tasks/GOV-PERF-001.md): unchanged L01–L10/timing/calibration/B01–B08 approved; B10 conditional on O06/O08 and other prerequisites; B09 provisional/not approved. This satisfies the applicable approval inputs for the finite baseline, not full O07/O09 closure. Outstanding Oxx/Axx/actual-school facts remain hard Task-specific READY inputs where applicable. No architecture contract or school fact is invented; load/device/restore/UAT and full G1–G10 evidence remain mandatory at their execution/completion/release gates. No LOCKED decision is waived.
 
-## 2. Candidate accounting and status semantics
+## 2. Baseline accounting and status semantics
 
-Only the unique rows in §3 are counted. All are unstarted candidate baseline work. GOV-REALIGN-006 and every earlier PRE-P11 Task are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
+Only the unique rows in §3 are counted. All are unstarted baseline work. Every completed PRE-P11 Task and the GOV-P11-001 governance transition are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
 
 | Counter | Value |
 |---|---:|
@@ -30,7 +32,7 @@ Only the unique rows in §3 are counted. All are unstarted candidate baseline wo
 | SUPERSEDED | 0 |
 | Progress % | 0% |
 
-These are **candidate** totals, not an approved Baseline Total. Progress is DONE / Current Total = 0 / 33. GOV-REALIGN-006's own active status is excluded. No historical DONE is re-counted.
+These are the Owner-approved finite baseline totals, unchanged from the accepted candidate. Progress is DONE / Current Total = 0 / 33. GOV-P11-001's VERIFYING status is outside these counters. No historical DONE is re-counted; official live tracking awaits controlled Owner merge.
 
 - BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; all present rows qualify.
 - TODO: included unstarted work without a currently identified blocker, still needing full contract readiness; none currently classified.
@@ -563,9 +565,9 @@ The shared policy definitions remain [P2 §8 O01–O09](CBT_DOMAIN_RULES_SPECIFI
 | UAT-SIGNATORIES | School UAT participant/signatory nomination and resulting signoffs | School + Owner/release lead | RELEASE-001 | UA01–UA08 participants and signatories nominated, authority/availability/roles/access agreed and protocol/criteria known before execution; no already-completed UAT signoff. | RELEASE-001 executes UAT and obtains actual UA01–UA08 signoffs with candidate/device/date/observed outcome/evidence before DONE/G9; planning acceptance is not UAT approval. |
 | RELEASE-AUTHORITY | Release/recovery authority, rehearsal inputs and final declarations | Owner + school/release operator | RELEASE-001 | Named authorized approver/operator, permitted rehearsal scope, upstream recovery target/image/schema/media facts and known proposed DB/cost change inputs. Do not require this Task's completed rehearsal or final declarations before it starts. | RELEASE-001 produces reviewed rehearsal/recovery evidence and approved final DB/cost declarations before DONE/G9/G10. Final go/no-go/deployment remains separately authorized. |
 
-**Earliest policy sequence:** obtain detailed P5/O09 approval first for SEC-001; O07 approved numeric workload/budgets is also a final-P11 prerequisite, not something silently deferred to load execution. O01/O03/A03 unlock identity; O02/A01 unlock all-type work; O05/A04 institution/transfer/results; O06/A02 media; O08/A05 signals; O04 must provide the required late-delivery integrity disposition before full G3. This is priority guidance, not authorization to decide or execute any of them.
+**Earliest implementation sequence:** bounded P5/O09 and numeric P6/O07 approvals are recorded in §1. SEC-001 still needs its exact role/reason/audit/schema/route/negative-test/file contract and full READY gate, then separate Owner execution authorization. O01/O03/A03 unlock identity; O02/A01 unlock all-type work; O05/A04 institution/transfer/results; O06/A02 media; O08/A05 signals; O04 must provide the required late-delivery integrity disposition before full G3. This is priority guidance, not authorization to decide or execute any of them.
 
-**P11 approval assessment:** P1 §8's P5 and P6 approval requirements bind this candidate in addition to DEC-045's per-Task READY rules. P5 package acceptance ≠ O09 approval; proposed P6 numbers ≠ approved workload. Accordingly final P11 approval is BLOCKED at least on those two explicit prerequisites plus required independent/Owner review. Review must also establish P1–P10 sufficient at their applicable gates; unresolved structural P2/P4 contracts cannot be disguised as implementation-ready. Remaining external facts/evidence stay named blockers on dependent Tasks. No new supersession, scope reduction or blanket exemption for O01–O09 is proposed.
+**P11 approval assessment — current:** the Owner accepted P1–P10 planning sufficiency and explicitly approved Gate B on 2026-10-31, subject to controlled tracker publication/merge (§11). P5/P6 approval is limited to the exact reviewed scopes in §1; accepted planning does not make unresolved P2/P4 technical contracts implementation-ready or approve conditional policies. Every external definition above retains its entry/completion distinction and dependent Task blocker. The earlier unapproved assessment is historical in the original candidate blob; no blanket O01–O09 exemption, scope reduction or new supersession is introduced.
 
 **PB disposition:** [authoritative backlog](../state/PRODUCTION_BLOCKERS_BACKLOG.md) retains 12 total, PB04 CLOSED, 11 OPEN including PB08/PB09 conditional/inactive for CBT-R1. PB05 approval alone does not close PB05. PB01/02/03/10 bar real student data. PB06/07/11/12 need actual reviewed device/integrity/production-restore/incident evidence. This Task changes none of their statuses. OPEN-05 participant removal and OD-10 repository visibility remain OPEN outside this implementation scope; no removal feature or visibility change is inferred.
 
@@ -589,11 +591,17 @@ All implementation anchors below are present at main `77756e38ff4e289e7b6ebcda63
 
 PRE-P11 history, **not counted in §2**: GOV-REALIGN-001/002 (P0/execution context); GOV-REALIGN-003 P1 approved content `6c9d311`, CI #81, PR #10/main `2c6a486`, CI #83; GOV-REALIGN-004 P2–P6 accepted content `9cf099a`, CI #84, PR #11/main `a16cbf5`, CI #86; GOV-REALIGN-005 P7–P10 accepted content `c5866da`, CI #87, final evidence `c3caa1e`, PR #12/main `77756e38ff4e289e7b6ebcda63d753749854756d`, CI #89. UI-SYSTEM-002 Part 2 PR #7/main CI #67 and UI-SYSTEM-004 Part 2 PR #8/main CI #74, Part 3 PR #9/main CI #79 stay DONE in their bounded records. GOV-REALIGN-006 is preparation only and will never add baseline DONE.
 
+Subsequent completed history remains excluded: GOV-REALIGN-006 Gate-A-only DONE, PR #13/main 9b11ec5/CI #94; GOV-DESIGN-001 accepted intent, PR #14/main 6c01358/CI #98; GOV-DESIGN-002 limited DEC-047 documentation, PR #15/main fffab09/CI #101; GOV-POLICY-001 bounded P5 approval, PR #16/main 067713a/CI #104; GOV-PERF-001 bounded numeric approval, reviewed 94fb79f/CI #105, evidence cf1036f7766eb4851da95b85dc82dbd03da2143d, PR #17/main 885a91d845059b00900daf85d719604826be8dd3/[CI #107](https://github.com/yusufarst/elligble/actions/runs/41162038798), attempt 1 eight SUCCESS on ubuntu-24.04 reverified 2026-10-31. Earlier approval exclusions remain historical authority boundaries; this transition changes no completed record. Application/runtime/E2E/workflow sources are unchanged from the §9 implementation anchor.
+
 ## 10. Proposed first implementation Task
 
-**SEC-001**, and no other successor is authorized. Shortest safe opening: explicit P5/O09 approval → satisfy final P11 prerequisite/approval gates → freeze SEC-001's exact role/reason/audit/schema/route/negative-test/file contract → authorize that one READY Task. Do not grant all-school access from current broader defaults or from a Teacher role. AUTH-001/identity follows only after its own gates; question foundation follows approved A01/O02/O05. Current recommendation is **BLOCKED**, not a request to start coding.
+**SEC-001 remains BLOCKED and NOT AUTHORIZED**, as does every other implementation Task. Bounded P5/P6 and final P11 Owner approvals are now recorded; shortest safe opening after controlled tracker landing: freeze SEC-001's exact role/reason/audit/schema/route/negative-test/file contract → satisfy all its READY inputs → obtain separate Owner authorization of that one READY Task. Do not grant all-school access from current broader defaults or from a Teacher role. AUTH-001/identity follows only after its own gates; question foundation follows approved A01/O02/O05. Current recommendation is **BLOCKED**, not a request to start coding.
 
-## 11. Candidate change control and review exit
+## 11. Change control and approval history
+
+### Historical candidate and Gate-A/Gate-B contract checkpoint
+
+The following initial change block and closure-amendment statements are preserved historical checkpoints from GOV-REALIGN-006, not current Task status or approval metadata. Current Gate B disposition and controlled activation are recorded in §11.1 below. The gate requirements remain binding.
 
 This is the initial proposed set; no prior approved P11 Baseline Total exists. Mechanical counts derive from §3, duplicate IDs/references/cycles/checklist/cards/coverage are checked before publication. No fabricated Task count or percentage comes from a chat estimate.
 
@@ -635,3 +643,24 @@ Final P11 approval and tracker activation remain blocked until all of these are 
 - The Owner gives **separate, explicit final P11 baseline approval**.
 
 Only after Gate B may TASK_PLAN.md become the active execution tracker under DEC-045. **GATE A does not imply GATE B.** Candidate acceptance or Task closure does not approve O01–O09, close PB05/other blockers, authorize implementation/deployment or make production ready. This document remains **CANDIDATE / NOT APPROVED / NOT ACTIVE**; implementation still requires separate Owner authorization of a bounded READY Task.
+
+### 11.1 Current Gate B Owner decision and controlled activation — 2026-10-31
+
+```text
+TASK PLAN CHANGE
+Reason: Record explicit Owner FINAL P11 Gate B approval and prepare controlled tracker activation.
+Affected Task(s): Approval/activation metadata only; all 33 implementation rows unchanged.
+New Task(s): NONE in baseline; GOV-P11-001 is governance transition only, excluded.
+Baseline Total: 33
+Previous Current Total: 33
+New Current Total: 33
+Dependencies Updated: NO; same 78 internal edges and external gate definitions.
+Scope Change: NO; full DEC-044 R01–R31/G1–G10 and every Task scope retained.
+Owner Approval Required: Gate B GRANTED 2026-10-31; exact-content acceptance and controlled merge PENDING.
+```
+
+The Owner explicitly approves FINAL P11 Gate B and P1–P10 planning sufficiency **for finite baseline approval only**, for main `885a91d845059b00900daf85d719604826be8dd3` and original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`. Bounded P5/O09 and P6/O07 approvals remain exactly as §1. The 33 IDs/cards/checklist/statuses/priorities/scopes, 78 internal dependency edges/acyclic DAG, all R01–R31/G1–G10 mappings and §2 counters are unchanged. GOV-P11-001 is excluded from these 33 implementation Tasks.
+
+**Owner-approved baseline is distinct from active tracker:** this document becomes the official execution tracker only after controlled Owner merge of GOV-P11-001. Stage-1 publication remains VERIFYING / NOT DONE pending exact-content automatic attempt-1 eight-job CI, Independent HIGH-risk Review and Owner exact-content acceptance. No evidence commit or merge is authorized in Stage-1. Subsequent implementation requires a separately authorized bounded READY Task; SEC-001 remains BLOCKED.
+
+O01–O08 and residual O07, excluded O09/C contracts, outstanding A01–A05, B09/conditional B10 inputs, all applicable PBs, S01–S16 facts, ACCESS/COST/LOAD-TOOL/DEVICE-ACCESS and release G1–G10 retain their existing unresolved states and authority. No policy, technical architecture, school fact, blocker closure, capacity/device/restore/UAT PASS or release authority is inferred. Production remains NOT READY; DEC-039/043/effective limited DEC-047 and all other compatible LOCKED/FROZEN decisions are preserved.
