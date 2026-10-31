@@ -1,6 +1,6 @@
 **Status:** OWNER-APPROVED DESIGN INTENT (2026-10-31); preservation document, NOT a production-token specification
 **Task:** GOV-DESIGN-001; HIGH; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE
-**Task publication:** VERIFYING; Independent HIGH-risk Review and Owner acceptance of this preservation artifact pending
+**Task publication:** GOV-DESIGN-001 DONE, Owner-accepted preservation only; subsequent GOV-DESIGN-002 exact-palette proposal in §7 PENDING review/acceptance/landing
 **Supersession:** NONE; no new LOCKED decision ID
 
 # ELLIGBLE Calm Progress — Owner design intent
@@ -60,3 +60,20 @@ A later separately authorized Task must identify proposed surface/role/interacti
 This Task preserves design intent only. It changes no UI, design source, production token, API, schema, dependency or test. No rendered visual PASS, prototype, production-ready, deployment or implementation claim. No vendor/cost added. GOV-REALIGN-006 remains DONE for candidate preparation only; final P11 remains NOT APPROVED / NOT ACTIVE, O01–O09/PB05 and other applicable blockers remain OPEN. Approval of this document never implies any of those approvals or another Task's execution.
 
 Acceptance of the preservation artifact requires exact-content CI, Independent HIGH-risk Review and explicit Owner acceptance under [GOV-DESIGN-001](../production/tasks/GOV-DESIGN-001.md). No implementation or LOCKED supersession is required to complete this documentation outcome.
+
+## 7. Subsequent Owner-selected canonical palette proposal — 2026-10-31
+
+GOV-DESIGN-001 completed preservation of §1–§6 and its original candidate-only authority. The Owner subsequently selected the following exact values for [GOV-DESIGN-002](../production/tasks/GOV-DESIGN-002.md). They are now the **Owner-selected canonical proposal**, PENDING final exact-content Independent HIGH-risk Review, explicit Owner acceptance and controlled landing; they are not yet effective production tokens. This is an explicit proposed change from the earlier candidate-only wording, not a retrospective token approval by GOV-DESIGN-001.
+
+| Value | Selected role |
+|---|---|
+| Warm Ivory #F7F8F4 | Primary application canvas |
+| Deep Sage #365E54 | Primary actions, brand interaction, active navigation and focus |
+| Soft Sage #B7CCBF | Subtle accents and non-exam progress surfaces |
+| Mist Teal #DCE7E6 | Calm supporting surfaces |
+| Forest Slate #26342F | Primary text/headings |
+| Retained white #FFFFFF | Cards and high-contrast foreground on Deep Sage |
+
+[DEC-047 proposal](../decisions/DECISION_LOG.md#dec-047) contains the exact CP01–CP10 supersession/preservation matrix and contrast restrictions. White/Deep Sage is 7.28:1; Forest Slate/Warm Ivory 12.19:1. Soft Sage cannot be low-contrast body text or a critical boundary; Deep Sage text on Soft Sage fails normal-text AA. No new supporting/hover/state color is implied.
+
+DEC-040 remains active except if and when the exact proposed clauses are approved and landed. DEC-043 shadcn/ui and DesainPakeAI authority remain, with only the old warm-monochrome color reference proposed for reconciliation. The Owner's cosmetic deferral has a limited exception for this exact palette change, not unrelated redesign. No UI implementation in this Task, no active-CBT gamification, token-code edit, final P11/Oxx/PB approval or production authority. Historical conflict register §5 remains the original preservation record; DEC-047 explicitly proposes the listed color-only resolutions, all other future reconciliation gates remain.
