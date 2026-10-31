@@ -5,15 +5,15 @@
 | Field | Value |
 |---|---|
 | Classification / risk | HIGH; BUILD / PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE; permission and sensitive-field authority |
-| Status | VERIFYING / NOT DONE; content publication/exact-SHA CI, Independent HIGH-risk/security Review and explicit Owner exact-content approval pending |
+| Status | DONE — BOUNDED P5/O09 APPROVAL PREPARATION ONLY (2026-10-31); HIGH / PRE-P11 / PRE-BASELINE; final evidence in §7; NOT COUNTED IN P11 BASELINE |
 | Owner authority | 2026-10-31 attached execution instruction: exactly this documentation Task, six-path allowlist, safe main synchronization/new Task branch, one content commit/normal push/one PR and Task-specific CI-first. Initial proposed label does not grant policy approval; no evidence commit, DONE, merge or implementation now |
 | Base / branch | main fffab096f21fa96d2b2cad7c866fb3b64dece3a6; task/gov-policy-001-p5-permission-contract |
 | Objective | Exact reviewable P5/O09 action/projection/control/negative-oracle package with honest implementation gaps and unresolved exclusions; metadata-only DEC-047 effectiveness reconciliation |
 | Dependencies / READY | GOV-DESIGN-002 DONE/landed, exact main CI #101 PASS, Owner-authorized bounded preparation, canonical role/field policies accessible, Task ID unused, no conflicting active work. Open input policies are recorded C exclusions rather than guessed or implementation-ready |
 | Parallel safe | NO; one active Owner-authorized Task |
 | Impacts | Documentation only; no route/API/schema/test/UI/localization implementation, no new vendor/package/cost; no real-data processing or operational authority granted |
-| Authority / O09 | PROPOSED / OPEN; K rules remain authoritative, P decisions require exact Owner approval, C dependencies remain OPEN. Package preparation is not O09 approval/PB05 closure |
-| Independent / Owner review | PENDING on exact content; predecessor design review does not transfer |
+| Authority / O09 | Owner APPROVED P01–P05 and proposal P in A01–A14 on exact beaf4eb; established K preserved; unresolved C/O01–O08 EXCLUDED / default-deny. No unconditional excluded-policy approval, PB05 closure, implementation or P11 activation (§7) |
+| Independent / Owner review | Independent HIGH-risk/Security Review PASS for exact six-file package beaf4eb; explicit Owner exact-content approval dated 2026-10-31 and final one-file evidence authorization recorded in §7 |
 | DONE | Complete bounded classified A01–A14/P01–P05 and N01–N10 package, deterministic guards, exact-content attempt-1 eight-job CI SUCCESS, independent HIGH-risk/security PASS and explicit Owner exact-content decision recorded, then separately authorized single Task-record-only evidence commit under DEC-045. Preparation acceptance must not be misreported as unconditional O09 or final-P11 approval |
 
 ### Exact six-path allowlist
@@ -63,3 +63,60 @@ PASS before staging: exact six authorized paths (five tracked edits and this new
 Coverage PASS: 14 unique A01–A14 contract rows, 14 unique enforcement/negative trace rows, every N01–N10 represented; all K/P/C classes, P01–P05, sensitive read/write/export exclusions and R/C/A explicit. Fifty local references/source paths/anchors resolve. Targeted source review preserves authenticated own-attempt activated-session/opaque-takeover proof while excluding competing raw session IDs and private device fingerprint leakage; this is not a session implementation change.
 
 Exact diff, current control-state/predecessor continuity, Owner configured/effective identity, secret/attribution-shaped additions and whitespace guards PASS. Draft trailing EOF whitespace was normalized before staging; no heavy test or CI retry occurred. Candidate TASK_PLAN/counters, O01–O08 rows, blocker/locked design sources and all application/test/workflow files remain unchanged. Final staged exact-scope/content/whitespace/identity gates and post-commit fuller/raw metadata inspection remain mandatory. CI and Independent HIGH-risk/security/Owner exact-content acceptance remain pending; no DONE or evidence commit now.
+
+## 7. Final bounded Owner approval and completion evidence — 2026-10-31
+
+### Authority and status history
+
+The initial pending/publication statements in §1–§6 and unchanged P5/P2/plan/manifest documents describe the historical submission checkpoint. This final Task record records the Owner's exact bounded approval and closes preparation only under DEC-045 §5. It neither modifies the approved P5 content nor converts exclusions into approved policy or implementation authority.
+
+| Stage | Exact evidence and outcome |
+|---|---|
+| Content publication | beaf4eb628ea8a616459f958b5245116898ac40a, parent fffab096f21fa96d2b2cad7c866fb3b64dece3a6; exact six-file documentation package; [PR #16](https://github.com/yusufarst/elligble/pull/16) OPEN / NOT MERGED |
+| Exact-content verification | [CI #102](https://github.com/yusufarst/elligble/actions/runs/41157026532), run 41157026532, exact content SHA, attempt 1, COMPLETED/SUCCESS, eight jobs SUCCESS on ubuntu-24.04 |
+| Independent review | Independent HIGH-risk/Security Review PASS for the exact six-file package at beaf4eb628ea8a616459f958b5245116898ac40a, supplied/confirmed by Owner in this final authorization |
+| Owner exact-content decision | 2026-10-31: APPROVED P01–P05 and proposal P in A01–A14; PRESERVED all established K authority; EXCLUDED unresolved C/O01–O08, default-deny; NOT APPROVED implementation, PB05 closure, unconditional excluded-policy approval, P11 activation or production release |
+| Final evidence authority | Owner explicitly authorizes exactly ONE Task-record-only evidence commit changing only docs/production/tasks/GOV-POLICY-001.md, using Owner configured identity, with normal push to the existing branch/PR #16 after all guards PASS |
+| Completion | DONE for bounded P5/O09 approval preparation only; HIGH / PRE-P11 / PRE-BASELINE and NOT COUNTED IN P11 BASELINE. No implementation or excluded-policy completion claimed |
+
+The exact Owner decision is limited to the listed P decisions at the reviewed content SHA. It is not a blanket O09/final-P11 sufficiency declaration or approval of a C dependency. Established K authority cannot be weakened by this acceptance. All unresolved exclusions remain unresolved/default-deny until separately approved; no policy is approved by the executor.
+
+### Exact CI and commit verification
+
+| CI #102 job | Result |
+|---|---|
+| Web client (typecheck, tests, build) | SUCCESS; typecheck/build PASS, 34 test files / 344 tests PASS |
+| Runtime (typecheck, unit, PostgreSQL integration) | SUCCESS |
+| Container image (build and smoke test) | SUCCESS |
+| Browser end-to-end: mobile-360 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: desktop-1280 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: webkit-390 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: firefox-1280 | SUCCESS; 22 tests PASS |
+| Browser end-to-end: tablet-768 | SUCCESS; 22 tests PASS |
+
+Actual test inventory was read from this exact run's existing logs; run/SHA/attempt, all eight job conclusions and ubuntu-24.04 labels were independently reverified before finalization. No rerun, dispatch, heavy local testing or Docker operation. Existing regression PASS is not proof that proposed permission enforcement or new N01–N10 coverage has been implemented.
+
+Physical finalization entry: C:/Projects/ELLIGBLE; task/gov-policy-001-p5-permission-contract; HEAD/upstream beaf4eb628ea8a616459f958b5245116898ac40a; working tree CLEAN; PR #16 OPEN at the same SHA. Content author/committer were verified both locally and through GitHub Git Commit API as Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>. Configured/effective final commit identity is the same Owner identity; no identity/global configuration changed. Content fuller/raw metadata shows the software-only message “docs(security): prepare P5 permission approval contract” with no attribution trailer.
+
+### Non-blocking reviewer note and compatibility
+
+Existing successful takeover can return supersededSessionId for the already-replaced session; this was confirmed by read-only inspection of runtime/secure-assessment/src/session.ts. Preserve compatibility and assess its projection disposition during a future separately authorized security implementation. This is not a demonstrated cross-user authorization bypass, not a reason to change code in this Task and not a blanket permission grant for active/foreign session disclosure. The note is non-blocking under the supplied Independent HIGH-risk/Security PASS and explicit Owner final authorization. The approved P5 matrix remains unchanged.
+
+### Evidence-only scope and preserved gates
+
+Final local guards require exactly this one-file diff, existing references/anchors, retained Task history, correct approved-P versus excluded-C boundaries, unchanged P5/P2/DECISION_LOG/plan/manifest/TASK_PLAN/locked design/application/tests/workflow and every other tracked path, whitespace, no secret-shaped values or attribution trailers, and correct Owner identity. Staged scope/content and git diff --cached --check are verified before the single controlled commit; parent must be the approved content SHA. Fuller/raw evidence metadata and clean synchronized remote PR head are checked after publication. Actual evidence SHA is reported externally and never recursively recorded by another commit; evidence-only CI is not a recursive DONE prerequisite under DEC-045 §5.
+
+| Control | Preserved final state |
+|---|---|
+| P01–P05 and proposal P in A01–A14 | OWNER APPROVED at exact beaf4eb |
+| Established K authority | PRESERVED |
+| Unresolved C / O01–O08 | EXCLUDED / OPEN / DEFAULT-DENY |
+| O09 scope | Bounded P approval recorded; no unconditional approval of excluded policy or blanket final-P11 sufficiency |
+| PB05 and other remaining blockers | OPEN / unchanged |
+| P6/O07 approval | REQUIRED; NOT GRANTED |
+| FINAL P11 | NOT APPROVED / NOT ACTIVE |
+| 33 candidate Tasks / baseline DONE | BLOCKED / 0 |
+| SEC-001 and other implementation | NOT AUTHORIZED |
+| Production release/readiness | NOT APPROVED / NOT READY |
+
+Default-deny, least privilege, tenant/current assignment/object/lifecycle checks, Teacher≠Proctor, Student≠Participant≠Attempt≠Session, sensitive-data minimization, server authority and answer integrity remain mandatory. DEC-039/043, effective color-only DEC-047, all compatible LOCKED/FROZEN decisions and full DEC-044/G1–G10 remain preserved. No frontend/token change, blocker closure, successor Task, history rewrite, force push, merge or production action. STOP after normal push and remote synchronization verification; next action is Owner-controlled merge of PR #16.
