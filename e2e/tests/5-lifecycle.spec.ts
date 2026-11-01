@@ -2,8 +2,80 @@ import { execFileSync as permissionExec } from 'node:child_process';
 import { createHash as permissionHash } from 'node:crypto';
 import { readFileSync as permissionRead, writeFileSync as permissionWrite } from 'node:fs';
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '@playwright/test';
 import { closeQuestionList, continueExam, expireAttemptOf, login, openQuestionList, option, reloadPage, saveStatus, shotName, state, withDatabase } from './helpers.ts';
+
+
+// SEC-001 C14: real keyboard traversal; never programmatically repair product focus.
+async function keyboardReach(page: Page, target: Locator): Promise<void> {
+    await expect(target).toBeVisible();
+    for (let step = 0; step < 80; step++) {
+        if (await target.evaluate(element => element === document.activeElement)) break;
+        await page.keyboard.press('Tab');
+    }
+    await expect(target, 'C14: control must be reachable using actual Tab keys').toBeFocused();
+}
+
+async function keyboardActivate(page: Page, target: Locator): Promise<void> {
+    await expect(target).toBeEnabled();
+    await keyboardReach(page, target);
+    await page.keyboard.press('Enter');
+}
+
+async function keyboardDialogScope(page: Page, dialog: Locator): Promise<void> {
+    await expect(dialog).toBeVisible();
+    await expect.poll(() => dialog.evaluate(element => element.contains(document.activeElement)),
+        { message: 'C14: opening moves focus inside the dialog' }).toBe(true);
+    const controls = await dialog.locator('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])').count();
+    expect(controls).toBeGreaterThan(0);
+    for (const direction of ['Tab', 'Shift+Tab']) {
+        for (let step = 0; step < controls + 1; step++) {
+            await page.keyboard.press(direction);
+            await expect.poll(() => dialog.evaluate(element => element.contains(document.activeElement)),
+                { message: 'C14: ' + direction + ' remains scoped, including wraparound' }).toBe(true);
+        }
+    }
+    await expect(dialog.getByRole('textbox', { name: 'Alasan tindakan', exact: true })).toHaveAccessibleName('Alasan tindakan');
+}
+
+async function keyboardReason(page: Page, dialog: Locator): Promise<void> {
+    const reason = dialog.getByRole('textbox', { name: 'Alasan tindakan', exact: true });
+    await keyboardReach(page, reason);
+    await page.keyboard.type('Pelaksanaan ujian terjadwal');
+    await expect(reason).toHaveValue('Pelaksanaan ujian terjadwal');
+}
+
+async function permissionControlState(examId: string): Promise<unknown> {
+    const result = await withDatabase(async client => (await client.query(
+        `SELECT i.lifecycle_state,
+            (SELECT count(*)::int FROM secure_assessment_permission_action_events e WHERE e.exam_instance_id = i.id) AS audits,
+            (SELECT count(*)::int FROM secure_assessment_exam_lifecycle_events e WHERE e.exam_instance_id = i.id) AS lifecycle_events,
+            (SELECT count(*)::int FROM secure_assessment_exam_participants p WHERE p.exam_instance_id = i.id) AS participants,
+            (SELECT count(*)::int FROM secure_assessment_exam_participant_additions a WHERE a.exam_instance_id = i.id) AS additions,
+            (SELECT count(*)::int FROM secure_assessment_attempt_locks l
+             JOIN secure_assessment_exam_attempts a ON a.id = l.exam_attempt_id
+             JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id WHERE p.exam_instance_id = i.id) AS locks
+         FROM secure_assessment_exam_instances i WHERE i.id = $1`, [examId]
+    )).rows[0]);
+    expect(result).toBeDefined();
+    return result;
+}
+
+async function recordKeyboardEvidence(page: Page, scenario: string, checks: string[]): Promise<void> {
+    const browser = page.context().browser();
+    if (!browser) throw new Error('C14 requires a real browser');
+    permissionWrite(test.info().outputPath('workspace-sec001-c14-' + scenario + '-' + test.info().project.name + '.json'), JSON.stringify({
+        task: 'SEC-001-C14', parentTask: 'SEC-001', kind: 'keyboard-focus', commit: permissionCommit,
+        frontendTree: permissionFrontend, runtimeTree: permissionRuntime, project: test.info().project.name,
+        browser: { engine: browser.browserType().name(), version: browser.version() }, viewport: page.viewportSize(), scenario,
+        fixtureSha256: permissionHash('sha256').update(permissionRead(new URL('../global-setup.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n')).digest('hex'),
+        interaction: 'actual Tab/Shift+Tab/Enter/Space/Escape through page.keyboard; no locator.focus or DOM focus repair',
+        checks, focusedElement: await page.evaluate(() => {
+            const active = document.activeElement;
+            return active ? { tag: active.tagName, role: active.getAttribute('role'), name: active.getAttribute('aria-label') ?? active.textContent?.trim().slice(0, 160) } : null;
+        }), ci: !!process.env['CI'], physicalDevice: false,
+    }, null, 2));
+}
 
 // SEC-001: identical capture protocol on the immutable baseline and implementation.
 const permissionGit = (...args: string[]) => permissionExec('git', args, { encoding: 'utf8' }).trim();
@@ -230,15 +302,32 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     const submittedRow = proctor.getByRole('row').filter({ has: proctor.getByText('siswa.e2e.01', { exact: true }) });
     await expect(submittedRow).toHaveCount(1);
     await expect(submittedRow.getByRole('button')).toHaveCount(0);
-    await lock.click();
+    const beforeLockCancel = await permissionControlState(state.examInstanceId);
+    const lockDialog = proctor.getByRole('dialog');
+    await keyboardActivate(proctor, lock);
+    await keyboardDialogScope(proctor, lockDialog);
+    await keyboardActivate(proctor, lockDialog.getByRole('button', { name: 'Batal', exact: true }));
+    await expect(lockDialog).toHaveCount(0);
+    expect(await permissionControlState(state.examInstanceId)).toEqual(beforeLockCancel);
+    await test.step('C14 Proctor: keyboard Cancel returns focus to the initiating participant lock control', async () => {
+        await expect(lock).toBeFocused();
+    });
+    await keyboardActivate(proctor, lock);
     await expect(proctor.getByRole('heading', { name: 'Kunci Pengerjaan Peserta?' })).toBeVisible();
+    await keyboardDialogScope(proctor, lockDialog);
     await proctor.screenshot({ path: test.info().outputPath('lock-confirm-360.png') });
-    await proctor.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+    await keyboardReason(proctor, lockDialog);
 
     await capturePermissionSurface(proctor, 'lock-confirm');
-    await proctor.getByRole('dialog').getByRole('button', { name: 'Kunci Pengerjaan' }).click();
+    await keyboardActivate(proctor, lockDialog.getByRole('button', { name: 'Kunci Pengerjaan', exact: true }));
     await expect(proctor.getByText(/^Pengerjaan siswa\.e2e\.03 dikunci sejak \d{2}\.\d{2} WIB\.$/)).toBeVisible();
     await expect(proctorRow).toContainText('Dikunci');
+    await expect(lockDialog).toHaveCount(0);
+    await expect.poll(() => proctorRow.getByRole('button', { name: 'Buka Kunci pengerjaan siswa.e2e.03', exact: true })
+        .or(proctor.getByRole('button', { name: 'Perbarui', exact: true }))
+        .evaluateAll(elements => elements.some(element => element === document.activeElement)),
+        { message: 'C14: successful participant control restores the replacement row action or persistent refresh' }).toBe(true);
+    await recordKeyboardEvidence(proctor, 'proctor-lock', ['keyboard trigger/confirmation','initial focus','Tab/Shift+Tab containment','named reason','Cancel zero business/audit mutation','Cancel trigger focus restored','successful lock and replacement row-action focus']);
 
     // Still offline and unaware of the lock, the student changes another answer.
     await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
@@ -268,12 +357,19 @@ test('the proctor locks one participant: questions hidden, time running, the ans
     await proctor.screenshot({ path: test.info().outputPath('monitoring-locked-1280.png'), fullPage: true });
 
     // Direct unlock by the proctor, recorded with who and when.
-    await proctorRow.getByRole('button', { name: 'Buka Kunci pengerjaan siswa.e2e.03' }).click();
-    await proctor.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+    await keyboardActivate(proctor, proctorRow.getByRole('button', { name: 'Buka Kunci pengerjaan siswa.e2e.03', exact: true }));
+    await keyboardDialogScope(proctor, lockDialog);
+    await keyboardReason(proctor, lockDialog);
 
     await capturePermissionSurface(proctor, 'unlock-confirm');
-    await proctor.getByRole('dialog').getByRole('button', { name: 'Buka Kunci' }).click();
+    await keyboardActivate(proctor, lockDialog.getByRole('button', { name: 'Buka Kunci', exact: true }));
     await expect(proctor.getByText('Kunci pengerjaan siswa.e2e.03 dibuka.')).toBeVisible();
+    await expect(lockDialog).toHaveCount(0);
+    await expect.poll(() => proctorRow.getByRole('button', { name: 'Kunci pengerjaan siswa.e2e.03', exact: true })
+        .or(proctor.getByRole('button', { name: 'Perbarui', exact: true }))
+        .evaluateAll(elements => elements.some(element => element === document.activeElement)),
+        { message: 'C14: successful participant control restores the replacement row action or persistent refresh' }).toBe(true);
+    await recordKeyboardEvidence(proctor, 'proctor-unlock', ['keyboard trigger/confirmation','initial focus','Tab/Shift+Tab containment','named reason','successful unlock and replacement row-action focus']);
     await expect(proctorRow).not.toContainText('Dikunci');
     // The reload during the lock starts again at question 1, which shows the answer kept.
     await expect(page.getByText('Hasil dari 2 + 3 adalah')).toBeVisible({ timeout: 15_000 });

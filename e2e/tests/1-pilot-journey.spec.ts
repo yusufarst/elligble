@@ -1,8 +1,80 @@
 import { execFileSync as permissionExec } from 'node:child_process';
 import { createHash as permissionHash } from 'node:crypto';
 import { readFileSync as permissionRead, writeFileSync as permissionWrite } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
-import { STAFF_SCREEN_FILE, activate, captureWorkspace, captureWorkspaceReading, option, reloadPage, requestedPaths, saveStatus, startExam, state } from './helpers.ts';
+import { expect, test, type Page, type Locator } from '@playwright/test';
+import { STAFF_SCREEN_FILE, activate, captureWorkspace, captureWorkspaceReading, option, reloadPage, requestedPaths, saveStatus, startExam, state, withDatabase } from './helpers.ts';
+
+
+// SEC-001 C14: real keyboard traversal; never programmatically repair product focus.
+async function keyboardReach(page: Page, target: Locator): Promise<void> {
+    await expect(target).toBeVisible();
+    for (let step = 0; step < 80; step++) {
+        if (await target.evaluate(element => element === document.activeElement)) break;
+        await page.keyboard.press('Tab');
+    }
+    await expect(target, 'C14: control must be reachable using actual Tab keys').toBeFocused();
+}
+
+async function keyboardActivate(page: Page, target: Locator): Promise<void> {
+    await expect(target).toBeEnabled();
+    await keyboardReach(page, target);
+    await page.keyboard.press('Enter');
+}
+
+async function keyboardDialogScope(page: Page, dialog: Locator): Promise<void> {
+    await expect(dialog).toBeVisible();
+    await expect.poll(() => dialog.evaluate(element => element.contains(document.activeElement)),
+        { message: 'C14: opening moves focus inside the dialog' }).toBe(true);
+    const controls = await dialog.locator('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled])').count();
+    expect(controls).toBeGreaterThan(0);
+    for (const direction of ['Tab', 'Shift+Tab']) {
+        for (let step = 0; step < controls + 1; step++) {
+            await page.keyboard.press(direction);
+            await expect.poll(() => dialog.evaluate(element => element.contains(document.activeElement)),
+                { message: 'C14: ' + direction + ' remains scoped, including wraparound' }).toBe(true);
+        }
+    }
+    await expect(dialog.getByRole('textbox', { name: 'Alasan tindakan', exact: true })).toHaveAccessibleName('Alasan tindakan');
+}
+
+async function keyboardReason(page: Page, dialog: Locator): Promise<void> {
+    const reason = dialog.getByRole('textbox', { name: 'Alasan tindakan', exact: true });
+    await keyboardReach(page, reason);
+    await page.keyboard.type('Pelaksanaan ujian terjadwal');
+    await expect(reason).toHaveValue('Pelaksanaan ujian terjadwal');
+}
+
+async function permissionControlState(examId: string): Promise<unknown> {
+    const result = await withDatabase(async client => (await client.query(
+        `SELECT i.lifecycle_state,
+            (SELECT count(*)::int FROM secure_assessment_permission_action_events e WHERE e.exam_instance_id = i.id) AS audits,
+            (SELECT count(*)::int FROM secure_assessment_exam_lifecycle_events e WHERE e.exam_instance_id = i.id) AS lifecycle_events,
+            (SELECT count(*)::int FROM secure_assessment_exam_participants p WHERE p.exam_instance_id = i.id) AS participants,
+            (SELECT count(*)::int FROM secure_assessment_exam_participant_additions a WHERE a.exam_instance_id = i.id) AS additions,
+            (SELECT count(*)::int FROM secure_assessment_attempt_locks l
+             JOIN secure_assessment_exam_attempts a ON a.id = l.exam_attempt_id
+             JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id WHERE p.exam_instance_id = i.id) AS locks
+         FROM secure_assessment_exam_instances i WHERE i.id = $1`, [examId]
+    )).rows[0]);
+    expect(result).toBeDefined();
+    return result;
+}
+
+async function recordKeyboardEvidence(page: Page, scenario: string, checks: string[]): Promise<void> {
+    const browser = page.context().browser();
+    if (!browser) throw new Error('C14 requires a real browser');
+    permissionWrite(test.info().outputPath('workspace-sec001-c14-' + scenario + '-' + test.info().project.name + '.json'), JSON.stringify({
+        task: 'SEC-001-C14', parentTask: 'SEC-001', kind: 'keyboard-focus', commit: permissionCommit,
+        frontendTree: permissionFrontend, runtimeTree: permissionRuntime, project: test.info().project.name,
+        browser: { engine: browser.browserType().name(), version: browser.version() }, viewport: page.viewportSize(), scenario,
+        fixtureSha256: permissionHash('sha256').update(permissionRead(new URL('../global-setup.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n')).digest('hex'),
+        interaction: 'actual Tab/Shift+Tab/Enter/Space/Escape through page.keyboard; no locator.focus or DOM focus repair',
+        checks, focusedElement: await page.evaluate(() => {
+            const active = document.activeElement;
+            return active ? { tag: active.tagName, role: active.getAttribute('role'), name: active.getAttribute('aria-label') ?? active.textContent?.trim().slice(0, 160) } : null;
+        }), ci: !!process.env['CI'], physicalDevice: false,
+    }, null, 2));
+}
 
 // SEC-001: identical capture protocol on the immutable baseline and implementation.
 const permissionGit = (...args: string[]) => permissionExec('git', args, { encoding: 'utf8' }).trim();
@@ -97,12 +169,47 @@ test('the teacher activates their account and opens the imported exam', async ({
     await expect.poll(() => requested.some(path => STAFF_SCREEN_FILE.test(path))).toBe(true);
     await expect(page.getByText('Terjadwal')).toBeVisible();
     await page.getByRole('button', { name: 'Tandai Siap' }).click();
-    await page.getByRole('button', { name: 'Buka Ujian' }).first().click();
-    await page.getByLabel('Alasan tindakan', { exact: true }).fill('Pelaksanaan ujian terjadwal');
+    const activationTrigger = page.getByRole('button', { name: 'Buka Ujian', exact: true }).first();
+    const activationDialog = page.getByRole('dialog', { name: 'Buka Ujian untuk Peserta?' });
+    const beforeCancel = await permissionControlState(state.examInstanceId);
+    await keyboardActivate(page, activationTrigger);
+    await keyboardDialogScope(page, activationDialog);
+    await expect(activationDialog.getByRole('button', { name: 'Buka Ujian', exact: true })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(activationDialog).toHaveCount(0);
+    expect(await permissionControlState(state.examInstanceId)).toEqual(beforeCancel);
+    await test.step('C14 activation: Escape returns focus to the initiating Buka Ujian button', async () => {
+        await expect(activationTrigger).toBeFocused();
+    });
+    await keyboardActivate(page, activationTrigger);
+    await keyboardDialogScope(page, activationDialog);
+    const reason = activationDialog.getByRole('textbox', { name: 'Alasan tindakan', exact: true });
+    await keyboardReach(page, reason);
+    await page.keyboard.type('x'.repeat(201));
+    await expect(reason).toHaveAttribute('aria-invalid', 'true');
+    const descriptionId = await reason.getAttribute('aria-describedby');
+    expect(descriptionId).toBeTruthy();
+    await expect(activationDialog.locator('[id="' + descriptionId + '"]')).toContainText('maksimal 200 karakter');
+    await expect(activationDialog.getByRole('button', { name: 'Buka Ujian', exact: true })).toBeDisabled();
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.press('Backspace');
+    await keyboardReason(page, activationDialog);
+    await expect(reason).toHaveAttribute('aria-invalid', 'false');
 
     await capturePermissionSurface(page, 'activate-confirm');
-    await page.getByRole('dialog').getByRole('button', { name: 'Buka Ujian' }).click();
+    await keyboardActivate(page, activationDialog.getByRole('button', { name: 'Buka Ujian', exact: true }));
     await expect(page.getByText('Berlangsung').first()).toBeVisible();
+    await expect(activationDialog).toHaveCount(0);
+    await expect(activationTrigger).toHaveCount(0);
+    await test.step('C14 activation: disappearing trigger restores an appropriate persistent Teacher control', async () => {
+        const fallback = page.getByRole('button', { name: 'Perbarui Data', exact: true })
+            .or(page.getByRole('heading', { name: 'Pelaksanaan Ujian', exact: true }))
+            .or(page.getByRole('button', { name: 'Pantau Peserta', exact: true }))
+            .or(page.getByRole('button', { name: 'Lihat Hasil', exact: true }));
+        await expect.poll(() => fallback.evaluateAll(elements => elements.some(element => element === document.activeElement)),
+            { message: 'C14: focus returns to a persistent Teacher heading or relevant control, never body' }).toBe(true);
+    });
+    await recordKeyboardEvidence(page, 'teacher-activation', ['keyboard trigger/confirmation','initial dialog focus','Tab and Shift+Tab containment/wrap','accessible reason and invalid-length feedback','Escape zero business/audit mutation','Escape trigger focus restored','successful transition and persistent fallback focus']);
 });
 
 test('the proctor sees the running exam', async ({ page }) => {
