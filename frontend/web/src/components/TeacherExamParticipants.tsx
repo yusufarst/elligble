@@ -62,8 +62,17 @@ export const AddParticipantsDialog: React.FC<{
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const actionKey = useRef<string | null>(null);
+  const retryButton = useRef<HTMLButtonElement | null>(null);
   const open = exam !== null;
   const examId = exam?.examInstanceId ?? null;
+
+  // Sending disables the focused confirmation button. Restore it only after
+  // the error and enabled retry control have both committed to the dialog.
+  useEffect(() => {
+    if (open && error && !sending && retryButton.current && !retryButton.current.disabled) {
+      retryButton.current.focus();
+    }
+  }, [open, error, sending]);
 
   const load = useCallback(async (keepChoice: boolean) => {
     if (!examId) return;
@@ -220,7 +229,7 @@ export const AddParticipantsDialog: React.FC<{
         <ActionReasonField value={reason} onChange={setReason} disabled={sending} />
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={sending}>Batal</Button>
-          <Button onClick={confirm} disabled={count === 0 || !validActionReason(reason) || sending || examProblems.length > 0}>
+          <Button ref={retryButton} onClick={confirm} disabled={count === 0 || !validActionReason(reason) || sending || examProblems.length > 0}>
             {sending ? 'Menambahkan...' : count > 0 ? `Tambahkan ${count} Peserta` : 'Tambahkan Peserta'}
           </Button>
         </DialogFooter>
