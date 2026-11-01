@@ -146,7 +146,12 @@ test('teacher results (real PostgreSQL, production wiring)', { skip: skipWithout
         assert.equal((await results(teacherClient, randomUUID())).status, 403, 'an unknown exam looks like a forbidden one');
         assert.equal((await teacherClient.request('/api/v1/assessment/teacher-exams/results?examInstanceId=bukan-uuid')).status, 400);
         assert.equal((await teacherClient.request('/api/v1/assessment/teacher-exams/results')).status, 400);
-        assert.equal((await teacherClient.request(`/api/v1/assessment/teacher-exams/results?examInstanceId=${exam}`, { method: 'POST', body: {} })).status, 405);
+        const malformedExport = await teacherClient.request(`/api/v1/assessment/teacher-exams/results?examInstanceId=${exam}`, { method: 'POST', body: {} });
+        assert.equal(malformedExport.status, 400);
+        assert.deepEqual(malformedExport.body, { error: 'invalid_request' });
+        const unsupportedMethod = await teacherClient.request(`/api/v1/assessment/teacher-exams/results?examInstanceId=${exam}`, { method: 'PUT', body: {} });
+        assert.equal(unsupportedMethod.status, 405);
+        assert.deepEqual(unsupportedMethod.body, { error: 'method_not_allowed' });
 
         await pool.query('UPDATE academic_core_teaching_assignments SET revoked_at = now() WHERE id = $1', [teaching.teachingAssignmentId]);
         assert.equal((await results(teacherClient)).status, 403, 'a revoked teaching assignment ends access');
