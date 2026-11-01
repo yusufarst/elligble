@@ -383,6 +383,7 @@ export class IdentityRuntime {
       FROM identity_sessions s
       JOIN identity_user_accounts a ON a.id = s.user_account_id
       WHERE s.id = $1
+      ${lockForMutation ? 'FOR UPDATE OF s FOR SHARE OF a' : ''}
     `, [sessionId]);
 
     const now = lockForMutation ? this.#clock.now() : requestedAt;
