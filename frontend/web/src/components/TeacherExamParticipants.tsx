@@ -49,9 +49,11 @@ function finalRefusal(err: unknown): string | null {
 export const AddParticipantsDialog: React.FC<{
   exam: TeacherExamReadinessProjection | null;
   onClose(): void;
+  /** Restore the controlled dialog's opener, or a persistent parent fallback. */
+  onReturnFocus?(): boolean;
   /** The attempt ended with an outcome to show above the list; the list is read again. */
   onDone(notice: { failed: boolean; text: string }): void;
-}> = ({ exam, onClose, onDone }) => {
+}> = ({ exam, onClose, onReturnFocus, onDone }) => {
   const [data, setData] = useState<TeacherExamParticipantCandidates | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
@@ -139,7 +141,8 @@ export const AddParticipantsDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !sending) onClose(); }}>
-      <DialogContent aria-describedby="add-participants-description" className={permissionDialogClass}>
+      <DialogContent aria-describedby="add-participants-description" className={permissionDialogClass}
+        onCloseAutoFocus={event => { if (onReturnFocus?.()) event.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>Tambah Peserta</DialogTitle>
           <DialogDescription id="add-participants-description">

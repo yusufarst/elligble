@@ -169,9 +169,13 @@ test('the teacher activates their account and opens the imported exam', async ({
     await expect.poll(() => requested.some(path => STAFF_SCREEN_FILE.test(path))).toBe(true);
     await expect(page.getByText('Terjadwal')).toBeVisible();
     await page.getByRole('button', { name: 'Tandai Siap' }).click();
+    // Wait for the completed transition before the exact zero-mutation snapshot.
+    await expect(page.getByText('Siap Dibuka', { exact: true })).toBeVisible();
     const activationTrigger = page.getByRole('button', { name: 'Buka Ujian', exact: true }).first();
+    await expect(activationTrigger).toBeEnabled();
     const activationDialog = page.getByRole('dialog', { name: 'Buka Ujian untuk Peserta?' });
     const beforeCancel = await permissionControlState(state.examInstanceId);
+    expect(beforeCancel).toMatchObject({ lifecycle_state: 'READY' });
     await keyboardActivate(page, activationTrigger);
     await keyboardDialogScope(page, activationDialog);
     await expect(activationDialog.getByRole('button', { name: 'Buka Ujian', exact: true })).toBeDisabled();
@@ -181,6 +185,12 @@ test('the teacher activates their account and opens the imported exam', async ({
     await test.step('C14 activation: Escape returns focus to the initiating Buka Ujian button', async () => {
         await expect(activationTrigger).toBeFocused();
     });
+    await keyboardActivate(page, activationTrigger);
+    await keyboardDialogScope(page, activationDialog);
+    await keyboardActivate(page, activationDialog.getByRole('button', { name: 'Batal', exact: true }));
+    await expect(activationDialog).toHaveCount(0);
+    expect(await permissionControlState(state.examInstanceId)).toEqual(beforeCancel);
+    await expect(activationTrigger).toBeFocused();
     await keyboardActivate(page, activationTrigger);
     await keyboardDialogScope(page, activationDialog);
     const reason = activationDialog.getByRole('textbox', { name: 'Alasan tindakan', exact: true });
@@ -209,7 +219,7 @@ test('the teacher activates their account and opens the imported exam', async ({
         await expect.poll(() => fallback.evaluateAll(elements => elements.some(element => element === document.activeElement)),
             { message: 'C14: focus returns to a persistent Teacher heading or relevant control, never body' }).toBe(true);
     });
-    await recordKeyboardEvidence(page, 'teacher-activation', ['keyboard trigger/confirmation','initial dialog focus','Tab and Shift+Tab containment/wrap','accessible reason and invalid-length feedback','Escape zero business/audit mutation','Escape trigger focus restored','successful transition and persistent fallback focus']);
+    await recordKeyboardEvidence(page, 'teacher-activation', ['keyboard trigger/confirmation','initial dialog focus','Tab and Shift+Tab containment/wrap','accessible reason and invalid-length feedback','Escape zero business/audit mutation','Escape trigger focus restored','Cancel zero business/audit mutation','Cancel trigger focus restored','successful transition and persistent fallback focus']);
 });
 
 test('the proctor sees the running exam', async ({ page }) => {

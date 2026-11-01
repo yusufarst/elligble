@@ -1,6 +1,6 @@
 import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
 import { newActionKey } from '../lib/action-key.ts';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getTeacherReadiness, postTeacherExamTransition, ApiError } from '../api/assessment-client.ts';
 import type { TeacherReadinessResponse, TeacherExamReadinessProjection, TeacherExamAction } from '../types/assessment.ts';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -123,6 +123,16 @@ export const TeacherReadinessView: React.FC<{
   const [cancelFor, setCancelFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [addFor, setAddFor] = useState<TeacherExamReadinessProjection | null>(null);
   const [statusNotice, setStatusNotice] = useState<{ failed: boolean; text: string } | null>(null);
+  const actionTrigger = useRef<HTMLButtonElement | null>(null);
+  const refreshButton = useRef<HTMLButtonElement | null>(null);
+  const restoreActionFocus = () => {
+    // Controlled dialogs have no Radix Trigger. Keep the actual opener, with a
+    // persistent fallback when a completed transition removes that action.
+    const target = [actionTrigger.current, refreshButton.current]
+      .find(button => button?.isConnected && !button.disabled);
+    target?.focus();
+    return target !== undefined;
+  };
 
   // A failed refresh keeps the last data on screen with a notice; a refusal replaces it.
   const fetchReadinessData = useCallback(async () => {
@@ -160,9 +170,10 @@ export const TeacherReadinessView: React.FC<{
     } catch (err) {
       setActionErrors(prev => ({ ...prev, [examInstanceId]: transitionFailureMessage(err) }));
     } finally {
+      // Refresh before closing so focus restoration sees the final action list.
+      await fetchReadinessData();
       setPendingAction(null);
       setConfirm(null);
-      await fetchReadinessData();
     }
   };
 
@@ -183,7 +194,7 @@ export const TeacherReadinessView: React.FC<{
         <>
           {onCreateExam && <Button onClick={onCreateExam}>Buat Ujian</Button>}
           {data && (
-            <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
+            <Button ref={refreshButton} variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
               {isRefreshing ? 'Memperbarui...' : 'Perbarui Data'}
             </Button>
           )}
@@ -347,7 +358,7 @@ export const TeacherReadinessView: React.FC<{
                 )}
                 {lifecycle === 'ENDED' && (
                   <ActionGroup className="border-t border-border pt-4" role="group" aria-label="Kendali ujian">
-                    <Button onClick={() => setConfirm({ exam, action: 'finalize' })} disabled={busy || (exam.progress.running ?? 0) > 0}>
+                    <Button onClick={event => { actionTrigger.current = event.currentTarget; setConfirm({ exam, action: 'finalize' }); }} disabled={busy || (exam.progress.running ?? 0) > 0}>
                       {busy ? 'Memproses...' : 'Finalisasi Hasil'}
                     </Button>
                     {(exam.progress.running ?? 0) > 0 && (
@@ -359,12 +370,12 @@ export const TeacherReadinessView: React.FC<{
                   <ActionGroup className="border-t border-border pt-4" role="group" aria-label="Kendali ujian">
                     {lifecycle === 'ACTIVE' && (
                       <>
-                        <Button variant="secondary" onClick={() => setConfirm({ exam, action: 'pause' })} disabled={busy}>Jeda Ujian</Button>
-                        <Button variant="destructive" onClick={() => setConfirm({ exam, action: 'end' })} disabled={busy}>Akhiri Ujian</Button>
+                        <Button variant="secondary" onClick={event => { actionTrigger.current = event.currentTarget; setConfirm({ exam, action: 'pause' }); }} disabled={busy}>Jeda Ujian</Button>
+                        <Button variant="destructive" onClick={event => { actionTrigger.current = event.currentTarget; setConfirm({ exam, action: 'end' }); }} disabled={busy}>Akhiri Ujian</Button>
                       </>
                     )}
                     {lifecycle === 'PAUSED' && (
-                      <Button onClick={() => setConfirm({ exam, action: 'resume' })} disabled={busy}>
+                      <Button onClick={event => { actionTrigger.current = event.currentTarget; setConfirm({ exam, action: 'resume' }); }} disabled={busy}>
                         {busy ? 'Memproses...' : 'Lanjutkan Ujian'}
                       </Button>
                     )}
@@ -398,14 +409,14 @@ export const TeacherReadinessView: React.FC<{
                     <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>
                   )}
                   <Button variant="secondary" onClick={() => setRescheduleFor(exam)} disabled={busy}>Ubah Jadwal</Button>
-                  <Button variant="secondary" onClick={() => setAddFor(exam)} disabled={busy}>Tambah Peserta</Button>
+                  <Button variant="secondary" onClick={event => { actionTrigger.current = event.currentTarget; setAddFor(exam); }} disabled={busy}>Tambah Peserta</Button>
                   {lifecycle === 'SCHEDULED' && (
                     <Button onClick={() => runTransition(exam.examInstanceId, 'mark_ready')} disabled={!readinessPass || busy}>
                       {busy ? 'Memproses...' : 'Tandai Siap'}
                     </Button>
                   )}
                   {lifecycle === 'READY' && (
-                    <Button onClick={() => setConfirm({ exam, action: 'activate' })} disabled={busy}>
+                    <Button onClick={event => { actionTrigger.current = event.currentTarget; setConfirm({ exam, action: 'activate' }); }} disabled={busy}>
                       {busy ? 'Memproses...' : 'Buka Ujian'}
                     </Button>
                   )}
@@ -463,6 +474,7 @@ export const TeacherReadinessView: React.FC<{
 
       <AddParticipantsDialog
         exam={addFor}
+        onReturnFocus={restoreActionFocus}
         onClose={() => setAddFor(null)}
         onDone={outcome => {
           setAddFor(null);
@@ -483,7 +495,8 @@ export const TeacherReadinessView: React.FC<{
 
       <Dialog open={confirm !== null} onOpenChange={open => { if (!open) setConfirm(null); }}>
         {confirm && (
-          <DialogContent className={permissionDialogClass} aria-describedby="exam-action-description">
+          <DialogContent className={permissionDialogClass} aria-describedby="exam-action-description"
+            onCloseAutoFocus={event => { if (restoreActionFocus()) event.preventDefault(); }}>
             <DialogHeader>
               <DialogTitle>{CONFIRM_COPY[confirm.action].title}</DialogTitle>
               <DialogDescription id="exam-action-description">{CONFIRM_COPY[confirm.action].description}</DialogDescription>
