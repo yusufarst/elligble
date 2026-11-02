@@ -1,3 +1,4 @@
+import { lockManagedExam } from './managed-exam.ts';
 import { createHash, randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { evaluateExamReadiness } from './exam-lifecycle-operations.ts';
@@ -247,7 +248,8 @@ export async function runTeacherExamImport(
     pool: pg.Pool,
     actor: TeacherImportActor,
     request: TeacherExamImportRequest,
-    mode: 'preview' | 'confirm'
+    mode: 'preview' | 'confirm',
+    transaction?: pg.PoolClient
 ): Promise<TeacherExamImportOutcome> {
     if (!UUID.test(actor.tenantId) || !UUID.test(actor.personId)) return { type: 'forbidden' };
     const sourceSha256 = sha256Hex(request.questionsCsv);
@@ -283,12 +285,13 @@ export async function runTeacherExamImport(
 
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         if (mode === 'confirm') {
             await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`sa-question-import:${actor.tenantId}:${actor.personId}:${request.importKey}`]);
             const earlier = await client.query(
@@ -300,9 +303,17 @@ export async function runTeacherExamImport(
                 [actor.tenantId, actor.personId, request.importKey]
             );
             if ((earlier.rowCount ?? 0) > 0) {
-                await client.query('ROLLBACK');
                 const row = earlier.rows[0];
-                if (row.source_sha256 !== sourceSha256) return { type: 'import_key_reused' };
+                // Current original-exam authority is mandatory even for an existing import key.
+                if (!(await lockManagedExam(client, actor, row.exam_instance_id, true))) {
+                    if (!transaction) await client.query('ROLLBACK');
+                    return { type: 'forbidden' };
+                }
+                if (row.source_sha256 !== sourceSha256) {
+                    if (!transaction) await client.query('ROLLBACK');
+                    return { type: 'import_key_reused' };
+                }
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'scheduled', examInstanceId: row.exam_instance_id, replayed: true, questionCount: row.question_count, participantCount: row.participants };
             }
         }
@@ -320,7 +331,7 @@ export async function runTeacherExamImport(
             [request.teachingAssignmentId, actor.tenantId, actor.personId]
         );
         if (teaching.rowCount !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const { academic_group_id: groupId, academic_period_id: periodId } = teaching.rows[0];
@@ -413,15 +424,16 @@ export async function runTeacherExamImport(
         }
 
         if (mode === 'preview' || problems.length > 0 || !examInstanceId) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return mode === 'preview' ? { type: 'preview', preview } : { type: 'invalid', preview };
         }
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return { type: 'scheduled', examInstanceId, replayed: false, questionCount: parsed.questions.length, participantCount: included.length };
-    } catch {
-        await client.query('ROLLBACK').catch(() => {});
+    } catch (transactionError) {
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

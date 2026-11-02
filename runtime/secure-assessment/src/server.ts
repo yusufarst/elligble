@@ -16,6 +16,7 @@ import { handleActivate, handleLogin, handleLogout, handleSessionGet } from './h
 import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
 import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
+import { executePermissionAction } from './permission-action-audit.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
 import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImport } from './teacher-exam-import.ts';
 import { readTeacherExamPreview } from './teacher-exam-preview.ts';
@@ -335,10 +336,18 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const result = await performTeacherExamAction(deps.pool, getContext()!, examInstanceId, action as TeacherExamAction);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: action === 'mark_ready' ? 'NONE' : 'EXAM_TRANSITION', action, examInstanceId,
+                    key: body.actionKey, reason: body.reason, confirmed: body.confirmed,
+                    payload: { examInstanceId, action }, body,
+                    replay: event => ({ type: 'transitioned' as const, examInstanceId,
+                        lifecycleState: event.resulting_state!, changed: false }),
+                }, (client, actor) => performTeacherExamAction(deps.pool, actor, examInstanceId, action as TeacherExamAction, client));
+                if (!execution) return;
+                const result = execution.result;
                 switch (result.type) {
                     case 'transitioned':
-                        sendJson(res, 200, { examInstanceId: result.examInstanceId, lifecycleState: result.lifecycleState, changed: result.changed });
+                        sendJson(res, 200, { examInstanceId: result.examInstanceId, lifecycleState: result.lifecycleState, changed: result.changed, audit: execution.audit });
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');
@@ -449,7 +458,12 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const outcome = await runTeacherExamImport(deps.pool, getContext()!, request, confirm ? 'confirm' : 'preview');
+                const execution = confirm ? await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'IMPORT', action: 'import', key: body.importKey, payload: request, body,
+                }, (client, actor) => runTeacherExamImport(deps.pool, actor, request, 'confirm', client))
+                    : { result: await runTeacherExamImport(deps.pool, getContext()!, request, 'preview'), audit: undefined };
+                if (!execution) return;
+                const outcome = execution.result;
                 switch (outcome.type) {
                     case 'preview':
                         sendJson(res, 200, outcome.preview);
@@ -461,6 +475,7 @@ export function createServer(deps: ServerDependencies): http.Server {
                         sendJson(res, outcome.replayed ? 200 : 201, {
                             examInstanceId: outcome.examInstanceId,
                             replayed: outcome.replayed,
+                            audit: execution.audit,
                             questionCount: outcome.questionCount,
                             participantCount: outcome.participantCount,
                         });
@@ -503,7 +518,13 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const outcome = await rescheduleTeacherExam(deps.pool, getContext()!, request);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'RESCHEDULE', action: 'reschedule', examInstanceId: request.examInstanceId,
+
+                    key: body.actionKey, reason: body.reason, confirmed: body.confirmed, payload: request, body,
+                }, (client, actor) => rescheduleTeacherExam(deps.pool, actor, request, client));
+                if (!execution) return;
+                const outcome = execution.result;
                 switch (outcome.type) {
                     case 'rescheduled':
                         sendJson(res, 200, {
@@ -512,6 +533,7 @@ export function createServer(deps: ServerDependencies): http.Server {
                             schedule: outcome.schedule,
                             changed: outcome.changed,
                             replayed: outcome.replayed,
+                            audit: execution.audit,
                             changedAt: outcome.changedAt,
                         });
                         return;
@@ -556,7 +578,13 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const outcome = await cancelTeacherExam(deps.pool, getContext()!, request);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'CANCEL', action: 'cancel', examInstanceId: request.examInstanceId,
+
+                    key: body.actionKey, reason: body.reason, confirmed: body.confirmed, payload: request, body,
+                }, (client, actor) => cancelTeacherExam(deps.pool, actor, request, client));
+                if (!execution) return;
+                const outcome = execution.result;
                 switch (outcome.type) {
                     case 'cancelled':
                         sendJson(res, 200, {
@@ -565,6 +593,7 @@ export function createServer(deps: ServerDependencies): http.Server {
                             reason: outcome.reason,
                             changed: outcome.changed,
                             replayed: outcome.replayed,
+                            audit: execution.audit,
                         });
                         return;
                     case 'invalid_state':
@@ -638,7 +667,13 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const outcome = await addTeacherExamParticipants(deps.pool, getContext()!, request);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'PARTICIPANT_ADD', action: 'add_participants', examInstanceId: request.examInstanceId,
+
+                    key: body.actionKey, reason: body.reason, confirmed: body.confirmed, payload: request, body,
+                }, (client, actor) => addTeacherExamParticipants(deps.pool, actor, request, client));
+                if (!execution) return;
+                const outcome = execution.result;
                 switch (outcome.type) {
                     case 'added':
                         sendJson(res, 200, {
@@ -647,6 +682,7 @@ export function createServer(deps: ServerDependencies): http.Server {
                             addedAt: outcome.addedAt,
                             added: outcome.added,
                             replayed: outcome.replayed,
+                            audit: execution.audit,
                         });
                         return;
                     case 'invalid':
@@ -722,10 +758,18 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const result = await performParticipantLockAction(deps.pool, getContext()!, examInstanceId, participantId, action);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'PARTICIPANT_CONTROL', action, examInstanceId, participantId,
+                    key: body.actionKey, reason: body.reason, confirmed: body.confirmed,
+                    payload: { examInstanceId, participantId, action }, body,
+                    replay: event => ({ type: 'ok' as const, participantId, locked: event.resulting_state === 'LOCKED',
+                        changed: false, lockedAt: event.effective_at?.toISOString() ?? null }),
+                }, (client, actor) => performParticipantLockAction(deps.pool, actor, examInstanceId, participantId, action, client));
+                if (!execution) return;
+                const result = execution.result;
                 switch (result.type) {
                     case 'ok':
-                        sendJson(res, 200, { participantId: result.participantId, locked: result.locked, changed: result.changed, lockedAt: result.lockedAt });
+                        sendJson(res, 200, { participantId: result.participantId, locked: result.locked, changed: result.changed, lockedAt: result.lockedAt, audit: execution.audit });
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');
@@ -765,7 +809,13 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const result = await addParticipantTime(deps.pool, getContext()!, request);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'TIME_ADD', action: 'add_time', examInstanceId: request.examInstanceId,
+                    participantId: request.participantId,
+                    key: body.actionKey, reason: body.reason, confirmed: body.confirmed, payload: request, body,
+                }, (client, actor) => addParticipantTime(deps.pool, actor, request, client));
+                if (!execution) return;
+                const result = execution.result;
                 switch (result.type) {
                     case 'ok':
                         sendJson(res, result.replayed ? 200 : 201, {
@@ -775,6 +825,7 @@ export function createServer(deps: ServerDependencies): http.Server {
                             remainingSeconds: result.remainingSeconds,
                             addedAt: result.addedAt,
                             replayed: result.replayed,
+                            audit: execution.audit,
                         });
                         return;
                     case 'forbidden':
@@ -820,7 +871,11 @@ export function createServer(deps: ServerDependencies): http.Server {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const result = await sendExamBroadcast(deps.pool, getContext()!, examInstanceId, target, message);
+                const execution = await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'NONE', action: 'broadcast', examInstanceId, payload: { examInstanceId, target, message }, body,
+                }, (client, actor) => sendExamBroadcast(deps.pool, actor, examInstanceId, target, message, client));
+                if (!execution) return;
+                const result = execution.result;
                 switch (result.type) {
                     case 'ok':
                         sendJson(res, 200, { broadcastId: result.broadcastId, sentAt: result.sentAt, recipients: result.recipients });
@@ -849,20 +904,33 @@ export function createServer(deps: ServerDependencies): http.Server {
                 sendError(res, 404, 'not found');
                 return;
             }
-            if (req.method !== 'GET') {
+            if (req.method !== 'GET' && req.method !== 'POST') {
                 sendError(res, 405, 'method_not_allowed');
                 return;
             }
             return withPersonContext(req, res, undefined, async getContext => {
-                const examInstanceId = url.searchParams.get('examInstanceId');
-                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                let body: Record<string, unknown> = {};
+                if (req.method === 'POST') {
+                    try { body = await readJsonObject(req); }
+                    catch (err) { sendError(res, err instanceof HttpError ? err.statusCode : 400, 'invalid_request'); return; }
+                    if (body.format !== 'csv' && body.format !== 'print') { sendError(res, 400, 'invalid_request'); return; }
+                }
+                const examInstanceId = req.method === 'POST' ? body.examInstanceId : url.searchParams.get('examInstanceId');
+                if (typeof examInstanceId !== 'string' || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
                     sendError(res, 400, 'invalid_request');
                     return;
                 }
-                const result = await readTeacherExamResults(deps.pool, getContext()!, examInstanceId);
+                const execution = req.method === 'POST'
+                    ? await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                        kind: 'RESULT_EXPORT', action: body.format as 'csv' | 'print', examInstanceId, key: body.actionKey,
+                        payload: { examInstanceId, format: body.format }, body,
+                    }, (client, actor) => readTeacherExamResults(deps.pool, actor, examInstanceId, client))
+                    : { result: await readTeacherExamResults(deps.pool, getContext()!, examInstanceId), audit: undefined, issuedAt: undefined };
+                if (!execution) return;
+                const result = execution.result;
                 switch (result.type) {
                     case 'ok':
-                        sendJson(res, 200, result.results);
+                        sendJson(res, 200, req.method === 'POST' ? { ...result.results, audit: execution.audit, format: body.format, issuedAt: execution.issuedAt } : result.results);
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');

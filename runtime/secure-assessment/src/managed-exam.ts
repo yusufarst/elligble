@@ -23,7 +23,8 @@ async function selectManagedExam(
     client: pg.PoolClient,
     actor: { tenantId: string; personId: string },
     examInstanceId: string,
-    lock: boolean
+    lock: boolean,
+    keyShare = false
 ): Promise<ManagedExamRow | null> {
     const exam = await client.query(
         `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at, i.configured_attempt_duration_seconds,
@@ -40,19 +41,33 @@ async function selectManagedExam(
                  ON ata.teacher_assignment_id = tta.id AND ata.tenant_id = tta.tenant_id AND ata.revoked_at IS NULL
                WHERE tm.tenant_id = i.tenant_id AND tm.person_id = $3 AND ata.id = i.teaching_assignment_id
            )
-         ${lock ? 'FOR UPDATE OF i' : ''}`,
+         ${lock ? (keyShare ? 'FOR KEY SHARE OF i' : 'FOR UPDATE OF i') : ''}`,
         [examInstanceId, actor.tenantId, actor.personId]
     );
-    return exam.rows.length === 1 ? exam.rows[0] as ManagedExamRow : null;
+    if (exam.rows.length !== 1) return null;
+    if (lock) {
+        const authority = await client.query(
+            `SELECT ata.id FROM academic_core_teaching_assignments ata
+             JOIN tenant_teacher_assignments tta ON tta.id = ata.teacher_assignment_id AND tta.tenant_id = ata.tenant_id
+             JOIN tenant_memberships tm ON tm.id = tta.membership_id AND tm.tenant_id = tta.tenant_id
+             JOIN secure_assessment_exam_instances i ON i.teaching_assignment_id = ata.id AND i.tenant_id = ata.tenant_id
+             WHERE i.id = $1 AND i.tenant_id = $2 AND tm.person_id = $3
+               AND ata.revoked_at IS NULL AND tta.revoked_at IS NULL
+             FOR SHARE OF ata, tta, tm`, [examInstanceId, actor.tenantId, actor.personId]
+        );
+        if (authority.rows.length !== 1) return null;
+    }
+    return exam.rows[0] as ManagedExamRow;
 }
 
 /** The managing teacher's exam, locked; null when the actor does not manage it. */
 export function lockManagedExam(
     client: pg.PoolClient,
     actor: { tenantId: string; personId: string },
-    examInstanceId: string
+    examInstanceId: string,
+    keyShare = false
 ): Promise<ManagedExamRow | null> {
-    return selectManagedExam(client, actor, examInstanceId, true);
+    return selectManagedExam(client, actor, examInstanceId, true, keyShare);
 }
 
 /** The managing teacher's exam as it stands, without a lock; null when the actor does not manage it. */

@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { TeacherResultsView, formatScore } from '../components/TeacherResultsView';
 import { TeacherReadinessView } from '../components/TeacherReadinessView';
-import { ApiError, getTeacherExamResults, getTeacherReadiness } from '../api/assessment-client';
+import { ApiError, getTeacherExamResults, getTeacherReadiness, postTeacherResultsExport } from '../api/assessment-client';
 import type { TeacherExamResultsResponse } from '../types/assessment';
 
 vi.mock('../api/assessment-client', async () => {
   const actual = await vi.importActual<typeof import('../api/assessment-client')>('../api/assessment-client');
-  return { ...actual, getTeacherExamResults: vi.fn(), getTeacherReadiness: vi.fn() };
+  return { ...actual, getTeacherExamResults: vi.fn(), getTeacherReadiness: vi.fn(), postTeacherResultsExport: vi.fn() };
 });
 
 const EXAM = '5f0c7b8e-1d2a-4c3b-8e9f-0a1b2c3d4e5f';
@@ -47,6 +47,7 @@ describe('TeacherResultsView', () => {
 
   it('downloads the results as a CSV file and opens the print dialog', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response({ resultState: 'FINAL', finalizedAt: '2026-09-29T04:05:00.000Z' }));
+    vi.mocked(postTeacherResultsExport).mockResolvedValue({ ...response({ resultState: 'FINAL', finalizedAt: '2026-09-29T04:05:00.000Z' }), audit: { id: EXAM, outcome: 'ISSUED', replayed: false }, issuedAt: '2026-09-29T04:05:00.000Z' });
     const blobs: Blob[] = [];
     const createObjectURL = vi.fn((blob: Blob) => { blobs.push(blob); return 'blob:hasil'; });
     const revokeObjectURL = vi.fn();
@@ -56,7 +57,8 @@ describe('TeacherResultsView', () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => {});
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Unduh CSV' }));
-    expect(clicked).toHaveLength(1);
+    await waitFor(() => expect(clicked).toHaveLength(1));
+    expect(postTeacherResultsExport).toHaveBeenCalledWith(EXAM, 'csv', expect.any(String));
     expect(clicked[0].download).toBe('hasil-ujian_matematika-wajib_x-1_2026-09-29_final.csv');
     const content = await new Promise<string>(resolve => {
       const reader = new FileReader();
@@ -68,9 +70,25 @@ describe('TeacherResultsView', () => {
     expect(content).toContain('66,67');
     expect(blobs[0].type).toBe('text/csv;charset=utf-8');
     fireEvent.click(screen.getByRole('button', { name: 'Cetak' }));
-    expect(print).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+    expect(postTeacherResultsExport).toHaveBeenCalledWith(EXAM, 'print', expect.any(String));
     click.mockRestore();
     print.mockRestore();
+  });
+
+  it('does not download or print cached data when authorization is refused', async () => {
+    vi.mocked(getTeacherExamResults).mockResolvedValue(response());
+    vi.mocked(postTeacherResultsExport).mockRejectedValue(new ApiError(403, 'forbidden'));
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {});
+    const download = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Unduh CSV' }));
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Akses ekspor ditolak. Tidak ada berkas atau cetakan dibuat.');
+    expect(download).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cetak' }));
+    await waitFor(() => expect(postTeacherResultsExport).toHaveBeenCalledTimes(2));
+    expect(print).not.toHaveBeenCalled();
+    download.mockRestore(); print.mockRestore();
   });
 
   it('shows finalized results as final, with who did not take the exam instead of a zero', async () => {

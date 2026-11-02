@@ -41,7 +41,16 @@ test('participant lock and unlock (real PostgreSQL, production wiring)', { skip:
     };
     const teacherClient = await loggedIn(teacher);
     const lockAction = (c: BrowserLikeClient, examInstanceId: string, participantId: string, action: string) =>
-        c.request('/api/v1/assessment/exam-monitoring/participant-lock', { method: 'POST', body: { examInstanceId, participantId, action } });
+        c.request('/api/v1/assessment/exam-monitoring/participant-lock', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, participantId, action }) } }).then(response => {
+            if (response.status >= 200 && response.status < 300) {
+                const { audit, ...business } = response.body;
+                assert.match(audit.id, /^[0-9a-f-]{36}$/);
+                assert.ok(['APPLIED','NO_OP'].includes(audit.outcome));
+                assert.equal(typeof audit.replayed, 'boolean');
+                return { ...response, body: business };
+            }
+            return response;
+        });
 
     async function student(exam: string, options: { startTimer?: boolean; start?: boolean } = {}) {
         const person = await createPersonWithAccount(pool);

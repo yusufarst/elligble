@@ -1,3 +1,4 @@
+import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { ApiError, postTeacherExamReschedule } from '../api/assessment-client.ts';
 import type { LatestStartPolicy, RescheduleProblemCode, TeacherExamReadinessProjection } from '../types/assessment.ts';
@@ -57,6 +58,7 @@ export const RescheduleDialog: React.FC<{
   const [duration, setDuration] = useState('');
   const [policy, setPolicy] = useState<LatestStartPolicy>('FULL_DURATION_BEYOND_WINDOW');
   const [problems, setProblems] = useState<RescheduleProblemCode[]>([]);
+  const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const actionKey = useRef<string | null>(null);
@@ -71,6 +73,7 @@ export const RescheduleDialog: React.FC<{
     setPolicy(exam.latestStartPolicy ?? 'FULL_DURATION_BEYOND_WINDOW');
     setProblems([]);
     setError(null);
+    setReason('');
     actionKey.current = newActionKey();
   }, [exam?.examInstanceId, open]);
 
@@ -83,14 +86,14 @@ export const RescheduleDialog: React.FC<{
   const wasReady = exam.lifecycleState === 'READY';
 
   const save = async () => {
-    if (!ready || sending) return;
+    if (!ready || !validActionReason(reason) || sending) return;
     setSending(true);
     setError(null);
     setProblems([]);
     try {
       const result = await postTeacherExamReschedule({
         examInstanceId: exam.examInstanceId, windowStartsAt: startsAt, windowEndsAt: endsAt, durationMinutes: minutes, latestStartPolicy: policy,
-        actionKey: actionKey.current ?? newActionKey(),
+        actionKey: actionKey.current ?? newActionKey(), reason, confirmed: true,
       });
       const window = formatWindow(result.schedule.windowStartsAt, result.schedule.windowEndsAt);
       onDone({
@@ -118,7 +121,7 @@ export const RescheduleDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !sending) onClose(); }}>
-      <DialogContent aria-describedby="reschedule-description" className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent aria-describedby="reschedule-description" className={permissionDialogClass}>
         <DialogHeader>
           <DialogTitle>Ubah Jadwal Ujian</DialogTitle>
           <DialogDescription id="reschedule-description">
@@ -129,11 +132,11 @@ export const RescheduleDialog: React.FC<{
         <p className="m-0 font-medium">{[subject, exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ')}</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <label htmlFor="reschedule-starts" className="text-sm font-medium">Mulai{zone ? ` (${zone})` : ''}</label>
             <Input id="reschedule-starts" type="datetime-local" value={startsAt} onChange={e => setStartsAt(e.target.value)} />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <label htmlFor="reschedule-ends" className="text-sm font-medium">Selesai{zone ? ` (${zone})` : ''}</label>
             <Input id="reschedule-ends" type="datetime-local" value={endsAt} min={startsAt || undefined} onChange={e => setEndsAt(e.target.value)} />
           </div>
@@ -181,9 +184,10 @@ export const RescheduleDialog: React.FC<{
         )}
         {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
 
+        <ActionReasonField value={reason} onChange={setReason} disabled={sending} />
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={sending}>Batal</Button>
-          <Button onClick={save} disabled={!ready || sending}>{sending ? 'Menyimpan...' : 'Simpan Jadwal'}</Button>
+          <Button onClick={save} disabled={!ready || !validActionReason(reason) || sending}>{sending ? 'Menyimpan...' : 'Simpan Jadwal'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

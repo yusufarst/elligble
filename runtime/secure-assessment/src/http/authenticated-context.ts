@@ -15,6 +15,9 @@ export class AuthenticationError extends Error {
 export interface AuthenticatedContextOptions {
     /** When set, the HttpOnly session cookie is accepted in addition to the Authorization header. */
     cookie?: SessionCookieConfig | null;
+    /** Existing transaction owned by a staff mutation coordinator; never client input. */
+    client?: pg.PoolClient;
+    mutation?: boolean;
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,6 +37,7 @@ export async function buildAuthenticatedContext(
     pool: pg.Pool,
     options: AuthenticatedContextOptions = {}
 ): Promise<MembershipContext | null> {
+    if (options.mutation && !options.client) throw new AuthenticationError(500, 'internal_error');
     const lookup = readSessionCredential(req, options.cookie ?? null);
     if (lookup.kind !== 'present') {
         throw new AuthenticationError(401, 'unauthorized');
@@ -43,9 +47,9 @@ export async function buildAuthenticatedContext(
     const tenantHeader = req.headers['x-tenant-id'];
     const tenantId = typeof tenantHeader === 'string' && UUID_REGEX.test(tenantHeader) ? tenantHeader : null;
 
-    let client: pg.PoolClient | null = null;
+    let client: pg.PoolClient | null = options.client ?? null;
     try {
-        client = await pool.connect();
+        if (!client) client = await pool.connect();
     } catch (err) {
         throw new AuthenticationError(503, 'persistence_unavailable');
     }
@@ -57,15 +61,15 @@ export async function buildAuthenticatedContext(
         if (!tenantId) {
             // An invalid credential is 401 whatever the tenant locator says, so clients
             // re-authenticate instead of treating the request as forbidden.
-            const session = await identityRuntime.resolveSession(sessionId, sessionSecret);
+            const session = options.mutation
+                ? await identityRuntime.resolveSessionForMutation(sessionId, sessionSecret)
+                : await identityRuntime.resolveSession(sessionId, sessionSecret);
             throw session ? new AuthenticationError(403, 'forbidden') : new AuthenticationError(401, 'unauthorized');
         }
 
-        const membership = await tenantAccessRuntime.resolveAuthenticatedMembershipContext(
-            sessionId,
-            sessionSecret,
-            tenantId
-        );
+        const membership = options.mutation
+            ? await tenantAccessRuntime.resolveAuthenticatedMembershipContextForMutation(sessionId, sessionSecret, tenantId)
+            : await tenantAccessRuntime.resolveAuthenticatedMembershipContext(sessionId, sessionSecret, tenantId);
 
         if (!membership) {
             // Distinguish an invalid session (401) from a valid session without a
@@ -82,9 +86,10 @@ export async function buildAuthenticatedContext(
         if (err instanceof AuthenticationError) {
             throw err;
         }
+        if (options.mutation) throw err;
         throw new AuthenticationError(500, 'internal_error');
     } finally {
-        if (client) {
+        if (client && !options.client) {
             client.release();
         }
     }

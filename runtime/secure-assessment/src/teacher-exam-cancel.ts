@@ -67,22 +67,24 @@ function iso(value: unknown): string {
 export async function cancelTeacherExam(
     pool: pg.Pool,
     actor: { tenantId: string; personId: string },
-    request: CancellationRequest
+    request: CancellationRequest,
+    transaction?: pg.PoolClient
 ): Promise<CancellationOutcome> {
     if (!UUID.test(actor.tenantId) || !UUID.test(actor.personId)) return { type: 'forbidden' };
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         // Locked like every lifecycle transition: cancellations of one exam are decided one at
         // a time, so a retry that overtakes the original finds what it recorded.
         const exam = await lockManagedExam(client, actor, request.examInstanceId);
         if (!exam) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
 
@@ -92,9 +94,9 @@ export async function cancelTeacherExam(
             [actor.tenantId, request.actionKey]
         );
         if (byKey.rows.length === 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             const earlier = byKey.rows[0];
-            if (earlier.exam_instance_id !== request.examInstanceId || earlier.cancelled_by_person_id !== actor.personId) {
+            if (earlier.exam_instance_id !== request.examInstanceId || earlier.cancelled_by_person_id !== actor.personId || earlier.reason !== request.reason) {
                 return { type: 'action_key_reused' };
             }
             return {
@@ -108,14 +110,14 @@ export async function cancelTeacherExam(
             [actor.tenantId, request.examInstanceId]
         );
         if (existing.rows.length === 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return {
                 type: 'cancelled', examInstanceId: request.examInstanceId, cancelledAt: iso(existing.rows[0].cancelled_at),
                 reason: existing.rows[0].reason, changed: false, replayed: false,
             };
         }
         if (!CANCELLABLE_STATES.has(exam.lifecycle_state)) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: exam.lifecycle_state };
         }
 
@@ -137,17 +139,18 @@ export async function cancelTeacherExam(
              VALUES ($1, $2, $3, 'ARCHIVED', $4, $5, $6)`,
             [actor.tenantId, request.examInstanceId, exam.lifecycle_state, actor.personId, cancelledAt, cancellationId]
         );
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return {
             type: 'cancelled', examInstanceId: request.examInstanceId, cancelledAt: iso(cancelledAt), reason: request.reason,
             changed: true, replayed: false,
         };
     } catch (err) {
-        await client.query('ROLLBACK').catch(() => {});
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
         // The same key used at the same moment for another exam: the unique key decides.
         if ((err as { code?: string })?.code === '23505') return { type: 'action_key_reused' };
+        if (transaction) throw err;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

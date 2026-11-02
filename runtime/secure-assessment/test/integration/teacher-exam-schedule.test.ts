@@ -48,7 +48,16 @@ test('rescheduling an exam before it opens (real PostgreSQL, production wiring)'
     };
     const teacherClient = await loggedIn(teacher);
     const reschedule = (c: BrowserLikeClient, body: Record<string, unknown>) =>
-        c.request('/api/v1/assessment/teacher-exams/reschedule', { method: 'POST', body });
+        c.request('/api/v1/assessment/teacher-exams/reschedule', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, ...(body) } }).then(response => {
+            if (response.status >= 200 && response.status < 300) {
+                const { audit, ...business } = response.body;
+                assert.match(audit.id, /^[0-9a-f-]{36}$/);
+                assert.ok(['APPLIED','NO_OP'].includes(audit.outcome));
+                assert.equal(typeof audit.replayed, 'boolean');
+                return { ...response, body: business };
+            }
+            return response;
+        });
     const changes = async (exam: string) => (await pool.query(
         `SELECT previous_lifecycle_state, previous_window_starts_at, previous_window_ends_at, previous_duration_seconds, previous_latest_start_policy,
                 new_window_starts_at, new_window_ends_at, new_duration_seconds, new_latest_start_policy, changed_by_person_id, action_key, changed_at
@@ -183,7 +192,7 @@ test('rescheduling an exam before it opens (real PostgreSQL, production wiring)'
             ['SCHEDULED', 90, 'FULL_DURATION_BEYOND_WINDOW', res.body.changedAt]
         );
 
-        const ready = await teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId: exam, action: 'mark_ready' } });
+        const ready = await teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId: exam, action: 'mark_ready' }) } });
         assert.equal(ready.status, 200, JSON.stringify(ready.body));
         assert.equal((await examRow(exam)).lifecycle_state, 'READY');
     });

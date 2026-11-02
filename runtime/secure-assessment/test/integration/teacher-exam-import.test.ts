@@ -235,7 +235,7 @@ test('teacher question import and scheduling (real PostgreSQL, production wiring
         const listed = readiness.body.exams.find((e: { examInstanceId: string }) => e.examInstanceId === examId);
         assert.equal(listed.lifecycleState, 'SCHEDULED');
         assert.equal(listed.baseline.status, 'baseline_readiness_checks_pass');
-        const ready = await teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId: examId, action: 'mark_ready' } });
+        const ready = await teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId: examId, action: 'mark_ready' }) } });
         assert.equal(ready.status, 200);
         assert.equal(ready.body.lifecycleState, 'READY');
     });
@@ -248,7 +248,8 @@ test('teacher question import and scheduling (real PostgreSQL, production wiring
             method: 'POST', body: { ...body, importKey: batch.import_key, expectedSha256: sha256Hex(FILE) },
         });
         assert.equal(retry.status, 200);
-        assert.deepEqual(retry.body, { examInstanceId: examId, replayed: true, questionCount: 3, participantCount: 2 });
+        assert.match(retry.body.audit.id, /^[0-9a-f-]{36}$/);
+        assert.deepEqual(retry.body, { examInstanceId: examId, replayed: true, questionCount: 3, participantCount: 2, audit: { id: retry.body.audit.id, outcome: 'APPLIED', replayed: true } });
         const changed = FILE.replace('Bandung', 'Bogor');
         const reused = await teacherClient.request('/api/v1/assessment/teacher-exams/import', {
             method: 'POST', body: { ...request({ questionsCsv: changed }), importKey: batch.import_key, expectedSha256: sha256Hex(changed) },

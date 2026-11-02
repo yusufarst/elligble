@@ -68,9 +68,18 @@ test('adding participants after scheduling (real PostgreSQL, production wiring)'
     const candidates = (c: BrowserLikeClient, exam: string) =>
         c.request(`/api/v1/assessment/teacher-exams/participants/candidates?examInstanceId=${exam}`);
     const add = (c: BrowserLikeClient, body: Record<string, unknown>) =>
-        c.request('/api/v1/assessment/teacher-exams/participants/add', { method: 'POST', body });
+        c.request('/api/v1/assessment/teacher-exams/participants/add', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, ...(body) } }).then(response => {
+            if (response.status >= 200 && response.status < 300) {
+                const { audit, ...business } = response.body;
+                assert.match(audit.id, /^[0-9a-f-]{36}$/);
+                assert.ok(['APPLIED','NO_OP'].includes(audit.outcome));
+                assert.equal(typeof audit.replayed, 'boolean');
+                return { ...response, body: business };
+            }
+            return response;
+        });
     const transition = (examInstanceId: string, action: string) =>
-        teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
     const stateOf = async (exam: string) => (await pool.query('SELECT lifecycle_state FROM secure_assessment_exam_instances WHERE id = $1', [exam])).rows[0]?.lifecycle_state;
     const participantsOf = async (exam: string) => (await pool.query(
         'SELECT person_id, academic_enrollment_id FROM secure_assessment_exam_participants WHERE exam_instance_id = $1 ORDER BY created_at, id',
@@ -360,7 +369,7 @@ test('adding participants after scheduling (real PostgreSQL, production wiring)'
         // A cancelled exam neither.
         const { exam: cancelled } = await plannedExam();
         const cancel = await teacherClient.request('/api/v1/assessment/teacher-exams/cancel', {
-            method: 'POST', body: { examInstanceId: cancelled, reason: 'Diganti', actionKey: randomUUID() },
+            method: 'POST', body: { confirmed: true, ...({ examInstanceId: cancelled, reason: 'Diganti', actionKey: randomUUID() }) },
         });
         assert.equal(cancel.status, 200);
         const res = await add(teacherClient, { examInstanceId: cancelled, enrollmentIds: [sB.enrollmentId], actionKey: randomUUID() });

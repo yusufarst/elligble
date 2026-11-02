@@ -17,6 +17,19 @@ import { finalizeExpiredAttempts } from '../../src/expiry-finalization.ts';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+
+/** Validate the additive receipt separately, retaining exact native business assertions. */
+function assertTransitionAudit(body: unknown, outcome: 'APPLIED' | 'NO_OP', replayed: boolean): Record<string, unknown> {
+    assert.ok(body !== null && typeof body === 'object' && !Array.isArray(body));
+    const { audit, ...business } = body as Record<string, unknown>;
+    assert.ok(audit !== null && typeof audit === 'object' && !Array.isArray(audit));
+    const receipt = audit as Record<string, unknown>;
+    assert.ok(typeof receipt.id === 'string');
+    assert.match(receipt.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    assert.deepEqual(receipt, { id: receipt.id, outcome, replayed });
+    return business;
+}
+
 test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: skipWithoutDatabase }, async (t) => {
     const db = await createDisposableDatabase();
     const app = await startProductionWiredServer(db.pool);
@@ -39,7 +52,7 @@ test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: 
     };
     const teacherClient = await loggedIn(teacher);
     const act = (examInstanceId: string, action: string, c: BrowserLikeClient = teacherClient) =>
-        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
 
     async function activeExam(questions = 3) {
         const exam = await createExamInstance(pool, tenant, teaching);
@@ -127,9 +140,9 @@ test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: 
 
         const paused = await act(exam, 'pause');
         assert.equal(paused.status, 200);
-        assert.deepEqual(paused.body, { examInstanceId: exam, lifecycleState: 'PAUSED', changed: true });
+        assert.deepEqual(assertTransitionAudit(paused.body, 'APPLIED', false), { examInstanceId: exam, lifecycleState: 'PAUSED', changed: true });
         const again = await act(exam, 'pause');
-        assert.deepEqual(again.body, { examInstanceId: exam, lifecycleState: 'PAUSED', changed: false }, 'repeating a pause changes nothing');
+        assert.deepEqual(assertTransitionAudit(again.body, 'NO_OP', false), { examInstanceId: exam, lifecycleState: 'PAUSED', changed: false }, 'repeating a pause changes nothing');
         const pauseRow = (await pool.query('SELECT paused_at, paused_by_person_id, resumed_at FROM secure_assessment_exam_pauses WHERE exam_instance_id = $1', [exam])).rows;
         assert.equal(pauseRow.length, 1);
         assert.equal(pauseRow[0].paused_by_person_id, teacher.personId);
@@ -210,8 +223,8 @@ test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: 
 
         await sleep(1100);
         const resumed = await act(exam, 'resume');
-        assert.deepEqual(resumed.body, { examInstanceId: exam, lifecycleState: 'ACTIVE', changed: true });
-        assert.deepEqual((await act(exam, 'resume')).body, { examInstanceId: exam, lifecycleState: 'ACTIVE', changed: false });
+        assert.deepEqual(assertTransitionAudit(resumed.body, 'APPLIED', false), { examInstanceId: exam, lifecycleState: 'ACTIVE', changed: true });
+        assert.deepEqual(assertTransitionAudit((await act(exam, 'resume')).body, 'NO_OP', false), { examInstanceId: exam, lifecycleState: 'ACTIVE', changed: false });
         const closed = (await pool.query('SELECT paused_at, resumed_at, resumed_by_person_id FROM secure_assessment_exam_pauses WHERE exam_instance_id = $1', [exam])).rows;
         assert.equal(closed.length, 1);
         assert.equal(closed[0].resumed_by_person_id, teacher.personId);
@@ -331,8 +344,8 @@ test('exam pause, resume and end (real PostgreSQL, production wiring)', { skip: 
         const waiting = await student(exam, { startTimer: false });
 
         const ended = await act(exam, 'end');
-        assert.deepEqual(ended.body, { examInstanceId: exam, lifecycleState: 'ENDED', changed: true });
-        assert.deepEqual((await act(exam, 'end')).body, { examInstanceId: exam, lifecycleState: 'ENDED', changed: false });
+        assert.deepEqual(assertTransitionAudit(ended.body, 'APPLIED', false), { examInstanceId: exam, lifecycleState: 'ENDED', changed: true });
+        assert.deepEqual(assertTransitionAudit((await act(exam, 'end')).body, 'NO_OP', false), { examInstanceId: exam, lifecycleState: 'ENDED', changed: false });
         assert.equal((await act(exam, 'pause')).status, 409, 'an ended exam is not paused');
         assert.equal((await act(exam, 'resume')).status, 409);
 

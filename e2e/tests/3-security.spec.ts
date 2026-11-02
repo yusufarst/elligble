@@ -14,6 +14,15 @@ test('another school and another student’s attempt are refused', async ({ page
         return res.status;
     }, { other: state.otherTenantId });
     expect(status).toBe(403);
+    // A tenant locator and a syntactically complete staff intent never elevate a Student.
+    const deniedStaff = await page.evaluate(async ({ tenant, exam }) => {
+        const request = await fetch('/api/v1/assessment/teacher-exams/results', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Tenant-ID': tenant },
+            body: JSON.stringify({ examInstanceId: exam, format: 'csv', actionKey: crypto.randomUUID() }),
+        });
+        return { status: request.status, body: await request.json() };
+    }, { tenant: state.tenantId, exam: state.examInstanceId });
+    expect(deniedStaff).toEqual({ status: 403, body: { error: 'forbidden' } });
 
     const intruderContext = await browser.newContext();
     const intruder = await intruderContext.newPage();

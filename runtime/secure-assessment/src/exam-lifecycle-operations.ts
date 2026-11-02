@@ -79,7 +79,8 @@ export async function performTeacherExamAction(
     pool: pg.Pool,
     actor: TeacherActor,
     examInstanceId: string,
-    action: TeacherExamAction
+    action: TeacherExamAction,
+    transaction?: pg.PoolClient
 ): Promise<TeacherExamActionResult> {
     if (!UUID_REGEX.test(examInstanceId) || !Object.hasOwn(TRANSITIONS, action)) {
         return { type: 'forbidden' };
@@ -88,13 +89,14 @@ export async function performTeacherExamAction(
 
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
 
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         const exam = await client.query(
             `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at, statement_timestamp() AS db_now
              FROM secure_assessment_exam_instances i
@@ -112,23 +114,23 @@ export async function performTeacherExamAction(
             [examInstanceId, actor.tenantId, actor.personId]
         );
         if (exam.rows.length !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const row = exam.rows[0];
         if (transition.idempotent && row.lifecycle_state === transition.to) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: false };
         }
         if (row.lifecycle_state !== transition.from) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: row.lifecycle_state };
         }
 
         if (action === 'finalize') {
             const frozen = await freezeExamResults(client, actor.tenantId, examInstanceId, actor.personId);
             if (frozen.type !== 'frozen') {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return frozen;
             }
         }
@@ -140,7 +142,7 @@ export async function performTeacherExamAction(
                 [examInstanceId, actor.tenantId, transition.to, transition.from]
             );
             if (moved.rowCount !== 1) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'invalid_state', currentState: row.lifecycle_state };
             }
             // The boundary is taken here, after the exam row lock: every answer save,
@@ -159,7 +161,7 @@ export async function performTeacherExamAction(
                 );
                 if (closed.rowCount !== 1) {
                     // A PAUSED exam without its open pause would lose the boundary; refuse.
-                    await client.query('ROLLBACK');
+                    if (!transaction) await client.query('ROLLBACK');
                     return { type: 'unavailable' };
                 }
             }
@@ -168,25 +170,25 @@ export async function performTeacherExamAction(
                  VALUES ($1, $2, $3, $4, $5)`,
                 [actor.tenantId, examInstanceId, transition.from, transition.to, actor.personId]
             );
-            await client.query('COMMIT');
+            if (!transaction) await client.query('COMMIT');
             return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
         }
 
         if (action === 'activate') {
             const now = new Date(row.db_now).getTime();
             if (row.window_starts_at && now < new Date(row.window_starts_at).getTime()) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'window_not_started', windowStartsAt: new Date(row.window_starts_at).toISOString() };
             }
             if (row.window_ends_at && now >= new Date(row.window_ends_at).getTime()) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'window_closed' };
             }
         }
 
         const readiness = await evaluateExamReadiness(client, actor.tenantId, examInstanceId);
         if (!readiness.ready) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'not_ready', readiness: { baseline: readiness.baseline, roomProctor: readiness.roomProctor } };
         }
 
@@ -196,7 +198,7 @@ export async function performTeacherExamAction(
             [examInstanceId, actor.tenantId, transition.to, transition.from]
         );
         if (updated.rowCount !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: row.lifecycle_state };
         }
         await client.query(
@@ -204,12 +206,13 @@ export async function performTeacherExamAction(
              VALUES ($1, $2, $3, $4, $5)`,
             [actor.tenantId, examInstanceId, transition.from, transition.to, actor.personId]
         );
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
-    } catch {
-        await client.query('ROLLBACK').catch(() => {});
+    } catch (transactionError) {
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

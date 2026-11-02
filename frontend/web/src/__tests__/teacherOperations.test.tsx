@@ -63,8 +63,28 @@ describe('teacher exam operations', () => {
     expect(await screen.findByRole('heading', { name: 'Buka Ujian untuk Peserta?' })).toBeDefined();
     expect(postTeacherExamTransition).not.toHaveBeenCalled();
     const dialogButtons = screen.getAllByRole('button', { name: 'Buka Ujian' });
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(dialogButtons[dialogButtons.length - 1]);
-    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'activate'));
+    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'activate', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) }));
+  });
+
+  it('requires a bounded reason, preserves the native dialog focus and emits explicit confirmation', async () => {
+    vi.mocked(getTeacherReadiness).mockResolvedValue({ exams: [exam({ lifecycleState: 'READY' })] });
+    render(<TeacherReadinessView />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Buka Ujian' }));
+    const buttons = screen.getAllByRole('button', { name: 'Buka Ujian' });
+    const confirm = buttons[buttons.length - 1] as HTMLButtonElement;
+    const field = screen.getByLabelText('Alasan tindakan');
+    expect(confirm.disabled).toBe(true);
+    fireEvent.change(field, { target: { value: '界'.repeat(201) } });
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
+    expect(postTeacherExamTransition).not.toHaveBeenCalled();
+    fireEvent.change(field, { target: { value: '界'.repeat(200) } });
+    expect(confirm.disabled).toBe(false);
+    expect(field.getAttribute('aria-describedby')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('explains why an exam cannot be opened yet', async () => {
@@ -75,6 +95,7 @@ describe('teacher exam operations', () => {
     render(<TeacherReadinessView />);
     fireEvent.click(await screen.findByRole('button', { name: 'Buka Ujian' }));
     const dialogButtons = await screen.findAllByRole('button', { name: 'Buka Ujian' });
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(dialogButtons[dialogButtons.length - 1]);
     expect(await screen.findByText(/^Ujian baru dapat dibuka mulai /)).toBeDefined();
   });
@@ -124,8 +145,9 @@ describe('pausing, resuming and ending a running exam', () => {
     expect(await screen.findByRole('heading', { name: 'Jeda Ujian untuk Semua Peserta?' })).toBeDefined();
     expect(screen.getByText(/Sisa waktu setiap peserta berhenti tepat saat ujian dijeda/)).toBeDefined();
     expect(postTeacherExamTransition).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(lastDialogButton('Jeda Ujian'));
-    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'pause'));
+    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'pause', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) }));
     expect(await screen.findByText('Ujian dijeda sejak 08.14 WIB')).toBeDefined();
     expect(screen.getByText('Dijeda')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Lanjutkan Ujian' })).toBeDefined();
@@ -144,8 +166,9 @@ describe('pausing, resuming and ending a running exam', () => {
     expect(await screen.findByRole('heading', { name: 'Finalisasi Hasil Ujian?' })).toBeDefined();
     expect(screen.getByText(/bukan bernilai 0/)).toBeDefined();
     expect(screen.getByText(/Nilai tetap tidak terlihat oleh siswa/)).toBeDefined();
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(lastDialogButton('Finalisasi Hasil'));
-    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'finalize'));
+    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'finalize', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) }));
     expect(await screen.findByText('Hasil Final')).toBeDefined();
     // The ICU data decides between "2026, 11.05" and "2026 pukul 11.05".
     expect(screen.getByText(/^Hasil difinalisasi 29 September 2026(,| pukul) 11\.05 WIB\./)).toBeDefined();
@@ -165,6 +188,7 @@ describe('pausing, resuming and ending a running exam', () => {
     vi.mocked(postTeacherExamTransition).mockRejectedValue(new (ApiError as any)(409, 'attempts_running', undefined, { error: 'attempts_running', running: 1 }));
     render(<TeacherReadinessView />);
     fireEvent.click(await screen.findByRole('button', { name: 'Finalisasi Hasil' }));
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(lastDialogButton('Finalisasi Hasil'));
     expect(await screen.findByText('Masih ada peserta yang mengerjakan. Finalisasi dapat dilakukan setelah semua peserta selesai.')).toBeDefined();
   });
@@ -175,8 +199,9 @@ describe('pausing, resuming and ending a running exam', () => {
     render(<TeacherReadinessView />);
     fireEvent.click(await screen.findByRole('button', { name: 'Lanjutkan Ujian' }));
     expect(await screen.findByRole('heading', { name: 'Lanjutkan Ujian?' })).toBeDefined();
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(lastDialogButton('Lanjutkan Ujian'));
-    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'resume'));
+    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'resume', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) }));
   });
 
   it('ends an exam only after the consequences are confirmed, and says who is still working', async () => {
@@ -193,8 +218,9 @@ describe('pausing, resuming and ending a running exam', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
     expect(postTeacherExamTransition).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Akhiri Ujian' }));
+    fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     fireEvent.click(lastDialogButton('Akhiri Ujian'));
-    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'end'));
+    await waitFor(() => expect(postTeacherExamTransition).toHaveBeenCalledWith(EXAM, 'end', { reason: 'Pelaksanaan ujian terjadwal', confirmed: true, actionKey: expect.any(String) }));
     expect(await screen.findByText('Ujian telah diakhiri. 25 peserta masih mengerjakan sampai waktunya masing-masing habis.')).toBeDefined();
     expect(screen.getByText('Diakhiri')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Akhiri Ujian' })).toBeNull();

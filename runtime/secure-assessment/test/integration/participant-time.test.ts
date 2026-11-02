@@ -41,11 +41,20 @@ test('add time for one participant (real PostgreSQL, production wiring)', { skip
     };
     const teacherClient = await loggedIn(teacher);
     const addTime = (c: BrowserLikeClient, body: Record<string, unknown>) =>
-        c.request('/api/v1/assessment/exam-monitoring/add-time', { method: 'POST', body });
+        c.request('/api/v1/assessment/exam-monitoring/add-time', { method: 'POST', body: { confirmed: true, ...(body) } }).then(response => {
+            if (response.status >= 200 && response.status < 300) {
+                const { audit, ...business } = response.body;
+                assert.match(audit.id, /^[0-9a-f-]{36}$/);
+                assert.ok(['APPLIED','NO_OP'].includes(audit.outcome));
+                assert.equal(typeof audit.replayed, 'boolean');
+                return { ...response, body: business };
+            }
+            return response;
+        });
     const monitoring = async (c: BrowserLikeClient, examId: string) =>
         (await c.request(`/api/v1/assessment/exam-monitoring?examInstanceId=${examId}`)).body;
     const transition = (examInstanceId: string, action: string) =>
-        teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        teacherClient.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
     const adjustments = async (attemptId: string) => (await pool.query(
         `SELECT adj.adjustment_seconds, adj.reason, adj.actor_person_id, adj.action_key, adj.created_at
          FROM secure_assessment_timer_adjustments adj JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id

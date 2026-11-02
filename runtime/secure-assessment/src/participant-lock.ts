@@ -27,23 +27,25 @@ export async function performParticipantLockAction(
     actor: { tenantId: string; personId: string },
     examInstanceId: string,
     participantId: string,
-    action: ParticipantLockAction
+    action: ParticipantLockAction,
+    transaction?: pg.PoolClient
 ): Promise<ParticipantLockResult> {
     if (!UUID_REGEX.test(examInstanceId) || !UUID_REGEX.test(participantId) || (action !== 'lock' && action !== 'unlock')) {
         return { type: 'forbidden' };
     }
     let client: pg.PoolClient;
     try {
-        client = await pool.connect();
-    } catch {
+        client = transaction ?? await pool.connect();
+    } catch (transactionError) {
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     }
     try {
-        await client.query('BEGIN');
+        if (!transaction) await client.query('BEGIN');
         // Exam row before attempt row, the order every attempt writer uses.
         const supervision = await resolveSupervisionScope(client, actor, examInstanceId, { lockExam: true });
         if (!supervision) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         const participant = await client.query(
@@ -53,11 +55,11 @@ export async function performParticipantLockAction(
             [actor.tenantId, examInstanceId, participantId, supervision.roomFilter]
         );
         if (participant.rows.length !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
         if (!SUPERVISED_STATES.has(supervision.lifecycleState)) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'invalid_state', currentState: supervision.lifecycleState };
         }
         // The participant's open (first unsubmitted) attempt, locked against its writers.
@@ -71,7 +73,7 @@ export async function performParticipantLockAction(
             [actor.tenantId, participantId]
         );
         if (attempt.rows.length !== 1) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'no_active_attempt' };
         }
         const attemptId: string = attempt.rows[0].id;
@@ -82,7 +84,7 @@ export async function performParticipantLockAction(
         );
         if (action === 'lock') {
             if (open.rows.length === 1) {
-                await client.query('ROLLBACK');
+                if (!transaction) await client.query('ROLLBACK');
                 return { type: 'ok', participantId, locked: true, changed: false, lockedAt: new Date(open.rows[0].locked_at).toISOString() };
             }
             // The boundary is taken after the attempt row lock: a save in flight lands before it.
@@ -91,11 +93,11 @@ export async function performParticipantLockAction(
                  VALUES ($1, $2, statement_timestamp(), $3) RETURNING locked_at`,
                 [actor.tenantId, attemptId, actor.personId]
             );
-            await client.query('COMMIT');
+            if (!transaction) await client.query('COMMIT');
             return { type: 'ok', participantId, locked: true, changed: true, lockedAt: new Date(created.rows[0].locked_at).toISOString() };
         }
         if (open.rows.length === 0) {
-            await client.query('ROLLBACK');
+            if (!transaction) await client.query('ROLLBACK');
             return { type: 'ok', participantId, locked: false, changed: false, lockedAt: null };
         }
         await client.query(
@@ -103,12 +105,13 @@ export async function performParticipantLockAction(
              WHERE tenant_id = $1 AND id = $2 AND unlocked_at IS NULL`,
             [actor.tenantId, open.rows[0].id, actor.personId]
         );
-        await client.query('COMMIT');
+        if (!transaction) await client.query('COMMIT');
         return { type: 'ok', participantId, locked: false, changed: true, lockedAt: null };
-    } catch {
-        await client.query('ROLLBACK').catch(() => {});
+    } catch (transactionError) {
+        if (!transaction) await client.query('ROLLBACK').catch(() => {});
+        if (transaction) throw transactionError;
         return { type: 'unavailable' };
     } finally {
-        client.release();
+        if (!transaction) client.release();
     }
 }

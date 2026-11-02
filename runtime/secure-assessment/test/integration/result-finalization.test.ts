@@ -13,6 +13,19 @@ import { BrowserLikeClient, startProductionWiredServer } from '../support/test-s
 // finalized, by the teacher who manages it; the results are frozen as computed then, stay
 // the same whatever changes later, record who finalized them and when, and publish nothing.
 
+
+/** Validate the additive receipt separately, retaining exact native business assertions. */
+function assertTransitionAudit(body: unknown, outcome: 'APPLIED' | 'NO_OP', replayed: boolean): Record<string, unknown> {
+    assert.ok(body !== null && typeof body === 'object' && !Array.isArray(body));
+    const { audit, ...business } = body as Record<string, unknown>;
+    assert.ok(audit !== null && typeof audit === 'object' && !Array.isArray(audit));
+    const receipt = audit as Record<string, unknown>;
+    assert.ok(typeof receipt.id === 'string');
+    assert.match(receipt.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    assert.deepEqual(receipt, { id: receipt.id, outcome, replayed });
+    return business;
+}
+
 test('result finalization (real PostgreSQL, production wiring)', { skip: skipWithoutDatabase }, async (t) => {
     const db = await createDisposableDatabase();
     const app = await startProductionWiredServer(db.pool);
@@ -35,7 +48,7 @@ test('result finalization (real PostgreSQL, production wiring)', { skip: skipWit
     };
     const teacherClient = await loggedIn(teacher);
     const act = (examInstanceId: string, action: string, c: BrowserLikeClient = teacherClient) =>
-        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { examInstanceId, action } });
+        c.request('/api/v1/assessment/teacher-exams/transition', { method: 'POST', body: { reason: 'Pelaksanaan ujian terjadwal', actionKey: randomUUID(), confirmed: true, ...({ examInstanceId, action }) } });
     const results = async (examInstanceId: string) => (await teacherClient.request(`/api/v1/assessment/teacher-exams/results?examInstanceId=${examInstanceId}`)).body;
 
     async function student(exam: string, name: string, options: { startTimer?: boolean; start?: boolean } = {}) {
@@ -93,7 +106,7 @@ test('result finalization (real PostgreSQL, production wiring)', { skip: skipWit
         await expire(late.attemptId!);
         const finalized = await act(exam, 'finalize');
         assert.equal(finalized.status, 200);
-        assert.deepEqual(finalized.body, { examInstanceId: exam, lifecycleState: 'FINALIZED', changed: true });
+        assert.deepEqual(assertTransitionAudit(finalized.body, 'APPLIED', false), { examInstanceId: exam, lifecycleState: 'FINALIZED', changed: true });
 
         const source = await pool.query('SELECT finalization_source FROM secure_assessment_exam_submissions WHERE exam_attempt_id = $1', [late.attemptId]);
         assert.equal(source.rows[0].finalization_source, 'EXPIRY_SERVER');
@@ -138,7 +151,7 @@ test('result finalization (real PostgreSQL, production wiring)', { skip: skipWit
 
     await t.test('finalizing again changes nothing; the frozen results survive later edits and cannot be altered', async () => {
         const again = await act(exam, 'finalize');
-        assert.deepEqual(again.body, { examInstanceId: exam, lifecycleState: 'FINALIZED', changed: false });
+        assert.deepEqual(assertTransitionAudit(again.body, 'NO_OP', false), { examInstanceId: exam, lifecycleState: 'FINALIZED', changed: false });
         assert.equal((await pool.query('SELECT count(*)::int AS n FROM secure_assessment_exam_result_finalizations WHERE exam_instance_id = $1', [exam])).rows[0].n, 1);
         assert.equal((await pool.query(`SELECT count(*)::int AS n FROM secure_assessment_exam_lifecycle_events WHERE exam_instance_id = $1 AND to_state = 'FINALIZED'`, [exam])).rows[0].n, 1);
 
