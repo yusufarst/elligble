@@ -125,6 +125,10 @@ test('pilot onboarding through the provisioning CLI (real PostgreSQL)', { skip: 
         assert.equal(tiga.rowCount, 0);
         const events = await pool.query('SELECT summary::text AS s FROM platform_provisioning_events');
         assert.doesNotMatch(events.rows.map(r => r.s).join(' '), /Budi|Ani|Rudi|Sari/);
+        const identities = await pool.query(`SELECT c.user_account_id FROM identity_account_credentials c
+            JOIN identity_person_account_bindings b ON b.person_id=c.person_id AND b.canonical_account_id=c.user_account_id
+            JOIN identity_login_identifiers r ON r.user_account_id=c.user_account_id AND r.original_username=c.username`);
+        assert.equal(identities.rowCount, 4, 'legacy import has exactly one canonical binding and registered identifier per account');
     });
 
     const academic = file('academic.json', JSON.stringify({

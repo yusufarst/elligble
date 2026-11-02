@@ -5,13 +5,13 @@
 | Field | Frozen contract |
 |---|---|
 | Task / classification | AUTH-001, existing active P11 baseline Task; P0 identity foundation; HIGH risk; R07/R08/R09; no Task split or new baseline row |
-| Current status | READY — contract registration only. Build, source changes, migration execution and deployment are NOT AUTHORIZED |
+| Current status | VERIFYING / NOT DONE — Owner-authorized Build candidate; exact-content CI and Independent HIGH-risk/Identity-Security Review pending |
 | Objective | Implement the approved ELLIGBLE ID allocation, canonical Account/Person and database-enforced uniqueness foundation while preserving existing provisioning, activation-card, authentication and exam continuity |
 | Base / branch | main 89d725c0cebdc4425971d91721376927fe160bbb; task/auth-001-elligble-id-foundation |
 | Internal dependency | SEC-001 DONE: accepted implementation 7866a4088fd766ac7c31f632f28779c25d0faaa8, evidence 55ab60818819ec47d1e34ad44ad8d1a4a15be0d5, Owner-merged PR #19/main above; exact-main CI #119/run 41367164249, attempt 1, eight SUCCESS |
 | External inputs | Owner approved O01/O03/A03 on 2026-11-02, within §4; Independent Identity/Security contract review and targeted A03 re-review in §6/§11 |
 | Responsible parties | Owner approves policy, authorizes Build and merges. Authorized executor implements only this contract. Independent Identity/Security reviewer performs HIGH-risk review; contract review was explicitly commissioned and completed, implementation review remains mandatory before DONE |
-| Current publication permission | Owner authorization: register this contract and synchronize SEC-001 in exactly seven documentation files; one controlled registration content commit, normal push and one PR. No implementation or final evidence commit authorized |
+| Current publication permission | Owner explicitly authorized Build and Task-specific CI-first on baseline 93a4ac42fa0fa6165f9d378821273ea63d2a1fa9 / PR #20: exact 20 paths, controlled implementation commit, normal push, automatic full CI attempt 1. No final evidence commit, DONE, merge or deployment |
 | Parallel safe | NO parallel execution of baseline Tasks. Owner/school may gather legal, infrastructure or device facts without executing another Task |
 | Cost / tools | Existing Node/TypeScript, PostgreSQL 16, Git and automatic eight-job GitHub Actions workflow; no dependency/vendor/service/recurring-cost change. Heavy verification uses isolated CI runners, never shared workstation Docker/DB/processes |
 | DONE | §8 acceptance and §9 exact-content verification, Independent HIGH-risk/Identity-Security Review PASS and Owner acceptance, then one separately authorized Task-record-only evidence commit under DEC-045. Not achieved by registration |
@@ -115,7 +115,7 @@ Required real-PostgreSQL oracles: unchanged autocommit fixture and transactional
 
 ## 7. Exact closed implementation allowlist
 
-Exactly **20 repository-relative paths**, no globs. Only rows **1–7** are writable under the present registration authorization. Rows 8–20 remain **future implementation scope, NOT current write authority**. No 21st path, dependency, shared fixture or ADR without separate Owner approval.
+Exactly **20 repository-relative paths**, no globs. The Owner Build/CI-first grant in §12 now authorizes rows 1–20. Earlier registration-only/future labels in the inventory preserve that checkpoint. No 21st path, dependency, shared fixture or ADR without separate Owner approval.
 
 | # | Exact path | Registration / future purpose |
 |---:|---|---|
@@ -205,3 +205,19 @@ Local registration guards PASS: exactly seven authorized changed documentation p
 Actual staged/commit scope, raw message, parent and remote synchronization must be inspected before/after publication. A commit does not contain its own SHA. No new exact-content CI, implementation acceptance, further independent review, Owner Build grant or release PASS is invented in this record. The single normal push/PR is the publication boundary; subsequent work requires explicit Owner authority.
 
 **PB05 OPEN. No automatic Build, merge, deployment, successor or evidence-only finalization.**
+
+## 12. Owner-authorized Build and verification checkpoint, 2026-11-02
+
+Owner explicitly authorizes AUTH-001 Build/CI-first from registered 93a4ac42fa0fa6165f9d378821273ea63d2a1fa9, existing branch/PR #20. Registration CI #120/run 41402361878 attempt 1/eight SUCCESS. The earlier registration-only/Build-NOT-AUTHORIZED paragraphs are historical and superseded only by this bounded execution grant. No policy, scope, dependency or LOCKED change.
+
+Status history: READY → IN_PROGRESS on this grant; implementation/source/targeted verification → VERIFYING for exact-content CI/review. No DONE. Current baseline counters: 33 total, DONE 1, VERIFYING 1, BLOCKED 31, READY 0, IN_PROGRESS 0; 78 dependency edges unchanged.
+
+Implemented: 0055 deterministic adoption and constraints; canonical Account/Person binding and immutable global registry/receipts; INSERT-only legacy compatibility with deferred orphan guard; Person-serialized reservations; cryptographic generated IDs, ten-collision savepoint bound and semantic replay; caller-owned READ COMMITTED transactions, required owning authorization/audit adapters and post-wait authority rechecks. No new public claim/reset route or role grant. Existing provisioning retains v1 CSV/card behavior and acquires deterministic batch locks; Identity lookup uses exact legacy precedence and GENERATED-only fallback; credential-first login/activation/reissue locks stay intact with post-lock time checks; enrollment/directory reads converge on canonical Identity lookup without academic writes.
+
+Targeted local verification: generator/normalization and ten-collision rollback tests PASS (2 tests); AUTH-001 post-credential-lock authentication time/no-Person-lock regression PASS (1 test). Existing tests/assertions retained. Typechecks for Identity and Secure Assessment PASS during authoring; a new test predicate UUID/string typing mismatch was corrected without oracle change, final typecheck repeated before publication. No local PostgreSQL, full suite, build, Docker, port or global-process operation.
+
+Added CI PostgreSQL oracles cover legacy autocommit INSERT, canonical/registry adoption, direct SQL ownership/duplicate/skipped INSERT refusal, whole-command audit rollback, same-key concurrency/replay, authorization before replay/cross-tenant denial, reservation uniqueness, empty/latest DB, populated 0054 migration/refusal/repeat, invalid historical Account preservation, old card/import regression and generated-ID activation/reissue/session continuity. Defined synthetic owning-adapter callbacks in tests are not production routes or new platform authentication. Future product callers must supply real owning authorization/audit adapters; caller labels alone never grant authority.
+
+C01–C13 implementation/oracles prepared, full PostgreSQL and regression evidence PENDING automatic CI on the actual implementation SHA. C14 PENDING eight-job/five-browser exact-content CI. C15 requires final scope/DAG/identity/whitespace guards; C16 PENDING Independent HIGH-risk/Identity-Security Review and Owner acceptance. No implementation acceptance or test-count claim from earlier runs. If CI fails, STOP and retain precise failure; no rerun, second correction, evidence finalization, merge, PB05 closure or deployment automatically.
+
+The derived Graphify graph is not rewritten because it is outside the exact 20-path allowlist; current source remains authoritative. This candidate never records its own commit SHA. After successful exact-content CI, hand over for Independent Review while remaining VERIFYING / NOT DONE. PB05 OPEN.

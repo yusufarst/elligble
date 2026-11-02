@@ -5,6 +5,8 @@ import { IdentityRuntime } from '../../../identity-access/src/index.ts';
 import { createDisposableDatabase, skipWithoutDatabase } from '../support/pg-harness.ts';
 import { addMembership, createPersonWithAccount, createTenant } from '../support/fixtures.ts';
 import { BrowserLikeClient, startProductionWiredServer } from '../support/test-server.ts';
+import { randomUUID } from 'node:crypto';
+import { allocateStudentIdentity } from '../../../identity-access/src/student-identity.ts';
 
 // Account activation through HTTP with real PostgreSQL: provisioned accounts cannot sign in
 // until the person sets their own password with a single-use, expiring activation code
@@ -18,6 +20,35 @@ async function issue(pool: pg.Pool, accountId: string, options: { validForMs?: n
         client.release();
     }
 }
+
+test('AUTH-001 generated ID activates and resets the same Account with session revocation', { skip: skipWithoutDatabase }, async t => {
+    const db = await createDisposableDatabase(); t.after(() => db.close());
+    const tenantId = await createTenant(db.pool), personId = randomUUID();
+    await db.pool.query('INSERT INTO identity_persons(id) VALUES($1)',[personId]);
+    const c = await db.pool.connect();
+    try {
+        await c.query('BEGIN');
+        const allocated = await allocateStudentIdentity(c, { personId, tenantId }, randomUUID(), {
+            authorize: async (_client, scope) => scope.personId === personId && scope.tenantId === tenantId
+                ? { kind: 'platform_operator', ref: 'synthetic-activation-operator' } : null,
+            audit: async () => {},
+        });
+        await c.query('COMMIT');
+        const runtime = new IdentityRuntime(c as unknown as pg.Client);
+        const code = await runtime.issueActivation(allocated.userAccountId);
+        assert.ok(code);
+        const first = await runtime.activate(allocated.elligbleId.toUpperCase(), code.code, 'ApprovedStudentPassword2026!');
+        assert.equal(first.success,true); if (!first.success) throw new Error('Activation refused');
+        assert.equal(first.personId,personId); assert.equal(first.userAccountId,allocated.userAccountId);
+        const reset = await runtime.issueActivation(allocated.userAccountId); assert.ok(reset);
+        assert.equal(await runtime.resolveSession(first.session.sessionId,first.session.secret),null);
+        const recovered = await runtime.activate(allocated.elligbleId,reset.code,'DifferentStudentPassword2026!');
+        assert.equal(recovered.success,true); if (!recovered.success) throw new Error('Reissue refused');
+        assert.equal(recovered.personId,personId); assert.equal(recovered.userAccountId,allocated.userAccountId);
+        assert.equal((await c.query('SELECT count(*)::int AS n FROM identity_user_accounts WHERE person_id=$1',[personId])).rows[0].n,1);
+        assert.equal((await runtime.activate(allocated.elligbleId,reset.code,'ThirdStudentPassword2026!')).success,false);
+    } finally { await c.query('ROLLBACK'); c.release(); }
+});
 
 test('account activation (real PostgreSQL, production wiring)', { skip: skipWithoutDatabase }, async (t) => {
     const db = await createDisposableDatabase();

@@ -1,3 +1,4 @@
+import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
 import type { ClientBase } from 'pg';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
@@ -99,17 +100,17 @@ export async function listEnrolledStudents(
     scope: { groupId: string; periodId: string; examDay: string }
 ): Promise<EnrolledStudent[]> {
     const res = await client.query(
-        `SELECT e.id AS enrollment_id, m.person_id, c.username
+        `SELECT e.id AS enrollment_id, m.person_id
          FROM academic_core_student_enrollments e
          JOIN tenant_memberships m ON m.id = e.membership_id AND m.tenant_id = e.tenant_id
-         JOIN identity_user_accounts a ON a.person_id = m.person_id
-         JOIN identity_account_credentials c ON c.user_account_id = a.id
          WHERE e.tenant_id = $1 AND e.academic_group_id = $2 AND e.academic_period_id = $3
            AND e.start_date <= $4::date AND (e.end_date IS NULL OR e.end_date >= $4::date)
-         ORDER BY c.username, e.id`,
+         ORDER BY e.id`,
         [tenantId, scope.groupId, scope.periodId, scope.examDay]
     );
-    return res.rows.map(r => ({ enrollmentId: r.enrollment_id, personId: r.person_id, elligbleId: r.username }));
+    const ids = await listElligbleIds(client, res.rows.map(r => r.person_id as string));
+    return res.rows.filter(r => ids.has(r.person_id)).map(r => ({ enrollmentId: r.enrollment_id, personId: r.person_id, elligbleId: ids.get(r.person_id)! }))
+        .sort((a, b) => a.elligbleId < b.elligbleId ? -1 : a.elligbleId > b.elligbleId ? 1 : a.enrollmentId.localeCompare(b.enrollmentId));
 }
 
 export async function provisionScheduledExam(

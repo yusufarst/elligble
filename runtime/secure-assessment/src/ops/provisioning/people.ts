@@ -97,6 +97,13 @@ export async function importPeople(
             await client.query('ROLLBACK');
             return result;
         }
+        // Acquire batch identifier/membership locks in one deterministic order before effects.
+        const resolved = await Promise.all(parsed.rows.map(row => findAccountByElligbleId(client, row.elligbleId)));
+        const keys = parsed.rows.map(row => 'identity_identifier:' + row.elligbleId);
+        for (const account of resolved) if (account) keys.push('tenant_membership:' + input.tenantId + ':' + account.personId);
+        for (const key of [...new Set(keys)].sort()) await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [key]);
+        for (const id of [...new Set(resolved.filter(a => a !== null).map(a => a.personId))].sort())
+            await client.query('SELECT id FROM identity_persons WHERE id = $1 FOR NO KEY UPDATE', [id]);
         let teacherAssignments = 0;
         for (const row of parsed.rows) {
             const existing = await findAccountByElligbleId(client, row.elligbleId);
@@ -178,7 +185,7 @@ export async function reissueActivation(
             return { ok: false, problem: 'no account with this ELLIGBLE ID in this school' };
         }
         await client.query('SELECT user_account_id FROM identity_account_credentials WHERE user_account_id = $1 FOR UPDATE', [account.userAccountId]);
-        const issued = await issueActivationInTransaction(client, account.userAccountId, { now, validForMs: input.validForMs, unusableVerifier });
+        const issued = await issueActivationInTransaction(client, account.userAccountId, { now: input.now ?? new Date(), validForMs: input.validForMs, unusableVerifier });
         await recordProvisioningEvent(client, {
             tenantId: input.tenantId, action: 'activation_reissued', context: input.context, inputSha256: null, summary: { accounts: 1 },
         });

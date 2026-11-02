@@ -1,7 +1,9 @@
+> **Current execution override, 2026-11-02:** AUTH-001 explicit Owner Build/CI-first grant supersedes registration-only READY/Build-NOT-AUTHORIZED navigation below. Current stage VERIFYING / NOT DONE, exact implementation CI/review pending; DONE 1/VERIFYING 1/BLOCKED 31/READY 0, 33 Tasks/78 edges unchanged. AUTH-001 §12 controls this stage; previous registration text is history. PB05 OPEN.
+
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
 **Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
 **Completed transition:** GOV-P11-001 DONE for controlled tracker preparation/evidence only; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919, CI #110; excluded from the 33 implementation Tasks
-**Current Task:** AUTH-001 READY, contract registration only; Build NOT AUTHORIZED. SEC-001 DONE/PR #19 landed; DONE 1/33 (3.03%), READY 1, BLOCKED 31.
+**Current Task:** AUTH-001 VERIFYING / NOT DONE under explicit Owner Build/CI-first authority, exact implementation CI/review pending; SEC-001 DONE, total 33/DONE 1/VERIFYING 1/BLOCKED 31.
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
 **Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
 **Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
@@ -25,9 +27,9 @@ Only the unique rows in §3 are counted. SEC-001 is completed baseline work; AUT
 | Baseline Total | 33 |
 | Current Total | 33 |
 | DONE | 1 |
-| READY | 1 |
+| READY | 0 |
 | IN_PROGRESS | 0 |
-| VERIFYING | 0 |
+| VERIFYING | 1 |
 | BLOCKED | 31 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
@@ -48,7 +50,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 | Task ID | Bounded outcome | Status | Priority / path position | Risk | Depends on | External lifecycle gates (§8) |
 |---|---|---|---|---|---|---|
 | SEC-001 | Enforce approved CBT permissions on existing routes | DONE | P0 / first implementation candidate | HIGH | NONE | O09 |
-| AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | READY | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
+| AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | VERIFYING | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
 | ADMIN-001 | School Operator authoritative roster import | BLOCKED | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
 | AUTH-002 | Student claim and scoped verification/activation | BLOCKED | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
 | AUTH-003 | In-person school-assisted recovery of the existing account | BLOCKED | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
@@ -84,7 +86,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 ### Candidate checklist
 
 - [x] SEC-001 — Enforce approved CBT permissions on existing routes (DONE)
-- [ ] AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation (READY, Build NOT AUTHORIZED)
+- [ ] AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation (VERIFYING, Build authorized; no DONE)
 - [ ] ADMIN-001 — School Operator authoritative roster import (BLOCKED)
 - [ ] AUTH-002 — Student claim and scoped verification/activation (BLOCKED)
 - [ ] AUTH-003 — In-person school-assisted recovery of the existing account (BLOCKED)
@@ -147,7 +149,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation
 
-- **Requirements / status / priority / risk:** R07, R08, R09; READY; P0 / identity foundation; HIGH. **Build NOT AUTHORIZED.** Exact [AUTH-001 contract](tasks/AUTH-001.md), §7 allowlist, §8 acceptance and §10 READY inputs control.
+- **Requirements / status / priority / risk:** R07, R08, R09; VERIFYING; P0 / identity foundation; HIGH. **Build NOT AUTHORIZED.** Exact [AUTH-001 contract](tasks/AUTH-001.md), §7 allowlist, §8 acceptance and §10 READY inputs control.
 - **Dependencies and approvals:** SEC-001 DONE. Owner-approved O01/O03/A03, including one canonical Account per Person across roles. Initial independent contract review STOP identified legacy credential INSERT incompatibility; corrected targeted Identity/Security re-review PASS. The INSERT-only Person-lock/binding/registry correction does not add Person/binding locks to existing credential UPDATE paths.
 - **Acceptance:** Approved generated ID format/global uniqueness/non-reuse with legacy login/card compatibility; DB-enforced canonical account and non-duplicate-producing reservation constraints; fail-closed ambiguity/conflict; transactional allocation, rollback/replay and migration compatibility. Future claim/verification/recovery workflows remain AUTH-002/AUTH-003 and roster import remains ADMIN-001. No Person merge or replacement-account recovery.
 - **Required tests/evidence:** Exact §8 future oracles include unchanged legacy fixture INSERT, same-Person and identifier races, skipped INSERT consistency, direct-SQL negatives, audit/receipt rollback, empty/upgrade/repeat migration and login/activation/session compatibility. Full exact-candidate CI/real PostgreSQL/five browsers and Independent HIGH-risk/Security Review/Owner Acceptance are execution/completion outcomes, not claimed PASS now.
@@ -709,3 +711,7 @@ Progress: 1 / 33 = 3.03% (rounded).
 Owner Approval: contract registration/publication only; no Build, migration execution, merge, PB05 closure or production authority.
 
 Applicable O01/O03/A03 policy/design inputs are recorded in AUTH-001, without approving all future claim/reset/roster transport/permission details or erasing excluded C. P5/O09/K and bounded P6/O07 exclusions, PB05/other OPEN blockers, LOCKED/FROZEN decisions and DEC-044 G1–G10 remain authoritative. STOP for separate Owner Build authorization after registration verification.
+
+### 11.5 AUTH-001 Build authority
+
+Owner authorizes the existing 20-path contract and Task-specific CI-first from 93a4ac4/PR #20. READY → IN_PROGRESS → VERIFYING for implementation CI/review, DONE 1/VERIFYING 1/BLOCKED 31/READY 0. Reason: execute existing identity foundation; no new/removed/split Tasks, scope expansion or dependency change; baseline/current total 33, edges 78, progress 3.03%. No DONE, PB05 closure, merge or deployment. Full evidence/status in AUTH-001 §12.

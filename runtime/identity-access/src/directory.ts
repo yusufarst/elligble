@@ -9,8 +9,9 @@ import type { ClientBase } from 'pg';
 export async function listElligbleIds(client: ClientBase, personIds: readonly string[]): Promise<Map<string, string>> {
     if (personIds.length === 0) return new Map();
     const res = await client.query(
-        `SELECT DISTINCT ON (a.person_id) a.person_id, c.username
-         FROM identity_user_accounts a
+        `SELECT a.person_id, c.username
+         FROM identity_person_account_bindings b
+         JOIN identity_user_accounts a ON a.id = b.canonical_account_id
          JOIN identity_account_credentials c ON c.user_account_id = a.id
          WHERE a.person_id = ANY($1::uuid[])
          ORDER BY a.person_id, c.username`,

@@ -1,3 +1,5 @@
+> **AUTH-001 execution checkpoint, 2026-11-02:** Owner-authorized Build/CI-first now supersedes the registration-only/no-Build checkpoint below, only within AUTH-001 exact 20 paths. See [AUTH-001 §12](tasks/AUTH-001.md). Migration/source/tests prepared; exact-content CI/review pending, VERIFYING / NOT DONE. SEC-001 DONE 1/33 (3.03%), VERIFYING 1/BLOCKED 31/READY 0; 78 dependencies unchanged. All other policy/LOCKED/excluded boundaries, PB05 OPEN and G1–G10 preserved; no new route, merge or deployment.
+
 **Status:** LIVING PLAN (DEC-042, amended by DEC-045): live production state, gaps, evidence, Owner decisions and continuity checkpoint; Task records in `docs/production/tasks/`; official Task-status tracking is active in `docs/production/TASK_PLAN.md` after Owner merge of GOV-P11-001; this living plan retains production evidence and continuity
 **Canonical:** YES for current production state, gaps, critical path and next work. Does not override LOCKED decisions.
 **Last Updated:** 2026-11-02
@@ -109,7 +111,7 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** SEC-001 DONE/Owner-merged PR #19 as main 89d725c0cebdc4425971d91721376927fe160bbb, exact-main CI #119/run 41367164249 attempt 1 eight SUCCESS. AUTH-001 is the sole READY Task: approved/reviewed O01/O03/A03 contract, including corrected legacy INSERT compatibility, registered within seven documentation paths. Build/migration execution NOT AUTHORIZED. Counters: 33 Tasks, DONE 1 (3.03%), READY 1, BLOCKED 31, IN_PROGRESS 0, VERIFYING 0; 78 acyclic edges/R01–R31/G1–G10 unchanged. PB05 and applicable exclusions remain OPEN/default-deny. Only controlled contract publication is authorized; STOP for separate Owner Build authority, no successor, merge, deployment or blocker closure.
+**CRITICAL PATH:** AUTH-001 VERIFYING under explicit Owner Build/CI-first authority, 20-path implementation candidate; full exact-content CI and Independent Identity/Security Review pending. SEC-001 DONE; DONE 1/VERIFYING 1/BLOCKED 31, 33 Tasks/78 edges. STOP on failed CI; no DONE, PB05 closure, merge, deployment or successor. Previous registration-only checkpoints are history.
 
 | View | Tasks |
 |---|---|

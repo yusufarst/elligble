@@ -97,8 +97,6 @@ export class IdentityRuntime {
       return { success: false, error: 'INVALID_CREDENTIALS' };
     }
 
-    const now = this.#clock.now();
-    const nowMs = now.getTime();
 
     await this.#pg.query('BEGIN');
     try {
@@ -109,7 +107,9 @@ export class IdentityRuntime {
           a.person_id
         FROM identity_account_credentials c
         JOIN identity_user_accounts a ON a.id = c.user_account_id
-        WHERE c.username = $1
+        WHERE (c.username = $1 OR (NOT EXISTS (SELECT 1 FROM identity_account_credentials exact WHERE exact.username = $1)
+          AND c.user_account_id = (SELECT r.user_account_id FROM identity_login_identifiers r
+            WHERE r.origin = 'GENERATED' AND r.identifier_key = identity_identifier_key($1))))
         FOR UPDATE OF c
       `, [username]);
 
@@ -119,6 +119,8 @@ export class IdentityRuntime {
         return { success: false, error: 'INVALID_CREDENTIALS' };
       }
 
+      const now = this.#clock.now();
+      const nowMs = now.getTime();
       const creds = res.rows[0];
 
       if (!creds.is_valid) {
@@ -234,7 +236,6 @@ export class IdentityRuntime {
     if (!Number.isFinite(validForMs) || validForMs < ACTIVATION_POLICY.MIN_VALIDITY_MS || validForMs > ACTIVATION_POLICY.MAX_VALIDITY_MS) {
       throw new RangeError('Activation validity must be between 1 hour and 30 days.');
     }
-    const now = this.#clock.now();
     const unusableVerifier = options.rotatePassword === false ? null : createUnusableVerifier();
 
     await this.#pg.query('BEGIN');
@@ -247,7 +248,7 @@ export class IdentityRuntime {
         await this.#pg.query('ROLLBACK');
         return null;
       }
-      const issued = await issueActivationInTransaction(this.#pg, userAccountId, { now, validForMs, unusableVerifier });
+      const issued = await issueActivationInTransaction(this.#pg, userAccountId, { now: this.#clock.now(), validForMs, unusableVerifier });
       await this.#pg.query('COMMIT');
       return issued;
     } catch (err) {
@@ -273,14 +274,15 @@ export class IdentityRuntime {
       return { success: false, error: 'INVALID_ACTIVATION' };
     }
 
-    const now = this.#clock.now();
     await this.#pg.query('BEGIN');
     try {
       const account = await this.#pg.query(`
         SELECT c.user_account_id, c.is_valid, a.person_id
         FROM identity_account_credentials c
         JOIN identity_user_accounts a ON a.id = c.user_account_id
-        WHERE c.username = $1
+        WHERE (c.username = $1 OR (NOT EXISTS (SELECT 1 FROM identity_account_credentials exact WHERE exact.username = $1)
+          AND c.user_account_id = (SELECT r.user_account_id FROM identity_login_identifiers r
+            WHERE r.origin = 'GENERATED' AND r.identifier_key = identity_identifier_key($1))))
         FOR UPDATE OF c
       `, [trimmedUsername]);
       const creds = account.rows[0];
@@ -293,6 +295,7 @@ export class IdentityRuntime {
           `, [creds.user_account_id])).rows[0]
         : undefined;
 
+      const now = this.#clock.now();
       if (!activation || new Date(activation.expires_at).getTime() <= now.getTime()) {
         await this.#pg.query('COMMIT');
         verifyPassword(code, UNKNOWN_ACCOUNT_VERIFIER);

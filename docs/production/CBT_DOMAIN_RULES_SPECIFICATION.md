@@ -1,3 +1,5 @@
+> **AUTH-001 execution checkpoint, 2026-11-02:** Owner-authorized Build/CI-first now supersedes the registration-only/no-Build checkpoint below, only within AUTH-001 exact 20 paths. See [AUTH-001 §12](tasks/AUTH-001.md). Migration/source/tests prepared; exact-content CI/review pending, VERIFYING / NOT DONE. SEC-001 DONE 1/33 (3.03%), VERIFYING 1/BLOCKED 31/READY 0; 78 dependencies unchanged. All other policy/LOCKED/excluded boundaries, PB05 OPEN and G1–G10 preserved; no new route, merge or deployment.
+
 **Status:** DRAFT / SUBMITTED FOR REVIEW; NOT APPROVED
 **Task:** GOV-REALIGN-004; HIGH; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE
 **Baseline:** `2c6a4860a71a40b5cfb344eae3b964dd5b983125`; verified 2026-10-30
