@@ -231,6 +231,19 @@ test('IdentityRuntime - authenticate success creates session directly tied to au
   }
 });
 
+test('AUTH-001 authentication evaluates lockout time after credential lock wait without Person locks', async () => {
+  const { runtime, password, pg, clock, userAccountId } = setupHarness();
+  pg.credentials.get(userAccountId)!.locked_until = new Date(clock.now().getTime() + 1000);
+  const query = pg.query.bind(pg);
+  pg.query = async (sql, params = []) => {
+    if (sql.includes('FOR UPDATE OF c')) clock.advance(1001);
+    return query(sql, params);
+  };
+  const result = await runtime.authenticate('student.user', password);
+  assert.strictEqual(result.success, true);
+  assert.ok(!pg.queries.some(q => /FOR NO KEY UPDATE|identity_person_account_bindings/.test(q.text)));
+});
+
 test('IdentityRuntime - authenticate wrong password returns INVALID_CREDENTIALS', async () => {
   const { runtime } = setupHarness();
 

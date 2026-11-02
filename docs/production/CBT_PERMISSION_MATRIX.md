@@ -1,3 +1,5 @@
+> **AUTH-001 execution checkpoint, 2026-11-02:** Owner-authorized Build/CI-first now supersedes the registration-only/no-Build checkpoint below, only within AUTH-001 exact 20 paths. See [AUTH-001 §12](tasks/AUTH-001.md). Migration/source/tests prepared; exact-content CI/review pending, VERIFYING / NOT DONE. SEC-001 DONE 1/33 (3.03%), VERIFYING 1/BLOCKED 31/READY 0; 78 dependencies unchanged. All other policy/LOCKED/excluded boundaries, PB05 OPEN and G1–G10 preserved; no new route, merge or deployment.
+
 **Status:** DRAFT / SUBMITTED FOR REVIEW; NOT APPROVED; PB05 OPEN
 **Task:** GOV-POLICY-001; HIGH; PRE-P11 / PRE-BASELINE; NOT COUNTED IN P11 BASELINE
 **History:** Original P2–P6 planning package accepted under GOV-REALIGN-004; O09 policy approval remains OPEN. Original matrix/oracles §1–§4 retained; exact classified approval submission §5.
@@ -6,6 +8,8 @@
 **Authority:** Derived P5 matrix proposal; neither new role authority nor blocker closure
 
 # CBT-R1 security and permission matrix
+
+> **Current bounded authority, 2026-11-02:** original draft/submission headers, §1–§5 descriptions and C labels retain their historical review context. [GOV-POLICY-001 §7](tasks/GOV-POLICY-001.md) establishes the accepted P01–P05/P portions, preserves K authority and excludes unresolved C. Subsequent Owner-approved O01/O03 and A03 inputs are registered only to the extent stated in [AUTH-001](tasks/AUTH-001.md) and §5.5 below. They grant no missing claim/reset/roster route or expanded role authority. PB05 remains OPEN; no full policy closure, production or Build authorization is inferred.
 
 ## 1. Canonical authority and evaluator
 
@@ -140,3 +144,11 @@ Explicit exclusions remain O01 final ID; O02 type/scoring/bank contracts; O03 pr
 O09 approval-ready means this finite policy submission is ready for Independent HIGH-risk/security review and explicit Owner exact-content decision. It does not mean implementation READY or that C capabilities are approved. Owner must distinguish accepting these bounded projections from authorizing any excluded policy. If full O09 acceptance cannot be established with the recorded exclusions, keep O09 OPEN and request the exact missing Owner decision; no partial package acceptance may be presented as unconditional final-P11 sufficiency.
 
 After explicit O09 approval, SEC-001 still needs final P11 Gate B (including separately approved P6/O07 and other applicable sufficiency), its own exact role/reason/audit/route/schema/file contract, defined positive/negative tests, READY verification and Owner execution authorization. All 33 candidate Tasks remain BLOCKED now. O09 matrix approval is an entry policy input; full enforcement/negative evidence, independent security review and authorized PB05 closure are later completion/release outcomes. PB05 remains OPEN.
+
+### 5.5 Subsequent bounded AUTH-001 decision registration
+
+On 2026-11-02 the Owner approved O01 `elg-xxxx-xxxx-xxxx` with alphabet `abcdefghjkmnpqrstuvwxyz23456789`, global uniqueness/non-reuse and legacy compatibility; O03 new claim seven days, single-use reset fifteen minutes and maximum ten failed attempts; and A03 one canonical Account per authoritatively resolved Person across roles. Claim does not activate an Account; minimized proof and atomic revocation preserve Person/Attempt continuity. Existing activation, authentication lockout, session and MFA rules are unchanged. [AUTH-001 §4–§10](tasks/AUTH-001.md) freezes the foundation contract, exact future 20-path allowlist, acceptance tests and READY assessment; the publication is seven documentation files only, with no source or migration changes.
+
+These subsequent decisions settle only the stated inputs previously excluded from this P5 submission. They do not approve every C field or close O03/O09 generally. ADMIN-001 authoritative roster import, AUTH-002 claim/verification and AUTH-003 recovery remain separate dependent Tasks with exact authorization, response, notification, proof/retention and transaction contracts where applicable. Homeroom Teacher remains limited to own rombel, School Operator to authorized tenant operations, and platform CLI authority cannot be inherited by those product routes. No new account directory, identity export, raw proof storage or cross-tenant lookup is permitted. G7 still prohibits real student data before legal closure.
+
+The targeted A03 contract re-review PASS covers atomic legacy credential INSERT compatibility, fail-closed conflicts and unchanged login/activation lock order; it is not new enforcement/test PASS. SEC-001's accepted implementation is recorded in its completed Task record; PR #19 landing is synchronized in the current tracker and living plan. The preceding submission-era all-BLOCKED/SEC-ready-pending statements are historical. PB05, other applicable OPEN blockers, K authority, unrelated C/default-deny and all G1–G10 release gates remain unchanged.

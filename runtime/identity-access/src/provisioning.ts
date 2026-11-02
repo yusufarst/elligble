@@ -9,8 +9,7 @@ import { formatActivationCode, generateActivationCode, hashPassword } from './cr
 
 /**
  * ELLIGBLE ID syntax accepted for provisioning: unique, non-secret, stable, not email-based
- * (D02.3-03, D02.5-01). The final format is an open decision (D02.10-C); this is the
- * conservative syntax operators may use until then.
+ * (D02.3-03, D02.5-01). Legacy CSV syntax remains compatible; generated IDs follow AUTH-001.
  */
 export const ELLIGBLE_ID_PATTERN = /^[a-z0-9](?:[a-z0-9._-]{1,62})[a-z0-9]$/;
 
@@ -33,7 +32,9 @@ export async function findAccountByElligbleId(client: ClientBase, elligbleId: st
         `SELECT c.user_account_id, a.person_id
          FROM identity_account_credentials c
          JOIN identity_user_accounts a ON a.id = c.user_account_id
-         WHERE c.username = $1`,
+         WHERE c.username = $1 OR (NOT EXISTS (SELECT 1 FROM identity_account_credentials exact WHERE exact.username = $1)
+            AND c.user_account_id = (SELECT r.user_account_id FROM identity_login_identifiers r
+                WHERE r.origin = 'GENERATED' AND r.identifier_key = identity_identifier_key($1)))`,
         [elligbleId]
     );
     return res.rowCount === 1 ? { userAccountId: res.rows[0].user_account_id, personId: res.rows[0].person_id } : null;
