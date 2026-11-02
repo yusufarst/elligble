@@ -5,16 +5,16 @@
 | Field | Frozen contract |
 |---|---|
 | Task / classification | AUTH-001, existing active P11 baseline Task; P0 identity foundation; HIGH risk; R07/R08/R09; no Task split or new baseline row |
-| Current status | VERIFYING / NOT DONE — Owner-authorized Build candidate; exact-content CI and Independent HIGH-risk/Identity-Security Review pending |
+| Current status | DONE — bounded AUTH-001 identity foundation only; final content, CI, independent implementation review and Owner acceptance recorded in §13 |
 | Objective | Implement the approved ELLIGBLE ID allocation, canonical Account/Person and database-enforced uniqueness foundation while preserving existing provisioning, activation-card, authentication and exam continuity |
 | Base / branch | main 89d725c0cebdc4425971d91721376927fe160bbb; task/auth-001-elligble-id-foundation |
 | Internal dependency | SEC-001 DONE: accepted implementation 7866a4088fd766ac7c31f632f28779c25d0faaa8, evidence 55ab60818819ec47d1e34ad44ad8d1a4a15be0d5, Owner-merged PR #19/main above; exact-main CI #119/run 41367164249, attempt 1, eight SUCCESS |
 | External inputs | Owner approved O01/O03/A03 on 2026-11-02, within §4; Independent Identity/Security contract review and targeted A03 re-review in §6/§11 |
 | Responsible parties | Owner approves policy, authorizes Build and merges. Authorized executor implements only this contract. Independent Identity/Security reviewer performs HIGH-risk review; contract review was explicitly commissioned and completed, implementation review remains mandatory before DONE |
-| Current publication permission | Owner explicitly authorized Build and Task-specific CI-first on baseline 93a4ac42fa0fa6165f9d378821273ea63d2a1fa9 / PR #20: exact 20 paths, controlled implementation commit, normal push, automatic full CI attempt 1. No final evidence commit, DONE, merge or deployment |
+| Current publication permission | Owner separately authorized exactly one final Task-record-only evidence commit and normal push to existing PR #20 after the §13 closure guards. Earlier Build/CI-first authority and checkpoints remain historical. No merge, deployment, PB05 closure or successor execution |
 | Parallel safe | NO parallel execution of baseline Tasks. Owner/school may gather legal, infrastructure or device facts without executing another Task |
 | Cost / tools | Existing Node/TypeScript, PostgreSQL 16, Git and automatic eight-job GitHub Actions workflow; no dependency/vendor/service/recurring-cost change. Heavy verification uses isolated CI runners, never shared workstation Docker/DB/processes |
-| DONE | §8 acceptance and §9 exact-content verification, Independent HIGH-risk/Identity-Security Review PASS and Owner acceptance, then one separately authorized Task-record-only evidence commit under DEC-045. Not achieved by registration |
+| DONE | §8 acceptance and §9 exact-content verification, Independent HIGH-risk/Identity-Security Review PASS and Owner acceptance satisfied for final content in §13; this sole separately authorized Task-record-only evidence change records closure under DEC-045. Not achieved by registration |
 
 Authority: [DEC-044 §5/§9/OD-05/OD-06](../../00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md), [DEC-045 §4–§7](../../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), [decision hierarchy](../../00-governance/00.02_DECISION_HIERARCHY.md), [TASK_PLAN §4/AUTH-001/§8](../TASK_PLAN.md), [domain ownership](../../00-governance/00.07_DOMAIN_OWNERSHIP_AND_CONTRACTS.md), [Identity/security architecture](../../architecture/IDENTITY_ACCESS_AND_SECURITY_ARCHITECTURE.md), [P2](../CBT_DOMAIN_RULES_SPECIFICATION.md), [P4](../CBT_ARCHITECTURE_DELTA_REVIEW.md), [P5](../CBT_PERMISSION_MATRIX.md), [GOV-POLICY-001 §7](GOV-POLICY-001.md) and [GOV-PERF-001 §7](GOV-PERF-001.md). Existing LOCKED/FROZEN decisions remain authoritative; this contract supplies approved implementation detail, not a new decision ID or silent supersession.
 
@@ -221,3 +221,73 @@ Added CI PostgreSQL oracles cover legacy autocommit INSERT, canonical/registry a
 C01–C13 implementation/oracles prepared, full PostgreSQL and regression evidence PENDING automatic CI on the actual implementation SHA. C14 PENDING eight-job/five-browser exact-content CI. C15 requires final scope/DAG/identity/whitespace guards; C16 PENDING Independent HIGH-risk/Identity-Security Review and Owner acceptance. No implementation acceptance or test-count claim from earlier runs. If CI fails, STOP and retain precise failure; no rerun, second correction, evidence finalization, merge, PB05 closure or deployment automatically.
 
 The derived Graphify graph is not rewritten because it is outside the exact 20-path allowlist; current source remains authoritative. This candidate never records its own commit SHA. After successful exact-content CI, hand over for Independent Review while remaining VERIFYING / NOT DONE. PB05 OPEN.
+
+## 13. Final implementation review, Owner acceptance and completion evidence, 2026-11-03
+
+**AUTH-001: DONE — ELLIGBLE ID and canonical Account foundation only.** Classification remains HIGH risk, active P11 baseline Task. This final checkpoint supersedes the pending/NOT DONE wording in the historical registration and Build checkpoints above; it does not change their recorded outcomes or the frozen contract.
+
+### 13.1 Content, review chain and explicit acceptance
+
+| Checkpoint | Verified evidence / disposition |
+|---|---|
+| Registered contract | 93a4ac42fa0fa6165f9d378821273ea63d2a1fa9; CI #120/run 41402361878, attempt 1, eight SUCCESS. Contract review and targeted legacy INSERT contract re-review remain separate from actual implementation review |
+| Initial implementation | 9c7ba74da7c496871c6d6aa924299cb101049899, parent registered contract; exact 20-path implementation scope. [CI #121](https://github.com/yusufarst/elligble/actions/runs/41428840090), attempt 1, eight SUCCESS; PostgreSQL 190 PASS |
+| Initial Independent HIGH-risk/Identity-Security implementation review | STOP on actual implementation 9c7ba74: C09 lacked real-PostgreSQL credential/session writer interleavings and expiry-during-lock evidence. C01–C08/C10–C13 inspected without a reported material defect; C14/C15 CI/scope/metadata verified separately. This was an evidence gap, not a demonstrated application vulnerability. Green CI did not override STOP |
+| Owner-authorized C09 correction | Only runtime/secure-assessment/test/integration/account-activation.test.ts changed, +185/-0, all original lines/assertions retained. Six controlled interleavings cover both orders of reissue versus authentication, activation and session mutation; two cases cover expiry while waiting for credential or activation locks. Real SQL barriers and pg_blocking_pids prove contention; no sleeps, fake contention, production-source correction or fixture/workflow change |
+| Final reviewed content | **82a96a55778c338dc9aa658f9b921c4b18a73b01**, parent 9c7ba74da7c496871c6d6aa924299cb101049899. Production source and migration identical to the initial implementation reviewed above; cumulative implementation scope remains exactly the §7 20 paths |
+| Targeted Independent Identity/Security re-review | **PASS on exact 82a96a55778c338dc9aa658f9b921c4b18a73b01**, by the same independent implementation reviewer. Actual test diff/locks/snapshot oracles inspected; C09 evidence gap explicitly closed, no remaining material defect found in the correction; prior source assessment preserved. Reviewer explicitly stated readiness for Owner Acceptance and that C16 still required acceptance/final evidence |
+| Final review disposition | **Independent HIGH-risk/Identity-Security PASS for final content 82a96a5**, composed of the original actual-source assessment and the exact-SHA targeted closure of its sole reported blocker, with final CI/scope evidence below. This records that review chain, not a fabricated separate full-review attestation or a substitution of contract review for implementation review |
+| Owner Acceptance | Explicitly received 2026-11-03 for exact 82a96a55778c338dc9aa658f9b921c4b18a73b01, citing CI #122 eight SUCCESS/attempt 1, PostgreSQL 200/200, targeted C09 re-review PASS, approved 20-path scope and no remaining reported material defect |
+| Final evidence authorization | Owner separately authorized exactly ONE evidence commit modifying only this Task record, normal push to existing [PR #20](https://github.com/yusufarst/elligble/pull/20), then STOP. No source change, unnecessary test repetition, merge, deployment or PB05 closure |
+
+The old registration-era identity comment is not an implementation review result. Its reviewed commit was 93a4ac4; actual local Git and GitHub commit metadata for 93a4ac4 and 9c7ba74 show the Owner as author/committer, without attribution trailers. Final 82a96a5 likewise has the Owner identity. The contrary comment is not supported by the inspected immutable metadata; no published history was rewritten.
+
+### 13.2 Exact-final-content verification
+
+[CI #122 / run 41443162362](https://github.com/yusufarst/elligble/actions/runs/41443162362): automatic push event, exact final content **82a96a55778c338dc9aa658f9b921c4b18a73b01**, **attempt 1**, COMPLETED / SUCCESS, **eight of eight jobs SUCCESS**, ubuntu-24.04. No rerun, dispatch or retry-to-PASS.
+
+| Job | Result / actual inventory |
+|---|---|
+| Web client (125269749696) | SUCCESS; typecheck, **346/346 tests in 34 files**, build PASS |
+| Runtime (125269750192) | SUCCESS; typecheck PASS; Identity 28, Tenant Access 13, Academic Core 3 and Secure Assessment 911 unit tests PASS; real PostgreSQL 16 integration **200/200 PASS**, zero failures/skips |
+| Container image (125270271887) | SUCCESS; build and PostgreSQL smoke PASS |
+| mobile-360 (125270271962) | SUCCESS; **22/22 E2E PASS** |
+| desktop-1280 (125270272021) | SUCCESS; **22/22 E2E PASS** |
+| tablet-768 (125270272083) | SUCCESS; **22/22 E2E PASS** |
+| firefox-1280 (125270272120) | SUCCESS; **22/22 E2E PASS** |
+| webkit-390 (125270272265) | SUCCESS; **22/22 E2E PASS** |
+
+The eight C09 subcases all PASS. The two new parent tests plus eight subtests explain PostgreSQL inventory 190 → 200. The barriers execute real queries before holding locks; ordering must complete while independent Person/binding locks remain held. Expiry cases prove initial validity/blocking, then wait for actual database/process clocks to cross the isolated synthetic expiry before release. Exact INVALID_ACTIVATION and unchanged credential/session/consumption state are asserted. No repeated operation masks a failure.
+
+Evidence sources: exact-run/job metadata and raw CI job logs; existing local targeted results in §12; C09 source/typecheck/whitespace guards PASS. Finalization reads those existing results and performs deterministic documentation/Git guards only, with no test/CI rerun or local database. Browser logs confirm all five inventories; successful workspace-artifact upload steps remain intact. No new UI or manually inspected visual-quality/accessibility certification is claimed for this non-UI Task.
+
+### 13.3 Acceptance C01–C16 disposition
+
+| Gate | Final result / evidence |
+|---|---|
+| C01 | PASS — generator/normalization and bounded collision rollback tests; Identity unit and PostgreSQL suites; actual-source independent assessment |
+| C02 | PASS — immutable registry/ownership constraints, exact legacy lookup and GENERATED-only fallback; collision/namespace and non-reuse negatives; PostgreSQL and source review |
+| C03 | PASS — canonical Person/Account binding and valid-credential constraints; direct SQL duplicate/mismatch/noncanonical history refusal; PostgreSQL and source review |
+| C04 | PASS — existing authoritative Person, required owning authorization/audit adapters and post-wait checks; cross-tenant/semantic-conflict zero-mutation tests; no Person merge or new public authority |
+| C05 | PASS — Person-serialized reservation/binding guards and one-open-reservation constraint, conflict/rollback tests; no replacement allocation or public claim/reset workflow |
+| C06 | PASS — concurrent same-key replay has one logical receipt/effect, different keys retain one Account; changed-scope replay and unauthorized/cross-tenant requests refuse without mutation |
+| C07 | PASS — injected failure/collision/audit rollback and exact pre/post snapshots; savepoint/caller-transaction source review; no partial command effect |
+| C08 | PASS — unchanged autocommit fixture and transactional import; direct SQL mismatch/duplicate/skipped INSERT/deferred orphan guards and rollback assertions |
+| C09 | PASS — six real PostgreSQL writer/session interleavings and two post-wait expiry cases at final SHA; revocation/identity/snapshot oracles intact; targeted independent re-review PASS |
+| C10 | PASS — empty/latest database, populated 0054 upgrade, ambiguous conflict atomic refusal and repeat migration; legacy verifier/UUID/history preserved; complete regression suite |
+| C11 | PASS — existing import/reimport/link/reissue/card regressions and atomicity/security assertions; source review preserves explicit existing authority and credential/session revocation |
+| C12 | PASS — canonical directory/enrollment read integration, existing scope/shape and participant/results regressions; no Academic write or new enrollment behavior |
+| C13 | PASS — unchanged route/UI/role/vendor/dependency surface, P5 excluded C/default-deny and G7; complete five-browser and Runtime security/answer/timer/session/submit regression |
+| C14 | PASS — exact-final-content CI #122, attempt 1, eight SUCCESS; full actual inventory above, including real PostgreSQL and five browser projects |
+| C15 | PASS — exact cumulative 20 paths, unchanged 0055/source since original review, sole +185/-0 C09 correction; 33 Tasks/78 edges unchanged; Owner identity/raw messages, scope and whitespace guards; PB05 OPEN |
+| C16 | PASS — original implementation assessment plus exact-SHA targeted C09 closure, final CI/scope verification, explicit Owner Acceptance and separate authorization; this sole Task-record-only evidence change records completion under DEC-045 |
+
+### 13.4 Closure boundaries and publication controls
+
+Status history: registered READY → Owner-authorized IN_PROGRESS → VERIFYING; initial independent implementation review STOP retained; Owner-authorized C09 correction → exact-SHA CI #122 PASS → targeted independent re-review PASS → Owner Acceptance → **DONE** through this authorized evidence record. Earlier pending and counter statements are historical checkpoints, not current closure claims.
+
+Only this Task record changes in finalization. The official tracker/living plan remain at the previous VERIFYING checkpoint because this evidence authorization excludes them. Their next authorized post-merge synchronization must record AUTH-001's completion/landing and reconcile **DONE 2/33 (6.06%), VERIFYING 0, BLOCKED 31, READY 0, IN_PROGRESS 0**; this is the completed-Task disposition, not a claim that those files have already been edited. Total 33 and 78 internal dependency edges remain unchanged; no successor becomes READY or authorized by inference.
+
+Pre-publication guards: clean entry at the accepted SHA and synchronized upstream/remote PR head; PR #20 OPEN; Owner author/committer configuration and effective identity verified as Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>. Publication requires exactly this one staged path, whitespace/reference/secret/attribution checks, parent equal to accepted content, actual raw commit metadata inspection, normal push and remote PR-head synchronization. The evidence commit does not record its own SHA and its own CI is not a recursive DONE prerequisite under DEC-045.
+
+**PB05 remains OPEN.** All other applicable production blockers and G1–G10 remain mandatory; production is NOT READY. Preserve approved P5/O09 and P6/O07 boundaries, B09/O06/O08 exclusions and unknown school/capacity/operational facts. This records bounded AUTH-001 acceptance, not broad O03 lifecycle completion, legal clearance, blocker closure, implementation of AUTH-002/AUTH-003/ADMIN-001, deployment or production migration authority. LOCKED/FROZEN decisions and existing Student/Person/Attempt/answer/timer/session integrity remain unchanged. The Owner alone controls PR #20 squash merge. STOP after this evidence publication; no successor execution.
