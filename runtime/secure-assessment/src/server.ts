@@ -1,3 +1,4 @@
+import { handleRoster } from './http/roster-routes.ts';
 import * as http from 'node:http';
 import { Readable } from 'node:stream';
 import * as pg from 'pg';
@@ -290,6 +291,11 @@ export function createServer(deps: ServerDependencies): http.Server {
             if (pathname === '/api/v1/auth/activate') return handleActivate(req, res, authDeps);
             if (pathname === '/api/v1/auth/logout') return handleLogout(req, res, authDeps);
             return handleSessionGet(req, res, authDeps);
+        }
+
+        if (pathname === '/api/v1/identity/roster/preview' || pathname === '/api/v1/identity/roster/confirm') {
+            if (!security) { sendError(res,404,'not found'); return; }
+            return handleRoster(req,res,deps.pool,security.cookie,pathname.endsWith('/confirm'));
         }
 
         if (pathname === '/api/v1/me/context') {

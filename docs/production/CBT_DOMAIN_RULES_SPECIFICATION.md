@@ -147,3 +147,9 @@ O07 submission annotation: the exact candidate keeps every original numeric valu
 Historical O09 submission scope only: the linked package was ready for review, not then approved or implementation READY. Its later bounded approval is governed by GOV-POLICY-001 §7, not unconditional O09 closure. O01/O03 now have only the subsequent bounded AUTH-001 approval recorded above; all other unresolved register inputs and applicable downstream exclusions remain unchanged.
 
 PB01/02/03/10 legal artifacts, PB12 incident responsibility/contacts, PB06 real-device matrix, PB07 report and PB11 production restore remain separate release evidence/Owner-external dependencies. PB08/09 remain conditional/inactive for CBT-R1, PB04 CLOSED. No G1–G10 gate is marked PASS; no TASK_PLAN.md/P11 baseline or production capacity claim. Package acceptance requires one consolidated Independent HIGH-risk Review and Owner review; each unresolved item remains explicit until separately settled by its authority.
+
+## ADMIN-001 bounded implementation checkpoint — 2026-11-03
+
+ADMIN-001 Owner-authorized implementation candidate composes Academic Core official roster with Tenant Access explicit Operator assignment. Stable school source key; per-row preview and whole-file reason/confirmation/audit/replay; no Account creation/activation/Person binding/merge, no deletion by omission/enrollment transfer. NISN/birth date stored as protected official truth, never returned by roster preview/receipt. D1–D3 and AUTH-001 decisions unchanged; AUTH-002/003 and legal G7 remain separate. Source/migration/tests prepared; acceptance/CI/actual implementation review pending, not DONE.
+
+Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.

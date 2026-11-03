@@ -60,6 +60,10 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         postTeacherExamImportPreview: m => m.postTeacherExamImportPreview(IMPORT_INPUT),
         postTeacherExamImport: m => m.postTeacherExamImport(IMPORT_INPUT, { importKey: ID, expectedSha256: '0'.repeat(64) }),
     },
+    'api/identity-client.ts': {
+        previewRoster: m => m.previewRoster({academicYearId:ID,academicPeriodId:ID,csv:'invalid'}),
+        confirmRoster: m => m.confirmRoster({academicYearId:ID,academicPeriodId:ID,csv:'invalid'},{requestKey:ID,reason:'Synthetic import',confirmed:true,inputDigest:'0'.repeat(64),stateDigest:'0'.repeat(64)}),
+    },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),
         activate: m => m.activate('pengguna.uji', 'ABCD-EFGH-JKMN', 'matahari-pagi-2026'),
@@ -76,7 +80,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     },
 };
 /** Exports that never call the network. */
-const PURE_EXPORTS = new Set(['ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
+const PURE_EXPORTS = new Set(['RosterApiError', 'ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
 
 const unavailablePool = {
     connect: async () => { throw new Error('database unavailable'); },

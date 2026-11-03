@@ -1,3 +1,4 @@
+import { schoolOperatorAssignment } from '../../../tenant-access/src/school-operator.ts';
 import type * as http from 'node:http';
 import type * as pg from 'pg';
 import { AuthenticationError, buildAuthenticatedContext } from './authenticated-context.ts';
@@ -18,6 +19,7 @@ export interface WorkspaceCapabilities {
     examParticipant: boolean;
     proctor: boolean;
     teacher: boolean;
+    schoolOperator?: boolean;
 }
 
 export async function handleMeContextGet(req: http.IncomingMessage, res: http.ServerResponse, deps: MeContextDependencies): Promise<void> {
@@ -74,6 +76,7 @@ export async function handleMeContextGet(req: http.IncomingMessage, res: http.Se
             proctor: Boolean(row?.proctor),
             teacher: Boolean(row?.teacher),
         };
+        if (await schoolOperatorAssignment(deps.pool,membership.tenantId,membership.membershipId)) capabilities.schoolOperator = true;
         sendJson(res, 200, {
             tenantId: membership.tenantId,
             tenantDisplayLabel: row?.display_label ?? null,

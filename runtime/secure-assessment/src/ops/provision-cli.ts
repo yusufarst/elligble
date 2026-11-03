@@ -1,3 +1,4 @@
+import { provisionSchoolOperator } from './provisioning/school-operator.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { env } from 'node:process';
 import { parseArgs } from 'node:util';
@@ -18,6 +19,7 @@ const USAGE = `ELLIGBLE provisioning (platform operators)
 
 Usage: node runtime/secure-assessment/src/ops/provision-cli.ts <command> [options]
 
+  operator assign|revoke --tenant <id> --elligble-id <id> --reason <reason>
   school create      --label <school name> --time-zone <IANA> [--allow-duplicate-label]
   school set-time-zone --tenant <id> --time-zone <IANA>
   people import      --tenant <id> --file <people.csv> --sheet <cards.html>
@@ -107,7 +109,7 @@ async function run(argv: string[]): Promise<number> {
         options: {
             label: { type: 'string' }, tenant: { type: 'string' }, file: { type: 'string' }, sheet: { type: 'string' },
             questions: { type: 'string' }, 'elligble-id': { type: 'string' }, 'full-name': { type: 'string' },
-            operator: { type: 'string' }, case: { type: 'string' }, 'valid-days': { type: 'string' },
+            reason: { type: 'string' }, operator: { type: 'string' }, case: { type: 'string' }, 'valid-days': { type: 'string' },
             'app-url': { type: 'string' }, 'time-zone': { type: 'string' }, type: { type: 'string', multiple: true },
             'dry-run': { type: 'boolean', default: false }, 'link-existing': { type: 'boolean', default: false },
             'allow-duplicate-label': { type: 'boolean', default: false },
@@ -117,7 +119,7 @@ async function run(argv: string[]): Promise<number> {
     });
     const dryRun = values['dry-run'] === true;
     const command = `${group} ${action ?? ''}`.trim();
-    const knownCommands = ['school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import', 'exam types'];
+    const knownCommands = ['operator assign', 'operator revoke', 'school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import', 'exam types'];
     if (!knownCommands.includes(command)) throw new UsageError(`unknown command "${command}"`);
     const context = operatorContext(values, dryRun);
     // Validate options that do not need the database before connecting.
@@ -134,6 +136,12 @@ async function run(argv: string[]): Promise<number> {
     const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
     try {
         switch (command) {
+            case 'operator assign':
+            case 'operator revoke': {
+                if (dryRun) throw new UsageError('operator assignment has no dry run');
+                const result = await provisionSchoolOperator(pool,{tenantId:tenant(values.tenant),elligbleId:required(values['elligble-id'],'elligble-id'),action:command==='operator assign'?'ASSIGN':'REVOKE',context,reason:required(values.reason,'reason')});
+                out(JSON.stringify(result)); return 0;
+            }
             case 'school create': {
                 if (dryRun) throw new UsageError('school create has no dry run');
                 const result = await createSchool(pool, {

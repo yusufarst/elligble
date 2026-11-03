@@ -20,6 +20,8 @@ import type { MeContext } from './api/auth-client.ts';
 import { setDisplayTimeZone } from './lib/format.ts';
 import { SCREEN_TITLE } from './lib/screen-titles.ts';
 
+const SchoolRosterImportView = React.lazy(() => import('./components/SchoolRosterImportView.tsx').then(module => ({ default: module.SchoolRosterImportView })));
+
 interface RouteState {
   attemptId: string | null;
   view: string | null;
@@ -87,7 +89,10 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   // The heading of a screen downloaded on demand, shown while it downloads or when it cannot be.
   let title = '';
   let content: React.ReactNode;
-  if (current === 'student') {
+  if (current === 'operator') {
+    title = 'Data Siswa';
+    content = <SchoolRosterImportView key={me.tenantId} />;
+  } else if (current === 'student') {
     content = <AssignedExamDiscovery onSelectAttempt={attemptId => navigate(`?attemptId=${encodeURIComponent(attemptId)}`)} />;
   } else if (current === 'proctor') {
     title = route.monitorExam ? SCREEN_TITLE.examMonitoring : SCREEN_TITLE.proctorExams;
