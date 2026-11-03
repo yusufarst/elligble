@@ -18,25 +18,32 @@ function message(e:unknown):string {
 }
 export function SchoolRosterImportView(){
   const [year,setYear]=useState(''),[period,setPeriod]=useState(''),[csv,setCsv]=useState('');
-  const [preview,setPreview]=useState<RosterPreview|null>(null),[busy,setBusy]=useState(false),[open,setOpen]=useState(false);
+  const [preview,setPreview]=useState<RosterPreview|null>(null),[pending,setPending]=useState<'read'|'preview'|'confirm'|null>(null),[open,setOpen]=useState(false);
   const [reason,setReason]=useState(''),[error,setError]=useState<string|null>(null),[notice,setNotice]=useState<string|null>(null);
-  const fileRef=useRef<HTMLInputElement>(null),triggerRef=useRef<HTMLButtonElement>(null),retryRef=useRef<HTMLButtonElement>(null);
-  const intent=useRef<{key:string;reason:string}|null>(null),completed=useRef(false);
+  const fileRef=useRef<HTMLInputElement>(null),retryRef=useRef<HTMLButtonElement>(null);
+  const intent=useRef<{key:string;reason:string}|null>(null),generation=useRef(0),confirming=useRef(false),restoreFile=useRef(false);
+  const busy=pending!==null;
+  useEffect(()=>()=>{generation.current++;intent.current=null;},[]);
   useEffect(()=>{if(open&&error&&!busy)retryRef.current?.focus();},[open,error,busy]);
-  function invalidate(){setPreview(null);setNotice(null);setError(null);intent.current=null;}
-  function clear(){invalidate();setCsv('');setOpen(false);if(fileRef.current)fileRef.current.value='';}
+  useEffect(()=>{if(restoreFile.current&&!open&&!busy)focusFile();});
+  function focusFile(){const file=fileRef.current;if(file&&!file.disabled){file.focus();file.scrollIntoView?.({block:'center',inline:'nearest'});restoreFile.current=false;}}
+  function invalidate(){generation.current++;setPending(null);setPreview(null);setReason('');setNotice(null);setError(null);intent.current=null;}
+  function purge(){invalidate();setCsv('');setOpen(false);restoreFile.current=true;if(fileRef.current)fileRef.current.value='';}
+  function cancel(){if(confirming.current)return;purge();focusFile();}
   async function check(){
-    setBusy(true);setError(null);setNotice(null);intent.current=null;
-    try{setPreview(await previewRoster({academicYearId:year,academicPeriodId:period,csv}));}
-    catch(e){setPreview(null);setError(message(e));}finally{setBusy(false);}
+    if(confirming.current)return;
+    invalidate();const current=generation.current;setPending('preview');
+    try{const result=await previewRoster({academicYearId:year,academicPeriodId:period,csv});if(current===generation.current)setPreview(result);}
+    catch(e){if(current===generation.current)setError(message(e));}finally{if(current===generation.current)setPending(null);}
   }
   async function save(){
-    if(!preview||busy||!validActionReason(reason))return;
-    intent.current??={key:newActionKey(),reason};setBusy(true);setError(null);
+    if(!preview||busy||confirming.current||!validActionReason(reason))return;
+    intent.current??={key:newActionKey(),reason};confirming.current=true;const current=generation.current;setPending('confirm');setError(null);
     try{
       const result=await confirmRoster({academicYearId:year,academicPeriodId:period,csv},{inputDigest:preview.inputDigest,stateDigest:preview.stateDigest,requestKey:intent.current.key,reason:intent.current.reason,confirmed:true});
-      completed.current=true;clear();setNotice(`Data tersimpan. Baru: ${result.summary.inserted}, koreksi: ${result.summary.corrected}, tidak berubah: ${result.summary.unchanged}.`);
-    }catch(e){setError(message(e));}finally{setBusy(false);}
+      if(current!==generation.current)return;
+      purge();setNotice(`Data tersimpan. Baru: ${result.summary.inserted}, koreksi: ${result.summary.corrected}, tidak berubah: ${result.summary.unchanged}.`);
+    }catch(e){if(current===generation.current)setError(message(e));}finally{confirming.current=false;if(current===generation.current)setPending(null);}
   }
   return <Page id="school-roster" className="min-w-0 [overflow-wrap:anywhere]">
     <PageHeader title="Data Siswa"><p className="m-0 text-muted-foreground">Periksa daftar resmi sekolah sebelum menyimpan. Impor tidak mengaktifkan akun atau memindahkan siswa.</p></PageHeader>
@@ -51,10 +58,12 @@ export function SchoolRosterImportView(){
       <div><label htmlFor="roster-file" className="text-sm font-medium">Berkas Daftar Siswa CSV</label><Input ref={fileRef} id="roster-file" type="file" accept=".csv,text/csv" disabled={busy} aria-describedby="roster-template" onChange={async e=>{
         invalidate();setCsv('');const file=e.target.files?.[0];if(!file)return;
         if(file.size>1024*1024){setError('Berkas terlalu besar. Maksimal 1 MiB.');return;}
-        setBusy(true);try{setCsv(await file.text());}catch{setError('Berkas belum dapat dibaca. Pilih ulang berkas.');}finally{setBusy(false);}
+        const current=generation.current;setPending('read');
+        try{const text=await file.text();if(current===generation.current)setCsv(text);}
+        catch{if(current===generation.current)setError('Berkas belum dapat dibaca. Pilih ulang berkas.');}finally{if(current===generation.current)setPending(null);}
       }}/></div>
       <p id="roster-template" className="m-0 break-all text-sm text-muted-foreground">Kolom templat: source_student_key, full_name, nis, nisn, date_of_birth, academic_group_id. Tanggal menggunakan YYYY-MM-DD. NISN dan tanggal lahir tidak ditampilkan pada pratinjau.</p>
-      <div className="flex flex-wrap gap-3"><Button onClick={check} disabled={busy||!csv||!year||!period}>{busy?'Memproses...':'Periksa Berkas'}</Button><Button variant="secondary" onClick={clear} disabled={busy}>Hapus Pilihan</Button></div>
+      <div className="flex flex-wrap gap-3"><Button onClick={check} disabled={busy||!csv||!year||!period}>{busy?'Memproses...':'Periksa Berkas'}</Button><Button variant="secondary" onClick={cancel} disabled={pending==='confirm'}>Hapus Pilihan</Button></div>
     </CardContent></Card>
     {preview&&<section aria-labelledby="roster-preview-heading" className="flex min-w-0 flex-col gap-3">
       <h2 id="roster-preview-heading" className="m-0 text-lg font-semibold">Hasil Pemeriksaan</h2>
@@ -63,13 +72,13 @@ export function SchoolRosterImportView(){
         <p className="m-0 text-sm font-medium">Baris {r.line}: {statusLabel[r.status]}</p><p className="mb-1 mt-2 font-semibold">{r.fullName}</p>
         <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm"><dt>Kunci sekolah</dt><dd className="m-0 break-all">{r.sourceKey}</dd><dt>NIS</dt><dd className="m-0 break-all">{r.nis}</dd><dt>Rombel</dt><dd className="m-0">{r.groupLabel??'Tidak ditemukan'}</dd></dl>
       </li>)}</ol>
-      <Button className="self-start" ref={triggerRef} disabled={busy||!preview.canConfirm} onClick={()=>{completed.current=false;setError(null);setReason('');intent.current=null;setOpen(true);}}>Konfirmasi Impor</Button>
+      <Button className="self-start" disabled={busy||!preview.canConfirm} onClick={()=>{setError(null);setOpen(true);}}>Konfirmasi Impor</Button>
     </section>}
-    <Dialog open={open} onOpenChange={next=>{if(!busy)setOpen(next);}}><DialogContent className={`max-h-[90dvh] overflow-y-auto ${permissionDialogClass}`} onCloseAutoFocus={e=>{e.preventDefault();(completed.current?fileRef.current:triggerRef.current)?.focus();}} onEscapeKeyDown={e=>{if(busy)e.preventDefault();}} onInteractOutside={e=>{if(busy)e.preventDefault();}}>
+    <Dialog open={open} onOpenChange={next=>{if(!next)cancel();}}><DialogContent className={`max-h-[90dvh] overflow-y-auto ${permissionDialogClass}`} onCloseAutoFocus={e=>{e.preventDefault();restoreFile.current=true;focusFile();}} onEscapeKeyDown={e=>{if(confirming.current)e.preventDefault();}} onInteractOutside={e=>{if(confirming.current)e.preventDefault();}}>
       <DialogHeader><DialogTitle>Simpan Daftar Siswa?</DialogTitle><DialogDescription>Seluruh berkas disimpan sebagai satu tindakan. Baris yang tidak disertakan tidak dihapus. Tidak ada penggabungan identitas atau perpindahan rombel otomatis.</DialogDescription></DialogHeader>
       <ActionReasonField value={reason} onChange={setReason} disabled={busy||intent.current!==null}/>
       {error&&<p role="alert" className="m-0 text-danger-ink">{error}</p>}
-      <DialogFooter><Button variant="secondary" disabled={busy} onClick={()=>setOpen(false)}>Batal</Button><Button ref={retryRef} onClick={save} disabled={busy||!validActionReason(reason)}>{busy?'Menyimpan...':error?'Kirim Ulang Tindakan':'Simpan Daftar'}</Button></DialogFooter>
+      <DialogFooter><Button variant="secondary" disabled={busy} onClick={cancel}>Batal</Button><Button ref={retryRef} onClick={save} disabled={busy||!validActionReason(reason)}>{busy?'Menyimpan...':error?'Kirim Ulang Tindakan':'Simpan Daftar'}</Button></DialogFooter>
     </DialogContent></Dialog>
   </Page>;
 }

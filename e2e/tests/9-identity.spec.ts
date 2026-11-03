@@ -21,6 +21,9 @@ async function capture(page: Page, scenario: string) {
     const metrics = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth,
         heading: document.querySelector('h1')?.textContent,
+        selectedFiles:document.querySelector<HTMLInputElement>('#roster-file')?.files?.length??null,
+        previewPresent:document.querySelector('#roster-preview-heading')!==null,
+        focus:(()=>{const el=document.activeElement as HTMLElement|null,r=el?.getBoundingClientRect();return{id:el?.id,tag:el?.tagName,enabled:el instanceof HTMLInputElement?!el.disabled:null,inViewport:r? r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth:false};})(),
         targets:[...document.querySelectorAll<HTMLElement>('#school-roster button,#school-roster input,[role=dialog] button,[role=dialog] textarea')].map(el=>{
             const r=el.getBoundingClientRect();return {name:el.getAttribute('aria-label')??el.textContent,width:r.width,height:r.height};
         }).filter(r=>r.width>0&&r.height>0),
@@ -90,6 +93,9 @@ if(applicationTree!==BASE_TREE)test('ADMIN-001 Operator roster preview, keyboard
         const trigger=page.getByRole('button',{name:'Konfirmasi Impor'});await expect(trigger).toBeEnabled();
         await expect(page.locator('#school-roster')).not.toContainText('9990000091');await expect(page.locator('#school-roster')).not.toContainText('2010-01-02');
         const before=await withDatabase(c=>c.query('SELECT count(*)::int AS n FROM academic_core_student_roster_records').then(r=>r.rows[0].n));
+        const rosterState=()=>withDatabase(async c=>{const result:Record<string,unknown>={};for(const table of ['academic_core_student_roster_records','academic_core_student_roster_revisions','academic_core_roster_import_receipts'])result[table]=(await c.query(`SELECT to_jsonb(t) AS row FROM ${table} t ORDER BY to_jsonb(t)::text`)).rows;return result;});
+        const cancellationState=await rosterState(),attempts:Array<{key:unknown;reason:unknown}>=[];
+        page.on('request',req=>{if(req.method()==='POST'&&new URL(req.url()).pathname==='/api/v1/identity/roster/confirm'){const body=req.postDataJSON() as Record<string,unknown>;attempts.push({key:body.requestKey,reason:body.reason});}});
         for(const width of [360,390,430,768,1024,1280,1440]){await page.setViewportSize({width,height:800});await capture(page,'operator-preview');}
         await page.setViewportSize({width:768,height:360});await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});await capture(page,'operator-preview-text-200');await page.evaluate(()=>{document.documentElement.style.fontSize='';});
         await keyboardReach(page,trigger);await page.keyboard.press('Enter');
@@ -97,16 +103,25 @@ if(applicationTree!==BASE_TREE)test('ADMIN-001 Operator roster preview, keyboard
         await expect.poll(()=>dialog.evaluate(el=>el.contains(document.activeElement))).toBe(true);
         for(const direction of ['Tab','Shift+Tab'])for(let n=0;n<7;n++){await page.keyboard.press(direction);await expect.poll(()=>dialog.evaluate(el=>el.contains(document.activeElement))).toBe(true);}
         await expect(dialog.getByRole('textbox',{name:'Alasan tindakan'})).toHaveAccessibleName('Alasan tindakan');
-        await page.keyboard.press('Escape');await expect(dialog).toBeHidden();await expect(trigger).toBeFocused();
+        const file=page.getByLabel('Berkas Daftar Siswa CSV');
+        const purged=async()=>{await expect(dialog).toBeHidden();await expect(trigger).toHaveCount(0);await expect(page.getByRole('heading',{name:'Hasil Pemeriksaan',exact:true})).toHaveCount(0);await expect(file).toHaveValue('');expect(await file.evaluate(el=>(el as HTMLInputElement).files?.length)).toBe(0);await expect(file).toBeVisible();await expect(file).toBeEnabled();await expect(file).toBeFocused();await expect(file).toBeInViewport({ratio:1});await expect(page.getByRole('button',{name:'Periksa Berkas',exact:true})).toBeDisabled();expect(attempts).toHaveLength(0);expect(await rosterState()).toEqual(cancellationState);};
+        const reopen=async()=>{await upload(csv);await expect(trigger).toHaveCount(0);await page.getByRole('button',{name:'Periksa Berkas',exact:true}).click();await expect(trigger).toBeEnabled();await keyboardReach(page,trigger);await page.keyboard.press('Enter');await expect(dialog).toBeVisible();await expect(dialog.getByRole('textbox',{name:'Alasan tindakan'})).toHaveValue('');await expect(dialog.getByRole('button',{name:'Simpan Daftar',exact:true})).toBeDisabled();await expect(dialog.getByRole('alert')).toHaveCount(0);};
+        await keyboardReach(page,dialog.getByRole('textbox',{name:'Alasan tindakan'}));await page.keyboard.type('Alasan sintetis yang dibatalkan');
+        await keyboardReach(page,dialog.getByRole('button',{name:'Batal',exact:true}));await page.keyboard.press('Enter');await purged();rosterEvidenceHash=null;await capture(page,'operator-cancel-button');
+        await reopen();await keyboardReach(page,dialog.getByRole('textbox',{name:'Alasan tindakan'}));await page.keyboard.type('Alasan sintetis untuk Escape');
+        await page.keyboard.press('Escape');await purged();rosterEvidenceHash=null;await capture(page,'operator-cancel-escape');
         expect(await withDatabase(c=>c.query('SELECT count(*)::int AS n FROM academic_core_student_roster_records').then(r=>r.rows[0].n))).toBe(before);
-        await page.keyboard.press('Enter');await keyboardReach(page,dialog.getByRole('textbox',{name:'Alasan tindakan'}));await page.keyboard.type('Pembaruan daftar sintetis yang disetujui');
+        await reopen();await keyboardReach(page,dialog.getByRole('textbox',{name:'Alasan tindakan'}));await page.keyboard.type('Pembaruan daftar sintetis yang disetujui');
         await capture(page,'operator-confirm');
         // A failed transport must leave actual DB state unchanged and focus an enabled retry.
-        await page.route('**/api/v1/identity/roster/confirm',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":"persistence_unavailable"}'}),{times:1});
+        let releaseFailure!:()=>void,requestArrived!:()=>void;const released=new Promise<void>(r=>{releaseFailure=r;}),arrived=new Promise<void>(r=>{requestArrived=r;});
+        await page.route('**/api/v1/identity/roster/confirm',async route=>{requestArrived();await released;await route.fulfill({status:503,contentType:'application/json',body:'{"error":"persistence_unavailable"}'});},{times:1});
         const send=dialog.getByRole('button',{name:'Simpan Daftar',exact:true});await keyboardReach(page,send);await page.keyboard.press('Enter');
+        await arrived;try{await expect(dialog.getByRole('button',{name:'Batal',exact:true})).toBeDisabled();await page.keyboard.press('Escape');await expect(dialog).toBeVisible();expect(attempts).toHaveLength(1);expect(await rosterState()).toEqual(cancellationState);}finally{releaseFailure();}
         await expect(dialog.getByRole('alert')).toBeVisible();const retry=dialog.getByRole('button',{name:'Kirim Ulang Tindakan'});await expect(retry).toBeFocused();await expect(retry).toBeEnabled();
         expect(await withDatabase(c=>c.query('SELECT count(*)::int AS n FROM academic_core_student_roster_records').then(r=>r.rows[0].n))).toBe(before);await capture(page,'operator-request-failed');
         await page.keyboard.press('Enter');await expect(page.getByRole('status').filter({hasText:'Data tersimpan.'})).toBeVisible();await expect(page.getByLabel('Berkas Daftar Siswa CSV')).toBeFocused();
+        expect(attempts).toHaveLength(2);expect(attempts[1]).toEqual(attempts[0]);
         expect(await withDatabase(c=>c.query('SELECT count(*)::int AS n FROM academic_core_student_roster_records').then(r=>r.rows[0].n))).toBe(before+1);await capture(page,'operator-success');
     }finally{
         await withDatabase(async c=>{await c.query('BEGIN');try{await setSchoolOperator(c,{tenantId:state.tenantId,personId:academic.person,action:'REVOKE',operator:'Synthetic CI operator',caseReference:'ADMIN-001',reason:'End synthetic verification'});await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}});
