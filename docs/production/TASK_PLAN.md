@@ -1,3 +1,5 @@
+> **ADMIN-001 Build override, 2026-11-03:** explicit Owner implementation/Task-specific CI-first grant on 1d3eff5/PR #21 supersedes registration-only/no-Build navigation below. IN_PROGRESS; capture-only baseline eight-job/five-artifact gate before UI, then exact 33-path implementation and full CI. DONE 2/IN_PROGRESS 1/BLOCKED 30/READY 0/VERIFYING 0, 78 edges unchanged; PB05 OPEN. See ADMIN-001 §10.
+
 > **Current registration checkpoint, 2026-11-03:** AUTH-001 DONE / MERGED through PR #20/main ebcc4ca3270473543cbb465092954457b355fe23, CI #124/run 41490069823 exact-main attempt 1 eight SUCCESS. ADMIN-001 formal READY PASS after D1–D3 and exact contract review chain closure, 33 frozen future implementation paths/C01–C15/migration 0056 reserved. DONE 2/33 (6.06%), READY 1, BLOCKED 30, VERIFYING/IN_PROGRESS 0; 78 edges unchanged. Only four-document publication/automatic CI authorized; Build NOT AUTHORIZED. PB05 OPEN. Earlier preparation checkpoints are history.
 
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
@@ -27,8 +29,8 @@ Only the unique rows in §3 are counted. SEC-001 and AUTH-001 are completed base
 | Baseline Total | 33 |
 | Current Total | 33 |
 | DONE | 2 |
-| READY | 1 |
-| IN_PROGRESS | 0 |
+| READY | 0 |
+| IN_PROGRESS | 1 |
 | VERIFYING | 0 |
 | BLOCKED | 30 |
 | TODO | 0 |
@@ -51,7 +53,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 |---|---|---|---|---|---|---|
 | SEC-001 | Enforce approved CBT permissions on existing routes | DONE | P0 / first implementation candidate | HIGH | NONE | O09 |
 | AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | DONE | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
-| ADMIN-001 | School Operator authoritative roster import | READY | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
+| ADMIN-001 | School Operator authoritative roster import | IN_PROGRESS | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
 | AUTH-002 | Student claim and scoped verification/activation | BLOCKED | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
 | AUTH-003 | In-person school-assisted recovery of the existing account | BLOCKED | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
 | ASSESS-QUESTION-001 | Versioned question/answer/scoring compatibility foundation | BLOCKED | P0 / question and answer integrity foundation | HIGH | SEC-001 | O02, O05, O09, A01 |
@@ -87,7 +89,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 
 - [x] SEC-001 — Enforce approved CBT permissions on existing routes (DONE)
 - [x] AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation (DONE, PR #20/main ebcc4ca, CI #124)
-- [ ] ADMIN-001 — School Operator authoritative roster import (READY, registered input contract; Build NOT AUTHORIZED)
+- [ ] ADMIN-001 — School Operator authoritative roster import (IN_PROGRESS, Owner-authorized Build; baseline pending)
 - [ ] AUTH-002 — Student claim and scoped verification/activation (BLOCKED)
 - [ ] AUTH-003 — In-person school-assisted recovery of the existing account (BLOCKED)
 - [ ] ASSESS-QUESTION-001 — Versioned question/answer/scoring compatibility foundation (BLOCKED)

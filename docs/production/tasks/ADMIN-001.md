@@ -5,7 +5,7 @@
 | Field | Current disposition |
 |---|---|
 | Classification | Existing active P11 baseline Task, P0 identity input; HIGH risk; R08/R09, P3 F01, P5 A09, P7 C15/U01–U07, P8 V01/V11/V12 |
-| Status | **READY — REGISTERED FROZEN INPUT CONTRACT ONLY. BUILD NOT AUTHORIZED.** Formal READY gates PASS in §9.5; no implementation/test/CI acceptance inferred |
+| Status | **IN_PROGRESS — Owner-authorized Build/CI-first; baseline visual gate precedes UI changes. NOT DONE.** |
 | Objective | Tenant-scoped School Operator validates a synthetic official Student roster, sees deterministic per-row preview, then explicitly confirms one atomic, audited, retry-safe import/re-import without identity merge or implicit activation |
 | Internal dependency | AUTH-001 DONE / MERGED; SEC-001 reused completed security foundation, not reopened |
 | Branch / base | task/admin-001-authoritative-roster-import; main ebcc4ca3270473543cbb465092954457b355fe23 |
@@ -234,3 +234,11 @@ Reviewed technical §§3–8 remain exactly unchanged, LF UTF-8 SHA-256 01800bc9
 Tracker reconciliation and transition: AUTH-001 DONE/PR #20/main ebcc4ca/CI #124 carried forward; SEC-001 DONE remains. Baseline/Current 33, DONE 2 (6.06%), READY 1 (ADMIN-001), BLOCKED 30, VERIFYING/IN_PROGRESS/TODO/SUPERSEDED 0; 78 internal edges and R01–R31/G1–G10 unchanged. No new/split/removed Task or inherited successor permission.
 
 Publication guards require exact four-file scope/references/whitespace, unchanged application/test/migration/workflow/LOCKED/finished-record trees, Owner author/committer identity and raw message without attribution, exact parent/base and normal push. The registration never records its own SHA or invents its CI result; actual SHA/PR/run/jobs are reported after automatic CI. No recursive evidence commit or second correction is authorized. PB05 and all applicable release blockers OPEN; production NOT READY. STOP for separate Owner Build/CI-first authorization after publication/CI verification.
+
+## 10. Owner-authorized Build and baseline gate — 2026-11-03
+
+Owner explicitly authorizes ADMIN-001 implementation/Task-specific CI-first on registered 1d3eff56ed4a796191a09503fd850454ab5f0d8d, PR #21, registration CI #125/run 41667580935 attempt 1 eight SUCCESS. Earlier registration-only/no-Build paragraphs are historical; D1–D3/33 paths/C01–C15 remain frozen. READY → IN_PROGRESS, counters DONE 2/IN_PROGRESS 1/BLOCKED 30/READY 0/VERIFYING 0, 78 edges unchanged. No DONE, PB05 closure, deployment or merge.
+
+Mandatory §8 baseline is the separate capture-only gate before UI modification, followed by one implementation-content commit. Existing e2e/tests/9-identity.spec.ts (new within allowlist) records the honest missing Operator entry on the actual production client, seven widths plus short 200% text, exact commit/source tree/full unchanged global-fixture SHA-256/browser/viewport/scenario. Baseline frontend tree aef3abfb4c233105026f11167c92da13d2664337; no application source changes in baseline. All eight automatic CI jobs/five retrievable workspace-* artifacts must PASS before UI. No old fixture/helper/workflow edits or local heavy tests.
+
+Frontend engineering skill selected/read: installed react-typescript-vite, SHA-256 450285288fba41f497991f074f100a43ed2d714e51818caae3294663e5ccd558, canonical stack engineering role. Shared tokens/primitives and DEC-039/043/047 preserved; no DPAI project availability or new design reference claimed. Actual UI evidence remains future gate, not static PASS.
