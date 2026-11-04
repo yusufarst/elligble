@@ -5,15 +5,17 @@ import { cn } from '@/lib/utils';
 import type { MeContext } from '../api/auth-client.ts';
 import { tenantLabel } from './SessionScreens.tsx';
 
-export type Workspace = 'student' | 'proctor' | 'teacher';
+export type Workspace = 'student' | 'proctor' | 'teacher' | 'operator';
 
 export const WORKSPACE_LABELS: Record<Workspace, string> = {
+  operator: 'Data Siswa',
   student: 'Jadwal Ujian',
   proctor: 'Ruang Ujian',
   teacher: 'Pelaksanaan Ujian',
 };
 
 const WORKSPACE_ICONS: Record<Workspace, React.FC> = {
+  operator: IconBuilding,
   student: IconBook,
   proctor: IconMonitor,
   teacher: IconClipboardCheck,
@@ -24,6 +26,7 @@ export function availableWorkspaces(me: MeContext): Workspace[] {
   if (me.capabilities.examParticipant) list.push('student');
   if (me.capabilities.proctor) list.push('proctor');
   if (me.capabilities.teacher) list.push('teacher');
+  if (me.capabilities.schoolOperator) list.push('operator');
   return list;
 }
 

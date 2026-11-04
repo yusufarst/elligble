@@ -16,6 +16,15 @@ export class AcademicSetupConflict extends Error {
     }
 }
 
+/** One canonical advisory namespace for every enrollment-slot writer, including empty slots. */
+export function enrollmentSlotKey(tenantId: string, membershipId: string, academicPeriodId: string): string {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (![tenantId, membershipId, academicPeriodId].every(v => typeof v === 'string' && uuid.test(v))) {
+        throw new AcademicSetupConflict('student enrollment', 'Invalid enrollment scope.');
+    }
+    return `ac_enrollment:${tenantId.toLowerCase()}:${membershipId.toLowerCase()}:${academicPeriodId.toLowerCase()}`;
+}
+
 export interface Ensured {
     id: string;
     created: boolean;
@@ -178,7 +187,10 @@ export async function ensureStudentEnrollment(
     tenantId: string,
     input: { academicYearId: string; academicPeriodId: string; academicGroupId: string; membershipId: string; startDate: string; source: string }
 ): Promise<Ensured> {
-    await lock(client, `ac_enrollment:${tenantId}:${input.membershipId}:${input.academicPeriodId}`);
+    const slot = enrollmentSlotKey(tenantId, input.membershipId, input.academicPeriodId);
+    tenantId = tenantId.toLowerCase();
+    input = { ...input, membershipId: input.membershipId.toLowerCase(), academicPeriodId: input.academicPeriodId.toLowerCase() };
+    await lock(client, slot);
     const existing = await client.query(
         `SELECT id, academic_group_id FROM academic_core_student_enrollments
          WHERE tenant_id = $1 AND membership_id = $2 AND academic_period_id = $3 AND end_date IS NULL`,

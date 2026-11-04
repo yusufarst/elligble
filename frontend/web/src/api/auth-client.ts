@@ -17,6 +17,7 @@ export interface WorkspaceCapabilities {
   examParticipant: boolean;
   proctor: boolean;
   teacher: boolean;
+  schoolOperator?: boolean;
 }
 
 export interface MeContext {

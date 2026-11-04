@@ -46,3 +46,9 @@ The approved correction belongs to the reserved Identity migration, not to fixtu
 ## 4. Review exit
 
 Required outputs before implementation: explicit Oxx decisions/accepted technical contracts, approved P5 enforcement and negatives, migration and client-version plan, P6 workload/budget agreement, and P7–P10 dependencies represented. One integrated review checks that A01–A05 preserve P1 scope and canonical invariants. No architecture alternative or phase is marked APPROVED, no capacity/production claim or P11 baseline, no application/ADR/workflow change. PB05/06/07/11/12 and legal blockers remain open as applicable.
+
+## ADMIN-001 bounded implementation checkpoint — 2026-11-03
+
+A03 foundation AUTH-001 is DONE/merged main ebcc4ca/CI #124. ADMIN-001 candidate adds reserved 0056: Tenant-owned Operator assignment/events and Academic-owned official roster/revisions/receipts. Existing privileged CLI owns bootstrap; membership/session/assignment guards coordinate confirm. Both Academic enrollment writers use one validated lowercase enrollmentSlotKey; roster try-locks sorted slots including absent entries, then locks group/roster rows, rereads enrollment and rolls back on conflict. No Identity allocation, credential or Assessment writes. Original contract review/targeted closure remains input evidence, not actual implementation approval. CI/migration/real-race evidence pending.
+
+Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.
