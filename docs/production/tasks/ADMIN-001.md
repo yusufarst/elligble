@@ -5,13 +5,13 @@
 | Field | Current disposition |
 |---|---|
 | Classification | Existing active P11 baseline Task, P0 identity input; HIGH risk; R08/R09, P3 F01, P5 A09, P7 C15/U01–U07, P8 V01/V11/V12 |
-| Status | **VERIFYING — implementation candidate prepared; full exact-content CI, rendered evidence and actual-source Independent Review pending. NOT DONE.** |
+| Status | **DONE — bounded ADMIN-001 implementation accepted and final evidence authorized on 2026-11-04 (§14). PR #21 remains OPEN / NOT MERGED; production NOT READY.** |
 | Objective | Tenant-scoped School Operator validates a synthetic official Student roster, sees deterministic per-row preview, then explicitly confirms one atomic, audited, retry-safe import/re-import without identity merge or implicit activation |
 | Internal dependency | AUTH-001 DONE / MERGED; SEC-001 reused completed security foundation, not reopened |
 | Branch / base | task/admin-001-authoritative-roster-import; main ebcc4ca3270473543cbb465092954457b355fe23 |
-| Current authorization | Original Build/34-path authority (§10/§12) preserved; Owner now authorizes one C11 cancellation-purge corrective commit in exactly the four existing paths in §13, normal push to existing PR #21, new automatic exact-SHA attempt-1 CI and targeted review by the original Independent reviewer. No merge/deployment/PB05 closure/final evidence commit or Owner Acceptance claim |
-| Responsible parties | Owner approves policy, authorizes publication/Build and controls merge. Independent HIGH-risk/Identity-Security reviewer explicitly accepted ADMIN-001 assignment/availability and completed original plus targeted contract reviews (§9.1–§9.4). Actual implementation review remains mandatory before DONE |
-| Publication / CI-first | Registration complete; separate ADMIN-001 Build/CI-first Owner grant recorded in §10. Baseline CI #126 and five artifact gate PASS; implementation candidate verification pending under §11. No inherited authorization from AUTH-001 |
+| Current authorization | Owner explicitly accepted content 3df5b32243245bfa5b2203be16b2aa5fe164fce9 on 2026-11-04 and separately authorized exactly one final Task-record-only evidence commit and normal push to existing PR #21 (§14). No other path, merge, deployment, production migration, PB05 closure or successor execution authorized |
+| Responsible parties | Owner approves policy, accepts implementation and controls merge. Independent HIGH-risk/Identity-Security actual-source implementation review plus targeted C11 closure PASS; contract review history (§9.1–§9.4) remains distinct and preserved |
+| Publication / CI-first | Registration/Build authority (§10), baseline CI #126, corrective history (§12–§13), final exact-content CI #129 and five artifact/review gates PASS. This single evidence publication follows DEC-045; its own CI is not a recursive DONE prerequisite |
 | Parallel safe | NO parallel baseline Task execution. Owner/school may gather legal/infrastructure/device facts without starting another executor Task |
 | Cost | Existing Node/TypeScript/React/PostgreSQL/CI only; no new package, vendor, paid service, recurring cost or production resource |
 
@@ -148,7 +148,7 @@ Forbidden: every other source/test/fixture/migration, AUTH-001/SEC-001 records, 
 
 ## 8. Acceptance, tests and Task-specific CI-first proposal
 
-All ADMIN-001 implementation checks below are **DEFINED / NOT EXECUTED**, not PASS claims.
+At contract registration, all ADMIN-001 implementation checks below were **DEFINED / NOT EXECUTED**, not PASS claims. Requirements are unchanged; final evidence and PASS dispositions are recorded in §14.
 
 | Gate | Required acceptance oracle / evidence |
 |---|---|
@@ -277,3 +277,82 @@ Correction: genuine Batal/Escape/dialog dismissal and explicit clear share one c
 Targeted local verification: schoolRosterImport.test.tsx 10/10 PASS with one worker/no file parallelism, web and E2E typechecks PASS. Existing assertions retained; the old trigger-focus oracle is replaced with the explicitly approved persistent-input focus oracle, plus stronger cancellation checks. Added controlled deferred read/preview resolution/rejection, Batal/Escape/close purge, fresh upload/preview/empty-reason/new-operation behavior, active-confirm dismissal refusal and identical open-dialog retry arguments. Actual-browser journey adds keyboard Batal/Escape, empty native FileList/no preview, visible/enabled/in-viewport persistent focus, zero confirmation calls and exact roster/history/receipt snapshots; both cancellation screenshots retain exact source/fixture/commit provenance. A held transport response proves active-confirm refusal without sleep; failure/retry captures identical key/reason and preserves successful actual import. Browser/DB/rendered results for this correction remain PENDING, not C11 PASS.
 
 Publication/exit gate: exact four-file diff, frozen contract/counters/identity/whitespace/attribution guards, one Owner-attributed corrective commit parented by 6bea3638b70f11d44ed779ab57668de121480f6e, normal push to PR #21, NEW automatic exact-SHA CI attempt 1 with all eight jobs/five projects SUCCESS. Do not rerun #128. Retrieve and inspect updated cancellation/focus evidence, then submit only this correction and directly affected evidence to the original Independent Identity/Security reviewer for targeted C11 re-review. If CI or targeted review fails, STOP without another correction. No self-SHA, C11 PASS, final Independent PASS, Owner Acceptance or DONE is invented here. ADMIN-001 VERIFYING / NOT DONE; PB05 OPEN; no final evidence commit, merge, deployment, real student data or successor.
+
+## 14. Final Owner-accepted implementation evidence — 2026-11-04
+
+**ADMIN-001: DONE.** Accepted implementation: **3df5b32243245bfa5b2203be16b2aa5fe164fce9**, parent **6bea3638b70f11d44ed779ab57668de121480f6e**. [PR #21](https://github.com/yusufarst/elligble/pull/21) is OPEN / NOT MERGED at evidence-publication entry. This is bounded implementation completion, not landing, deployment, production readiness or PB05 closure. Earlier pending/VERIFYING statements in §§9–13 are historical checkpoints resolved by this section, not deleted evidence.
+
+### 14.1 Correction, independent review and Owner acceptance chain
+
+- Registration 1d3eff56ed4a796191a09503fd850454ab5f0d8d and capture-only baseline ec4037cf44b0fdc67b3d6dce11efcb08d2d735e3/CI #126 remain preserved (§10–§11); the baseline passed before application UI modification.
+- Implementation e276f5e7c21e74687c4bc4184e1fac920b28624d: CI #127/run 41676115522, attempt 1, FAILURE (§12). Existing metrics assertion rejected the two unclassified roster routes; Secure Assessment 911/912, web 348/348, integration/image/browser execution SKIPPED. This run is not relabeled PASS.
+- Owner-authorized metrics correction 6bea3638b70f11d44ed779ab57668de121480f6e adds only the two administration mappings and its record, with the approved expansion to 34 paths. CI #128/run 41677543541, attempt 1, eight SUCCESS: web 348/348, Secure Assessment 912/912, PostgreSQL 224/224, image/smoke and five browsers 24/24 each.
+- Original Independent HIGH-risk/Identity-Security actual-source implementation review on 6bea3638b70f11d44ed779ab57668de121480f6e: **STOP — C11 ONLY**. Batal/Escape hid the dialog without purging CSV/preview/request intent. No other material defect was reported for C01–C10/C12–C14. This was a cancellation/privacy-lifecycle defect, not demonstrated cross-user disclosure (§13).
+- Owner-authorized C11 correction 3df5b32243245bfa5b2203be16b2aa5fe164fce9 changes exactly the four paths in §13. Final CI #129 below is PASS. The original separately assigned Independent HIGH-risk/Identity-Security reviewer issued **targeted C11 re-review PASS on this exact SHA and parent** after actual correction/test and five-browser rendered-evidence inspection. The reviewer confirmed common purge, late-result protection, persistent focus, active-confirm dismissal refusal, same-key/reason retry and zero-mutation coverage; no remaining material correction defect. That targeted PASS closes the sole original STOP and preserves the accepted C01–C10/C12–C14 assessment. **Final Independent HIGH-risk/Identity-Security implementation review chain: PASS.** No repeated full review or contract-review-as-implementation attestation is claimed.
+- **Explicit Owner Acceptance — 2026-11-04:** Owner accepted ADMIN-001 at exact SHA 3df5b32243245bfa5b2203be16b2aa5fe164fce9 based on CI #129, the independent review chain, actual five-browser rendered evidence, corrected cancellation/focus/retry semantics and cumulative approved scope. The acceptance-only stage made no repository changes and withheld evidence-publication authority.
+- **Separate Owner final evidence authorization — 2026-11-04:** exactly one controlled commit modifying only this Task record, normal push to existing PR #21, then remote verification and STOP. Owner explicitly authorizes recording C01–C15 PASS and DONE, with no merge, implementation changes, additional evidence commit, CI rerun, deployment, production migration, blocker closure or successor execution.
+
+### 14.2 Exact-content automatic CI and verification
+
+[CI #129/run 41684459058](https://github.com/yusufarst/elligble/actions/runs/41684459058): accepted SHA above; automatic push event; **attempt 1, COMPLETED / SUCCESS, eight individual jobs SUCCESS on ubuntu-24.04**. Actual job logs and conclusions were verified; no rerun-to-PASS.
+
+| Job | Job ID | Actual result |
+|---|---|---|
+| Runtime: typecheck, unit, PostgreSQL integration | 126086404497 | SUCCESS; Secure Assessment 912/912 unit tests and real PostgreSQL 224/224 integration tests PASS; Identity/Tenant/Academic unit regressions PASS |
+| Web client: typecheck, tests, build | 126086404692 | SUCCESS; 356/356 tests, typecheck and production build PASS |
+| Container image: build and smoke | 126087078168 | SUCCESS |
+| Browser mobile-360 | 126087078307 | SUCCESS, 24/24 |
+| Browser firefox-1280 | 126087078347 | SUCCESS, 24/24 |
+| Browser desktop-1280 | 126087078355 | SUCCESS, 24/24 |
+| Browser tablet-768 | 126087078369 | SUCCESS, 24/24 |
+| Browser webkit-390 | 126087078400 | SUCCESS, 24/24 |
+
+Prior permitted local checks are preserved, not rerun for finalization: four new Node tests (§11); metrics unit 5/5 and Secure Assessment typecheck (§12); `node node_modules/vitest/vitest.mjs run src/__tests__/schoolRosterImport.test.tsx --maxWorkers=1 --minWorkers=1 --no-file-parallelism` from frontend/web, 10/10 PASS, plus web/E2E typechecks (§13). Heavy PostgreSQL/browser/build verification ran in GitHub Actions, not on the shared workstation.
+
+### 14.3 Actual rendered evidence and limits
+
+Five CI #129 workspace-visual archives were retrieved, their ZIP SHA-256 matched GitHub artifact digests, and 150 ADMIN PNG/JSON pairs (30 per project) verified against accepted SHA, after classification, frontend tree **b11e1f64f2321ca05e3aa6d24ccde1fb9c041996** and unchanged Git-LF global fixture SHA-256 **d9fe5cacbb32898a421f0d92d65a9f396a5af97e84d1b7f2d278c3656f0eb1f8**. Existing candidate preview, INVALID, REVIEW_REQUIRED, reason/confirm, request failure/retry and ACK success evidence is preserved.
+
+| Project | CI #129 artifact ID |
+|---|---|
+| tablet-768 | 13255425671 |
+| webkit-390 | 13254718247 |
+| mobile-360 | 13254662811 |
+| desktop-1280 | 13254647923 |
+| firefox-1280 | 13254533005 |
+
+Targeted re-review inspected the actual Batal/Escape cancellation PNGs in all five projects, not just metadata. All ten cancellation manifests at 768×360 show selectedFiles=0, previewPresent=false, and the persistent roster-file input enabled, focused and fully within the viewport. Real keyboard journeys assert fresh upload/preview is required, empty reason, no confirmation call and exact unchanged roster/history/receipt snapshots. Controlled pending response/failure/retry tests preserve the same request key/reason; late file-read/preview success or failure cannot restore canceled state. This supports logical reference clearing, not physical JavaScript memory zeroization or undo of a possibly committed request.
+
+Responsive evidence covers 360/390/430/768/1024/1280/1440 widths and short landscape/200% text with existing shared controls, visible focus and measured >=44px targets/no page horizontal overflow. Local retained provenance report: `C:/Users/Yusuf Setiawan/AppData/Local/Temp/e2e-002-codex/admin-001/ci129-c11-rendered/provenance-verification.json`; durable provenance is the GitHub run/artifacts above. Baseline #126's Teacher loading frames establish the absent Operator entry only: they are **not equivalent before-states** for the new import interface. Forty baseline pairs were matched by scenario/project/viewport/provenance, not asserted pixel-identical. New Operator states are actual candidate-only evidence. Existing deferred cosmetic sticky-header polish is not claimed fixed; focus visibility is additionally asserted in the viewport. No real-device, blanket WCAG, legal, load/capacity or whole-release certification is inferred from CI or screenshots. Owner accepted the rendered implementation with these limitations.
+
+### 14.4 Final C01–C15 disposition
+
+Evidence references: **I** = runtime/secure-assessment/test/integration/roster-import.test.ts, real PostgreSQL in CI #129; **U** = the roster unit tests in Academic Core/Tenant Access/Secure Assessment and frontend/web/src/__tests__/schoolRosterImport.test.tsx; **E** = e2e/tests/9-identity.spec.ts in all five CI projects; **V** = §14.3 actual rendered evidence; **R** = §14.1 independent actual-source review chain and Owner Acceptance. These references identify existing executed evidence, not new test execution in this evidence commit.
+
+| Gate | Final disposition and supporting evidence |
+|---|---|
+| C01 | PASS — I authorization/privacy/revocation and session-expiry cases, E other-role/cross-tenant refusal and zero-mutation snapshots, R actual route/Operator guard review |
+| C02 | PASS — U CSV/validation/bounds cases, I deterministic read-only preview with exact unchanged domain state, E preview/INVALID rows |
+| C03 | PASS — I stable-key correction/re-import/NO_OP/omission cases and preserved identity/enrollment snapshots; R migration/owning API review confirms no automatic Account/Person creation, binding or activation |
+| C04 | PASS — I middle-row/receipt/audit and migration failure rollback with exact business/history/receipt state; atomic whole-file import reviewed in R |
+| C05 | PASS — I concurrent same-key replay, altered-intent conflict and revoked receipt denial; U/E same-key/reason open-dialog uncertain retry and actual success |
+| C06 | PASS — I controlled PostgreSQL barriers for both actual writer acquisition orders, existing/empty slots and lower/upper/mixed UUID forms; pg_locks/pg_blocking_pids effective lock proof, reverse multi-slot refusal, enrollment re-read and exact no-partial-mutation oracles; R independent concurrency review |
+| C07 | PASS — I distinct-key/opposite-order stale corrections, forged digests/references, post-lock session/assignment/time checks; E REVIEW_REQUIRED/conflict refusal |
+| C08 | PASS — U/I/E minimal projection, no NISN/birth-date/raw CSV in returned preview/receipt/error or browser persistence, tenant-safe disclosure; R actual privacy/owning-storage review plus C11 purge closure |
+| C09 | PASS — I empty/0055 upgrade/repeat/constraint/rollback compatibility; full unchanged AUTH-001/SEC-001 and Student/assessment/session regression inventory in §14.2 |
+| C10 | PASS — U/I privileged audited bootstrap, target-membership validation, audit-failure rollback, singular concurrent grants and assignment revocation serialization; R owning Tenant Access/CLI review |
+| C11 | PASS — U 10/10 and E actual upload/preview/confirm/ACK/refusal, Batal/Escape purge, late-result invalidation, accessible keyboard/dialog/focus/error retry, zero mutation and stable request intent; V five-project cancellation/focus evidence; targeted independent C11 PASS closes original STOP |
+| C12 | PASS — E/V responsive widths, short landscape/200% text, shared ELLIGBLE primitives/Bahasa copy, control targets/focus/no measured page overflow; R source/rendered inspection, subject to explicit §14.3 limits |
+| C13 | PASS — §14.2 exact accepted SHA, automatic attempt 1, all eight jobs/five browsers SUCCESS; actual inventories recorded without test removal or rerun-to-PASS |
+| C14 | PASS — cumulative 32 changed paths within 34 unique approved paths; migration 0056, owning APIs, unchanged fixtures/workflows/dependencies/LOCKED rules, Owner metadata and no attribution; 33 Tasks/78-edge baseline preserved; PB05 OPEN |
+| C15 | PASS — actual-source HIGH-risk/Identity-Security review plus exact-SHA targeted C11 closure PASS, explicit Owner Acceptance/rendered acceptance 2026-11-04, and separately authorized single Task-record-only final evidence publication under DEC-045. Owner controls merge; no merge is claimed |
+
+### 14.5 Completion status, accounting and publication boundary
+
+Status history: BLOCKED preparation → formal READY/registration → Owner-authorized IN_PROGRESS → VERIFYING implementation/CI #127 failure → targeted metrics correction/CI #128 PASS → independent C11 STOP → authorized C11 correction/CI #129 PASS → targeted Independent C11 PASS → Owner Acceptance → **DONE through this authorized final evidence record**, 2026-11-04. All prior contract review/correction history remains intact.
+
+Evidence-entry guards: correct root/branch; HEAD/upstream/remote PR head all equal accepted 3df5b32243245bfa5b2203be16b2aa5fe164fce9; clean working tree; PR #21 OPEN / NOT MERGED; final CI verified; all five content commits inspected with Owner author/committer **Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>** and no AI/tool attribution. Cumulative 32 changed paths are within the approved 34; current evidence writes only this record. Exact scope/whitespace/reference/history/identity guards apply before the single controlled commit. Its parent must be the accepted SHA; inspect full/raw metadata after commit, normal push, verify remote head and clean synchronization. This record does not contain its own commit SHA; no second evidence commit or recursive evidence-CI requirement applies (DEC-045 §5).
+
+The official finite baseline remains **33 Tasks and 78 dependency edges**. Expected post-merge reconciliation is **DONE 3/33 (9.09%), VERIFYING 0, BLOCKED 30**, READY/IN_PROGRESS 0. This is explicitly expected post-merge accounting: TASK_PLAN.md and the living plan remain unmodified by this evidence-only publication and retain their prior checkpoint until the subsequent authorized synchronization. No Task split, automatic successor READY/Build, or reopening of SEC-001/AUTH-001 occurs.
+
+**PB05 remains OPEN; all other applicable blockers and LOCKED/FROZEN decisions remain unchanged. Production remains NOT READY.** No real student data, production migration/deployment, policy approval or release gate closure is implied. Next separate Owner action: Owner-controlled squash merge PR #21, followed by exact-main post-merge CI verification and a subsequent authorized canonical checkpoint reconciliation. STOP after this evidence publication and remote verification.
