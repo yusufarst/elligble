@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Governance authority change; HIGH risk (00.12 §5); excluded from the 33-Task P11 baseline counters, like GOV-P11-001 |
-| Status | **VERIFYING — Owner approved the exact reviewed text and instructed the executor to merge (§5); content commit, CI and evidence pending; DEC-048 NOT EFFECTIVE until landing on `main`** |
+| Status | **DONE — Owner approval (§5), review chain PASS (§4), content commit and CI attempt 1 SUCCESS (§8); DEC-048 EFFECTIVE on landing on `main` by the Owner-instructed executor squash merge (00.13 §9 item 4)** |
 | Objective | Record one narrowly bounded, Owner-approved supersession that delegates routine mechanical execution of eligible baseline Tasks (identification, READY, commit, push, PR, CI, review commissioning, evidence, delegated acceptance, squash merge, continuation). Every gate and every Owner-reserved or external decision stays in force |
 | Owner authorization | 2026-11-07, Owner in chat: "Use the Owner's present instruction as authorization to prepare this governance change. Do not claim the delegation is already effective while it remains unrecorded or its mandatory approval gates are incomplete." Preparation only; activation is a separate Owner gate |
 | Base and branch | main/origin/main 056a154d4ae2eb9c5a7c7923c6737496f396990d; branch `task/gov-exec-001-standing-execution-delegation` in the worktree `C:\Projects\ELLIGBLE-gov-exec-001`, so the four unpublished AUTH-002 documents in the main checkout stay untouched |
@@ -197,4 +197,20 @@ Any reduced-scope release is a new Owner decision.
 - **AUTH-002 review evidence:** the AUTH-002 record SHA-256 785ed0f902a2151ae6162b940c64a48b959eeaf7fb23b47077b9b16ec64c5e57 contains its §10.1 contract review chain STOP → STOP → PASS. That evidence is local and unpublished, and its reviewer transcripts are executor-session subagent output, not repository artifacts.
 - **Branch protection check:** `gh api repos/yusufarst/elligble/branches/main/protection` returned `{"message":"Branch not protected", … "status":"404"}`; `gh auth status` reported the account yusufarst with scopes `repo`, `workflow`.
 - **Preparation:** 00.13 and the pointer edits were prepared in a separate worktree from origin/main.
-- **Not done:** no commit, push, PR or merge. DEC-045 remains in force.
+- **Not done at preparation:** no commit, push, PR or merge. DEC-045 remained in force.
+
+## 8. Completion evidence
+
+2026-11-07, after the Owner approval recorded in §5:
+
+- **Pinned-hash check before commit:** all ten paths recomputed with `tr -d '\r' < <path> | sha256sum`. Nine matched the §5 table; this record differed only by the §5 table itself (a permitted addition).
+- **Status-only metadata (00.13 §9 item 3), exact diff:**
+  - 00.13 header: `**Status:** PROPOSED / NOT EFFECTIVE (becomes LOCKED and effective only under §9)` → `**Status:** LOCKED / EFFECTIVE on landing on main (00.13 §9)`; `**Version:** 0.2.0 (proposal)` → `**Version:** 1.0.0`; `**Owner Approved:** PENDING. Owner instructed its preparation in chat on 2026-11-07` → `**Owner Approved:** YES (Owner in chat, 2026-11-07; recorded in GOV-EXEC-001 §5)`.
+  - DECISION_LOG DEC-048: `**Version:** 0.2.0 (proposal)` → `**Version:** 1.0.0`; `**Status:** PROPOSED / NOT EFFECTIVE until 00.13 §9 holds (Owner approval of the exact text, independent governance review PASS, GOV-EXEC-001 DONE, landing on `main`)` → `**Status:** LOCKED / EFFECTIVE on landing on main (00.13 §9)`.
+- **Content commit:** b0eaf71880d1bf3f8bb96b87ace10fea94e6781c on `task/gov-exec-001-standing-execution-delegation`, parent 056a154d4ae2eb9c5a7c7923c6737496f396990d. It changes exactly the ten declared paths (10 files, 479 insertions, 13 deletions).
+  - Committed-blob LF SHA-256 (`git show HEAD:<path> | sha256sum`): AGENTS.md, READ_ME_FIRST.md, 00.12, the manifest, EXECUTION_CONTEXT, the living plan and TASK_PLAN equal the §5 table; 00.13 65b7c6e6b986c29a43028b3f3f18935e1293d70df4b80759aa81bad8cef80128 and DECISION_LOG 0eabd09eb3199bbc720aacefbd840e871ffe288b7cd5b2f2bf9e28cf4d6a51d8 differ only by the metadata above; this record 402ad5829feae0ca4355564f6a94dea9df340ff79387cca0fe8cf88473215e47 differs only by the §1 status and §5 approval additions.
+  - Attribution check: `git log -1 --format=fuller` shows author and committer Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>, the Owner identity used on `main`; the raw message has no trailer and no AI, model or tool attribution.
+- **Push and PR:** normal push; PR https://github.com/yusufarst/elligble/pull/22.
+- **CI:** CI #132, run 42324774887, event push, head b0eaf71880d1bf3f8bb96b87ace10fea94e6781c, attempt 1, completed, conclusion success, eight jobs success: Web client (typecheck, tests, build); Runtime (typecheck, unit, PostgreSQL integration); Container image (build and smoke test); Browser end-to-end mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. Verified with `gh run view 42324774887` on 2026-11-07. No re-run.
+- **Independent review:** §4, chain STOP → PASS → STOP → PASS, final PASS on 00.13 0b9d6669… and this record 3ebcd3f4…, the texts the Owner approved.
+- **Landing:** by the executor under the Owner's one-time instruction in §5, as a squash merge of PR #22 with an explicit subject and body and no `Co-authored-by` trailer. The landing commit and its post-merge CI are recorded by the next Task (00.12 §5).
