@@ -24,7 +24,6 @@ const fixtureSha256 = createHash('sha256').update(readFileSync(new URL('../globa
 
 const TEACHER = ['guru.e2e', 'papan-tulis-hijau'] as const;
 const STUDENT = ['siswa.e2e.06', 'bintang-kejora-2026'] as const;
-const OTHERS = ['siswa.e2e.01', 'siswa.e2e.02', 'siswa.e2e.03', 'siswa.e2e.04', 'siswa.e2e.05'];
 const V1_HEADER = 'no;prompt;option_a;option_b;option_c;option_d;option_e;correct;score';
 const LONG = 'Pernyataan panjang tentang sifat bilangan yang membutuhkan beberapa baris di layar sempit agar terbaca utuh tanpa terpotong';
 /** Baseline file: v1 single choice only, one question with long option text. */
@@ -127,10 +126,17 @@ test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and
     await page.getByRole('radio', { name: /Durasi penuh/ }).check();
     await page.getByLabel('Berkas CSV').setInputFiles({ name: FILE_NAME, mimeType: 'text/csv', buffer: Buffer.from(file, 'utf8') });
     await page.getByRole('button', { name: 'Periksa Soal dan Jadwal' }).click();
-    await expect(page.getByText('Soal dan jadwal siap dijadwalkan')).toBeVisible();
-    for (const other of OTHERS) await page.getByRole('checkbox', { name: other, exact: true }).uncheck();
+    // Earlier specs leave the other class members expected in an overlapping exam (and spec 9
+    // adds a claimed student): keep siswa.e2e.06 only, then check again.
+    const participants = page.getByRole('region', { name: /^Peserta \(/ });
+    await expect(participants.getByRole('checkbox', { name: STUDENT[0], exact: true })).toBeVisible();
+    for (const box of await participants.getByRole('checkbox').all()) {
+        if ((await box.getAttribute('aria-label') ?? await box.evaluate(el => (el as HTMLInputElement).labels?.[0]?.textContent ?? '')).trim() !== STUDENT[0] && await box.isChecked()) await box.uncheck();
+    }
+    await expect(participants.getByRole('checkbox', { name: STUDENT[0], exact: true })).toBeChecked();
     await page.getByRole('button', { name: 'Periksa Lagi' }).click();
-    await expect(page.getByText('Peserta (1 dari 6)')).toBeVisible();
+    await expect(page.getByText('Soal dan jadwal siap dijadwalkan')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Peserta \(1 dari \d+\)$/ })).toBeVisible();
     await captureQuestionSurface(page, 'import-preview', () => page.locator('main').first(), file);
 
     await page.getByRole('button', { name: 'Jadwalkan Ujian' }).click();
