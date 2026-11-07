@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, saveStatus, state, wib, withDatabase } from './helpers.ts';
+import { login, reloadPage, saveStatus, state, wib, withDatabase } from './helpers.ts';
 
 // ASSESS-QUESTION-003 five-browser journey and rendered evidence (record §4A/§7 C06/C07).
 // Sorts after 99-question-types (Playwright orders files with localeCompare), whose exam is
@@ -187,8 +187,9 @@ test('ASSESS-QUESTION-003 true/false: import, preview, Student journey and rende
     await expect(saveStatus(student)).toHaveText('Tersimpan');
     expect(await stored()).toEqual({ value: true });
 
-    // Reload: the value is restored from the server.
-    await student.reload();
+    // Reload: the value is restored from the server. The shared helper does not wait for the load
+    // event, which Playwright's Firefox driver sometimes never reports (helpers.ts; main CI #187).
+    await reloadPage(student);
     await toStatement();
     await expect(benar).toBeChecked();
 

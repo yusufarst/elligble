@@ -426,3 +426,12 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
 - PB05 and PB12 are OPEN. G7 is required before real data. There is no deployment or release claim.
 
 **Landing:** a delegated squash merge of PR #28 under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The next Task's first change records the landing, with DONE 9/33 (27.27%), VERIFYING 0, BLOCKED 24.
+
+## 13. Post-merge main CI failure and Owner-authorized test-only correction — 2026-11-08
+
+- **Landing state.** PR #28 was squash-merged to main b7d02eee254ce6b07bfd75ad632ad04a3bedc46b; its tree equals the evidence head 4d99ce4, and PR-head CI #186 was eight SUCCESS.
+- **Post-merge main CI #187** (run 42412062972, attempt 1): seven jobs SUCCESS. Browser end-to-end (firefox-1280) FAILED: `99b-true-false.spec.ts:191` `page.reload()` hit the 600 s test budget. It is preserved without re-run.
+- **Cause.** The spec called `page.reload()` directly, and Playwright's Firefox driver sometimes never reports the load event (documented in `e2e/tests/helpers.ts`, CI runs 52 and 53). The shared `reloadPage()` exists for this and was not used. `99-question-types.spec.ts:282` has the same latent call. Product code is not involved: the same tree passed #184–#186.
+- **Chain stopped** under 00.13 §6/§8 and escalated. **Owner decision (2026-11-08, in chat):** "Buka ulang 003, uji saja (Recommended)": reopen ASSESS-QUESTION-003 for a test-only correction, then continue with ASSESS-QUESTION-004.
+- **Correction** (branch task/assess-question-003-firefox-reload from b7d02ee): row 22 (the 99b spec) and the ASSESS-QUESTION-002 spec `e2e/tests/99-question-types.spec.ts` (a path-only addition, test-only, no acceptance change) call `reloadPage()` instead of `page.reload()`. Nothing else changes.
+- **Verification:** exact-SHA CI, then review by the same reviewer, a delegated squash merge and post-merge main CI. The trackers keep ASSESS-QUESTION-003 at VERIFYING until that CI passes; the next Task's first change then records the landing.
