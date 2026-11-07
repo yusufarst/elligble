@@ -252,7 +252,7 @@ export const TeacherExamImportView: React.FC<{
       {back}
       <PageHeader title={SCREEN_TITLE.examImport}>
         <p className="m-0 text-muted-foreground">
-          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG) atau pilihan ganda kompleks (PGK) dengan pilihan A sampai E dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
+          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK) atau benar/salah (BS) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
         </p>
       </PageHeader>
 
@@ -505,6 +505,7 @@ const PreviewSection: React.FC<{
                     <span className="shrink-0 text-xs font-semibold text-success-ink">Kunci jawaban</span>
                   </p>
                 )}
+                {q.options.length > 0 && (
                 <ol className="m-0 flex list-none flex-col gap-1 p-0">
                   {q.options.map((option, i) => {
                     const letter = 'ABCDE'[i];
@@ -518,6 +519,7 @@ const PreviewSection: React.FC<{
                     );
                   })}
                 </ol>
+                )}
               </li>
             ))}
           </ol>

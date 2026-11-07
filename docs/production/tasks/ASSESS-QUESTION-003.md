@@ -320,3 +320,28 @@ The reviewer confirmed the clearing reading (no Owner decision needed), the impo
 - **Correction 1** (row 22 only):
   - V06 asserts that "Selesaikan Ujian" is disabled while the save is held, then releases it, and the submission completes;
   - the reload step uses a plain `reload()`. Only about 40 captures precede it, the point where every browser reloaded safely in ASSESS-QUESTION-002, and the fresh-tab helper is removed.
+
+### 11.2 CI #184, implementation review and rendered review STOP; correction 2
+
+- **CI #184:** exact SHA 55a4a9b, attempt 1. All eight jobs SUCCESS.
+- **Artifacts:** 650 pairs at 55a4a9b (450 from the 99 spec, 200 from ASSESS-QUESTION-003 = 40 × 5 projects). Every screenshot hash matches its JSON. Zero overflow; zero targets under 44 px.
+- **Implementation review:** PASS, by the same standing reviewer as the contract chain (§9), conditional on CI #184. Non-material notes:
+  - the workstation keeps its v1 fallback branch;
+  - the #181 baseline manifest is held as the reviewer's scratch evidence, and its SHA-256 is recorded in §10;
+  - V06 is read as "submit is disabled while the choice is unsent";
+  - safe areas were checked visually;
+  - there is no frontend unit test for the BS import display.
+- **Regression against #181:** normalized accessibility snapshots compared key by key.
+  - Exam screens and teacher previews are identical.
+  - One multiple-response focus capture differs only in a transient "Menyimpan..." state.
+  - The import preview differs only in the intended card instruction and random fixture student IDs.
+- **Rendered review: STOP B1.** The import page intro still described only PG and PGK "dengan pilihan A sampai E". That is wrong for BS and contradicts the card instruction.
+- **Correction 2** (row 18 only):
+  - the intro now reads: "Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK) atau benar/salah (BS) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.";
+  - the option list in the import preview is rendered only when the item has options. This was the reviewer's non-material note: BS items no longer show an empty list.
+  - No test asserts either. Local: web typecheck PASS; `teacherExamImport` and `true-false` web tests 16/16.
+- **Not caused by this Task** (also present at #181):
+  - the dock breaks words mid-word at 200 % text;
+  - the fixed dock covers content in full-page captures;
+  - the `::first-line` prompt style.
+  These are left for UI-SYSTEM.
