@@ -197,7 +197,7 @@ This section corrects the contract after the independent contract review (§9). 
 7. **Gates and order (F7).**
    - **Frozen CI-first order:**
      1. Registration (record and trackers, carrying the ASSESS-QUESTION-001 landing).
-     2. A capture-only baseline commit that changes only `e2e/tests/10-question-types.spec.ts`: it captures the existing v1 exam screen, v1 teacher preview and import view, and its CI artifacts are validated before any application change.
+     2. A capture-only baseline commit that changes only `e2e/tests/99-question-types.spec.ts`: it captures the existing v1 exam screen, v1 teacher preview and import view, and its CI artifacts are validated before any application change.
      3. Implementation.
      4. Independent implementation and rendered review by the same reviewer.
      5. Delegated Acceptance and the evidence commit.
@@ -294,7 +294,7 @@ Import vectors: `PGK` with `A,C`, `a c`, `A, C` → set {A, C}. `PGK` with `A,A`
 | 27 | runtime/secure-assessment/test/multiple-response.test.ts | Units: descriptor and parser vectors |
 | 28 | runtime/secure-assessment/test/integration/multiple-response.test.ts | Real PostgreSQL journey and migration |
 | 29 | frontend/web/src/__tests__/multiple-response.test.tsx | Control, sync and preview |
-| 30 | e2e/tests/10-question-types.spec.ts | Capture baseline, five-browser journey and rendered evidence |
+| 30 | e2e/tests/99-question-types.spec.ts (renamed by §10A) | Capture baseline, five-browser journey and rendered evidence |
 | 31 | (withdrawn by §4A.7: the existing artifact paths are used; ci.yml is forbidden) | — |
 | 32 | runtime/secure-assessment/test/question-contract.test.ts | One assertion: production registry keys (§4A.1) |
 | 33 | frontend/web/src/__tests__/answerTypes.test.tsx | Supported list and header assertions (§4A.1) |
@@ -369,7 +369,7 @@ The reviewer confirmed the descriptor, vectors, PG-as-v1 choice, engine safety o
 - **Frontend skill checkpoint (§4A.8):** `react-typescript-vite`, `frontend-responsive-ui` and `web-design-reviewer`, verified by SHA-256. DesainPakeAI was not consulted, and there is no design-authority claim.
 - **Frozen CI-first order:** as in §4A.7.
   1. Registration.
-  2. The capture-only v1 baseline (only `e2e/tests/10-question-types.spec.ts`), with its five artifacts validated.
+  2. The capture-only v1 baseline (only `e2e/tests/99-question-types.spec.ts`), with its five artifacts validated.
   3. Implementation.
   4. Independent implementation and rendered review by the same reviewer.
   5. Delegated Acceptance and the evidence commit.
@@ -377,3 +377,16 @@ The reviewer confirmed the descriptor, vectors, PG-as-v1 choice, engine safety o
 
   No re-runs.
 - **Status:** BLOCKED → READY → IN_PROGRESS. Counters: DONE 7, IN_PROGRESS 1, BLOCKED 25. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+## 10A. READY correction 1 (spec file name and participant) — 2026-11-07
+
+- **Finding:** writing the capture-only baseline showed that Playwright orders spec files with `localeCompare`. `10-question-types.spec.ts` would therefore run second, right after `1-pilot-journey`.
+  - Later specs assert global state: `6-teacher-import` expects exactly one active teacher exam card, exactly one import batch, and zero attempts outside finalized exams.
+  - A Task-10 exam created before them would break those unchanged specs.
+- **Correction:** allowlist row 30 becomes `e2e/tests/99-question-types.spec.ts` (it sorts after `9-identity`). Its content, purpose and gates are unchanged. Row 30's old name is not created.
+- **Participant:** the spec's exam has one participant, `siswa.e2e.06`. The other fixture students are expected in `6-teacher-import`'s exam at an overlapping time, which would block scheduling (D04.2 conflict rule). The five browser projects run in separate CI jobs, each with its own database, so no cross-project conflict arises.
+- **Targeted re-review**, same reviewer, on SHA-256 1fce42a0942805669b4d39a16c3bce677ab97af6b42fd64b53eb8c9c8237fefb: **PASS** on §10A, and PASS on the draft spec as the capture-only step 2.
+  - Names folded: every earlier mention of  now reads .
+  - The 200 % text method is fixed before the baseline: each element's computed font size and line height are doubled, as in spec 6, and the method is identical in both phases.
+  - The after phase adds explicit keyboard-focus captures, the multiple-response scenarios and the unsupported-content state. The before scenarios stay byte-for-byte the same.
+  - The spec draft (written before this confirmation, uncommitted) and the descriptor, parser and builder drafts are pre-baseline working-tree work. The descriptor, parser and builder are reviewed with the implementation.
