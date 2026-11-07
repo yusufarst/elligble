@@ -426,3 +426,37 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
 - PB05 and PB12 are OPEN. G7 is required before real data. There is no deployment or release claim.
 
 **Landing:** a delegated squash merge of PR #28 under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The next Task's first change records the landing, with DONE 9/33 (27.27%), VERIFYING 0, BLOCKED 24.
+
+## 13. Post-merge main CI failure and Owner-authorized test-only correction — 2026-11-08
+
+- **Landing state.** PR #28 was squash-merged to main b7d02eee254ce6b07bfd75ad632ad04a3bedc46b; its tree equals the evidence head 4d99ce4, and PR-head CI #186 was eight SUCCESS.
+- **Post-merge main CI #187** (run 42412062972, attempt 1): seven jobs SUCCESS. Browser end-to-end (firefox-1280) FAILED: `99b-true-false.spec.ts:191` `page.reload()` hit the 600 s test budget. It is preserved without re-run.
+- **Cause.** The spec called `page.reload()` directly, and Playwright's Firefox driver sometimes never reports the load event (documented in `e2e/tests/helpers.ts`, CI runs 52 and 53). The shared `reloadPage()` exists for this and was not used. `99-question-types.spec.ts:282` has the same latent call. Product code is not involved: the same tree passed #184–#186.
+- **Chain stopped** under 00.13 §6/§8 and escalated. **Owner decision (2026-11-08, in chat):** "Buka ulang 003, uji saja (Recommended)": reopen ASSESS-QUESTION-003 for a test-only correction, then continue with ASSESS-QUESTION-004.
+- **Correction** (branch task/assess-question-003-firefox-reload from b7d02ee): row 22 (the 99b spec) and the ASSESS-QUESTION-002 spec `e2e/tests/99-question-types.spec.ts` (a path-only addition, test-only, no acceptance change) call `reloadPage()` instead of `page.reload()`. Nothing else changes.
+- **Verification:** exact-SHA CI, then review by the same reviewer, a delegated squash merge and post-merge main CI. The trackers keep ASSESS-QUESTION-003 at VERIFYING until that CI passes; the next Task's first change then records the landing.
+
+### 13.1 Review and correction 2 of the post-merge fix
+
+- **CI #188** (run 42416082132, f12ade7, attempt 1): eight jobs SUCCESS.
+- **Review by the same reviewer: STOP F1.**
+  - The diagnosis, the reload change and its assertion strength are confirmed. There is no product impact.
+  - F1: `99-question-types.spec.ts` `freshTab()` still calls `student.goto(url)`. That is the first navigation of a new page into the client, which waits for the load event. It is the same Firefox hazard `helpers.ts` `open()` documents (CI runs 28/29), and it already hung 99b in CI #183 (§11.1).
+- **Path authority.** The reviewer confirmed after the fact that the `99-question-types.spec.ts` path is necessary: test-only, no acceptance change, needed to keep C04/C08 green. 00.13 §5.2 asks for that confirmation before the edit. The authority for this path is therefore the Owner's explicit decision "Buka ulang 003, uji saja" (§13), with the reviewer's necessity confirmation recorded here.
+- **Correction 2:** `freshTab()` calls `open(student, url)` instead of `student.goto(url)`. No direct `goto()` or `reload()` remains in either spec.
+
+### 13.2 Final evidence of the post-merge fix
+
+- **Final content:** 45924f3b98c2b743b5e6a2a6e749d86d1150072b on task/assess-question-003-firefox-reload (PR #29).
+- **Commits:**
+  - correction 1, f12ade7 (CI #188, attempt 1, eight SUCCESS);
+  - correction 2, 45924f3 (CI #189, run 42417342209, attempt 1, eight SUCCESS).
+  - Owner author and committer on every commit; no trailers or attribution.
+- **Review, by the same reviewer:** STOP F1, then PASS on 45924f3. F1 is closed and the §13/§13.1 wording was confirmed accurate.
+- **Scope:**
+  - the 99b and 99 specs (test-only);
+  - this record;
+  - one checkpoint line in each tracker.
+  - No product, workflow or acceptance change.
+- **Acceptance:** ASSESS-QUESTION-003 stays accepted under DEC-048 (§12.4); this fix restores the C06/C08 gates on `main`.
+- **Landing:** a delegated squash merge of PR #29 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, then post-merge main CI. The next Task's first change records the landing, with DONE 9/33 (27.27%), VERIFYING 0, BLOCKED 24.

@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, saveStatus, state, wib, withDatabase } from './helpers.ts';
+import { login, open, reloadPage, saveStatus, state, wib, withDatabase } from './helpers.ts';
 
 // ASSESS-QUESTION-002 rendered evidence and journey (record §4A.7/§7 C07/C08). The same
 // capture routine runs on the capture-only baseline (phase "before": v1 content on the
@@ -240,7 +240,9 @@ async function multipleResponseJourney(teacher: Page, firstPage: Page, examId: s
         await student.close();
         student = next;
         bind();
-        await student.goto(url);
+        // The first navigation of a new page into the client: the shared helper does not wait for
+        // the load event the Firefox driver sometimes never reports (helpers.ts open()).
+        await open(student, url);
     };
     // The native checkbox is visually hidden inside its option card: pointer input goes to the card.
     const tap = (box: Locator) => student.locator('.options-list label').filter({ has: box }).click();
@@ -278,8 +280,9 @@ async function multipleResponseJourney(teacher: Page, firstPage: Page, examId: s
     await saved();
     expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2], ids[4]].sort() });
 
-    // Reload: the set is restored from the server.
-    await student.reload();
+    // Reload: the set is restored from the server, through the shared helper that does not wait
+    // for the Firefox driver's load event (helpers.ts; main CI #187).
+    await reloadPage(student);
     await toMr();
     for (const box of [A, C, E]) await expect(box).toBeChecked();
     await expect(B).not.toBeChecked();
