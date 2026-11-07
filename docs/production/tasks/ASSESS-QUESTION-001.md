@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 question and answer integrity foundation; HIGH risk; R02, R03, R10–R17, R25, R26; P8 V02–V06, V09–V11 |
-| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation review (§11); DEC-048** |
+| Status | **DONE — final content ad10b38, CI #158 attempt 1 eight SUCCESS, independent contract and implementation review chains PASS, Delegated Acceptance (DEC-048) (§13); landing by delegated squash merge (00.13 §6)** |
 | Objective | Freeze and implement the approved discriminated question/answer/scoring contract and compatibility policy (A01) so that later type Tasks plug in without touching v1 truth. No new question type is delivered here |
 | Owner decisions | 2026-11-07, Owner in chat: all 18 O02/O05 defaults ("Setujui semua default") and all 7 A01/A04 designs ("Setujui semua desain") of the question and institution package, recorded verbatim in §4. The architecture/assessment and security reviewer is the standing Owner-designated read-only subagent reviewer |
 | Execution authority | DEC-048 (00.13). Internal dependency SEC-001 is DONE / MERGED. O02 (approved rules), O05 (approved composition, result shape), O09 (approved P5 content under GOV-POLICY-001) and A01 (approved design) are settled inputs |
@@ -383,4 +383,68 @@ The reviewer found the design faithful to A01-1/A01-2/A01-4/O02-2 otherwise. It 
   - §11 now records the safe `question-contract.ts` ↔ `answer.ts` import cycle.
 - **C02 evidence mapping:** equivalence holds by construction through the hand-off. The new representative vectors, the unchanged `test/scoring.test.ts` fixtures, and the unchanged integration finalization tests (which now run through `scoreAttempt`) are its evidence.
 - **Non-material notes recorded:** `contentKeyOf` is used only by tests until a type UI uses it, and the explicit `question_type_unsupported` case in `classifySaveFailure` matches the default branch.
-- **Targeted re-review: pending.**
+- **Targeted re-review, same reviewer, on ad10b38: PASS.** Finding 1 is CLOSED and there is no new material finding.
+
+## 13. Final evidence and Delegated Acceptance — 2026-11-07
+
+### 13.1 Content and CI
+
+**Final content:** ad10b3858e3fe94eca4cd9018dca5c2d8d372397.
+
+**Commits** on task/assess-question-001-versioned-foundation (PR #26):
+
+| Commit | Content |
+|---|---|
+| 4a8fd30 | registration, the SEC-OPS-001 landing record and the Owner decisions (§4) |
+| 6454853 | implementation |
+| ad10b38 | correction 1 (tests and record) |
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #158/run 42376903627, push, attempt 1, eight jobs SUCCESS.
+- Runtime units: identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 926 (including the 5 new contract units); all pass.
+- Real PostgreSQL 16 integration: 252/252, including the new ASSESS-QUESTION-001 oracle.
+- Web job: 39 files and 376 tests (including the 7 new client tests), plus typecheck and build. Container image build and smoke test.
+- E2E: 28/28 in each of the five browser projects (existing journeys unchanged; this Task has no UI).
+
+**All runs, preserved without re-run:**
+
+| Run | Head | Result |
+|---|---|---|
+| #156 | 4a8fd30 | SUCCESS |
+| #157 | 6454853 | SUCCESS |
+| #158 | ad10b38 | SUCCESS |
+
+### 13.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. Contract: STOP → STOP → PASS (§9).
+2. Implementation on 6454853: STOP (C04 locked-attempt evidence only); targeted re-review on ad10b38: PASS (§12).
+
+No reviewer was replaced. There is no material UI, so there is no rendered review.
+
+### 13.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: the classification table (malformed, v1, unsupported, registered) is total and deterministic; the production registry holds only v1; registry key rules |
+| C02 | PASS: `scoreAttempt` equals `scoreBaselineAttempt` on every representative vector (including invalid, unsupported, zero, 1e-9 and large/small maxScore); the v1 descriptor's per-item score and Student view are identical; answer acceptance equals `isAnswerForQuestion` on a content × payload table including minimal content; a version 2 single choice row is now 409; existing scoring and finalization tests unchanged |
+| C03 | PASS: header parsing (absent, trimmed, Node-joined, 16-token limit, empty, duplicate, malformed); 400 after the context check with a never-connected pool on both handlers; authorization first; real-PostgreSQL zero mutation |
+| C04 | PASS: unsupported rows give 409 without content on delivery and save, with no answer row; a version 2 single choice row is refused; a client without v1 is refused on delivery and save; paused, locked and submitted attempts keep their refusals; first row in authored order decides; readiness keeps `schema_version_invalid`; activation is refused while the v1 control exam activates |
+| C05 | PASS: v1 delivery is byte-identical with and without the header; new, idempotent, identity-conflict and stale saves; resume; submit; finalization `BASELINE_SINGLE_CHOICE_V1` and `item_outcomes` equal to the baseline computation |
+| C06 | PASS: through the real save handler with a test-only registry, an empty value is an accepted versioned write (1, 2, 3) and is refused when not declared; composite finalization in real PostgreSQL gives `COMPOSITE_PER_ITEM_V1`, per-item `ruleId`, `selectedOptionId` only on v1 items, exact totals (42.86), and production still gives `scoring_unavailable`; registered-v2 invalid content gives `question_content_invalid` |
+| C07 | PASS: the header on delivery and on the real engine-driven save; `contentKey` on new records; a legacy record syncs as v1 with the same payload; reopen and other-session adoption, plus discard, unchanged; an unsupported key is never sent and ends failed; `question_type_unsupported` is rejected without retry |
+| C08 | PASS: 21 changed paths, all within rows 1–21; every existing test unchanged and passing; 33 Tasks and 78 edges unchanged; exact-content attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 13.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent review PASSED on the final content SHA. ASSESS-QUESTION-001 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and boundaries:**
+- No new type is delivered: production behaviour changes only for version 2 rows, which no writer creates yet, and for clients that declare no v1.
+- A delivery 409 shows the existing generic message. The reload message, the "Belum dijawab" display and every type control belong to the type Tasks.
+- Teacher results and preview read v1 only; reading composite results is RESULT-004.
+- The O02/O05/A04 rows beyond this foundation are implemented by their own Tasks.
+- PB05 and PB12 OPEN; G7 before real data; no deployment or release claim.
+
+**Landing:** delegated squash merge of PR #26 under 00.13 §6 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The landing is recorded by the next Task's first change, with DONE 7/33 (21.21%), VERIFYING 0, BLOCKED 26.
