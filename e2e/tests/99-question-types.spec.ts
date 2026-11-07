@@ -85,8 +85,8 @@ async function captureQuestionSurface(page: Page, scenario: string, root: () => 
                 });
                 const name = ['workspace-question', phase, scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
                 const screenshot = `${name}.png`;
-                // Engines refuse images above 32767 px: a taller page is captured at the viewport.
-                const fullPage = (await page.evaluate(() => document.documentElement.scrollHeight)) <= 30000;
+                // Engines refuse images above 32767 device pixels: a taller page is captured at the viewport.
+                const fullPage = (await page.evaluate(() => document.documentElement.scrollHeight * window.devicePixelRatio)) <= 30000;
                 await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
                 writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
                     task: 'ASSESS-QUESTION-002', phase, commit, baseline: { commit: BASE_COMMIT, frontendTree: BASE_FRONTEND_TREE }, frontendTree,
