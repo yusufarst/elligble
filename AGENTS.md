@@ -7,7 +7,7 @@ Before acting, you MUST use `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` as
 **Core Requirements:**
 - Require Git working-state verification (`git status --short`) before trusting dynamic state files.
 - Read the living plan `docs/production/PRODUCTION_COMPLETION_PLAN.md` for current production state and the critical path. `CURRENT_STATE.md`, `HANDOFF_PACKET.md` and `BUILD_PHASE_INDEX.md` are frozen historical records (BU-090 terminal); `DOCUMENT_MANIFEST.md` is the document index.
-- Read `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (DEC-044: the current release is Secure Assessment / CBT only) and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (DEC-045: execute only the Owner-authorized Task, one bounded READY Task at a time; Task records in `docs/production/tasks/`).
+- Read `docs/00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md` (DEC-044: the current release is Secure Assessment / CBT only) and `docs/00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md` (DEC-045: execute only the Owner-authorized Task, one bounded READY Task at a time; Task records in `docs/production/tasks/`) and `docs/00-governance/00.13_STANDING_EXECUTION_DELEGATION.md` (DEC-048, operative only once effective under its §9: standing delegation of routine execution of eligible baseline Tasks, including selection, continuation and squash merge, only within its §4–§6 gates; the decisions in its §7 stay with the Owner).
 - **Evidence-Over-Summary Rule:** Actual repository file content and Git output ALWAYS beat agent summaries or external reports.
 - **Working-Tree Preservation Rule:** A modified/untracked file is evidence of possible in-progress work. Do NOT perform destructive cleanup merely to make Git appear clean.
 
@@ -38,7 +38,7 @@ LEGACY       → reference only until audited
 - If the working tree is non-clean, execute the working-state reconstruction protocol in `docs/00-governance/00.04_AGENT_CONTEXT_RULES.md` before acting.
 - Never use a stale state file alone to overwrite or restart in-progress work.
 
-Architecture, API and UI work must serve the critical path in the living plan and respect the LOCKED decisions it touches. Actual execution requires explicit Owner authorization of one bounded READY Task by ID under DEC-045 (00.12 §4–§5); critical-path relevance alone is not authorization.
+Architecture, API and UI work must serve the critical path in the living plan and respect the LOCKED decisions it touches. Actual execution requires either explicit Owner authorization of one bounded READY Task by ID under DEC-045 (00.12 §4–§5) or, once DEC-048 is effective under 00.13 §9, the eligibility and gates of that standing delegation (00.13 §4–§6); critical-path relevance alone is not authorization.
 
 ## Product Guardrails
 
@@ -87,8 +87,8 @@ DROP
 
 Follow `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (execution model) and the non-superseded parts of `docs/00-governance/00.09_PRODUCT_MILESTONE_DRIVEN_BUILD_CONTROL.md` (baseline-first priority, Baseline Completion Gate).
 
-- **AUTHORIZED TASK ONLY (DEC-045):** implement only the Task the Owner authorized, within its contract; the critical path is the P11 Task baseline.
-- **PRODUCT COMPLETION FIRST:** Prioritize the shortest safe production critical path recorded in `docs/production/PRODUCTION_COMPLETION_PLAN.md`. Execute only the bounded Task explicitly authorized by the Owner under DEC-045; keep the plan current in the same change. This product priority does not authorize autonomous Task selection or continuation.
+- **AUTHORIZED TASK ONLY (DEC-045, DEC-048):** implement only the Task the Owner authorized, or, once DEC-048 is effective under 00.13 §9, the single next eligible Task under 00.13 §4, within its contract; the critical path is the P11 Task baseline.
+- **PRODUCT COMPLETION FIRST:** Prioritize the shortest safe production critical path recorded in `docs/production/PRODUCTION_COMPLETION_PLAN.md`. Execute only the bounded Task authorized under DEC-045 or, once DEC-048 is effective under 00.13 §9, selected under 00.13 §4; keep the plan current in the same change. Product priority alone never authorizes a Task; gated sequential selection and continuation exist only under 00.13 §4.
 - **NO NEW BUILD UNITS:** Do not create BU-091 or later, Stage-1..5 lifecycle records, Controller stage audits, or lifecycle-close / navigation-correction commits. BU-001..BU-090 are historical construction assets: do not reopen or rewrite them.
 - **BASELINE PRIORITY:** `IN — CORE` + `IN — MANDATORY BASELINE` first. `OPTIONAL` / `FUTURE` stay deferred until the Baseline Completion Gate passes.
 - **REUSE PROVEN CAPABILITIES:** Compose and extend existing runtime/schema capabilities; do not duplicate them. Fix them when evidence shows a defect.
@@ -113,7 +113,7 @@ Follow `docs/00-governance/00.10_CONTINUOUS_PRODUCTION_COMPLETION.md` (execution
 - Commit only with the Owner's configured author and committer identity. Before the first commit of a session, check `git config user.name` and `git config user.email`; if they are not the Owner's identity, stop and ask. Never set an identity yourself.
 - Never add AI, model or tool attribution to commits, trailers, pull request metadata or contributor metadata (no Co-Authored-By, Generated-By, Assisted-By or session links).
 - After every commit, inspect `git log -1 --format=fuller` and the raw message; report any attribution instead of rewriting history.
-- No force push. No rewriting of published history. The Owner merges into `main`.
+- No force push. No rewriting of published history. The Owner merges into `main`, or, once DEC-048 is effective under 00.13 §9, the executor squash-merges only under the delegated merge gates of 00.13 §6.
 
 ## Secrets
 

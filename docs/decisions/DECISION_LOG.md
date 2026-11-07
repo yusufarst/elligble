@@ -508,3 +508,16 @@ Preserve typography/fallback delivery, spacing, radii, elevation, icon geometry,
 DesainPakeAI project b5a22aa4-7b38-49d2-9448-443eab6e8075 remains the DEC-043 reference via dpai CLI only. No access, revision or palette agreement is claimed. Resolve any verified reference conflict explicitly before future implementation; do not infer approval or copy another project. UI-SYSTEM-005 remains BLOCKED.
 
 Canonical adoption review must accept the exact matrix and permitted/prohibited state pairings. Future implementation needs its own bounded Owner authorization, verified reference reconciliation and full component-state/contrast plus actual rendered mobile/tablet/desktop and regression evidence. This documentation Task changes no CSS/token/TSX/test/asset. No final P11, O01–O09 policy, PB05/blocker closure, release-scope reduction, production-ready or deployment authority. Final P11 NOT APPROVED / NOT ACTIVE; 33 candidate Tasks BLOCKED, baseline DONE 0; P5/O09 and P6/O07 approvals remain mandatory.
+
+<a id="dec-048"></a>
+
+### DEC-048 — Standing Execution Delegation for CBT-R1 Tasks (2026-11-07)
+
+**Version:** 1.0.0
+**Status:** LOCKED / EFFECTIVE on landing on main (00.13 §9)
+**Canonical artifact:** `docs/00-governance/00.13_STANDING_EXECUTION_DELEGATION.md`; Task record `docs/production/tasks/GOV-EXEC-001.md`
+
+- Delegates routine mechanical execution of the eligible Tasks of the approved 33-Task P11 baseline: selection and gated sequential continuation, READY with frozen allowlist, commit, normal push, PR, exact-SHA CI, independent review commissioning, evidence, delegated acceptance, squash merge and post-merge verification.
+- Supersedes exactly (00.13 §3): 00.12 §4 steps 1–3; the 00.12 §4 and §7 Owner-merge and push-authorization sentences; the quoted parts of TASK_PLAN §4 items 2, 3, 4, 9 and 11; the per-Task Owner acceptance and CI-first lines of the P7/P8 plans; the restatements in AGENTS.md, READ_ME_FIRST.md, EXECUTION_CONTEXT.md and the DEC-045 entry above; per-Task Build/publication/footprint grants and per-Task Owner Acceptance for implementation Tasks.
+- Reserved to the Owner: material policy or product decisions and OPEN inputs; architecture decisions A01–A05 and any ADR; LOCKED/FROZEN and approved-decision changes; baseline or scope changes; governance and execution-rule text, CI workflows and test gates; cost and vendors; external approvals and every TASK_PLAN §8 gate authority (legal, school facts, ACCESS, devices, UAT, PB07 reviewer); the prepare-only operations, performance, device, integrity, legal, security-release and release Tasks; every production and real-data action; release acceptance; repository settings and irreversible actions.
+- Does NOT supersede: 00.02; DEC-044 and G1–G10; any LOCKED decision; the 00.12 §5 DONE, independent-review and evidence-commit rules; the rest of TASK_PLAN §4 and §8; the TOOLCHAIN re-run rule (no CI re-run without the Owner's authorization naming the run); Git identity and attribution rules; one active Task at a time.
