@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 account continuity; HIGH risk; R09, P3 F03, P5 A09, P8 V01/V03/V11 |
-| Status | **VERIFYING — capture-only baseline PASS; implementation candidate published for exact-content CI and independent implementation review (§14)** |
+| Status | **DONE — final content 5003176, CI #148 attempt 1 eight SUCCESS, independent contract, implementation and rendered review chains PASS, Delegated Acceptance (DEC-048) (§16); landing by delegated squash merge (00.13 §6)** |
 | Objective | A Student who forgot their password is verified in person by a scoped school verifier, who issues a single-use recovery code; the Student sets their own new password on the same Person and canonical Account, and every older session and open code is revoked atomically |
 | Owner decisions | 2026-11-07, Owner in chat: R1–R4 approved (§4); the Owner designated a separate read-only fresh-context reviewer agent as the Independent Identity/Security reviewer for this Task (A03 gate, contract and implementation) |
 | Execution authority | DEC-048 (00.13). Eligible after AUTH-002 DONE / MERGED (main 38259da885197ae3d207df3743d98c89d2bed9ac, post-merge CI #144 attempt 1 eight SUCCESS) and the Owner decisions above |
@@ -353,3 +353,86 @@ The executor verified the cited evidence before correcting: provisioning.ts and 
   - Timing and 429 reveal that a recovery is in progress for a username (bounded residual).
   - An old code counts against a newer open code.
   - Completion lists memberships after COMMIT, as activation does, so the F3 409 retry covers a 503.
+
+## 16. Final evidence and Delegated Acceptance — 2026-11-07
+
+### 16.1 Content and CI
+
+**Final content:** 5003176256a3364d22af438a77db48ea18c456ca.
+
+**Commits** on task/auth-003-in-person-recovery (PR #24):
+
+| Commit | Content |
+|---|---|
+| 20bf81b | registration plus the AUTH-002 landing record |
+| 7991183 | capture-only baseline |
+| da32668 | implementation |
+| 5003176 | correction 1 |
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #148/run 42362508728, push, attempt 1, eight jobs SUCCESS on ubuntu-24.04.
+- Runtime units: identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 918; all pass.
+- Real PostgreSQL 16 integration: 240/240, none failing.
+- Web job: typecheck, tests and build.
+- Container image build and smoke test.
+- E2E: 28/28 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. That includes the AUTH-003 after-phase journey (scoped issue, one-time handoff, an honest expiry refusal, Student recovery and sign-in) and the existing journeys.
+
+**Artifacts:** all five retrieved; 66 AUTH-003 captures per project (330), all phase `after` at the exact commit and tree, with no page overflow, no target under 44 px, no clipped dialog value, and all 45 handoff captures masked.
+
+**All runs, preserved without re-run:**
+
+| Run | Head | Result |
+|---|---|---|
+| #145 | 20bf81b | SUCCESS |
+| #146 | 7991183 | SUCCESS (baseline artifacts validated) |
+| #147 | da32668 | Runtime FAILURE, the test-ordering defect of §15 |
+| #148 | 5003176 | SUCCESS |
+
+### 16.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. Contract: STOP (F1–F5), then PASS (§12).
+2. Implementation on da32668: STOP (C08 evidence), then targeted re-review on 5003176: PASS.
+3. Rendered evidence on CI #148: PASS.
+
+The reviewer inspected the actual images: shared primitives only, Bahasa Indonesia without em dash, honest states, the masked code, nothing clipped, and targets of at least 44 px. Every STOP was closed by the same reviewer; no reviewer was replaced.
+
+**Rendered-review notes, recorded and not blocking:**
+- Most narrow `recovery-empty` captures show the lazy-load "Memuat halaman..." state. The empty form is evidenced at 200% text and at 1280 and wider, and in every `recovery-compare` capture; future captures should wait for the card.
+- At 200% text, Button, link and some dialog text do not scale. This is pre-existing in the shared primitives.
+- The bordered list-item pattern now has three copies.
+
+Both of the last two items are UI-SYSTEM follow-ups, outside this Task.
+
+### 16.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: preview and every out-of-scope, unknown, foreign, unbound, staff, self and never-activated target give one bounded refusal with zero business mutation |
+| C02 | PASS: Operator and covering Homeroom only; wrong rombel, plain Teacher, anonymous, verifier revocation and session revocation refused |
+| C03 | PASS: issuing changes only recovery rows; an older code is superseded |
+| C04 | PASS: fifteen minutes exactly; equality boundary; ten failures revoke; no lockout |
+| C05 | PASS: completion replaces the password, revokes sessions and open activation and recovery codes, and signs in; old password and sessions fail; same Account |
+| C06 | PASS: issue replay without the code; altered intent 409; 409 `recovery_already_completed` retry; a consumed or revoked code cannot complete |
+| C07 | PASS: failure injection at issue insert and completion session insert rolls back exactly |
+| C08 | PASS: every §6A.4 interleaving on the actual writers in both orders (§15), plus post-wait expiry |
+| C09 | PASS: verification-only projection; no NISN, birth date or code in rows or responses beyond the scoped preview; constant-work refusal |
+| C10 | PASS: 0058 rollback, repeat and no backfill; F1 closure on activation issuance and consumption; claim and activation behaviour unchanged |
+| C11 | PASS: five-browser rendered journey, keyboard dialog containment, purge, masked code, ≥44 px, no clipping |
+| C12 | PASS: 35 of 36 frozen paths; 33 Tasks and 78 edges unchanged; exact-content attempt-1 CI with no re-run |
+| C13 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 16.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C13 has PASSED with recorded evidence. The independent review PASSED on the final content SHA, including the rendered evidence. AUTH-003 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks:**
+- the completion route uses the general API edge zone (deployment configuration is Owner-reserved);
+- timing or a 429 reveals that a recovery is in progress for a username;
+- `issued_at` uses the database clock while expiry uses the application clock (single VPS);
+- the 0058 roster foreign key couples Identity to an Academic row that is never deleted;
+- a plain staff membership with no assignment row cannot be told apart from a Student.
+
+**Boundaries:** PB05 OPEN; G7 before real data; no deployment or release claim.
+
+**Landing:** delegated squash merge of PR #24 under 00.13 §6 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The landing is recorded by the next Task's first change, with DONE 5/33 (15.15%), VERIFYING 0, BLOCKED 28.
