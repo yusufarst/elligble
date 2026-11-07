@@ -1392,3 +1392,16 @@
     gap: var(--space-3);
   }
 }
+
+/* ASSESS-QUESTION-002: the option card with a checkbox (multiple response), a documented variant
+ * of the radio card (FDS §21): the same card, selected state and check badge; the marker corner is
+ * tighter so the box reads as a checkbox, and the instruction sits above the options. */
+.options-instruction {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+.option-marker.option-marker-square {
+  border-radius: 3px;
+}

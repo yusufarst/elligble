@@ -1,3 +1,5 @@
+import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
+import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
 import type { ClientBase } from 'pg';
@@ -47,6 +49,40 @@ export function buildBaselineFrozenContent(
     return content;
 }
 
+export interface MultipleResponseQuestionInput {
+    prompt: string;
+    /** Exactly five option texts, in the authored order (shown as A to E). */
+    options: string[];
+    /** Indexes (0 to 4) of the correct options: one to five, each once. */
+    correctIndexes: number[];
+    maxScore: number;
+}
+
+/** Frozen MULTIPLE_RESPONSE content (ASSESS-QUESTION-002 §4.1); random option ids, as v1. */
+export function buildMultipleResponseFrozenContent(
+    input: MultipleResponseQuestionInput,
+    newOptionId: () => string = () => `opt_${randomBytes(6).toString('hex')}`
+): Record<string, unknown> {
+    const options = input.options.map(content => ({ id: newOptionId(), content }));
+    const content = {
+        schemaVersion: 2,
+        questionType: MULTIPLE_RESPONSE_TYPE,
+        prompt: input.prompt,
+        options,
+        correctOptionIds: input.correctIndexes.map(i => options[i]?.id),
+        maxScore: input.maxScore,
+    };
+    if (!MULTIPLE_RESPONSE_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid multiple-response question');
+    return content;
+}
+
+/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response. */
+export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    return q.type === 'PGK'
+        ? buildMultipleResponseFrozenContent({ prompt: q.prompt, options: q.options, correctIndexes: q.correctIndexes, maxScore: q.maxScore })
+        : buildBaselineFrozenContent({ prompt: q.prompt, options: q.options, correctIndex: q.correctIndex, maxScore: q.maxScore });
+}
+
 export async function ensureAssessmentType(client: ClientBase, tenantId: string, label: string): Promise<{ id: string; created: boolean }> {
     const trimmed = label.trim();
     await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`sa_assessment_type:${tenantId}:${trimmed}`]);
@@ -84,6 +120,8 @@ export interface QuestionImportBatchInput {
     sourceFileName: string | null;
     sourceSha256: string;
     sourceLines: number[];
+        /** The question template of the file (elligble-questions-v1 when absent). */
+        template?: string;
 }
 
 export interface EnrolledStudent {
@@ -151,9 +189,9 @@ export async function provisionScheduledExam(
             `INSERT INTO secure_assessment_question_import_batches (
                 tenant_id, exam_instance_id, imported_by_person_id, import_key, template,
                 source_file_name, source_sha256, question_count
-             ) VALUES ($1, $2, $3, $4, 'elligble-questions-v1', $5, $6, $7) RETURNING id`,
+             ) VALUES ($1, $2, $3, $4, $8, $5, $6, $7) RETURNING id`,
             [tenantId, examInstanceId, input.importBatch.importedByPersonId, input.importBatch.importKey,
-                input.importBatch.sourceFileName, input.importBatch.sourceSha256, input.questions.length]
+                input.importBatch.sourceFileName, input.importBatch.sourceSha256, input.questions.length, input.importBatch.template ?? 'elligble-questions-v1']
         );
         importBatchId = batch.rows[0].id;
     }

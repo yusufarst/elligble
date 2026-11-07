@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, wib, withDatabase } from './helpers.ts';
+import { login, saveStatus, state, wib, withDatabase } from './helpers.ts';
 
 // ASSESS-QUESTION-002 rendered evidence and journey (record §4A.7/§7 C07/C08). The same
 // capture routine runs on the capture-only baseline (phase "before": v1 content on the
@@ -28,6 +28,11 @@ const V1_HEADER = 'no;prompt;option_a;option_b;option_c;option_d;option_e;correc
 const LONG = 'Pernyataan panjang tentang sifat bilangan yang membutuhkan beberapa baris di layar sempit agar terbaca utuh tanpa terpotong';
 /** Baseline file: v1 single choice only, one question with long option text. */
 const V1_FILE = [V1_HEADER, '1;Hasil dari 6 x 7 adalah;40;42;44;46;48;B;1', `2;Pilih pernyataan yang benar;${LONG} A;${LONG} B;${LONG} C;${LONG} D;${LONG} E;C;2`].join('\r\n') + '\r\n';
+/** After phase: the same two questions as PG rows of a v2 file, plus a PGK question with long options. */
+const V2_HEADER = 'no;type;prompt;option_a;option_b;option_c;option_d;option_e;correct;score';
+const MR_PROMPT = 'Pilih semua bilangan prima';
+const V2_FILE = [V2_HEADER, '1;PG;Hasil dari 6 x 7 adalah;40;42;44;46;48;B;1', `2;PG;Pilih pernyataan yang benar;${LONG} A;${LONG} B;${LONG} C;${LONG} D;${LONG} E;C;2`,
+    `3;PGK;${MR_PROMPT};2 adalah bilangan prima genap satu-satunya yang ada;4;5 adalah bilangan prima ganjil terkecil setelah tiga;8;9;A,C;2`].join('\r\n') + '\r\n';
 const FILE_NAME = 'tipe-soal-e2e.csv';
 
 const WIDTHS = [360, 390, 430, 768, 1024, 1280, 1440];
@@ -81,6 +86,9 @@ async function captureQuestionSurface(page: Page, scenario: string, root: () => 
                         reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
                         focus: active ? { tag: active.tagName, type: (active as HTMLInputElement).type ?? null, outline: getComputedStyle(active).outlineStyle } : null,
                         checkboxes: element.querySelectorAll('input[type=checkbox]').length, radios: element.querySelectorAll('input[type=radio]').length,
+                        // Elements reaching past the viewport, for diagnosis of an overflow.
+                        overflowing: [...document.querySelectorAll<HTMLElement>('body *')].filter(node => node.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5)
+                            .slice(0, 8).map(node => `${node.tagName.toLowerCase()}${node.id ? '#' + node.id : ''}.${String(node.className).slice(0, 60)}:${Math.round(node.getBoundingClientRect().width)}`),
                     };
                 });
                 const name = ['workspace-question', phase, scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
@@ -117,7 +125,8 @@ async function captureQuestionSurface(page: Page, scenario: string, root: () => 
 
 test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and the exam screen', async ({ page, browser }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const file = V1_FILE;
+    const file = phase === 'after' ? V2_FILE : V1_FILE;
+    const questionCount = phase === 'after' ? 3 : 2;
     await login(page, ...TEACHER);
     await page.getByRole('button', { name: 'Buat Ujian' }).first().click();
     await expect(page.getByRole('heading', { name: 'Buat Ujian dari Berkas Soal' })).toBeVisible();
@@ -143,7 +152,7 @@ test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and
 
     await page.getByRole('button', { name: 'Jadwalkan Ujian' }).click();
     await page.getByRole('dialog', { name: 'Jadwalkan Ujian Ini?' }).getByRole('button', { name: 'Jadwalkan Ujian' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'dijadwalkan dengan 2 soal dan 1 peserta' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: `dijadwalkan dengan ${questionCount} soal dan 1 peserta` })).toBeVisible();
     const examId: string = await withDatabase(async client => (await client.query(
         'SELECT exam_instance_id FROM secure_assessment_question_import_batches WHERE source_file_name = $1', [FILE_NAME])).rows[0].exam_instance_id);
     const card = page.getByTestId(`teacher-exam-${examId}`);
@@ -156,6 +165,15 @@ test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and
     await expect(page.getByText('Pilih pernyataan yang benar')).toBeVisible();
     await page.getByLabel('Tampilkan kunci jawaban dan skor').check();
     await captureQuestionSurface(page, 'teacher-preview-second-key', () => page.locator('main').first(), file);
+    if (phase === 'after') {
+        // Multiple response in the preview: the instruction, checkboxes and every key option.
+        await page.getByRole('button', { name: 'Soal Berikutnya' }).click();
+        await expect(page.getByText(MR_PROMPT)).toBeVisible();
+        await expect(page.getByText('Pilih semua jawaban yang benar.')).toBeVisible();
+        await expect(page.locator('main').getByRole('checkbox')).toHaveCount(6);
+        await expect(page.getByText('Kunci jawaban', { exact: true })).toHaveCount(2);
+        await captureQuestionSurface(page, 'teacher-preview-mr-key', () => page.locator('main').first(), file);
+    }
     await page.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }).click();
 
     await card.getByRole('button', { name: 'Tandai Siap' }).click();
@@ -176,5 +194,102 @@ test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and
     await student.getByRole('button', { name: 'Soal Berikutnya' }).click();
     await expect(student.getByText('Pilih pernyataan yang benar')).toBeVisible();
     await captureQuestionSurface(student, 'exam-second', () => student.locator('body'), file);
+    if (phase === 'after') await multipleResponseJourney(page, student, examId, file);
     await studentContext.close();
 });
+
+/** C07: the five-browser multiple-response journey on the after phase. */
+async function multipleResponseJourney(teacher: Page, student: Page, examId: string, file: string) {
+    const api = (path: string, body?: Record<string, unknown>) => teacher.evaluate(async ({ path, body, tenant }) => {
+        const r = await fetch(path, { method: body ? 'POST' : 'GET', credentials: 'same-origin',
+            headers: { 'X-Tenant-ID': tenant, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+        return { status: r.status, body: await r.json() };
+    }, { path, body, tenant: state.tenantId });
+    const transition = (action: string) => api('/api/v1/assessment/teacher-exams/transition', { examInstanceId: examId, action, reason: 'Uji tipe soal', actionKey: crypto.randomUUID(), confirmed: true });
+    const snapshot = await withDatabase(async client => (await client.query(
+        "SELECT id, frozen_content FROM secure_assessment_exam_question_snapshots WHERE exam_instance_id = $1 AND frozen_content->>'questionType' = 'MULTIPLE_RESPONSE'", [examId])).rows[0]);
+    const ids: string[] = snapshot.frozen_content.options.map((o: { id: string }) => o.id);
+    const stored = async () => (await withDatabase(async client => (await client.query(
+        'SELECT answer_payload FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshot.id])).rows[0]?.answer_payload ?? null));
+    const option = (text: RegExp | string) => student.getByRole('checkbox', { name: text });
+    const A = option(/^2 adalah/), B = option('4'), C = option(/^5 adalah/), E = option('9');
+    const saved = async () => { await expect(saveStatus(student)).toHaveText('Tersimpan'); };
+    const toMr = async () => {
+        while (!(await student.getByText(MR_PROMPT).isVisible())) await student.getByRole('button', { name: 'Soal Berikutnya' }).click();
+    };
+
+    await toMr();
+    await expect(student.getByText('Pilih semua jawaban yang benar.')).toBeVisible();
+    await expect(student.locator('.options-list input[type=checkbox]')).toHaveCount(5);
+    await expect(student.locator('.options-list input[type=checkbox]:checked')).toHaveCount(0);
+    await captureQuestionSurface(student, 'exam-mr-empty', () => student.locator('body'), file);
+    // Keyboard: Tab reaches the option, Space toggles it; then a pointer click adds another.
+    await A.focus();
+    await student.keyboard.press('Space');
+    await expect(A).toBeChecked();
+    await captureQuestionSurface(student, 'exam-mr-keyboard-focus', () => student.locator('body'), file);
+    await C.click();
+    await saved();
+    expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2]].sort() });
+    await captureQuestionSurface(student, 'exam-mr-selected', () => student.locator('body'), file);
+
+    // Offline: several toggles, then reconnect; only the final set reaches the server.
+    await student.context().setOffline(true);
+    await B.click(); await B.click(); await E.click(); await A.click(); await A.click();
+    await student.context().setOffline(false);
+    await saved();
+    expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2], ids[4]].sort() });
+
+    // Reload: the set is restored from the server.
+    await student.reload();
+    await toMr();
+    for (const box of [A, C, E]) await expect(box).toBeChecked();
+    await expect(B).not.toBeChecked();
+
+    // Clearing every option is a saved empty answer that reads "Belum dijawab" (O02-2).
+    await A.click(); await C.click(); await E.click();
+    await expect(saveStatus(student)).toHaveText('Belum dijawab');
+    await expect.poll(stored).toEqual({ selectedOptionIds: [] });
+    await captureQuestionSurface(student, 'exam-mr-cleared', () => student.locator('body'), file);
+    await A.click();
+    await saved();
+
+    // Content this version cannot show: an explicit reload state, no endless loading.
+    await student.route('**/api/v1/assessment/questions**', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'question_type_unsupported' }) }));
+    await student.reload();
+    await expect(student.getByRole('heading', { name: 'Perlu Memuat Ulang' })).toBeVisible();
+    await expect(student.getByRole('button', { name: 'Muat Ulang' })).toBeVisible();
+    await captureQuestionSurface(student, 'exam-unsupported', () => student.locator('body'), file);
+    await student.unroute('**/api/v1/assessment/questions**');
+    await student.getByRole('button', { name: 'Muat Ulang' }).click();
+    await toMr();
+    await expect(A).toBeChecked();
+
+    // Read-only while paused: no question content at all, then the exam continues.
+    expect((await transition('pause')).status).toBe(200);
+    await expect(student.getByText('Ujian Dijeda')).toBeVisible({ timeout: 30_000 });
+    await expect(student.locator('.options-list')).toHaveCount(0);
+    expect((await transition('resume')).status).toBe(200);
+    await expect(student.getByText(/Soal \d dari 3/).first()).toBeVisible({ timeout: 30_000 });
+    await toMr();
+
+    // V06: submit with a save still pending; the pending choice is sent before submission.
+    await student.context().setOffline(true);
+    await C.click();
+    await student.context().setOffline(false);
+    await student.getByRole('button', { name: 'Selesaikan Ujian' }).click();
+    await student.getByRole('dialog').getByRole('checkbox').check();
+    await student.getByRole('button', { name: 'Kirim Jawaban Sekarang' }).click();
+    await expect(student.getByText('Ujian Berhasil Dikumpulkan')).toBeVisible();
+    expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2]].sort() });
+
+    // The teacher ends and finalizes; the exact set earns its full score under the composite rule.
+    const provisional = await api(`/api/v1/assessment/teacher-exams/results?examInstanceId=${examId}`);
+    expect(provisional.body.scoring.rule).toBe('COMPOSITE_PER_ITEM_V1');
+    expect((await transition('end')).status).toBe(200);
+    expect((await transition('finalize')).status).toBe(200);
+    const final = await api(`/api/v1/assessment/teacher-exams/results?examInstanceId=${examId}`);
+    expect(final.body.resultState).toBe('FINAL');
+    const mine = final.body.results.find((r: { elligbleId: string }) => r.elligbleId === STUDENT[0]);
+    expect([mine.score.rawScore, mine.score.maxScore, mine.score.scaledScore, mine.score.correct]).toEqual([2, 5, 40, 1]);
+}

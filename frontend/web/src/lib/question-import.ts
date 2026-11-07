@@ -7,14 +7,15 @@ import type { ImportProblem, LatestStartPolicy } from '../types/assessment.ts';
 export const QUESTION_TEMPLATE_FILE_NAME = 'templat-soal-elligble.csv';
 
 /**
- * The canonical elligble-questions-v1 columns with two example rows, separated by semicolons
- * with a decimal comma, as spreadsheets set to Indonesian open and save them (the results
- * export uses the same form); files separated by commas are read as well.
+ * The canonical elligble-questions-v2 columns (ASSESS-QUESTION-002, O02-12) with a PG (pilihan
+ * ganda) and a PGK (pilihan ganda kompleks) example row, separated by semicolons with a decimal
+ * comma, as spreadsheets set to Indonesian open and save them; files separated by commas, and
+ * elligble-questions-v1 files without the type column, are read as well.
  */
 export const QUESTION_TEMPLATE_CSV = '\uFEFF' + [
-  'no;prompt;option_a;option_b;option_c;option_d;option_e;correct;score',
-  '1;Ibu kota Indonesia adalah;Bandung;Jakarta;Surabaya;Medan;Makassar;B;1',
-  '2;Hasil dari 12 : 4 adalah;2;3;4;6;8;B;1,5',
+  'no;type;prompt;option_a;option_b;option_c;option_d;option_e;correct;score',
+  '1;PG;Ibu kota Indonesia adalah;Bandung;Jakarta;Surabaya;Medan;Makassar;B;1',
+  '2;PGK;Bilangan prima di bawah 10 adalah;2;4;5;8;9;A,C;1,5',
 ].join('\r\n') + '\r\n';
 
 export const LATEST_START_OPTIONS: Array<{ value: LatestStartPolicy; label: string; description: string }> = [
@@ -47,10 +48,10 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'not_text': return 'Berkas ini bukan berkas CSV (mungkin berkas Excel). Simpan sebagai "CSV UTF-8", lalu unggah lagi.';
       case 'encoding_invalid': return `${at}berkas tidak tersimpan sebagai UTF-8. Simpan sebagai "CSV UTF-8", lalu unggah lagi.`;
       case 'csv_syntax': return `${at}tanda kutip ganda tidak berpasangan.`;
-      case 'header_invalid': return `${at}judul kolom harus persis no, prompt, option_a, option_b, option_c, option_d, option_e, correct, score. Gunakan templat ELLIGBLE.`;
+      case 'header_invalid': return `${at}judul kolom harus sama dengan templat ELLIGBLE (no;prompt;option_a sampai option_e;correct;score, atau no;type;prompt;option_a sampai option_e;correct;score). Unduh templat terbaru lalu salin soal Anda ke dalamnya.`;
       case 'file_empty': return 'Berkas tidak berisi soal.';
       case 'too_many_questions': return `Berkas berisi ${problem.found} soal; paling banyak ${problem.expected} soal dalam satu berkas.`;
-      case 'column_count': return `${at}harus ada 9 kolom, ditemukan ${problem.found}.`;
+      case 'column_count': return `${at}harus ada ${problem.expected ?? 9} kolom, ditemukan ${problem.found}.`;
       case 'number_out_of_order': return `${at}nomor soal harus ${problem.expected}. Soal diberi nomor 1, 2, 3 dan seterusnya secara berurutan.`;
       case 'prompt_empty': return `${at}teks soal kosong.`;
       case 'option_empty': return `${at}pilihan ${letters(problem.letters)} kosong. Setiap soal perlu lima pilihan, A sampai E.`;
@@ -58,6 +59,8 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'correct_multiple': return `${at}kunci jawaban harus satu huruf. Setiap soal hanya punya satu jawaban benar.`;
       case 'correct_invalid': return `${at}kunci jawaban harus salah satu huruf A, B, C, D, atau E.`;
       case 'score_invalid': return `${at}skor harus angka lebih dari 0 sampai ${limits.maxQuestionScore}, dengan paling banyak dua angka di belakang koma.`;
+      case 'type_invalid': return `${at}tipe soal harus PG atau PGK.`;
+      case 'correct_duplicate': return `${at}huruf kunci jawaban tidak boleh berulang.`;
     }
   }
   switch (problem.code) {

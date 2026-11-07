@@ -2,7 +2,7 @@ import type pg from 'pg';
 import { findAccountByElligbleId } from '../../../../identity-access/src/provisioning.ts';
 import { findActiveTeacherAssignment, findMembership, findTenant } from '../../../../tenant-access/src/provisioning.ts';
 import {
-    LATEST_START_POLICIES, buildBaselineFrozenContent, ensureAssessmentType, listEnrolledStudents, provisionScheduledExam, type LatestStartPolicy,
+    LATEST_START_POLICIES, buildImportedFrozenContent, ensureAssessmentType, listEnrolledStudents, provisionScheduledExam, type LatestStartPolicy,
 } from '../../exam-provisioning.ts';
 import { QUESTIONS_HEADER, QUESTIONS_TEMPLATE, describeQuestionProblem, parseQuestionFile } from '../../question-import.ts';
 import { recordProvisioningEvent, sha256, type OperatorContext } from './audit.ts';
@@ -59,9 +59,7 @@ export function validateExamSetup(value: unknown): { setup: ExamSetup | null; pr
 export function parseQuestionsCsv(text: string): { questions: Record<string, unknown>[]; problems: string[] } {
     const parsed = parseQuestionFile(text);
     return {
-        questions: parsed.problems.length > 0 ? [] : parsed.questions.map(q => buildBaselineFrozenContent({
-            prompt: q.prompt, options: q.options, correctIndex: q.correctIndex, maxScore: q.maxScore,
-        })),
+        questions: parsed.problems.length > 0 ? [] : parsed.questions.map(buildImportedFrozenContent),
         problems: parsed.problems.map(describeQuestionProblem),
     };
 }

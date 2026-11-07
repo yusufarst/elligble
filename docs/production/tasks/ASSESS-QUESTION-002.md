@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 all eight formats; HIGH risk; R11, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → PASS (§9); formal READY PASS and Build started under DEC-048 on 2026-11-07 (§10)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation and rendered review (§11); DEC-048** |
 | Objective | Deliver multiple response ("Pilihan ganda kompleks") end to end: author through the approved import format, teacher preview, Student answer with local recovery, submit, and score under the approved exact-set rule, on the ASSESS-QUESTION-001 foundation |
 | Owner decisions | O02-1, O02-2, O02-3 and O02-12, approved 2026-11-07 and recorded in [ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md); A01-1/A01-2/A01-4 as implemented there. Reviewer: the standing Owner-designated read-only subagent reviewer |
 | Execution authority | DEC-048 (00.13). Internal dependency ASSESS-QUESTION-001 is DONE / MERGED (main 8ade3ae4316a2839d91311be2037e8bfbb8c745f, post-merge CI #160 attempt 1 eight SUCCESS). O09 rests on the approved P5 content |
@@ -390,3 +390,62 @@ The reviewer confirmed the descriptor, vectors, PG-as-v1 choice, engine safety o
   - The 200 % text method is fixed before the baseline: each element's computed font size and line height are doubled, as in spec 6, and the method is identical in both phases.
   - The after phase adds explicit keyboard-focus captures, the multiple-response scenarios and the unsupported-content state. The before scenarios stay byte-for-byte the same.
   - The spec draft (written before this confirmation, uncommitted) and the descriptor, parser and builder drafts are pre-baseline working-tree work. The descriptor, parser and builder are reviewed with the implementation.
+
+## 11. Baseline and implementation checkpoint — 2026-11-07
+
+### 11.1 Registration and capture-only baseline (CI-first steps 1–2)
+
+| Commit | Content | CI |
+|---|---|---|
+| b4a878e | registration plus the ASSESS-QUESTION-001 landing record | #161 SUCCESS |
+| c7ff705 | READY correction record (§10A) | #162 cancelled by the next push (concurrency) |
+| c37f656 | record text repair | #163 SUCCESS |
+| 4b9b00f | capture-only baseline (spec only) | #164 FAILURE: five E2E jobs; the other class members were expected in an overlapping exam, and spec 9 adds a claimed student |
+| 18ba220 | baseline: keep only `siswa.e2e.06` (spec only) | #165 FAILURE: WebKit refused a full-page image above 32767 px |
+| 44d99f1 | baseline: cap the full-page height (spec only) | #166 FAILURE: WebKit renders at device pixel ratio 3 |
+| 3138f06 | baseline: the cap counts device pixels (spec only) | **#167 attempt 1, eight SUCCESS** |
+
+- Every failed run is preserved. None was re-run; each correction was a new spec-only SHA.
+- **Artifacts of #167, all five retrieved:** 50 screenshot/JSON pairs per project (250), every one phase `before` at commit 3138f06 with frontend tree 95c0845 (= main 8ade3ae). Scenarios: import preview, teacher preview (single and key shown) and the exam screen (two v1 questions), at seven widths, 640×360 and two 200 % text variants.
+- **Recorded, not blessed, baseline defects** on the existing import view (allowlist row 25), fixed in the candidate and gated in the after phase:
+  - "Kembali ke Pelaksanaan Ujian" is 36 px high and "Unduh Templat CSV" is 23 px high, below 44 px, at every width;
+  - the page overflows horizontally at 390 px with 200 % text (537 px).
+
+  The exam screen and the teacher preview had no target or overflow defect.
+
+### 11.2 Implementation candidate (CI-first step 3)
+
+Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no change: the exam screen passes only answered values to the navigator.
+
+- **Server:**
+  - descriptor `question-types/multiple-response.ts`, registered in the production registry;
+  - the v2 parser (PG/PGK, `type_invalid`, `correct_duplicate`, `column_count` with `expected` for v2 only, both headers in the operator text);
+  - builders: PG as v1 content, PGK as multiple response; the batch records its template; the operator CLI uses the same builder;
+  - type-aware teacher preview (`questionType`, `correctOptionIds`);
+  - provisional results through `scoreAttempt` (the reported rule is the scored rule);
+  - optional `ruleId`/`selectedOptionId` on finalized items;
+  - monitoring does not count `{selectedOptionIds: []}`;
+  - migration 0060.
+- **Client:**
+  - the pure answer-value helpers (`EMPTY_SELECTION`, `canonicalSelection`, `answerValueOf`, `selectionOf`, `isAnsweredValue`) are in `types/assessment.ts`, so the route-parity guard over `answer-sync-api.ts` stays unchanged;
+  - the adapter builds the payload by key and refuses a malformed value locally;
+  - `countUnreceivedLocalAnswers` uses the canonical mapping;
+  - the hook passes the content key and observes `question_type_unsupported` without changing the engine;
+  - `MultipleResponseAnswer` (checkbox option cards, the instruction, no count);
+  - the exam screen: "Belum dijawab" for a cleared choice, answered values only to the navigator and counts, and the "Perlu Memuat Ulang" state for both the delivery and the save refusal. Both stop polling; the server time keeps running;
+  - teacher preview and import preview by type;
+  - the v2 template download and the new wording (no em dash);
+  - the checkbox marker variant uses a token color.
+- **Baseline defects fixed in the import view:** 44 px minimum on both buttons; `min-w-0` on the schedule columns and inputs. The intro names PG and PGK.
+- **E2E after phase:**
+  - the same five baseline scenarios, plus the PGK teacher preview with the key, and the exam screen with PGK empty, keyboard focus, selected and cleared, and the unsupported state;
+  - the journey: keyboard and pointer, offline toggles with only the final set saved, reload recovery, clear to "Belum dijawab", the reload state, read-only during a pause, submit with a pending save (V06), and end and finalize with the exact score;
+  - the after phase also records the elements reaching past the viewport, for diagnosis.
+- **Tests:** `test/multiple-response.test.ts` (C01/C02), `test/integration/multiple-response.test.ts` (C03/C05), `frontend/web/src/__tests__/multiple-response.test.tsx` (C06), and the two §4A.1 assertions.
+- **Local verification:**
+  - typechecks PASS (runtime, web, e2e);
+  - Secure Assessment units PASS (933, including route parity after moving the helpers);
+  - the new web tests 7/7, plus the affected existing files, PASS when run in groups.
+
+  A full local web run timed out in four heavy UI files under workstation load. They pass in smaller groups, and CI is the oracle. Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 7, VERIFYING 1, BLOCKED 25. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.

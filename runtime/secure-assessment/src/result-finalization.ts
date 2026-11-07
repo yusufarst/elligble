@@ -200,7 +200,8 @@ export interface FinalizedResultRow {
     rawScore: number | null;
     maxScore: number | null;
     scaledScore: number | null;
-    itemOutcomes: Array<{ questionSnapshotId: string; selectedOptionId: string | null; outcome: string; scoreMicro: number; maxScoreMicro: number }> | null;
+    /** v1-only exams: selectedOptionId on every item. Composite exams: ruleId on every item, selectedOptionId on v1 items. */
+    itemOutcomes: Array<{ questionSnapshotId: string; ruleId?: string; selectedOptionId?: string | null; outcome: string; scoreMicro: number; maxScoreMicro: number }> | null;
 }
 
 export interface FinalizedResults {

@@ -3,9 +3,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { evaluateExamReadiness } from './exam-lifecycle-operations.ts';
 import {
-    LATEST_START_POLICIES, buildBaselineFrozenContent, listEnrolledStudents, provisionScheduledExam, type LatestStartPolicy,
+    LATEST_START_POLICIES, buildImportedFrozenContent, listEnrolledStudents, provisionScheduledExam, type LatestStartPolicy,
 } from './exam-provisioning.ts';
-import { MAX_IMPORT_QUESTIONS, MAX_QUESTION_SCORE, OPTION_LETTERS, parseQuestionFile, type QuestionProblem } from './question-import.ts';
+import { MAX_IMPORT_QUESTIONS, MAX_QUESTION_SCORE, OPTION_LETTERS, QUESTIONS_TEMPLATE, parseQuestionFile, type ImportQuestionType, type QuestionProblem } from './question-import.ts';
 
 // A teacher schedules a teacher-managed exam for one of their own teaching assignments from
 // a question file (ASSESS-TEACHER-001; D04.4-26A/26C LOCKED: the teacher creates the exam for
@@ -64,8 +64,12 @@ export interface PreviewQuestion {
     no: number;
     prompt: string;
     options: string[];
+    /** The key letters, joined by ", " for PGK. */
     correct: string;
     score: number;
+    /** ASSESS-QUESTION-002 §4A.6. */
+    type: ImportQuestionType;
+    correctLetters: string[];
 }
 
 export interface PreviewParticipant {
@@ -256,7 +260,7 @@ export async function runTeacherExamImport(
     if (mode === 'confirm' && request.expectedSha256 !== sourceSha256) return { type: 'content_changed' };
 
     const problems: ImportProblem[] = [];
-    let parsed: ReturnType<typeof parseQuestionFile> = { questions: [], problems: [] };
+    let parsed: ReturnType<typeof parseQuestionFile> = { questions: [], problems: [], template: QUESTIONS_TEMPLATE };
     if (request.questionsCsv.length > MAX_QUESTION_FILE_CHARS) {
         problems.push({ source: 'setup', code: 'file_too_large' });
     } else {
@@ -272,7 +276,8 @@ export async function runTeacherExamImport(
         sourceSha256,
         problems,
         questions: parsed.questions.map(q => ({
-            line: q.line, no: q.no, prompt: q.prompt, options: q.options, correct: OPTION_LETTERS[q.correctIndex], score: q.maxScore,
+            line: q.line, no: q.no, prompt: q.prompt, options: q.options, correct: q.correctIndexes.map(i => OPTION_LETTERS[i]).join(', '), score: q.maxScore,
+            type: q.type, correctLetters: q.correctIndexes.map(i => OPTION_LETTERS[i]),
         })),
         participants: [],
         window: null,
@@ -405,9 +410,7 @@ export async function runTeacherExamImport(
                 windowEndsAt: endsAt!,
                 durationSeconds: request.durationMinutes * 60,
                 latestStartPolicy: request.latestStartPolicy,
-                questions: parsed.questions.map(q => buildBaselineFrozenContent({
-                    prompt: q.prompt, options: q.options, correctIndex: q.correctIndex, maxScore: q.maxScore,
-                })),
+                questions: parsed.questions.map(buildImportedFrozenContent),
                 participants: included.map(s => ({ personId: s.personId, academicEnrollmentId: s.enrollmentId })),
                 proctorPersonIds: [],
                 importBatch: {
@@ -416,6 +419,7 @@ export async function runTeacherExamImport(
                     sourceFileName: request.sourceFileName,
                     sourceSha256,
                     sourceLines: parsed.questions.map(q => q.line),
+                    template: parsed.template,
                 },
             }, actor.personId);
             examInstanceId = created.examInstanceId;

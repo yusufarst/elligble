@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { StudentSafeQuestion, ResumeResponse, TimerResponse } from '../types/assessment.ts';
+import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -8,6 +8,7 @@ import { clearReviewFlags, useReviewFlags } from '../hooks/useReviewFlags.ts';
 import { clearBroadcastSeen, useBroadcastInbox } from '../hooks/useBroadcastInbox.ts';
 import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
+import { MultipleResponseAnswer } from './answers/MultipleResponseAnswer.tsx';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
 import { formatTime } from '../lib/format.ts';
@@ -24,6 +25,8 @@ import { StatusPage } from '@/components/ui/status-page';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type WorkstationPhase =
+  /** The server refused question content this client version cannot show (ASSESS-QUESTION-002 §4A.2). */
+  | 'unsupported_content'
   | 'invalid_attempt'
   | 'loading'
   | 'access_denied'
@@ -322,6 +325,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               setPhase('submitted');
               return;
             }
+            if (err.code === 'question_type_unsupported') {
+              setPhase('unsupported_content');
+              return;
+            }
             if (err.code === 'session_not_active') {
               setPhase('session_inactive');
               return;
@@ -468,6 +475,11 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const inbox = useBroadcastInbox({ attemptId: attemptId || '', enabled: phase === 'active' });
   const noteMessageCount = inbox.noteCount;
   answersRef.current = { pendingCount: answers.pendingCount, flush: answers.flush, flushBeforeFinalization: answers.flushBeforeFinalization, hasUnresolvedSaves };
+  // A save refused because this client cannot handle the question content: reload (§4A.2).
+  const unsupportedContent = answers.unsupportedContent;
+  useEffect(() => {
+    if (unsupportedContent) setPhase('unsupported_content');
+  }, [unsupportedContent]);
 
   const loadQuestions = useCallback(async (id: string) => {
     if (questionsLoadingRef.current) return;
@@ -476,6 +488,11 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
       const qRes = await getQuestions(id);
       if (mountedRef.current) setQuestions(qRes.questions);
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'question_type_unsupported' && mountedRef.current) {
+        // Stop asking: only a newer version of the page can show these questions.
+        setPhase('unsupported_content');
+        return;
+      }
       if (err instanceof ApiError && err.code === 'exam_paused' && mountedRef.current) {
         setExamState('PAUSED');
         examStateRef.current = 'PAUSED';
@@ -645,6 +662,19 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     );
   }
 
+  if (phase === 'unsupported_content') {
+    return (
+      <StatusPage
+        title="Perlu Memuat Ulang"
+        role="alert"
+        actions={<Button onClick={() => window.location.reload()}>Muat Ulang</Button>}
+      >
+        <p>Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.</p>
+        <p>Jawaban yang sudah tersimpan tetap aman dan waktu ujian tetap dihitung oleh server.</p>
+      </StatusPage>
+    );
+  }
+
   if (phase === 'not_found') {
     return (
       <StatusPage title="Data Tidak Ditemukan" role="alert">
@@ -807,14 +837,20 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
-  const answeredCount = questions.filter(q => !!selectedOptions[q.snapshotId]).length;
+  // A cleared multiple-response answer is "Belum dijawab" (O02-2): only answered values count.
+  const answeredOptions: Record<string, string> = {};
+  for (const q of questions) {
+    const value = selectedOptions[q.snapshotId];
+    if (isAnsweredValue(contentKeyOf(q), value)) answeredOptions[q.snapshotId] = value;
+  }
+  const answeredCount = questions.filter(q => !!answeredOptions[q.snapshotId]).length;
   const unansweredCount = totalQuestions - answeredCount;
 
   const currentSaveState = currentQuestion ? saveStates[currentQuestion.snapshotId] : undefined;
 
   const getSaveStatusPresentation = () => {
     if (!currentSaveState || currentSaveState.status === 'pristine') {
-      const isAnswered = currentQuestion ? !!selectedOptions[currentQuestion.snapshotId] : false;
+      const isAnswered = currentQuestion ? !!answeredOptions[currentQuestion.snapshotId] : false;
       if (isAnswered) {
         return {
           statusClass: 'saved',
@@ -833,6 +869,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
           text: 'Menyimpan...',
         };
       case 'saved':
+        // An acknowledged empty selection is saved, but it is not an answer.
+        if (currentQuestion && contentKeyOf(currentQuestion) === MULTIPLE_RESPONSE_KEY && selectedOptions[currentQuestion.snapshotId] === EMPTY_SELECTION) {
+          return { statusClass: 'unanswered', text: 'Belum dijawab' };
+        }
         return {
           statusClass: 'saved',
           text: 'Tersimpan',
@@ -964,7 +1004,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               <QuestionNumberButton
                 key={q.snapshotId}
                 number={idx + 1}
-                state={questionNumberState(q.snapshotId, idx, currentIndex, selectedOptions, saveStates, review.flags)}
+                state={questionNumberState(q.snapshotId, idx, currentIndex, answeredOptions, saveStates, review.flags)}
                 onSelect={() => setCurrentIndex(idx)}
               />
             ))}
@@ -999,6 +1039,13 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
             <fieldset className="question-fieldset">
               <legend className="question-prompt">{currentQuestion.prompt}</legend>
 
+              {currentQuestion.questionType === 'MULTIPLE_RESPONSE' ? (
+                <MultipleResponseAnswer
+                  question={currentQuestion}
+                  value={selectedOptions[currentQuestion.snapshotId]}
+                  onChange={value => selectOption(currentQuestion.snapshotId, value, MULTIPLE_RESPONSE_KEY)}
+                />
+              ) : (
               <div className="options-list" role="radiogroup" aria-label="Pilihan Jawaban">
                 {currentQuestion.options.map((opt, optIdx) => {
                   const isSelected = selectedOptions[currentQuestion.snapshotId] === opt.id;
@@ -1046,6 +1093,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   );
                 })}
               </div>
+              )}
             </fieldset>
 
             <label className={`review-flag-toggle ${review.flags[currentQuestion.snapshotId] ? 'flagged' : ''}`}>
@@ -1178,7 +1226,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         onClose={() => setIsNavSheetOpen(false)}
         questions={questions}
         currentIndex={currentIndex}
-        selectedOptions={selectedOptions}
+        selectedOptions={answeredOptions}
         saveStates={saveStates}
         flags={review.flags}
         onSelectQuestion={idx => setCurrentIndex(idx)}

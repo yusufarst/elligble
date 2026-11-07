@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ResumeAnswer, SaveState } from '../types/assessment.ts';
+import { V1_SINGLE_CHOICE_KEY, answerValueOf, type ResumeAnswer, type SaveState } from '../types/assessment.ts';
 import { AnswerSyncEngine, type BlockSource, type ExamRunState, type SyncApi } from '../exam/answer-sync-engine.ts';
 import { MemoryAnswerStore, openAnswerStore, type AnswerStore, type PendingAnswerRecord } from '../exam/answer-store.ts';
-import { createAnswerSyncApi, selectedOptionOf, toServerAnswerState } from '../exam/answer-sync-api.ts';
+import { createAnswerSyncApi, toServerAnswerState } from '../exam/answer-sync-api.ts';
 import { useOptionalSession } from '../session/SessionProvider.tsx';
 
 // Student answers for one attempt on this device, local-first (D04.3-83A..D, D04.5-05..18).
@@ -34,7 +34,10 @@ export interface UseAnswerManagerOptions {
 export interface AnswerManager {
   selectedOptions: Record<string, string>;
   saveStates: Record<string, SaveState>;
-  selectOption: (snapshotId: string, optionId: string) => void;
+  /** The canonical answer value (ASSESS-QUESTION-002 §4A.4) under the question's content key (v1 by default). */
+  selectOption: (snapshotId: string, value: string, contentKey?: string) => void;
+  /** The server refused content this client cannot handle: the page needs reloading (§4A.2). */
+  unsupportedContent: boolean;
   /** Local intents are loaded and reconciled with the server answers. */
   ready: boolean;
   /** True while any choice is not yet acknowledged by the server (or still loading). */
@@ -86,6 +89,18 @@ class DeferredAnswerStore implements AnswerStore {
 
 const EMPTY: Record<string, never> = {};
 
+/** Observes refusals of content this client cannot handle without changing the engine (§4A.9). */
+function watchUnsupported(api: SyncApi, onUnsupported: () => void): SyncApi {
+  return {
+    save: async request => {
+      const outcome = await api.save(request);
+      if (outcome.kind === 'rejected' && outcome.code === 'question_type_unsupported') onUnsupported();
+      return outcome;
+    },
+    fetchServerAnswers: () => api.fetchServerAnswers(),
+  };
+}
+
 export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManager {
   const { tenantId, attemptId, sessionId, initialAnswers, enabled } = options;
   const [engine, setEngine] = useState<AnswerSyncEngine | null>(null);
@@ -93,7 +108,8 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
   const [tick, setTick] = useState(0);
   const callbacksRef = useRef(options);
   callbacksRef.current = options;
-  const queuedRef = useRef<Array<[string, string]>>([]);
+  const queuedRef = useRef<Array<[string, string, string]>>([]);
+  const [unsupportedContent, setUnsupportedContent] = useState(false);
 
   useEffect(() => {
     if (!enabled || !attemptId || !sessionId || !initialAnswers) return;
@@ -103,7 +119,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
       attemptId,
       examSessionId: sessionId,
       store: new DeferredAnswerStore(callbacksRef.current.openStore ?? openAnswerStore),
-      api: callbacksRef.current.api ?? createAnswerSyncApi(attemptId, sessionId),
+      api: watchUnsupported(callbacksRef.current.api ?? createAnswerSyncApi(attemptId, sessionId), () => setUnsupportedContent(true)),
       events: {
         onChange: () => setTick(t => t + 1),
         onSessionInactive: () => callbacksRef.current.onSessionInactive?.(),
@@ -121,7 +137,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     created.initialize(initialAnswers.map(toServerAnswerState)).then(() => {
       if (active) setReady(true);
     });
-    for (const [snapshotId, optionId] of queuedRef.current.splice(0)) void created.capture(snapshotId, optionId);
+    for (const [snapshotId, value, contentKey] of queuedRef.current.splice(0)) void created.capture(snapshotId, value, contentKey);
     return () => {
       active = false;
       created.dispose();
@@ -152,9 +168,9 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
   }, [engine, sessionExpired]);
 
   const selectOption = useCallback(
-    (snapshotId: string, optionId: string) => {
-      if (engine) void engine.capture(snapshotId, optionId);
-      else queuedRef.current.push([snapshotId, optionId]);
+    (snapshotId: string, value: string, contentKey: string = V1_SINGLE_CHOICE_KEY) => {
+      if (engine) void engine.capture(snapshotId, value, contentKey);
+      else queuedRef.current.push([snapshotId, value, contentKey]);
     },
     [engine]
   );
@@ -162,7 +178,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
   const unsupported = useMemo(() => {
     const ids = new Set<string>();
     for (const answer of initialAnswers ?? []) {
-      if (selectedOptionOf(answer.answerPayload) === null) ids.add(answer.snapshotId);
+      if (answerValueOf(answer.answerPayload) === null) ids.add(answer.snapshotId);
     }
     return ids;
   }, [initialAnswers]);
@@ -206,6 +222,7 @@ export function useAnswerManager(options: UseAnswerManagerOptions): AnswerManage
     selectedOptions,
     saveStates,
     selectOption,
+    unsupportedContent,
     ready: ready && engine !== null,
     hasUnresolvedSaves: !ready || !engine || engine.hasUnresolved,
     degraded: engine?.degraded ?? false,
