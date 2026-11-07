@@ -1,3 +1,5 @@
+> **DEC-048 governance checkpoint, 2026-11-07:** GOV-EXEC-001 records the standing execution delegation (`docs/00-governance/00.13_STANDING_EXECUTION_DELEGATION.md`); effective only when every 00.13 §9 condition holds (Owner approval of the exact text, independent governance review PASS, GOV-EXEC-001 DONE, landing on `main`). Baseline counters unchanged; AUTH-002 local preparation is carried separately.
+
 > **ADMIN-001 candidate verification, 2026-11-03:** baseline ec4037c/CI #126 attempt 1 eight SUCCESS and five retrieved artifacts PASS before UI; exact 33-path implementation candidate now VERIFYING for full CI/after-rendered evidence/actual-source independent review. DONE 2/VERIFYING 1/BLOCKED 30/READY 0/IN_PROGRESS 0, 78 edges unchanged. Owner Build/CI-first authority in ADMIN-001 §10; PB05 OPEN. Earlier checkpoints are history.
 
 > **ADMIN-001 Build override, 2026-11-03:** explicit Owner implementation/Task-specific CI-first grant on 1d3eff5/PR #21 supersedes registration-only/no-Build navigation below. IN_PROGRESS; capture-only baseline eight-job/five-artifact gate before UI, then exact 33-path implementation and full CI. DONE 2/IN_PROGRESS 1/BLOCKED 30/READY 0/VERIFYING 0, 78 edges unchanged; PB05 OPEN. See ADMIN-001 §10.
@@ -124,6 +126,8 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 - [ ] RELEASE-001 — Full regression, school UAT, rehearsal and release dossier (BLOCKED)
 
 ## 4. Common contract, READY and verification requirements
+
+> **DEC-048 note:** once DEC-048 is effective under 00.13 §9, only the parts of items 2, 3, 4, 9 and 11 quoted in 00.13 §3 are replaced as stated there; everything else in this section, including the §8 gate authorities and the item 9 workstation limits, stays in force.
 
 The following fields apply to **each** §5 card, in addition to its specific acceptance/evidence/impact scope:
 
@@ -603,6 +607,13 @@ Subsequent completed history remains excluded: GOV-REALIGN-006 Gate-A-only DONE,
 **Current implementation control:** SEC-001 and AUTH-001 DONE/merged. ADMIN-001 READY, frozen contract/four-document publication authorized, automatic exact-SHA registration CI required. STOP for separate Owner Build/CI-first permission; no source/migration/import/merge/deployment/parallel Task or PB05 closure. Earlier checkpoints in §11 are history.
 
 ## 11. Change control and approval history
+
+### DEC-048 standing execution delegation — 2026-11-07
+
+- **Authority/reason:** Owner instruction to prepare a standing delegation of routine execution (GOV-EXEC-001); DEC-048 in 00.13, effective only under its §9.
+- **Exact baseline delta:** no Task, status, counter, edge, priority, risk, dependency or R/G coverage change; GOV-EXEC-001 is excluded from baseline counters.
+- **Rule delta (only once effective):** the §4 item 2, 3, 4, 9 and 11 parts quoted in 00.13 §3 are replaced; the §4 note records this. Nothing else in §4 or §8 changes.
+- **Effect once effective:** the executor selects the single next eligible Task (00.13 §4), records READY, executes, and squash-merges under 00.13 §6; every decision in 00.13 §7 stays with the Owner.
 
 ### Historical candidate and Gate-A/Gate-B contract checkpoint
 

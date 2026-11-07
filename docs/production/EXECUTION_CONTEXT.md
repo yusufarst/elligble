@@ -1,6 +1,6 @@
 **Status:** ACTIVE (P0, DEC-045; created by GOV-REALIGN-002)
 **Canonical:** NO. A navigation aid for executors and reviewers. Every rule here is a pointer; on any conflict the referenced document wins (00.02).
-**Last Updated:** 2026-10-26
+**Last Updated:** 2026-11-07
 
 # ELLIGBLE Execution Context
 
@@ -14,7 +14,7 @@ Read after `AGENTS.md` and `READ_ME_FIRST.md`, before the active Task record (00
 | Current release | CBT-R1, Secure Assessment / CBT only; the deferred domains of 00.11 §8 stay out | 00.11 §8, AGENTS.md |
 | Roles | Student, Teacher, Proctor, School Operator, Platform Admin; Teacher authority is not Proctor authority without an assignment | 00.11 §4 |
 | Stack | as built: Node.js/TypeScript runtime, React/Vite client, PostgreSQL 16, one container behind nginx on the school's own VPS | ADR-001 (DEC-046) |
-| Framework | AICWDF v4.3, adapted: phases P0 to P11, one Owner-authorized Task at a time | 00.12 (DEC-045) |
+| Framework | AICWDF v4.3, adapted: phases P0 to P11, one Task at a time, Owner-authorized or, once DEC-048 is effective (00.13 §9), selected under the standing delegation | 00.12 (DEC-045), 00.13 (DEC-048) |
 | Engineering priority | answer and data integrity, exam reliability, security and authorization, correctness, device compatibility, operational simplicity, concurrency, maintainability, polish | 00.11 §2 |
 
 ## 2. Where the state is
@@ -40,8 +40,8 @@ Read after `AGENTS.md` and `READ_ME_FIRST.md`, before the active Task record (00
 
 | Rule | Authority |
 |---|---|
-| Only the Task the Owner authorized by ID, inside its stated scope; a deviation stops the work with one question and a recommended default | 00.12 §4, 00.10 §3 |
-| One branch `task/<task-id>-<slug>` from the current `main`, one pull request; the Owner squash-merges; no force push, no rewriting of published history | 00.12 §7 |
+| Only the Task the Owner authorized by ID, or, once DEC-048 is effective (00.13 §9), the single next eligible Task under the standing delegation, inside its stated scope; a deviation or an Owner-reserved item stops the work with one question and a recommended default | 00.12 §4, 00.13 §4/§7/§8, 00.10 §3 |
+| One branch `task/<task-id>-<slug>` from the current `main`, one pull request; the Owner squash-merges, or, once DEC-048 is effective (00.13 §9), the executor only under the delegated merge gates; no force push, no rewriting of published history | 00.12 §7, 00.13 §6 |
 | Commits only with the Owner's configured identity; no AI, model or tool attribution in commits, trailers or pull request metadata; after every commit inspect `git log -1 --format=fuller` and the raw message | 00.12 §7 |
 | A commit never records its own SHA; one evidence commit per Task changes only its record; the next Task records the landing commit | 00.12 §5 |
 | DONE only with the required tests passed and the evidence recorded; HIGH risk also needs an independent review PASS | 00.12 §5 |
