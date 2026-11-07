@@ -510,3 +510,4 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
 - **CI #172/run 42388684029:** exact SHA f791b40, attempt 1. Runtime, Web and Container SUCCESS. The five E2E jobs FAILED at the first PGK step, after every capture up to exam-second. Preserved; no re-run.
   - Cause: an editing script dropped the backslash in the progress-heading pattern (`/^Soal d dari 3$/`), so the heading "Soal 2 dari 3" was never matched.
 - **Correction 5** (row 30 only): the pattern is `/^Soal d dari 3$/`.
+- **Correction 5a:** the first correction-5 commit (89b7ec3) recorded the fix but did not contain it, because the shell edit did not apply. Commit 5a applies the pattern to the spec.
