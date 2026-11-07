@@ -68,6 +68,17 @@ export async function readRosterIdentity(client: ClientBase, tenantId: string, r
     return r.rows.length === 1 ? toRoster(r.rows[0]) : null;
 }
 
+/** Current roster records of a tenant inside the given group/period scopes (Homeroom queue). */
+export async function rosterIdsInScope(client: ClientBase, tenantId: string, scopes: ReadonlyArray<{ academicGroupId: string; academicPeriodId: string }>): Promise<string[]> {
+    requireUuid(tenantId, ...scopes.flatMap(s => [s.academicGroupId, s.academicPeriodId]));
+    if (!scopes.length) return [];
+    const r = await client.query(`SELECT r.id FROM academic_core_student_roster_records r
+        JOIN unnest($2::uuid[], $3::uuid[]) AS s(group_id, period_id) ON s.group_id = r.academic_group_id AND s.period_id = r.academic_period_id
+        WHERE r.tenant_id = $1 ORDER BY r.id`,
+        [tenantId.toLowerCase(), scopes.map(s => s.academicGroupId.toLowerCase()), scopes.map(s => s.academicPeriodId.toLowerCase())]);
+    return r.rows.map(row => row.id as string);
+}
+
 /** Does the claim's submitted NISN/date/name still match this current roster record exactly? */
 export async function rosterStillMatches(client: ClientBase, roster: RosterIdentity, submitted: { nisn: string; birth: string; name: string }): Promise<boolean> {
     const r = await client.query(`SELECT 1 FROM academic_core_student_roster_records WHERE id = $1 AND tenant_id = $2 AND nisn = $3 AND date_of_birth = $4::date`,

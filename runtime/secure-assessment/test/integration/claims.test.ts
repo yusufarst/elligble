@@ -2,18 +2,53 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { readdir, readFile } from 'node:fs/promises';
 import type pg from 'pg';
 import { createDisposableDatabase, skipWithoutDatabase } from '../support/pg-harness.ts';
 import { addMembership, addProctorAssignment, createExamInstance, createPersonWithAccount, createTeachingContext, createTenant } from '../support/fixtures.ts';
 import { BrowserLikeClient, startProductionWiredServer } from '../support/test-server.ts';
 import { setSchoolOperator } from '../../../tenant-access/src/school-operator.ts';
 import { IdentityRuntime } from '../../../identity-access/src/index.ts';
-import { resolveClaimActivationRoute } from '../../../identity-access/src/claims.ts';
+import { listOpenClaims, resolveClaimActivationRoute } from '../../../identity-access/src/claims.ts';
+import { allocateStudentIdentity } from '../../../identity-access/src/student-identity.ts';
+import { ensureMembership } from '../../../tenant-access/src/provisioning.ts';
+import { ensureStudentEnrollment } from '../../../academic-core/src/provisioning.ts';
+import { importPeople } from '../../src/ops/provisioning/people.ts';
 import { activateClaimBound, submitClaim } from '../../src/claims.ts';
 
 // AUTH-002 real PostgreSQL oracles (record §9 C01–C12). Every scenario uses synthetic data,
 // the production-wired server and the existing CLI boundary; contention uses real locks
 // observed through pg_blocking_pids, never sleeps or retries.
+
+// Every client checked out in this file is tracked, and every barrier too: teardown releases
+// barriers and destroys still-held connections before closing the server and the database, so
+// a failing or timed-out test can never leave the run waiting on an open transaction.
+const LEASED = new Set<pg.PoolClient>();
+const OPEN_GATES = new Set<{ release: () => void }>();
+function tracked(pool: pg.Pool): pg.Pool {
+    return new Proxy(pool, { get(target, property) {
+        if (property === 'connect') return async () => {
+            const client = await target.connect();
+            LEASED.add(client);
+            const release = client.release.bind(client);
+            client.release = ((err?: Error | boolean) => { LEASED.delete(client); return release(err); }) as typeof client.release;
+            return client;
+        };
+        const value = Reflect.get(target, property);
+        return typeof value === 'function' ? value.bind(target) : value;
+    } });
+}
+async function disposable(options: { migrate?: boolean } = {}) {
+    const db = await createDisposableDatabase(options);
+    return { ...db, pool: tracked(db.pool), close: () => db.close() };
+}
+async function teardown(app: { close(): Promise<void> } | null, db: { close(): Promise<void> }) {
+    for (const g of OPEN_GATES) g.release();
+    OPEN_GATES.clear();
+    for (const client of [...LEASED]) { LEASED.delete(client); try { client.release(true); } catch { /* already released */ } }
+    if (app) await app.close();
+    await db.close();
+}
 
 const CLI = new URL('../../src/ops/provision-cli.ts', import.meta.url).pathname;
 const PASSWORD = 'MatahariPagiSintetis2026!';
@@ -107,8 +142,8 @@ async function untilBlocked(watch: pg.PoolClient, count: number, pending: Promis
 const student = (s: School, name: string, nisn: string, birth: string, key = randomUUID()) => ({ tenantId: s.tenant, fullName: name, nisn, birthDate: birth, requestKey: key });
 
 test('AUTH-002 C01/C02/C04/C11 public submission is non-trusted, uniform, replay-safe and lazily expires', { skip: skipWithoutDatabase }, async t => {
-    const db = await createDisposableDatabase(); const app = await startProductionWiredServer(db.pool);
-    t.after(async () => { await app.close(); await db.close(); });
+    const db = await disposable(); const app = await startProductionWiredServer(db.pool);
+    t.after(() => teardown(app, db));
     const s = await school(db.pool);
     const matched = await roster(db.pool, s, 'Siti  Rahmawati', '0012345678', '2010-02-03');
     const other = await roster(db.pool, s, 'Budi Santoso', '0099999999', '2010-05-06');
@@ -168,8 +203,8 @@ test('AUTH-002 C01/C02/C04/C11 public submission is non-trusted, uniform, replay
 });
 
 test('AUTH-002 C03/C08/C10/C11 scoped verifiers, explicit new identity, one-time handoff and Student activation', { skip: skipWithoutDatabase, timeout: 120000 }, async t => {
-    const db = await createDisposableDatabase(); const app = await startProductionWiredServer(db.pool);
-    t.after(async () => { await app.close(); await db.close(); });
+    const db = await disposable(); const app = await startProductionWiredServer(db.pool);
+    t.after(() => teardown(app, db));
     const s = await school(db.pool), elsewhere = await otherGroup(db.pool, s);
     const homeroom = await createPersonWithAccount(db.pool), homeroomMembership = await addMembership(db.pool, s.tenant, homeroom.personId);
     const foreignHomeroom = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, foreignHomeroom.personId);
@@ -257,8 +292,8 @@ test('AUTH-002 C03/C08/C10/C11 scoped verifiers, explicit new identity, one-time
 });
 
 test('AUTH-002 C03/C08 continuity, existing binding, active Account and fail-closed staff exclusion', { skip: skipWithoutDatabase, timeout: 120000 }, async t => {
-    const db = await createDisposableDatabase(); const app = await startProductionWiredServer(db.pool);
-    t.after(async () => { await app.close(); await db.close(); });
+    const db = await disposable(); const app = await startProductionWiredServer(db.pool);
+    t.after(() => teardown(app, db));
     const s = await school(db.pool);
     const verifier = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, verifier.personId);
     await operator(db.pool, s, verifier.personId);
@@ -329,8 +364,8 @@ test('AUTH-002 C03/C08 continuity, existing binding, active Account and fail-clo
 });
 
 test('AUTH-002 C04/C05/C06 exhaustion, reissue, expiry, cancellation and atomic rollback', { skip: skipWithoutDatabase, timeout: 120000 }, async t => {
-    const db = await createDisposableDatabase(); const app = await startProductionWiredServer(db.pool);
-    t.after(async () => { await app.close(); await db.close(); });
+    const db = await disposable(); const app = await startProductionWiredServer(db.pool);
+    t.after(() => teardown(app, db));
     const s = await school(db.pool);
     const verifier = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, verifier.personId);
     await operator(db.pool, s, verifier.personId);
@@ -415,15 +450,14 @@ test('AUTH-002 C04/C05/C06 exhaustion, reissue, expiry, cancellation and atomic 
 });
 
 test('AUTH-002 C07/C09 real contention: roster fence both orders, membership key, credential lock, duplicates', { skip: skipWithoutDatabase, timeout: 120000 }, async t => {
-    const db = await createDisposableDatabase(); const app = await startProductionWiredServer(db.pool);
-    t.after(async () => { await app.close(); await db.close(); });
+    const db = await disposable(); const app = await startProductionWiredServer(db.pool);
+    t.after(() => teardown(app, db));
     const s = await school(db.pool);
     const verifier = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, verifier.personId);
     await operator(db.pool, s, verifier.personId);
     const op = await signIn(app.baseUrl, s, verifier);
     const anonymous = new BrowserLikeClient(app.baseUrl);
     const watch = await db.pool.connect();
-    t.after(() => watch.release());
     const newClaim = async (name: string, nisn: string) => {
         const id = await roster(db.pool, s, name, nisn, '2010-11-12');
         assert.equal((await submit(anonymous, student(s, name, nisn, '2010-11-12'))).status, 202);
@@ -507,4 +541,377 @@ test('AUTH-002 C07/C09 real contention: roster fence both orders, membership key
     assert.equal((await claimOf(db.pool, seventh)).state, 'APPROVED_PENDING_ACTIVATION');
     assert.equal((await db.pool.query(`SELECT a.consumed_at, a.failed_attempts FROM identity_student_claim_activations r JOIN identity_account_activations a ON a.id=r.activation_id
         WHERE r.claim_id=$1`, [(await claimOf(db.pool, seventh)).id])).rows[0].failed_attempts, 0);
+});
+
+// ---------------------------------------------------------------------------------------
+// Review correction (record §14): actual-writer contention in both orders, scoped queue,
+// post-wait expiry and the 0057 upgrade/rollback oracle.
+
+interface Gate { matches: (sql: string, params: unknown[]) => boolean; reached: Promise<void>; arrive: () => void; proceed: Promise<void>; release: () => void; pid: number }
+function gate(matches: Gate['matches']): Gate {
+    let arrive!: () => void, release!: () => void;
+    const reached = new Promise<void>(r => { arrive = r; }), proceed = new Promise<void>(r => { release = r; });
+    const g = { matches, reached, arrive, proceed, release, pid: 0 };
+    OPEN_GATES.add(g);
+    return g;
+}
+type GateRef = { current: Gate | null };
+function gatedClient<T extends pg.ClientBase>(client: T, ref: GateRef): T {
+    return new Proxy(client, { get(target, property) {
+        if (property === 'query') return async (...args: unknown[]) => {
+            const result = await Reflect.apply(target.query, target, args);
+            const g = ref.current, sql = typeof args[0] === 'string' ? args[0] : '', params = Array.isArray(args[1]) ? args[1] : [];
+            if (g && g.matches(sql, params)) {
+                ref.current = null;
+                g.pid = (await target.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+                g.arrive();
+                await g.proceed;
+            }
+            return result;
+        };
+        const value = Reflect.get(target, property);
+        return typeof value === 'function' ? value.bind(target) : value;
+    } });
+}
+function gatedPool(pool: pg.Pool, ref: GateRef): pg.Pool {
+    return new Proxy(pool, { get(target, property) {
+        if (property === 'connect') return async () => gatedClient(await target.connect(), ref);
+        const value = Reflect.get(target, property);
+        return typeof value === 'function' ? value.bind(target) : value;
+    } });
+}
+function settled<T>(p: Promise<T>) { return p.then(value => ({ ok: true as const, value }), error => ({ ok: false as const, error })); }
+async function blockedBy(watch: pg.PoolClient, pid: number, pending: Promise<unknown>) {
+    let finished = false; void pending.then(() => { finished = true; });
+    const until = Date.now() + 15000;
+    while (Date.now() < until) {
+        if (finished) throw new Error('Writer finished before contention was observed');
+        const r = await watch.query(`SELECT count(*)::int AS n FROM pg_stat_activity WHERE $1::int = ANY(pg_blocking_pids(pid))`, [pid]);
+        if (r.rows[0].n > 0) return;
+    }
+    throw new Error('No real PostgreSQL contention observed');
+}
+const atSlot = (sql: string, params: unknown[]) => sql.includes('pg_try_advisory_xact_lock') && String(params[0] ?? '').startsWith('ac_enrollment:');
+async function inTx<T>(pool: pg.Pool, run: (c: pg.PoolClient) => Promise<T>): Promise<{ client: pg.PoolClient; pending: ReturnType<typeof settled<T>> }> {
+    const client = await pool.connect();
+    await client.query('BEGIN');
+    return { client, pending: settled(run(client)) };
+}
+async function finish(c: pg.PoolClient) { await c.query('COMMIT'); c.release(); }
+
+test('AUTH-002 C09 actual writers against decide in both orders (operator, membership, people import, enrollment, roster import, allocation, session, verifier revocation)', { skip: skipWithoutDatabase, timeout: 240000 }, async t => {
+    const db = await disposable();
+    const ref: GateRef = { current: null };
+    const app = await startProductionWiredServer(gatedPool(db.pool, ref));
+    const watch = await db.pool.connect();
+    t.after(() => teardown(app, db));
+    const s = await school(db.pool);
+    const anonymous = new BrowserLikeClient(app.baseUrl);
+    let seq = 0;
+    const verifierClient = async () => {
+        const v = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, v.personId); await operator(db.pool, s, v.personId);
+        return { account: v, client: await signIn(app.baseUrl, s, v) };
+    };
+    const target = async () => {
+        seq++;
+        const person = await createPersonWithAccount(db.pool), membership = await addMembership(db.pool, s.tenant, person.personId);
+        const nisn = `0700${String(seq).padStart(6, '0')}`, name = `Writer Uji ${seq}`;
+        const rosterId = await roster(db.pool, s, name, nisn, '2010-06-06');
+        assert.equal((await submit(anonymous, student(s, name, nisn, '2010-06-06'))).status, 202);
+        return { person, membership, rosterId };
+    };
+    const continuity = async (v: BrowserLikeClient, x: Awaited<ReturnType<typeof target>>) =>
+        decide(v, await approveBody(db.pool, x.rosterId, { adjudication: 'EXISTING_ACCOUNT_CONTINUITY', elligbleId: x.person.username }));
+    const claimRows = async (rosterId: string) => (await db.pool.query('SELECT to_jsonb(c)::text AS row FROM identity_student_claims c WHERE roster_id=$1', [rosterId])).rows;
+    const { client: op } = await verifierClient();
+
+    // Writer first: the decide request waits on the writer's real lock, then serializes after its commit.
+    const writerFirst = async (label: string, write: (c: pg.PoolClient, x: Awaited<ReturnType<typeof target>>) => Promise<unknown>, expect: number) => {
+        const x = await target();
+        const w = await inTx(db.pool, c => write(c, x));
+        const holder = (await w.client.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+        await w.pending.then(r => { if (!r.ok) throw r.error; });
+        const before = await claimRows(x.rosterId);
+        const deciding = continuity(op, x);
+        await blockedBy(watch, holder, deciding);
+        await finish(w.client);
+        const r = await deciding;
+        assert.equal(r.status, expect, `${label}: ${JSON.stringify(r.body)}`);
+        if (expect !== 200) assert.deepEqual(await claimRows(x.rosterId), before, label);
+        return x;
+    };
+    // Decide first: paused at its enrollment-slot try-lock holding every earlier lock; the writer waits.
+    const decideFirst = async (label: string, write: (c: pg.PoolClient, x: Awaited<ReturnType<typeof target>>) => Promise<unknown>) => {
+        const x = await target();
+        const g = gate(atSlot); ref.current = g;
+        const deciding = continuity(op, x);
+        await Promise.race([g.reached, deciding.then(r => { throw new Error(`${label}: decide finished without reaching the barrier ${r.status}`); })]);
+        const w = await inTx(db.pool, c => write(c, x));
+        await blockedBy(watch, g.pid, w.pending);
+        g.release();
+        const r = await deciding;
+        assert.equal(r.status, 200, `${label}: ${JSON.stringify(r.body)}`);
+        const written = await w.pending;
+        await finish(w.client);
+        return { x, written };
+    };
+
+    // setSchoolOperator on the target: after commit the target is staff, so decide refuses; reverse order assigns afterwards.
+    const assignTarget = (c: pg.PoolClient, x: Awaited<ReturnType<typeof target>>) => setSchoolOperator(c, { tenantId: s.tenant, personId: x.person.personId, action: 'ASSIGN', operator: 'Synthetic', caseReference: 'AUTH-002 C09', reason: 'Writer order' });
+    await writerFirst('setSchoolOperator first', assignTarget, 409);
+    const op2 = await decideFirst('setSchoolOperator second', assignTarget);
+    assert.equal(op2.written.ok, true);
+    // ensureMembership (people import, provisioning) re-entering the same tenant_membership key.
+    const membership = (c: pg.PoolClient, x: Awaited<ReturnType<typeof target>>) => ensureMembership(c, s.tenant, x.person.personId);
+    await writerFirst('ensureMembership first', membership, 200);
+    assert.equal((await decideFirst('ensureMembership second', membership)).written.ok, true);
+    // Existing AUTH-001 allocation for the same Person: identity_allocate key, then the Person lock.
+    const allocation = (c: pg.PoolClient, x: Awaited<ReturnType<typeof target>>) => allocateStudentIdentity(c, { tenantId: s.tenant, personId: x.person.personId }, randomUUID(), {
+        authorize: async (_c, scope) => scope.personId === x.person.personId ? { kind: 'platform_operator', ref: 'synthetic-c09' } : null, audit: async () => {} });
+    await writerFirst('allocation first', allocation, 200);
+    const alloc = await decideFirst('allocation second', allocation);
+    assert.equal(alloc.written.ok && (alloc.written.value as { outcome: string }).outcome, 'existing');
+    // Shared enrollment writer on an initially empty slot (case-variant membership id).
+    const enroll = (c: pg.PoolClient, x: Awaited<ReturnType<typeof target>>) => ensureStudentEnrollment(c, s.tenant.toUpperCase(), {
+        academicYearId: s.year, academicPeriodId: s.period.toUpperCase(), academicGroupId: s.group, membershipId: x.membership.toUpperCase(), startDate: '2026-07-01', source: 'TEST' });
+    const slotFirst = await target();
+    const sw = await inTx(db.pool, c => enroll(c, slotFirst));
+    await sw.pending.then(r => { if (!r.ok) throw r.error; });
+    const beforeSlot = await claimRows(slotFirst.rosterId);
+    const refused = await continuity(op, slotFirst);
+    assert.equal(refused.status, 409); assert.equal(refused.body.error, 'stale_conflict');
+    assert.deepEqual(await claimRows(slotFirst.rosterId), beforeSlot);
+    await finish(sw.client);
+    assert.equal((await continuity(op, slotFirst)).status, 200);
+    const enrolled = await decideFirst('enrollment second', enroll);
+    assert.equal(enrolled.written.ok && (enrolled.written.value as { created: boolean }).created, false);
+
+    // People import (actual writer, own transaction) paused after its sorted identifier/membership locks.
+    const peopleRef: GateRef = { current: null };
+    const importTarget = (x: Awaited<ReturnType<typeof target>>) => importPeople(gatedPool(db.pool, peopleRef), {
+        tenantId: s.tenant, text: `elligble_id,full_name,kind\n${x.person.username},Writer Uji,student`, context: { operator: 'Synthetic', caseReference: 'AUTH-002 C09' },
+        validForMs: 7 * 24 * 3600 * 1000, dryRun: false, linkExisting: false });
+    {
+        const x = await target();
+        const g = gate(sql => sql.includes('FROM identity_persons WHERE id = $1 FOR NO KEY UPDATE')); peopleRef.current = g;
+        const importing = settled(importTarget(x));
+        await Promise.race([g.reached, importing.then(() => { throw new Error('import did not reach its barrier'); })]);
+        const deciding = continuity(op, x);
+        await blockedBy(watch, g.pid, deciding);
+        g.release();
+        const imported = await importing; assert.equal(imported.ok, true);
+        assert.equal((await deciding).status, 200);
+    }
+    {
+        const x = await target();
+        const g = gate(atSlot); ref.current = g;
+        const deciding = continuity(op, x);
+        await Promise.race([g.reached, deciding.then(() => { throw new Error('decide did not reach its barrier'); })]);
+        const importing = settled(importTarget(x));
+        await blockedBy(watch, g.pid, importing);
+        g.release();
+        assert.equal((await deciding).status, 200);
+        const imported = await importing; assert.equal(imported.ok, true);
+    }
+
+    // Roster import confirm (actual HTTP writer) and decide share the roster-tenant fence.
+    const header = 'source_student_key,full_name,nis,nisn,date_of_birth,academic_group_id\n';
+    const prepared = async (client: BrowserLikeClient, key: string) => {
+        const input = { academicYearId: s.year, academicPeriodId: s.period, csv: header + `${key},Impor ${key},nis-${key},nisn-${key},2010-01-01,${s.group}` };
+        const p = await client.request('/api/v1/identity/roster/preview', { method: 'POST', body: input });
+        assert.equal(p.status, 200);
+        return { ...input, inputDigest: p.body.inputDigest, stateDigest: p.body.stateDigest, requestKey: randomUUID(), reason: 'C09 import', confirmed: true };
+    };
+    const { client: importer } = await verifierClient();
+    {
+        const x = await target(), intent = await prepared(importer, 'fence-a');
+        const g = gate((sql, params) => sql.includes('pg_advisory_xact_lock') && String(params[0] ?? '') === `roster-tenant:${s.tenant}`); ref.current = g;
+        const importing = importer.request('/api/v1/identity/roster/confirm', { method: 'POST', body: intent });
+        await Promise.race([g.reached, importing.then(() => { throw new Error('import did not reach the fence'); })]);
+        const deciding = continuity(op, x);
+        await blockedBy(watch, g.pid, deciding);
+        g.release();
+        assert.equal((await importing).status, 200);
+        assert.equal((await deciding).status, 200);
+    }
+    {
+        const x = await target(), intent = await prepared(importer, 'fence-b');
+        const g = gate(atSlot); ref.current = g;
+        const deciding = continuity(op, x);
+        await Promise.race([g.reached, deciding.then(() => { throw new Error('decide did not reach its barrier'); })]);
+        const importing = importer.request('/api/v1/identity/roster/confirm', { method: 'POST', body: intent });
+        await blockedBy(watch, g.pid, importing);
+        g.release();
+        assert.equal((await deciding).status, 200);
+        const imported = await importing;
+        assert.equal(imported.status, 409); assert.equal(imported.body.error, 'stale_conflict');
+    }
+
+    // Session revocation and verifier revocation: first, the decide refuses with zero mutation; second, it completes.
+    for (const kind of ['session', 'operator'] as const) {
+        const v = await verifierClient();
+        const x = await target();
+        const sessionId = (await db.pool.query('SELECT id FROM identity_sessions WHERE user_account_id=$1 ORDER BY authenticated_at DESC LIMIT 1', [v.account.accountId])).rows[0].id;
+        const revoke = (c: pg.PoolClient): Promise<unknown> => kind === 'session'
+            ? c.query('UPDATE identity_sessions SET is_revoked = TRUE WHERE id = $1', [sessionId])
+            : setSchoolOperator(c, { tenantId: s.tenant, personId: v.account.personId, action: 'REVOKE', operator: 'Synthetic', caseReference: 'AUTH-002 C09', reason: 'Revoke during decide' });
+        const w = await inTx(db.pool, revoke);
+        await w.pending.then(r => { if (!r.ok) throw r.error; });
+        const holder = (await w.client.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+        const before = await claimRows(x.rosterId);
+        const deciding = continuity(v.client, x);
+        await blockedBy(watch, holder, deciding);
+        await finish(w.client);
+        const r = await deciding;
+        assert.equal(r.status, kind === 'session' ? 401 : 403, kind);
+        assert.deepEqual(await claimRows(x.rosterId), before, kind);
+        const v2 = await verifierClient(), y = await target();
+        const sessionId2 = (await db.pool.query('SELECT id FROM identity_sessions WHERE user_account_id=$1 ORDER BY authenticated_at DESC LIMIT 1', [v2.account.accountId])).rows[0].id;
+        const g = gate(atSlot); ref.current = g;
+        const pending = continuity(v2.client, y);
+        await Promise.race([g.reached, pending.then(() => { throw new Error('decide did not reach its barrier'); })]);
+        const w2 = await inTx(db.pool, (c): Promise<unknown> => kind === 'session'
+            ? c.query('UPDATE identity_sessions SET is_revoked = TRUE WHERE id = $1', [sessionId2])
+            : setSchoolOperator(c, { tenantId: s.tenant, personId: v2.account.personId, action: 'REVOKE', operator: 'Synthetic', caseReference: 'AUTH-002 C09', reason: 'Revoke during decide' }));
+        await blockedBy(watch, g.pid, w2.pending);
+        g.release();
+        assert.equal((await pending).status, 200, kind);
+        assert.equal((await w2.pending).ok, true);
+        await finish(w2.client);
+        assert.equal((await review(v2.client)).status, kind === 'session' ? 401 : 403);
+    }
+});
+
+test('AUTH-002 C09 reissue and claim-bound activation in both orders; post-wait expiry refuses (record §14)', { skip: skipWithoutDatabase, timeout: 180000 }, async t => {
+    const db = await disposable();
+    const ref: GateRef = { current: null };
+    const app = await startProductionWiredServer(gatedPool(db.pool, ref));
+    const watch = await db.pool.connect();
+    t.after(() => teardown(app, db));
+    const s = await school(db.pool);
+    const verifier = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, verifier.personId); await operator(db.pool, s, verifier.personId);
+    const op = await signIn(app.baseUrl, s, verifier);
+    const anonymous = new BrowserLikeClient(app.baseUrl);
+    let seq = 0;
+    const approved = async () => {
+        seq++;
+        const nisn = `0800${String(seq).padStart(6, '0')}`, name = `Aktivasi Uji ${seq}`;
+        const rosterId = await roster(db.pool, s, name, nisn, '2010-08-08');
+        await submit(anonymous, student(s, name, nisn, '2010-08-08'));
+        const r = await decide(op, await approveBody(db.pool, rosterId, { adjudication: 'NEW_IDENTITY_REVIEWED', noExistingAccountConfirmed: true }));
+        assert.equal(r.status, 200);
+        const account = (await db.pool.query('SELECT user_account_id FROM identity_account_credentials WHERE username=$1', [r.body.elligbleId])).rows[0].user_account_id as string;
+        return { rosterId, elligbleId: r.body.elligbleId as string, code: r.body.activationCode as string, account };
+    };
+    const reissueGated = (accountId: string, cref: GateRef) => (async () => {
+        const c = await db.pool.connect();
+        try { return await new IdentityRuntime(gatedClient(c, cref) as unknown as pg.Client).issueActivation(accountId, { rotatePassword: false }); } finally { c.release(); }
+    })();
+
+    // Reissue first, paused holding the credential lock: the claim-bound activation waits, then refuses the replaced code.
+    {
+        const a = await approved(), cref: GateRef = { current: null };
+        const g = gate(sql => sql.includes('FROM identity_account_credentials WHERE user_account_id = $1 FOR UPDATE')); cref.current = g;
+        const reissuing = settled(reissueGated(a.account, cref));
+        await Promise.race([g.reached, reissuing.then(() => { throw new Error('reissue did not reach its barrier'); })]);
+        const activating = activate(new BrowserLikeClient(app.baseUrl), a.elligbleId, a.code);
+        await blockedBy(watch, g.pid, activating);
+        g.release();
+        const card = await reissuing; assert.equal(card.ok, true);
+        assert.equal((await activating).status, 401);
+        const row = (await db.pool.query('SELECT a.consumed_at, a.revoked_at, a.failed_attempts FROM identity_student_claim_activations r JOIN identity_account_activations a ON a.id=r.activation_id JOIN identity_student_claims c ON c.id=r.claim_id WHERE c.roster_id=$1', [a.rosterId])).rows[0];
+        assert.equal(row.consumed_at, null); assert.notEqual(row.revoked_at, null); assert.equal(row.failed_attempts, 0);
+        if (card.ok && card.value) assert.equal((await activate(new BrowserLikeClient(app.baseUrl), a.elligbleId, card.value.code)).status, 200);
+    }
+    // Activation first, paused holding the credential lock: reissue waits; activation consumes; the claim is ACTIVATED.
+    {
+        const a = await approved();
+        const g = gate(sql => sql.includes('FOR UPDATE OF c') && sql.includes('identity_login_identifiers')); ref.current = g;
+        const activating = activate(new BrowserLikeClient(app.baseUrl), a.elligbleId, a.code);
+        await Promise.race([g.reached, activating.then(r => { throw new Error(`activation did not reach its barrier ${r.status}`); })]);
+        const reissuing = settled(reissueGated(a.account, { current: null }));
+        await blockedBy(watch, g.pid, reissuing);
+        g.release();
+        assert.equal((await activating).status, 200);
+        assert.equal((await reissuing).ok, true);
+        assert.equal((await claimOf(db.pool, a.rosterId)).state, 'ACTIVATED');
+    }
+    // Post-wait expiry: the check before the credential wait passes; the wait crosses expires_at; nothing is consumed.
+    {
+        const a = await approved();
+        const claim = await claimOf(db.pool, a.rosterId);
+        let crossed = false;
+        const clock = { now: () => crossed ? new Date(claim.expires_at) : new Date(new Date(claim.expires_at).getTime() - 60_000) };
+        const holder = await db.pool.connect();
+        await holder.query('BEGIN');
+        await holder.query('SELECT 1 FROM identity_account_credentials WHERE user_account_id=$1 FOR UPDATE', [a.account]);
+        const hpid = (await holder.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
+        const route = await resolveClaimActivationRoute(db.pool as unknown as pg.PoolClient, a.elligbleId);
+        const pc = await db.pool.connect();
+        const pending = settled(activateClaimBound(pc, route!, a.elligbleId, a.code, PASSWORD, clock));
+        await blockedBy(watch, hpid, pending);
+        crossed = true;
+        await holder.query('COMMIT'); holder.release();
+        const result = await pending; pc.release();
+        assert.equal(result.ok && result.value.success, false);
+        assert.equal((await claimOf(db.pool, a.rosterId)).state, 'EXPIRED');
+        const row = (await db.pool.query('SELECT a.consumed_at, a.revoked_at, a.failed_attempts FROM identity_student_claim_activations r JOIN identity_account_activations a ON a.id=r.activation_id WHERE r.claim_id=$1', [claim.id])).rows[0];
+        assert.equal(row.consumed_at, null); assert.notEqual(row.revoked_at, null); assert.equal(row.failed_attempts, 0);
+        assert.equal((await db.pool.query('SELECT count(*)::int AS n FROM identity_sessions WHERE user_account_id=$1', [a.account])).rows[0].n, 0);
+    }
+});
+
+test('AUTH-002 C03/C11 queue scope is applied before paging; unmatched submissions cannot hide scoped claims (record §14)', { skip: skipWithoutDatabase, timeout: 180000 }, async t => {
+    const db = await disposable(); const app = await startProductionWiredServer(db.pool);
+    t.after(() => teardown(app, db));
+    const s = await school(db.pool), other = await otherGroup(db.pool, s);
+    const homeroom = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, homeroom.personId);
+    homeroomCli(db.url, s, homeroom.username, other);
+    const verifier = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, verifier.personId); await operator(db.pool, s, verifier.personId);
+    for (let i = 0; i < 105; i++) await submitClaim(db.pool, student(s, `Tidak Cocok ${i}`, `0900${String(i).padStart(6, '0')}`, '2011-01-01'));
+    for (let i = 0; i < 3; i++) {
+        await roster(db.pool, s, `Rombel Lain ${i}`, `0910${i}`, '2010-02-02', other);
+        await submit(new BrowserLikeClient(app.baseUrl), student(s, `Rombel Lain ${i}`, `0910${i}`, '2010-02-02'));
+    }
+    const hr = await signIn(app.baseUrl, s, homeroom), op = await signIn(app.baseUrl, s, verifier);
+    const scoped = await review(hr);
+    assert.equal(scoped.status, 200); assert.equal(scoped.body.claims.length, 3); assert.equal(scoped.body.truncated, false);
+    const first = await review(op);
+    assert.equal(first.body.claims.length, 100); assert.equal(first.body.truncated, true);
+    assert.deepEqual(first.body.claims.slice(0, 3).map((c: { roster: unknown }) => c.roster !== null), [true, true, true]);
+    const second = await op.request('/api/v1/identity/claims/review?offset=100');
+    assert.equal(second.body.claims.length, 8); assert.equal(second.body.truncated, false); assert.equal(second.body.offset, 100);
+    for (const bad of ['-1', 'abc', '100001', '1e3']) assert.equal((await op.request(`/api/v1/identity/claims/review?offset=${bad}`)).status, 400);
+    // Expired claims are not offered for decision (owning Identity listing at a later instant).
+    const later = await listOpenClaims(db.pool as unknown as pg.PoolClient, s.tenant, { now: new Date(Date.now() + 8 * 24 * 3600 * 1000), rosterIds: null, limit: 100, offset: 0 });
+    assert.deepEqual(later, { claims: [], more: false });
+});
+
+test('AUTH-002 C12 migration 0057 upgrade, rollback and repeat preserve 0056 data without backfill', { skip: skipWithoutDatabase }, async t => {
+    const db = await disposable({ migrate: false }); t.after(() => teardown(null, db));
+    const c = await db.pool.connect();
+    try {
+        const dir = new URL('../../../../database/migrations/', import.meta.url);
+        for (const file of (await readdir(dir)).filter(n => /^\d{4}.*\.sql$/.test(n) && n < '0057').sort()) await c.query(await readFile(new URL(file, dir), 'utf8'));
+        const s = await school(db.pool);
+        const person = await createPersonWithAccount(db.pool);
+        await db.pool.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth, academic_year_id, academic_period_id, academic_group_id, person_id)
+            VALUES($1,'legacy','Legacy','n1','0123','2010-01-01',$2,$3,$4,$5)`, [s.tenant, s.year, s.period, s.group, person.personId]);
+        const tables = ['identity_account_credentials', 'identity_person_account_bindings', 'academic_core_student_roster_records', 'tenant_memberships', 'tenant_school_operator_assignments'];
+        const before = await snapshot(db.pool, tables);
+        const sql = await readFile(new URL('0057_student_claim_verification.sql', dir), 'utf8');
+        const failing = sql.replace("INSERT INTO elligble_migration_history(migration_id) VALUES('0057_student_claim_verification');", "RAISE EXCEPTION 'synthetic migration rollback';");
+        assert.notEqual(failing, sql);
+        await assert.rejects(c.query(failing), /synthetic migration rollback/); await c.query('ROLLBACK');
+        assert.equal((await c.query("SELECT to_regclass('identity_student_claims') AS r")).rows[0].r, null);
+        assert.equal((await c.query("SELECT count(*)::int AS n FROM elligble_migration_history WHERE migration_id='0057_student_claim_verification'")).rows[0].n, 0);
+        assert.deepEqual(await snapshot(db.pool, tables), before);
+        await c.query(sql); await c.query(sql);
+        assert.deepEqual(await snapshot(db.pool, tables), before);
+        for (const table of ['identity_student_claims', 'identity_student_claim_events', 'identity_student_claim_activations', 'academic_core_roster_identity_bindings', 'academic_core_homeroom_responsibilities', 'academic_core_homeroom_responsibility_events']) {
+            assert.equal((await c.query(`SELECT count(*)::int AS n FROM ${table}`)).rows[0].n, 0, table);
+        }
+        // The 0056 person_id remains authoritative: a disagreeing binding is refused, the record is never rewritten.
+        await assert.rejects(db.pool.query('UPDATE academic_core_student_roster_records SET person_id = NULL, revision = revision + 1'));
+    } finally { c.release(); }
 });

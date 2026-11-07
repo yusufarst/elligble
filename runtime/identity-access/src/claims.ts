@@ -323,11 +323,24 @@ export interface ReviewClaim {
     submittedName: string; submittedNisn: string; submittedBirth: string; createdAt: Date; expiresAt: Date;
 }
 
-/** Open claims of one tenant, oldest first; the coordinator narrows them to the verifier's scope. */
-export async function listOpenClaims(client: ClientBase, tenantId: string, limit: number): Promise<ReviewClaim[]> {
+export interface OpenClaimPage { claims: ReviewClaim[]; more: boolean }
+
+/**
+ * One page of the open, unexpired claims of a tenant, scoped in SQL. `rosterIds` null means
+ * every roster identity and unmatched claims (School Operator); a list restricts the page to
+ * those roster records (Homeroom). Roster-matched claims come first, then oldest first, so
+ * unmatched submissions cannot push matched claims off the page. An expired claim is not
+ * offered for decision; the next locked observer records its closure.
+ */
+export async function listOpenClaims(client: ClientBase, tenantId: string, options: { now: Date; rosterIds: string[] | null; limit: number; offset: number }): Promise<OpenClaimPage> {
     requireUuid(tenantId);
+    if (options.rosterIds) requireUuid(...options.rosterIds);
+    const limit = Math.max(1, Math.min(options.limit, 500)), offset = Math.max(0, Math.trunc(options.offset));
     const r = await client.query(`SELECT ${CLAIM_COLUMNS} FROM identity_student_claims
-        WHERE tenant_id = $1 AND closed_at IS NULL ORDER BY created_at, id LIMIT $2`, [tenantId.toLowerCase(), Math.max(1, Math.min(limit, 1000))]);
-    return r.rows.map(toClaim).map(c => ({ id: c.id, revision: c.revision, state: c.state, rosterId: c.rosterId, rosterRevision: c.rosterRevision,
+        WHERE tenant_id = $1 AND closed_at IS NULL AND expires_at > $2 AND ($3::uuid[] IS NULL OR roster_id = ANY($3::uuid[]))
+        ORDER BY (roster_id IS NULL), created_at, id LIMIT $4 OFFSET $5`,
+        [tenantId.toLowerCase(), options.now, options.rosterIds ? options.rosterIds.map(id => id.toLowerCase()) : null, limit + 1, offset]);
+    const claims = r.rows.slice(0, limit).map(toClaim).map(c => ({ id: c.id, revision: c.revision, state: c.state, rosterId: c.rosterId, rosterRevision: c.rosterRevision,
         submittedName: c.submittedName, submittedNisn: c.submittedNisn, submittedBirth: c.submittedBirth, createdAt: c.createdAt, expiresAt: c.expiresAt }));
+    return { claims, more: r.rows.length > limit };
 }

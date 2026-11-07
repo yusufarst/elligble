@@ -19,7 +19,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const FAILURE_COPY: Record<string, string> = {
   invalid_request: 'Data pengajuan belum sesuai. Periksa kembali isian Anda.',
-  busy: 'Pengajuan untuk data ini sedang diproses. Coba lagi beberapa saat lagi.',
+  busy: 'Server sedang sibuk. Coba lagi beberapa saat lagi.',
   too_many_requests: 'Terlalu banyak permintaan. Coba lagi beberapa saat lagi.',
 };
 const FALLBACK_FAILURE = 'Pengajuan belum diterima server. Periksa koneksi lalu kirim ulang.';
@@ -110,7 +110,7 @@ export const StudentClaimView: React.FC<StudentClaimViewProps> = ({ initialTenan
         <CardContent className="flex flex-col gap-4">
           {received ? (
             <div ref={statusRef} tabIndex={-1} role="status" className="flex flex-col gap-4 outline-none">
-              <Alert variant="info">
+              <Alert variant="info" role="none">
                 <IconInfo />
                 <AlertDescription>
                   Pengajuan sudah dikirim. Temui wali kelas atau operator sekolah dengan membawa kartu pelajar untuk verifikasi langsung dalam 7 hari. Setelah disetujui, petugas sekolah memberikan ELLIGBLE ID dan kode aktivasi kepada Anda secara langsung.

@@ -27,7 +27,7 @@ export interface ClaimReviewItem {
   submitted:{fullName:string;nisn:string;birthDate:string};
   roster:{revision:number;fullName:string;groupLabel:string|null;bound:boolean;nameMatches:boolean}|null;
 }
-export interface ClaimReview { authority:'school_operator'|'homeroom'; claims:ClaimReviewItem[]; truncated:boolean }
+export interface ClaimReview { authority:'school_operator'|'homeroom'; claims:ClaimReviewItem[]; offset:number; truncated:boolean }
 export type ClaimAdjudication='EXISTING_BINDING'|'EXISTING_ACCOUNT_CONTINUITY'|'NEW_IDENTITY_REVIEWED';
 export interface ClaimDecisionInput {
   claimId:string; expectedRevision:number; expectedRosterRevision?:number; decision:'APPROVE'|'REJECT'|'CANCEL';
@@ -49,5 +49,5 @@ async function claimRequest<T>(url:string,init:{method:'GET'|'POST';json?:unknow
   return res.json() as Promise<T>;
 }
 export const submitClaim=(input:ClaimSubmission)=>claimRequest<ClaimReceipt>('/api/v1/identity/claims',{method:'POST',json:input});
-export const getClaimReview=()=>claimRequest<ClaimReview>('/api/v1/identity/claims/review',{method:'GET'});
+export const getClaimReview=(offset=0)=>claimRequest<ClaimReview>('/api/v1/identity/claims/review'+(offset>0?`?offset=${offset}`:''),{method:'GET'});
 export const decideClaim=(input:ClaimDecisionInput)=>claimRequest<ClaimDecisionResult>('/api/v1/identity/claims/decision',{method:'POST',json:input});

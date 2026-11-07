@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Pool } from 'pg';
 import type { SessionCookieConfig } from './session-credentials.ts';
 import { HttpError, readJsonObject, sendError, sendJson } from './http-utils.ts';
-import { claimError, decideClaim, listClaimReview, submitClaim } from '../claims.ts';
+import { claimError, decideClaim, listClaimReview, submitClaim, validateReviewOffset } from '../claims.ts';
 
 // AUTH-002 F02 transport (record §7). Public submission is a non-trusted entry with a uniform
 // 202 receipt; review and decision require an authenticated scoped verifier. Responses are
@@ -27,7 +27,8 @@ export async function handleClaimReview(req: IncomingMessage, res: ServerRespons
     res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'GET') { req.resume(); sendError(res, 405, 'method_not_allowed'); return; }
     try {
-        sendJson(res, 200, await listClaimReview(pool, req, cookie));
+        const offset = validateReviewOffset(new URL(req.url ?? '/', 'http://local').searchParams.get('offset'));
+        sendJson(res, 200, await listClaimReview(pool, req, cookie, offset));
     } catch (e) {
         const error = claimError(e);
         sendError(res, error.status, error.code);

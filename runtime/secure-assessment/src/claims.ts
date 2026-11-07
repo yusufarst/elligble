@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
 import type { Pool, PoolClient } from 'pg';
-import { ACTIVATION_POLICY, IdentityRuntime, type ActivationResult, type Clock } from '../../identity-access/src/index.ts';
+import { ACTIVATION_POLICY, checkNewPassword, IdentityRuntime, type ActivationResult, type Clock } from '../../identity-access/src/index.ts';
 import {
     canonicalClaimUuid, claimDigest, claimRequestLockKey, claimRosterLockKey, createReviewedPerson, findClaimSubmission,
     findDecisionReceipt, hasOtherOpenClaimForPerson, insertClaim, isNeverActivated, isOpenClaimState, issueClaimActivation,
@@ -16,7 +16,7 @@ import { schoolOperatorAssignment } from '../../tenant-access/src/school-operato
 import { activeHomeroomResponsibilities, homeroomCovers } from '../../academic-core/src/homeroom.ts';
 import {
     bindRosterIdentity, claimEnrollmentSlot, claimEnrollmentState, claimNamesMatch, ensureClaimEnrollment, isClaimBirthDate,
-    isClaimName, isClaimNisn, matchRosterForClaim, personHasAcademicStaffRole, readRosterIdentity, rosterRecordsBoundToPerson,
+    isClaimName, isClaimNisn, matchRosterForClaim, personHasAcademicStaffRole, readRosterIdentity, rosterIdsInScope, rosterRecordsBoundToPerson,
     rosterStillMatches, type RosterIdentity,
 } from '../../academic-core/src/student-identity.ts';
 import { AuthenticationError, buildAuthenticatedContext } from './http/authenticated-context.ts';
@@ -131,9 +131,16 @@ export interface ReviewItem {
     roster: { revision: number; fullName: string; groupLabel: string | null; bound: boolean; nameMatches: boolean } | null;
 }
 
-const REVIEW_LIMIT = 100;
+export const REVIEW_PAGE_SIZE = 100;
+const MAX_REVIEW_OFFSET = 100_000;
 
-export async function listClaimReview(pool: Pool, req: IncomingMessage, cookie: SessionCookieConfig, clock: Clock = SYSTEM_CLOCK) {
+export function validateReviewOffset(value: string | null): number {
+    if (value === null) return 0;
+    if (!/^\d{1,6}$/.test(value) || Number(value) > MAX_REVIEW_OFFSET) throw new ClaimRefusal(400, 'invalid_request');
+    return Number(value);
+}
+
+export async function listClaimReview(pool: Pool, req: IncomingMessage, cookie: SessionCookieConfig, offset = 0, clock: Clock = SYSTEM_CLOCK) {
     const ctx = await buildAuthenticatedContext(req, pool, { cookie });
     if (!ctx) throw new ClaimRefusal(403, 'forbidden');
     const c = await pool.connect();
@@ -143,13 +150,13 @@ export async function listClaimReview(pool: Pool, req: IncomingMessage, cookie: 
         const operator = !!(await schoolOperatorAssignment(c, tenant, ctx.membershipId));
         const homerooms = operator ? [] : await activeHomeroomResponsibilities(c, tenant, ctx.membershipId, now);
         if (!operator && !homerooms.length) throw new ClaimRefusal(403, 'forbidden');
+        // Scope is applied in SQL before paging; unknown or ambiguous rombel goes to the School Operator only.
+        const rosterIds = operator ? null : await rosterIdsInScope(c, tenant, homerooms);
+        const page = await listOpenClaims(c, tenant, { now, rosterIds, limit: REVIEW_PAGE_SIZE, offset });
         const items: ReviewItem[] = [];
-        let truncated = false;
-        for (const claim of await listOpenClaims(c, tenant, 500)) {
+        for (const claim of page.claims) {
             const roster = claim.rosterId ? await readRosterIdentity(c, tenant, claim.rosterId) : null;
-            // Unknown or ambiguous rombel goes to the School Operator only.
             if (!operator && !(roster && homeroomCovers(homerooms, roster))) continue;
-            if (items.length === REVIEW_LIMIT) { truncated = true; break; }
             items.push({
                 claimId: claim.id, revision: claim.revision, state: claim.state, expired: now.getTime() >= claim.expiresAt.getTime(),
                 createdAt: claim.createdAt.toISOString(), expiresAt: claim.expiresAt.toISOString(),
@@ -161,7 +168,7 @@ export async function listClaimReview(pool: Pool, req: IncomingMessage, cookie: 
             });
         }
         await c.query('COMMIT');
-        return { authority: operator ? 'school_operator' : 'homeroom', claims: items, truncated };
+        return { authority: operator ? 'school_operator' : 'homeroom', claims: items, offset, truncated: page.more };
     } catch (error) {
         await c.query('ROLLBACK').catch(() => {});
         throw error;
@@ -373,6 +380,9 @@ export async function activateClaimBound(
     c: PoolClient, route: ClaimActivationRoute, username: string, code: string, newPassword: string, clock: Clock = SYSTEM_CLOCK,
 ): Promise<ActivationResult> {
     const identity = new IdentityRuntime(c as never, clock);
+    // A refused password is answered before any claim lock, exactly like ordinary activation.
+    const rejection = checkNewPassword(newPassword, { username: typeof username === 'string' ? username.trim() : '' });
+    if (rejection) return { success: false, error: 'PASSWORD_REJECTED', reason: rejection };
     await c.query('BEGIN');
     try {
         const tenant = route.tenantId.toLowerCase();
@@ -392,7 +402,12 @@ export async function activateClaimBound(
                 && enrollment?.enrolled && enrollment.compatible && activation) guard = activation.activationId;
         }
         // A refused route still runs the same credential-locked check with a guard that cannot match.
-        const { result, effect } = await identity.activateInTransaction(username, code, newPassword, { activationId: guard });
+        const { result, effect } = await identity.activateInTransaction(username, code, newPassword,
+            { activationId: guard, ...(claim ? { notAfter: claim.expiresAt } : {}) });
+        // The wait for the credential lock may have crossed the claim's expiry: record it now.
+        if (claim?.state === 'APPROVED_PENDING_ACTIVATION' && effect === 'none') {
+            await observeClaim(c, claim, clock.now(), ACTIVATION_POLICY.MAX_FAILED_ATTEMPTS);
+        }
         if (claim && guard !== IMPOSSIBLE_ACTIVATION && (effect === 'consumed' || effect === 'exhausted')) {
             const outcome = effect === 'consumed' ? 'ACTIVATED' : 'EXHAUSTED';
             await transitionClaim(c, claim, { actorKind: effect === 'consumed' ? 'student' : 'system', state: outcome, event: outcome });

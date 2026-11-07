@@ -56,7 +56,7 @@ it('a failed send retries with the same key; a changed field gets a new key', as
   fireEvent.click(screen.getByRole('button', { name: 'Kirim Pengajuan' }));
   expect((await screen.findByRole('alert')).textContent).toContain('kirim ulang');
   fireEvent.click(screen.getByRole('button', { name: 'Kirim Ulang Pengajuan' }));
-  expect((await screen.findByRole('alert')).textContent).toContain('sedang diproses');
+  expect((await screen.findByRole('alert')).textContent).toContain('sedang sibuk');
   const [first, second] = vi.mocked(client.submitClaim).mock.calls.map(c => c[0].requestKey);
   expect(second).toBe(first);
   fireEvent.change(screen.getByLabelText('Nama Lengkap'), { target: { value: 'Siti R' } });

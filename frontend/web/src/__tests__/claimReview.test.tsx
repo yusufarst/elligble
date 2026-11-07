@@ -15,7 +15,7 @@ const item = (over: Partial<client.ClaimReviewItem> = {}): client.ClaimReviewIte
   submitted: { fullName: 'Dewi Lestari', nisn: '0011112222', birthDate: '2010-03-04' },
   roster: { revision: 1, fullName: 'Dewi Lestari', groupLabel: 'X-1', bound: false, nameMatches: true }, ...over,
 });
-const queue = (claims: client.ClaimReviewItem[]): client.ClaimReview => ({ authority: 'homeroom', claims, truncated: false });
+const queue = (claims: client.ClaimReviewItem[]): client.ClaimReview => ({ authority: 'homeroom', claims, offset: 0, truncated: false });
 
 it('only the server-derived verifier capability adds the verification workspace', () => {
   const me = { tenantId: TENANT, tenantDisplayLabel: 'S', capabilities: { examParticipant: false, teacher: true, proctor: false } };

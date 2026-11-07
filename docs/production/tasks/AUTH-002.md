@@ -356,3 +356,67 @@ Engineering details resolved within the contract (00.13 §5.1):
 - NEW_IDENTITY_REVIEWED relies on the recorded in-person attestation.
 
 **Boundaries:** PB05 OPEN. No real data, deployment or release claim.
+
+## 14. Independent implementation review and correction 1 — 2026-11-07
+
+### 14.1 Original implementation review: STOP
+
+The reviewer was a fresh-context, read-only Identity/Security agent (00.13 §5.5) and reviewed content 660d69d113341b77095351362e0e09b086120bae against base 5d0672f. The executor verified each item of cited evidence in the source before correcting.
+
+**Verdict: STOP, three material findings.**
+
+- **M1, queue truncated before scope:** `listClaimReview` took the tenant's oldest 500 open claims, then filtered by Homeroom scope and capped at 100. `truncated` ignored the source cut, and expired or unmatched claims were never excluded. Anonymous unmatched submissions could therefore hide scoped claims (C03/C11).
+- **M2, no expiry recheck after the credential wait:** claim-bound activation evaluated claim expiry before waiting on the credential lock. A code could be consumed after the claim's `expires_at` (§6 item 7, C09).
+- **M3, C09/C12 evidence below the gate:** contention used raw advisory or row locks instead of the actual writers, mostly in one order. Several writer pairs, a 0057 upgrade/rollback oracle and path 42 compatibility were missing.
+
+**Found consistent by the reviewer:**
+
+- the lock order against every existing writer;
+- D2 adjudication, self-target and N1 exclusion;
+- the §6A.2 predicate after the credential lock, `unusableVerifier: null` and no code on replay;
+- the claim-issued guard, single-row revocation and lazy observation;
+- 0057 constraints and 0056 agreement;
+- scope (41 of 44 paths);
+- UI copy and purge;
+- no test assertion expected to fail.
+
+**Exact-content CI of 660d69d:** CI #137/run 42333137898, push, attempt 1: Web job SUCCESS; the Runtime job's integration step started 2026-11-07T03:15:44Z and was still running at 04:41:45Z (CI #136 took 29 s), so it is hung. Executor diagnosis from source: the 660d69d contention test registered `t.after(watch.release)` after `t.after(db.close)`. Hooks run in registration order, so `pool.end()` waits for the unreleased observer client, the test process never exits and the job runs to the 6-hour default limit. Correction 1 replaces every teardown with one that first releases barriers and destroys still-held clients. The run is not cancelled; its final conclusion is recorded at evidence time. It was preserved as recorded: no cancellation and no re-run.
+
+### 14.2 Correction 1 (within the frozen contract and allowlist; bound 1 of 3, 00.13 §5.6)
+
+- **M1:**
+  - Identity `listOpenClaims` now pages in SQL over open, unexpired claims, scoped by an Academic-owned `rosterIdsInScope` for Homeroom; roster-matched claims come first. `truncated` reflects the scoped query.
+  - The route accepts a bounded `offset` (0 to 100000; anything else is 400), and the UI offers next and first page.
+  - Expired claims are not offered for decision; the next locked observer records their closure. Unmatched claims still require an Operator rejection or cancellation, or simply expire.
+- **M2:**
+  - `ClaimActivationGuard.notAfter` carries the claim's `expires_at` and is evaluated in `#activateCore` after the credential and activation row locks; it refuses without counting or consuming.
+  - The coordinator then re-observes the claim, so it records EXPIRED and revokes only its own code row.
+- **M3:** new real-PostgreSQL barrier tests on the actual writers, each observed through `pg_blocking_pids` and run in both orders:
+  - `setSchoolOperator` on the target;
+  - `ensureMembership`;
+  - AUTH-001 `allocateStudentIdentity`;
+  - the shared enrollment writer on an initially empty slot with case-variant UUIDs;
+  - `importPeople`;
+  - roster import confirm over HTTP;
+  - session revocation;
+  - School Operator revocation of the verifier;
+  - reissue against claim-bound activation;
+  - post-wait claim expiry.
+
+  Also added:
+  - a scoped-queue and paging oracle;
+  - a 0057 upgrade, rollback and repeat oracle over 0056 data;
+  - a path 42 compatibility oracle: legacy `activate()` refuses a claim-issued code without counting, and ordinary cards count and activate as before.
+- **Non-material notes applied:**
+  - the 429 copy is neutral ("Server sedang sibuk");
+  - a refused password is answered before any claim lock;
+  - the received-state info Alert no longer nests an alert role.
+- **Notes left as recorded residuals:** activation-row writes after the slot lock (harmless, credential held); the no-op allocation audit (claim event and allocation event are the record); the predicate evaluated at approval only, as the contract defines; retention is a G7 input.
+- **Local checks:**
+  - typecheck PASS in all runtime packages, web and e2e;
+  - targeted Node units PASS (Secure Assessment claims and route parity 5/5, plus earlier units);
+  - targeted web units PASS (studentClaim and claimReview 8/8).
+
+  Real PostgreSQL and browser evidence come only from CI.
+
+**Status:** VERIFYING. Pending: exact-content CI of the correction, then targeted re-review by the same reviewer.

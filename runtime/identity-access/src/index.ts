@@ -51,8 +51,11 @@ export type ActivationResult =
 /** Effect of one activation attempt, for a claim-bound coordinator that records the claim outcome. */
 export type ActivationEffect = 'none' | 'failed' | 'exhausted' | 'consumed';
 
-/** Claim-bound guard: only this exact open code row may be used; any other open row refuses. */
-export interface ClaimActivationGuard { activationId: string }
+/**
+ * Claim-bound guard: only this exact open code row may be used, and only before `notAfter`
+ * (the claim's own lifetime), evaluated after the credential and activation row locks.
+ */
+export interface ClaimActivationGuard { activationId: string; notAfter?: Date }
 
 export interface SessionCreationResult {
   sessionId: string;
@@ -336,7 +339,8 @@ export class IdentityRuntime {
     // coordinator only with its own row; either mismatch refuses without counting (§6A.6).
     const claimIssued = activation ? await isClaimIssuedActivation(this.#pg, activation.id) : false;
     const routeMismatch = guard ? !activation || activation.id !== guard.activationId : claimIssued;
-    if (!activation || routeMismatch || new Date(activation.expires_at).getTime() <= now.getTime()) {
+    const claimExpired = guard?.notAfter !== undefined && now.getTime() >= guard.notAfter.getTime();
+    if (!activation || routeMismatch || claimExpired || new Date(activation.expires_at).getTime() <= now.getTime()) {
       verifyPassword(code, UNKNOWN_ACCOUNT_VERIFIER);
       return { ...invalid, effect: 'none' };
     }

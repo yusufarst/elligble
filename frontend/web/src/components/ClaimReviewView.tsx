@@ -50,6 +50,7 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
   const [review, setReview] = useState<ClaimReview | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [offset, setOffset] = useState(0);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [adjudication, setAdjudication] = useState<ClaimAdjudication | null>(null);
   const [elligbleId, setElligbleId] = useState('');
@@ -68,12 +69,12 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
   const retryRef = useRef<HTMLButtonElement>(null);
   const ids = { elligble: useId(), attest: useId(), inPerson: useId(), adjudication: useId() };
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (from: number) => {
     const current = ++loads.current;
     setLoading(true);
     setLoadError(null);
     try {
-      const result = await getClaimReview();
+      const result = await getClaimReview(from);
       if (current === loads.current) setReview(result);
     } catch (e) {
       if (current === loads.current) { setReview(null); setLoadError(failureCopy(e)); }
@@ -82,7 +83,8 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
     }
   }, []);
 
-  useEffect(() => { void load(); return () => { generation.current++; loads.current++; intent.current = null; }; }, [load]);
+  useEffect(() => { void load(offset); }, [load, offset]);
+  useEffect(() => () => { generation.current++; loads.current++; intent.current = null; }, []);
   useEffect(() => { if (draft && error && !pending) retryRef.current?.focus(); }, [draft, error, pending]);
 
   function resetDraft() {
@@ -133,7 +135,7 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
       } else {
         setNotice(result.replayed ? 'Tindakan ini sudah tercatat sebelumnya. Kode aktivasi tidak ditampilkan ulang.' : 'Keputusan tersimpan.');
       }
-      void load();
+      void load(offset);
     } catch (e) {
       if (current === generation.current) setError(failureCopy(e));
     } finally {
@@ -159,7 +161,7 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
       {notice && <p role="status" className="m-0 rounded-md border border-border p-4">{notice}</p>}
       {loadError && <p role="alert" className="m-0 text-danger-ink">{loadError}</p>}
       <div className="flex flex-wrap gap-3">
-        <Button variant="secondary" onClick={() => void load()} disabled={loading || pending}>{loading ? 'Memuat...' : 'Muat Ulang Daftar'}</Button>
+        <Button variant="secondary" onClick={() => void load(offset)} disabled={loading || pending}>{loading ? 'Memuat...' : 'Muat Ulang Daftar'}</Button>
       </div>
       {review && review.claims.length === 0 && <p className="m-0" role="status">Tidak ada pengajuan yang menunggu verifikasi Anda.</p>}
       {review && review.claims.length > 0 && (
@@ -189,7 +191,13 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
           ))}
         </ol>
       )}
-      {review?.truncated && <p className="m-0 text-sm text-muted-foreground">Daftar dibatasi 100 pengajuan tertua. Selesaikan pengajuan ini lalu muat ulang.</p>}
+      {review && (review.truncated || offset > 0) && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="m-0 text-sm text-muted-foreground">Menampilkan pengajuan {offset + 1} sampai {offset + review.claims.length}. Pengajuan yang cocok dengan daftar resmi ditampilkan lebih dulu.</p>
+          {offset > 0 && <Button variant="secondary" disabled={loading || pending} onClick={() => setOffset(0)}>Kembali ke Halaman Pertama</Button>}
+          {review.truncated && <Button variant="secondary" disabled={loading || pending} onClick={() => setOffset(offset + 100)}>Tampilkan Berikutnya</Button>}
+        </div>
+      )}
 
       <Dialog open={draft !== null} onOpenChange={next => { if (!next) close(); }}>
         <DialogContent className={`max-h-[90dvh] overflow-y-auto ${permissionDialogClass}`}
