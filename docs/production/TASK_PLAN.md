@@ -1,3 +1,5 @@
+> **AUTH-003 implementation checkpoint, 2026-11-07 (DEC-048):** baseline CI #146 attempt 1 eight SUCCESS and five artifacts PASS; implementation candidate published for exact-content CI and independent review ([record §14](tasks/AUTH-003.md)). DONE 4/33 (12.12%), VERIFYING 1, BLOCKED 28, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
+
 > **AUTH-003 READY / Build checkpoint, 2026-11-07 (DEC-048):** Owner decided the AUTH-003 recovery policy R1–R4 and designated the reviewer; contract review chain STOP → PASS ([record §4/§6A/§12](tasks/AUTH-003.md)); formal READY PASS, frozen 36-path allowlist, reserved 0058, CI-first order ([§13](tasks/AUTH-003.md)). DONE 4/33 (12.12%), IN_PROGRESS 1, BLOCKED 28, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
 
 > **AUTH-002 landing and next-Task checkpoint, 2026-11-07 (DEC-048):** AUTH-002 DONE / MERGED: PR #23 squash main 38259da885197ae3d207df3743d98c89d2bed9ac (tree equal to evidence head d879179), PR-head CI #143 and post-merge main CI #144 attempt 1 eight SUCCESS; final record §15 (Delegated Acceptance). DONE 4/33 (12.12%), BLOCKED 29, others 0; 78 edges unchanged. No baseline Task is eligible (00.13 §4.1): AUTH-003 needs Owner recovery-policy decisions; ASSESS-QUESTION-001 and ASSESS-INSTITUTION-001 need OPEN O02/O05 and A01/A04; OPS-STAGING-001 and LEGAL-001 are prepare-only. Owner decision package presented in chat (00.13 §4.5); this landing record stays local until publication is authorized or the next eligible Task's first change includes it. PB05 OPEN; production NOT READY.
@@ -21,7 +23,7 @@
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
 **Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
 **Completed transition:** GOV-P11-001 DONE for controlled tracker preparation/evidence only; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919, CI #110; excluded from the 33 implementation Tasks
-**Current Task:** AUTH-003 IN_PROGRESS under DEC-048 ([record §13](tasks/AUTH-003.md)), after AUTH-002 DONE / MERGED (main 38259da, CI #144; [record §15](tasks/AUTH-002.md)). Earlier: AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
+**Current Task:** AUTH-003 VERIFYING under DEC-048 ([record §14](tasks/AUTH-003.md)), after AUTH-002 DONE / MERGED (main 38259da, CI #144; [record §15](tasks/AUTH-002.md)). Earlier: AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
 **Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
 **Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
@@ -38,7 +40,7 @@ Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CB
 
 ## 2. Baseline accounting and status semantics
 
-Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-002 are completed baseline work; AUTH-003 is IN_PROGRESS; the remaining 28 Tasks are BLOCKED. Every completed PRE-P11 Task and GOV-P11-001 are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
+Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-002 are completed baseline work; AUTH-003 is VERIFYING; the remaining 28 Tasks are BLOCKED. Every completed PRE-P11 Task and GOV-P11-001 are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
 
 | Counter | Value |
 |---|---:|
@@ -46,8 +48,8 @@ Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-0
 | Current Total | 33 |
 | DONE | 4 |
 | READY | 0 |
-| IN_PROGRESS | 1 |
-| VERIFYING | 0 |
+| IN_PROGRESS | 0 |
+| VERIFYING | 1 |
 | BLOCKED | 28 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
@@ -57,7 +59,7 @@ Baseline/Current Total remain 33. Progress = 4 / 33 = 12.12% (rounded). SEC-001,
 
 - BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; the 28 presently BLOCKED rows qualify.
 - TODO: included unstarted work without a currently identified blocker, still needing full contract readiness; none currently classified.
-- READY: dependencies DONE, applicable policies/contracts/scope/impacts/tests/tools/cost known and no blocking ambiguity. ADMIN-001 completed its full lifecycle; AUTH-002 completed its full lifecycle under DEC-048; AUTH-003 passed READY and is IN_PROGRESS.
+- READY: dependencies DONE, applicable policies/contracts/scope/impacts/tests/tools/cost known and no blocking ambiguity. ADMIN-001 completed its full lifecycle; AUTH-002 completed its full lifecycle under DEC-048; AUTH-003 passed READY and is VERIFYING.
 - IN_PROGRESS/VERIFYING/DONE/SUPERSEDED retain DEC-045 meanings; only reviewed evidence supports DONE. SEC-001, AUTH-001 and ADMIN-001 are checked as completed.
 - Priorities indicate production ordering, not estimates or a waiver. Independent school/Owner decisions can be obtained without authorizing parallel executor Tasks. PARALLEL SAFE: NO for all rows unless a later explicit contract/Owner approval changes that.
 
@@ -71,7 +73,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 | AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | DONE | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
 | ADMIN-001 | School Operator authoritative roster import | DONE | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
 | AUTH-002 | Student claim and scoped verification/activation | DONE | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
-| AUTH-003 | In-person school-assisted recovery of the existing account | IN_PROGRESS | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
+| AUTH-003 | In-person school-assisted recovery of the existing account | VERIFYING | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
 | ASSESS-QUESTION-001 | Versioned question/answer/scoring compatibility foundation | BLOCKED | P0 / question and answer integrity foundation | HIGH | SEC-001 | O02, O05, O09, A01 |
 | ASSESS-QUESTION-002 | Multiple response | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-003 | True/false | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
@@ -107,7 +109,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 - [x] AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation (DONE, PR #20/main ebcc4ca, CI #124)
 - [x] ADMIN-001 — School Operator authoritative roster import (DONE, PR #21/main 056a154, CI #131)
 - [x] AUTH-002 — Student claim and scoped verification/activation (DONE)
-- [ ] AUTH-003 — In-person school-assisted recovery of the existing account (IN_PROGRESS)
+- [ ] AUTH-003 — In-person school-assisted recovery of the existing account (VERIFYING)
 - [ ] ASSESS-QUESTION-001 — Versioned question/answer/scoring compatibility foundation (BLOCKED)
 - [ ] ASSESS-QUESTION-002 — Multiple response (BLOCKED)
 - [ ] ASSESS-QUESTION-003 — True/false (BLOCKED)
@@ -194,7 +196,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### AUTH-003 — In-person school-assisted recovery of the existing account
 
-- **Requirements / status / priority / risk:** R09; IN_PROGRESS; P0 / account continuity; HIGH.
+- **Requirements / status / priority / risk:** R09; VERIFYING; P0 / account continuity; HIGH.
 - **Dependencies and approvals:** AUTH-002; external O03, O09, A03. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Scoped verifier authorizes reset of the existing identity/account after approved in-person proof. Single-use/expiry/revocation/notification follow O03; concurrent completion/replay cannot allocate a new identity or consume a token twice. Never expose credential/proof data.
 - **Required tests/evidence:** P8 V01/V03/V11; expired/consumed/forged proof, wrong verifier/rombel/tenant, concurrent reset and old-session behavior; real PostgreSQL and browser recovery. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.

@@ -20,7 +20,7 @@ const queue = (claims: client.ClaimReviewItem[]): client.ClaimReview => ({ autho
 it('only the server-derived verifier capability adds the verification workspace', () => {
   const me = { tenantId: TENANT, tenantDisplayLabel: 'S', capabilities: { examParticipant: false, teacher: true, proctor: false } };
   expect(availableWorkspaces(me)).toEqual(['teacher']);
-  expect(availableWorkspaces({ ...me, capabilities: { ...me.capabilities, claimVerifier: true } })).toEqual(['teacher', 'verifier']);
+  expect(availableWorkspaces({ ...me, capabilities: { ...me.capabilities, claimVerifier: true } })).toEqual(['teacher', 'verifier', 'recovery']);
 });
 
 it('approval needs an adjudication, in-person confirmation and a reason; the code is shown once', async () => {

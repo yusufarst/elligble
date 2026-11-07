@@ -159,3 +159,14 @@ Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registrat
 The Student claim follows the settled O03 values (seven days from server creation, expired at now >= expires_at, ten failures) and Owner-approved D1–D3: in-person verification with the existing single-use activation code issued at approval; explicit adjudication EXISTING_BINDING, EXISTING_ACCOUNT_CONTINUITY or NEW_IDENTITY_REVIEWED; failures counted only on the claim-issued code. Claim states: PENDING_REVIEW, REVIEW_REQUIRED, APPROVED_PENDING_ACTIVATION (open); APPROVED_EXISTING_ACCOUNT, REJECTED, CANCELLED, ACTIVATED, EXPIRED, EXHAUSTED, CLOSED_BY_REISSUE (terminal). Name confirmation is NFC, trimmed, whitespace-collapsed, case-folded exact equality.
 
 Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.
+
+## AUTH-003 bounded implementation checkpoint — 2026-11-07
+
+In-person recovery follows O03 and Owner R1–R4:
+- only an activated Student Account bound to the school roster qualifies;
+- a scoped verifier issues a single-use code valid fifteen minutes (expired at now >= expires_at, ten failures), shown once;
+- a newer code, an activation code or an activation closes an older open recovery code;
+- completion atomically replaces the password and revokes every session and open code;
+- no notification channel and no Account lockout.
+
+Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.

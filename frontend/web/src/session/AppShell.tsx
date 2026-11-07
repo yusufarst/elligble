@@ -1,15 +1,16 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { IconBuilding, IconClipboardCheck, IconLogOut, IconMonitor, IconBook } from '@/components/icons';
+import { IconBuilding, IconClipboardCheck, IconInfo, IconLogOut, IconMonitor, IconBook } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import type { MeContext } from '../api/auth-client.ts';
 import { tenantLabel } from './SessionScreens.tsx';
 
-export type Workspace = 'student' | 'proctor' | 'teacher' | 'operator' | 'verifier';
+export type Workspace = 'student' | 'proctor' | 'teacher' | 'operator' | 'verifier' | 'recovery';
 
 export const WORKSPACE_LABELS: Record<Workspace, string> = {
   operator: 'Data Siswa',
   verifier: 'Verifikasi Pendaftaran',
+  recovery: 'Pemulihan Akun',
   student: 'Jadwal Ujian',
   proctor: 'Ruang Ujian',
   teacher: 'Pelaksanaan Ujian',
@@ -18,6 +19,7 @@ export const WORKSPACE_LABELS: Record<Workspace, string> = {
 const WORKSPACE_ICONS: Record<Workspace, React.FC> = {
   operator: IconBuilding,
   verifier: IconClipboardCheck,
+  recovery: IconInfo,
   student: IconBook,
   proctor: IconMonitor,
   teacher: IconClipboardCheck,
@@ -29,7 +31,7 @@ export function availableWorkspaces(me: MeContext): Workspace[] {
   if (me.capabilities.proctor) list.push('proctor');
   if (me.capabilities.teacher) list.push('teacher');
   if (me.capabilities.schoolOperator) list.push('operator');
-  if (me.capabilities.claimVerifier) list.push('verifier');
+  if (me.capabilities.claimVerifier) list.push('verifier', 'recovery');
   return list;
 }
 

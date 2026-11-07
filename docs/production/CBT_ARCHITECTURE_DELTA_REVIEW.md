@@ -58,3 +58,9 @@ Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registrat
 Migration 0057 adds Identity-owned claims, claim events and the claim-to-activation relation, and Academic-owned roster identity bindings and Homeroom responsibilities with append-only events. The Secure Assessment coordinator composes owning APIs in one READ COMMITTED transaction with the reviewed total lock order (record §6A.3). 0056 roster person_id and all prior migrations are unchanged; Identity never reads Academic tables.
 
 Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.
+
+## AUTH-003 bounded implementation checkpoint — 2026-11-07
+
+Migration 0058 adds the Identity-owned identity_account_recovery_codes table: one open code per Account, immutable identity, and a single close. Issue and completion compose the owning APIs in the reviewed lock orders (record §6/§6A). Completion uses the existing credential → activation → sessions order, with non-blocking tenant and identity keys.
+
+Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.

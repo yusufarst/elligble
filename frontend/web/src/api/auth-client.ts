@@ -111,3 +111,40 @@ export async function getMeContext(): Promise<MeContext> {
   if (!res.ok) throw new Error(`me_context_failed_${res.status}`);
   return res.json() as Promise<MeContext>;
 }
+
+// AUTH-003: the Student completes an in-person recovery with the school's single-use code.
+export type RecoveryFailure = 'invalid_recovery' | 'already_completed' | 'busy' | 'password_rejected' | 'invalid_request' | 'unavailable';
+
+export class RecoveryError extends Error {
+  readonly reason: RecoveryFailure;
+  readonly passwordRejection: PasswordRejection | null;
+  constructor(reason: RecoveryFailure, passwordRejection: PasswordRejection | null = null) {
+    super(reason);
+    this.name = 'RecoveryError';
+    this.reason = reason;
+    this.passwordRejection = passwordRejection;
+  }
+}
+
+/** Recovery completion: the new password is the person's own and every older session ends. */
+export async function completeRecovery(username: string, recoveryCode: string, newPassword: string): Promise<SessionInfo> {
+  let res: Response;
+  try {
+    res = await apiFetch('/api/v1/identity/recovery/complete', { method: 'POST', json: { username, recoveryCode, newPassword } });
+  } catch {
+    throw new RecoveryError('unavailable');
+  }
+  if (res.ok) return res.json() as Promise<SessionInfo>;
+  if (res.status === 401) throw new RecoveryError('invalid_recovery');
+  if (res.status === 409) throw new RecoveryError('already_completed');
+  if (res.status === 429) throw new RecoveryError('busy');
+  if (res.status === 400) {
+    const body = await res.json().catch(() => null);
+    if (body && body.error === 'password_rejected') {
+      const reason = body.reason as PasswordRejection;
+      throw new RecoveryError('password_rejected', ['too_short', 'too_long', 'too_common', 'contains_username'].includes(reason) ? reason : 'too_common');
+    }
+    throw new RecoveryError('invalid_request');
+  }
+  throw new RecoveryError('unavailable');
+}

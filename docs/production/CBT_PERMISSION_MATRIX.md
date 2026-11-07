@@ -164,3 +164,9 @@ Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registrat
 A09 is implemented only as: anonymous non-trusted claim submission; claim review and decision by an authenticated own-tenant School Operator or an effective own-current-rombel Homeroom responsibility, assigned only through the audited existing-authority CLI. A Teacher label, teaching assignment or Proctor role grants nothing. Staff, Teacher, Proctor, Operator and Homeroom Persons are never bound or issued a code.
 
 Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.
+
+## AUTH-003 bounded implementation checkpoint — 2026-11-07
+
+A09 recovery is implemented only for the own-tenant School Operator and the effective Homeroom of the Student's current rombel. Staff, Teacher, Proctor, Operator and Homeroom Accounts, self and out-of-scope targets get one bounded refusal; completion rechecks binding, staff exclusion and issuer authority.
+
+Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.

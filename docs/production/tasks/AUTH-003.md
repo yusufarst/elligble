@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 account continuity; HIGH risk; R09, P3 F03, P5 A09, P8 V01/V03/V11 |
-| Status | **IN_PROGRESS — contract review chain PASS (§12); formal READY PASS and Build started under DEC-048 on 2026-11-07 (§13)** |
+| Status | **VERIFYING — capture-only baseline PASS; implementation candidate published for exact-content CI and independent implementation review (§14)** |
 | Objective | A Student who forgot their password is verified in person by a scoped school verifier, who issues a single-use recovery code; the Student sets their own new password on the same Person and canonical Account, and every older session and open code is revoked atomically |
 | Owner decisions | 2026-11-07, Owner in chat: R1–R4 approved (§4); the Owner designated a separate read-only fresh-context reviewer agent as the Independent Identity/Security reviewer for this Task (A03 gate, contract and implementation) |
 | Execution authority | DEC-048 (00.13). Eligible after AUTH-002 DONE / MERGED (main 38259da885197ae3d207df3743d98c89d2bed9ac, post-merge CI #144 attempt 1 eight SUCCESS) and the Owner decisions above |
@@ -304,3 +304,30 @@ The executor verified the cited evidence before correcting: provisioning.ts and 
 
   Every content SHA needs automatic attempt-1 eight-job CI. There are no re-runs. Locally only typechecks and targeted units run.
 - **Status:** BLOCKED → READY → IN_PROGRESS. Counters: DONE 4, IN_PROGRESS 1, BLOCKED 28. 33 IDs and 78 edges unchanged. PB05 OPEN.
+
+## 14. Implementation candidate — 2026-11-07
+
+- **Registration:** 20bf81b6dd6a4a917c2ea80d4ab49f05d26fdd41, PR #24, CI #145/run 42359969022, attempt 1, eight SUCCESS.
+- **Capture-only baseline:** 79911831eceabb66522552b033cd648803ef3e6d changed only the E2E spec (the shared capture routine now takes the Task context). CI #146/run 42360633652, attempt 1, eight SUCCESS.
+  - All five workspace-visual artifacts were retrieved, each with 16 AUTH-003 captures (login-entry and verifier-workspace, seven widths plus 200% text).
+  - Every capture is phase `before` at the exact commit with frontend tree 2a4f9f399167ac1947e4c2130eae354daf9ad9b3, and the recovery entry is absent (0).
+- **Candidate** (within the frozen 36 paths):
+  - Identity: 0058, `recovery.ts`, completion in `index.ts`; F1 closure in `provisioning.ts` and on activation.
+  - Academic Core: the comparison read.
+  - Secure Assessment: the coordinator `recovery.ts`, the F03 routes, wiring and metrics; `claims.ts` exports the shared helpers.
+  - Web: `AccountRecoveryView`, `RecoveryForm`, the login entry, provider `recover`, the `recovery` workspace.
+  - Tests: units, real PostgreSQL integration (C01–C10 including the §6A.4 interleavings and post-wait expiry), the after-phase E2E journey with an honest expiry refusal and the masked handoff.
+  - Records: P2/P3/P4/P5/P7 pointers.
+  - Unchanged in this candidate: rows 21 (account-activation integration) and 34 apart from the comparison read.
+- **Engineering details within the contract (00.13 §5.1):**
+  - the comparison read returns name, rombel, NISN, birth date and roster revision only;
+  - the login footnote now points to in-person verification;
+  - the new workspace reuses `IconInfo`.
+- **Local checks:**
+  - typecheck PASS in all runtime packages, web and e2e;
+  - targeted Node units 30/30 (route parity, metrics, server, recovery, claims) and identity recovery 3/3;
+  - targeted web units 38/38 (accountRecovery, session, claimReview, designSystemGuard, studentClaim).
+
+  Real PostgreSQL and five-browser evidence come only from CI.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 4, VERIFYING 1, BLOCKED 28.
+- **Pending:** exact-content CI, independent implementation and rendered review, Delegated Acceptance, the evidence commit and the merge.

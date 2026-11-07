@@ -66,6 +66,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         submitClaim: m => m.submitClaim({tenantId:ID,fullName:'Siswa Sintetis',nisn:'0012345678',birthDate:'2010-01-02',requestKey:ID}),
         getClaimReview: m => m.getClaimReview(),
         decideClaim: m => m.decideClaim({claimId:ID,expectedRevision:1,decision:'REJECT',reason:'Synthetic decision',confirmed:true,requestKey:ID}),
+        authorizeRecovery: m => m.authorizeRecovery({elligbleId:'elg-abcd-efgh-jkmn',confirmed:false}),
     },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),
@@ -73,6 +74,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getSession: m => m.getSession(),
         logout: m => m.logout(),
         getMeContext: m => m.getMeContext(),
+        completeRecovery: m => m.completeRecovery('pengguna.uji', 'ABCD-EFGH-JKMN', 'matahari-pagi-2026'),
     },
     'exam/answer-sync-api.ts': {
         createAnswerSyncApi: async m => {
@@ -83,7 +85,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     },
 };
 /** Exports that never call the network. */
-const PURE_EXPORTS = new Set(['RosterApiError', 'ClaimApiError', 'ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
+const PURE_EXPORTS = new Set(['RosterApiError', 'ClaimApiError', 'RecoveryError', 'ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
 
 const unavailablePool = {
     connect: async () => { throw new Error('database unavailable'); },

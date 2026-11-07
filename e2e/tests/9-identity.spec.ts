@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { login, open, withDatabase, state } from './helpers.ts';
 import { setSchoolOperator } from '../../runtime/tenant-access/src/school-operator.ts';
+import { hashPassword } from '../../runtime/identity-access/src/crypto.ts';
 
 const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 const BASE_TREE = 'aef3abfb4c233105026f11167c92da13d2664337';
@@ -334,5 +335,89 @@ test('AUTH-003 actual entry baseline: login and verifier workspace before recove
         await captureAuthWidths(page, 'verifier-workspace', [], RECOVERY_CAPTURE);
     } finally {
         await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: person, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'End synthetic baseline' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
+    }
+});
+
+if (RECOVERY_CAPTURE.phase === 'after') test('AUTH-003 in-person recovery: scoped issue, one-time handoff, Student recovery and expiry', async ({ page }) => {
+    const oldPassword = 'SandiLamaSintetis2026!', newPassword = 'SandiBaruSintetis2026!';
+    const fixture = await withDatabase(async c => {
+        const r = await c.query(`SELECT g.id AS group_id, g.academic_year_id, p.id AS period_id FROM academic_core_academic_groups g
+            JOIN academic_core_academic_periods p ON p.tenant_id = g.tenant_id AND p.academic_year_id = g.academic_year_id
+            WHERE g.tenant_id = $1 AND g.display_label = 'X-E2E'`, [state.tenantId]);
+        const guru = (await c.query('SELECT a.person_id FROM identity_user_accounts a JOIN identity_account_credentials cr ON cr.user_account_id=a.id WHERE cr.username=$1', ['guru.e2e'])).rows[0].person_id as string;
+        const make = async (username: string, nisn: string) => {
+            const person = (await c.query('INSERT INTO identity_persons(id) VALUES(gen_random_uuid()) RETURNING id')).rows[0].id as string;
+            const account = (await c.query('INSERT INTO identity_user_accounts(id, person_id) VALUES(gen_random_uuid(), $1) RETURNING id', [person])).rows[0].id as string;
+            await c.query('INSERT INTO identity_account_credentials(user_account_id, username, password_verifier, last_successful_login_at) VALUES($1,$2,$3,now())', [account, username, hashPassword(oldPassword)]);
+            await c.query('INSERT INTO tenant_memberships(id, tenant_id, person_id) VALUES(gen_random_uuid(),$1,$2)', [state.tenantId, person]);
+            const roster = (await c.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth, academic_year_id, academic_period_id, academic_group_id, person_id)
+                VALUES($1,$2,'Siswa Pulih Sintetis',$3,$4,'2010-06-07',$5,$6,$7,$8) RETURNING id`, [state.tenantId, `rec-${username}`, `nis-${username}`, nisn, r.rows[0].academic_year_id, r.rows[0].period_id, r.rows[0].group_id, person])).rows[0].id as string;
+            return { person, account, roster };
+        };
+        const main = await make('pulih.e2e', '9990000093'), expired = await make('pulih.kedaluwarsa', '9990000094');
+        await c.query('BEGIN');
+        try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: guru, action: 'ASSIGN', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'Synthetic recovery verification' }); await c.query('COMMIT'); }
+        catch (e) { await c.query('ROLLBACK'); throw e; }
+        // A synthetic, already expired code renders the honest expiry refusal; no fixture change.
+        await c.query(`INSERT INTO identity_account_recovery_codes(tenant_id, user_account_id, person_id, roster_id, issuer_person_id, issuer_kind, reason, request_key, request_digest, code_verifier, issued_at, expires_at)
+            VALUES($1,$2,$3,$4,$5,'school_operator','Synthetic expired',gen_random_uuid(),repeat('0',64),$6,now() - interval '20 minutes',now() - interval '5 minutes')`,
+            [state.tenantId, expired.account, expired.person, expired.roster, guru, hashPassword('ABCDEFGHJKMN')]);
+        return { guru, main };
+    });
+    try {
+        await login(page, 'guru.e2e', 'papan-tulis-hijau');
+        await page.getByRole('button', { name: 'Pemulihan Akun', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Pemulihan Akun', exact: true })).toBeVisible();
+        await captureAuthWidths(page, 'recovery-empty', [], RECOVERY_CAPTURE);
+        await page.getByLabel('ELLIGBLE ID siswa').fill('pulih.e2e');
+        await page.getByRole('button', { name: 'Periksa', exact: true }).click();
+        await expect(page.locator('#account-recovery')).toContainText('9990000093');
+        await captureAuthWidths(page, 'recovery-compare', [], RECOVERY_CAPTURE);
+        const trigger = page.getByRole('button', { name: 'Terbitkan Kode Pemulihan' });
+        await tabTo(page, trigger);
+        await page.keyboard.press('Enter');
+        const dialog = page.getByRole('dialog', { name: 'Terbitkan Kode Pemulihan?' });
+        await expect(dialog).toBeVisible();
+        for (const key of ['Tab', 'Shift+Tab']) for (let n = 0; n < 6; n++) {
+            await page.keyboard.press(key);
+            await expect.poll(() => dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+        }
+        await dialog.getByLabel('Saya sudah memverifikasi siswa ini secara langsung dengan kartu pelajar.').check();
+        await dialog.getByRole('textbox', { name: 'Alasan tindakan' }).fill('Lupa kata sandi, diverifikasi langsung');
+        await captureAuthWidths(page, 'recovery-issue', [], RECOVERY_CAPTURE);
+        await dialog.getByRole('button', { name: 'Terbitkan', exact: true }).click();
+        const handoff = page.getByRole('dialog', { name: 'Serahkan Kode Pemulihan' });
+        await expect(handoff).toBeVisible();
+        const code = (await handoff.locator('dd').nth(1).textContent())!.trim();
+        await captureAuthWidths(page, 'recovery-handoff', [handoff.locator('dd').nth(1)], RECOVERY_CAPTURE);
+        await handoff.getByRole('button', { name: 'Selesai, Tutup Kode' }).click();
+        await expect(page.getByText(code)).toHaveCount(0);
+        await expect(page.locator('#account-recovery')).not.toContainText('9990000093');
+        await page.getByRole('button', { name: 'Keluar' }).click();
+        await expect(page.getByRole('heading', { name: 'Masuk ke ELLIGBLE', exact: true })).toBeVisible();
+
+        // Student: expired code refused honestly, then the handed-over code recovers the same Account.
+        await page.getByRole('button', { name: 'Lupa kata sandi? Gunakan kode pemulihan dari sekolah' }).click();
+        await expect(page.getByRole('heading', { name: 'Pulihkan Akun', exact: true })).toBeVisible();
+        await captureAuthWidths(page, 'recovery-form', [], RECOVERY_CAPTURE);
+        const fill = async (username: string, value: string) => {
+            await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(username);
+            await page.getByLabel('Kode Pemulihan').fill(value);
+            await page.getByLabel('Kata Sandi Baru', { exact: true }).fill(newPassword);
+            await page.getByLabel('Ulangi Kata Sandi Baru').fill(newPassword);
+            await page.getByRole('button', { name: 'Pulihkan dan Masuk' }).click();
+        };
+        await fill('pulih.kedaluwarsa', 'ABCD-EFGH-JKMN');
+        await expect(page.getByRole('alert')).toContainText('kedaluwarsa');
+        await captureAuthWidths(page, 'recovery-refused', [], RECOVERY_CAPTURE);
+        await fill('pulih.e2e', code);
+        await expect(page.getByRole('heading', { name: 'Belum Ada Ruang Kerja', exact: true })).toBeVisible();
+        await withDatabase(async c => {
+            const row = (await c.query('SELECT consumed_at IS NOT NULL AS consumed FROM identity_account_recovery_codes WHERE user_account_id = $1', [fixture.main.account])).rows;
+            expect(row).toEqual([{ consumed: true }]);
+            expect((await c.query('SELECT count(*)::int AS n FROM identity_user_accounts WHERE person_id = $1', [fixture.main.person])).rows[0].n).toBe(1);
+        });
+    } finally {
+        await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: fixture.guru, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'End synthetic verification' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
     }
 });

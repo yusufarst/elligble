@@ -6,6 +6,7 @@ import { CenteredPage, StatusPage } from '@/components/ui/status-page';
 import { IconBuilding, IconChevronRight, IconInfo } from '@/components/icons';
 import { LoginForm } from './LoginForm.tsx';
 import { ActivationForm } from './ActivationForm.tsx';
+import { RecoveryForm } from './RecoveryForm.tsx';
 import type { SessionInfo } from '../api/auth-client.ts';
 
 function tenantLabel(label: string | null, tenantId: string): string {
@@ -17,29 +18,45 @@ export const LoginScreen: React.FC<{
   onActivate?(username: string, activationCode: string, newPassword: string): Promise<void>;
   /** AUTH-002: opens the non-trusted Student claim; absent where the claim is not offered. */
   onClaim?(): void;
-}> = ({ onLogin, onActivate, onClaim }) => {
-  const [mode, setMode] = useState<'login' | 'activate'>('login');
+  /** AUTH-003: completes an in-person recovery with the school's single-use code. */
+  onRecover?(username: string, recoveryCode: string, newPassword: string): Promise<void>;
+}> = ({ onLogin, onActivate, onClaim, onRecover }) => {
+  const [mode, setMode] = useState<'login' | 'activate' | 'recover'>('login');
   const activating = mode === 'activate' && onActivate;
+  const recovering = mode === 'recover' && onRecover;
+  const back = (
+    <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={() => setMode('login')}>
+      Kembali ke halaman masuk
+    </Button>
+  );
   return (
     <CenteredPage>
       <p className="mb-6 text-center font-mono text-sm font-semibold tracking-[0.2em] text-foreground">ELLIGBLE</p>
       <Card>
         <CardHeader>
-          <CardTitle level="h1">{activating ? 'Aktivasi Akun' : 'Masuk ke ELLIGBLE'}</CardTitle>
+          <CardTitle level="h1">{activating ? 'Aktivasi Akun' : recovering ? 'Pulihkan Akun' : 'Masuk ke ELLIGBLE'}</CardTitle>
           <CardDescription>
             {activating
               ? 'Masukkan ELLIGBLE ID dan kode aktivasi dari sekolah, lalu buat kata sandi Anda sendiri.'
-              : 'Gunakan ELLIGBLE ID dan kata sandi dari sekolah Anda.'}
+              : recovering
+                ? 'Masukkan ELLIGBLE ID dan kode pemulihan yang diberikan langsung oleh operator sekolah atau wali kelas, lalu buat kata sandi baru Anda sendiri.'
+                : 'Gunakan ELLIGBLE ID dan kata sandi dari sekolah Anda.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {activating ? <ActivationForm onSubmit={onActivate} /> : <LoginForm onSubmit={onLogin} />}
-          {onActivate && (
-            <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={() => setMode(activating ? 'login' : 'activate')}>
-              {activating ? 'Kembali ke halaman masuk' : 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi'}
+          {activating ? <ActivationForm onSubmit={onActivate} /> : recovering ? <RecoveryForm onSubmit={onRecover} /> : <LoginForm onSubmit={onLogin} />}
+          {(activating || recovering) && back}
+          {!activating && !recovering && onActivate && (
+            <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={() => setMode('activate')}>
+              Belum pernah masuk? Aktifkan akun dengan kode aktivasi
             </Button>
           )}
-          {onClaim && !activating && (
+          {!activating && !recovering && onRecover && (
+            <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={() => setMode('recover')}>
+              Lupa kata sandi? Gunakan kode pemulihan dari sekolah
+            </Button>
+          )}
+          {onClaim && !activating && !recovering && (
             <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={onClaim}>
               Belum punya akun? Ajukan pendaftaran akun
             </Button>
@@ -47,7 +64,7 @@ export const LoginScreen: React.FC<{
         </CardContent>
       </Card>
       <p className="mt-5 text-center text-sm leading-relaxed text-muted-foreground">
-        Lupa kata sandi atau kode aktivasi? Hubungi operator sekolah atau wali kelas Anda.
+        Lupa kata sandi atau kode aktivasi? Temui operator sekolah atau wali kelas Anda untuk verifikasi langsung.
         <br />
         Petugas sekolah tidak pernah meminta kata sandi Anda.
       </p>

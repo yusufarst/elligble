@@ -3,6 +3,7 @@ import {
   getMeContext,
   getSession,
   activate as activateRequest,
+  completeRecovery as completeRecoveryRequest,
   login as loginRequest,
   logout as logoutRequest,
   type MeContext,
@@ -27,6 +28,8 @@ export interface SessionApi {
   login(username: string, password: string): Promise<void>;
   /** First sign-in of a provisioned account with its activation code. */
   activate(username: string, activationCode: string, newPassword: string): Promise<void>;
+  /** AUTH-003: completes an in-person recovery with the school's code and signs in. */
+  recover(username: string, recoveryCode: string, newPassword: string): Promise<void>;
   reauthenticate(username: string, password: string): Promise<void>;
   logout(): Promise<void>;
   selectTenant(tenantId: string): void;
@@ -117,6 +120,12 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await enterSession(session);
   }, [enterSession]);
 
+  const recover = useCallback(async (username: string, recoveryCode: string, newPassword: string) => {
+    const session = await completeRecoveryRequest(username, recoveryCode, newPassword);
+    setExpired(false);
+    await enterSession(session);
+  }, [enterSession]);
+
   const reauthenticate = useCallback(async (username: string, password: string) => {
     const session = await loginRequest(username, password);
     const current = phaseRef.current;
@@ -161,8 +170,8 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const api = useMemo<SessionApi>(() => ({
-    phase, expired, login, activate, reauthenticate, logout, selectTenant, switchTenant, retry: check,
-  }), [phase, expired, login, activate, reauthenticate, logout, selectTenant, switchTenant, check]);
+    phase, expired, login, activate, recover, reauthenticate, logout, selectTenant, switchTenant, retry: check,
+  }), [phase, expired, login, activate, recover, reauthenticate, logout, selectTenant, switchTenant, check]);
 
   return <SessionContext.Provider value={api}>{children}</SessionContext.Provider>;
 };

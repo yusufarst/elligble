@@ -113,3 +113,13 @@ Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registrat
 Functional screens: the signed-out entry offers "Ajukan Pendaftaran Akun" (school code from the school's link or typed; name, NISN, birth date; no password; uniform received state); the "Verifikasi Pendaftaran" workspace lists scoped open claims, opens a reasoned decision dialog with explicit adjudication and in-person confirmation, and shows the ELLIGBLE ID and activation code once. Existing shared primitives only; rendered evidence per record §9.
 
 Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.
+
+## AUTH-003 bounded implementation checkpoint — 2026-11-07
+
+Functional screens:
+- the "Pemulihan Akun" verifier workspace: lookup by ELLIGBLE ID, in-person comparison card, a reasoned issue dialog and a one-time code handoff;
+- the login entry "Lupa kata sandi? Gunakan kode pemulihan dari sekolah", which opens the "Pulihkan Akun" form.
+
+Shared primitives only; rendered evidence per record §9.
+
+Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.

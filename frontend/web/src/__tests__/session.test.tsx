@@ -7,7 +7,7 @@ const TENANT_B = '55555555-5555-4555-8555-555555555555';
 
 vi.mock('../api/auth-client.ts', async () => {
   const actual = await vi.importActual<typeof import('../api/auth-client.ts')>('../api/auth-client.ts');
-  return { ...actual, getSession: vi.fn(), getMeContext: vi.fn(), login: vi.fn(), logout: vi.fn(), activate: vi.fn() };
+  return { ...actual, getSession: vi.fn(), getMeContext: vi.fn(), login: vi.fn(), logout: vi.fn(), activate: vi.fn(), completeRecovery: vi.fn() };
 });
 vi.mock('../api/assessment-client.ts', () => ({
   getAssignedExams: vi.fn(async () => ({ assignments: [] })),
@@ -16,7 +16,7 @@ vi.mock('../api/assessment-client.ts', () => ({
   ApiError: class ApiError extends Error {},
 }));
 
-import { getSession, getMeContext, login, logout, activate, LoginError, ActivationError } from '../api/auth-client.ts';
+import { getSession, getMeContext, login, logout, activate, completeRecovery, LoginError, ActivationError, RecoveryError } from '../api/auth-client.ts';
 import { apiFetch, getActiveTenantId, setActiveTenantId } from '../api/http.ts';
 import { act } from '@testing-library/react';
 
@@ -184,6 +184,32 @@ describe('session gate', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
     expect(await screen.findByRole('heading', { name: 'Masuk ke ELLIGBLE' })).toBeDefined();
     expect(login).not.toHaveBeenCalled();
+    expect(activate).not.toHaveBeenCalled();
+  });
+
+  it('AUTH-003: a forgotten password is recovered with the school code; refusals stay neutral and clear the password', async () => {
+    vi.mocked(getSession).mockResolvedValue(null);
+    vi.mocked(completeRecovery).mockRejectedValueOnce(new RecoveryError('invalid_recovery')).mockRejectedValueOnce(new RecoveryError('already_completed'))
+      .mockResolvedValue(session([{ tenantId: TENANT_A, displayLabel: null }]));
+    vi.mocked(getMeContext).mockResolvedValue(me(TENANT_A, { examParticipant: true }));
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Lupa kata sandi? Gunakan kode pemulihan dari sekolah' }));
+    expect(await screen.findByRole('heading', { name: 'Pulihkan Akun' })).toBeDefined();
+    const fill = () => {
+      fireEvent.change(screen.getByLabelText('ELLIGBLE ID'), { target: { value: 'siswa.satu' } });
+      fireEvent.change(screen.getByLabelText('Kode Pemulihan'), { target: { value: 'ABCD-EFGH-JKMN' } });
+      fireEvent.change(screen.getByLabelText('Kata Sandi Baru'), { target: { value: 'matahari-pagi-2026' } });
+      fireEvent.change(screen.getByLabelText('Ulangi Kata Sandi Baru'), { target: { value: 'matahari-pagi-2026' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Pulihkan dan Masuk' }));
+    };
+    fill();
+    expect(await screen.findByText(/Kode berlaku 15 menit/)).toBeDefined();
+    expect((screen.getByLabelText('Kata Sandi Baru') as HTMLInputElement).value).toBe('');
+    fill();
+    expect(await screen.findByText(/sudah selesai/)).toBeDefined();
+    fill();
+    await waitFor(() => expect(completeRecovery).toHaveBeenLastCalledWith('siswa.satu', 'ABCD-EFGH-JKMN', 'matahari-pagi-2026'));
+    expect(await screen.findByText('Daftar Ujian Siswa')).toBeDefined();
     expect(activate).not.toHaveBeenCalled();
   });
 
