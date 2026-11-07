@@ -495,3 +495,12 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
 - **Correction 3** (rows 25 and 30):
   - the back button and the "Unduh Templat CSV" link wrap (`whitespace-normal`, `h-auto`, `max-w-full`) and keep their 44 px minimum;
   - the after-phase layout gates are `expect.soft`, so one run reports every violating scenario; the test still fails on any of them.
+
+### 11.6 CI #171 and correction 4
+
+- **CI #171/run 42387529024:** exact SHA 2594cbd, attempt 1. Runtime, Web and Container SUCCESS. The five E2E jobs FAILED at the first pointer click of the PGK journey, after the import, teacher-preview and v1 exam captures and the PGK empty and keyboard-focus captures. No soft layout violation was reported up to that point, so the import-view overflow is fixed. Preserved; no re-run.
+  - Cause: the spec clicked the visually hidden native checkbox, and its option card (label and marker) intercepts pointer events, as it does for the radio cards, which the existing specs click through the card. The run then hit the 90 s test timeout.
+- **Correction 4** (row 30 only):
+  - pointer input goes to the option card containing the checkbox; checked-state assertions still read the checkbox;
+  - the test timeout is 10 minutes for the many rendered variants;
+  - stepping to the PGK question waits for the progress heading after a reload and checks each step.

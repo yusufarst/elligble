@@ -125,6 +125,8 @@ async function captureQuestionSurface(page: Page, scenario: string, root: () => 
 }
 
 test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and the exam screen', async ({ page, browser }) => {
+    // Many rendered variants per surface, plus the after-phase journey.
+    test.setTimeout(10 * 60_000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const file = phase === 'after' ? V2_FILE : V1_FILE;
     const questionCount = phase === 'after' ? 3 : 2;
@@ -213,10 +215,20 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     const stored = async () => (await withDatabase(async client => (await client.query(
         'SELECT answer_payload FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshot.id])).rows[0]?.answer_payload ?? null));
     const option = (text: RegExp | string) => student.getByRole('checkbox', { name: text });
-    const A = option(/^2 adalah/), B = option('4'), C = option(/^5 adalah/), E = option('9');
+    const A = option(/^2 adalah/), B = student.getByRole('checkbox', { name: '4', exact: true }), C = option(/^5 adalah/), E = student.getByRole('checkbox', { name: '9', exact: true });
+    // The native checkbox is visually hidden inside its option card: pointer input goes to the card.
+    const tap = (box: Locator) => student.locator('.options-list label').filter({ has: box }).click();
     const saved = async () => { await expect(saveStatus(student)).toHaveText('Tersimpan'); };
+    const progress = student.getByRole('heading', { name: /^Soal d dari 3$/ });
+    // After a reload the screen may open on any question: wait for it, then step to the PGK one.
     const toMr = async () => {
-        while (!(await student.getByText(MR_PROMPT).isVisible())) await student.getByRole('button', { name: 'Soal Berikutnya' }).click();
+        await expect(progress).toBeVisible({ timeout: 30_000 });
+        for (let i = 0; i < 3 && !(await student.getByText(MR_PROMPT).isVisible()); i++) {
+            const at = await progress.innerText();
+            await student.getByRole('button', { name: 'Soal Berikutnya' }).click();
+            await expect(progress).not.toHaveText(at);
+        }
+        await expect(student.getByText(MR_PROMPT)).toBeVisible();
     };
 
     await toMr();
@@ -229,14 +241,14 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     await student.keyboard.press('Space');
     await expect(A).toBeChecked();
     await captureQuestionSurface(student, 'exam-mr-keyboard-focus', () => student.locator('body'), file);
-    await C.click();
+    await tap(C);
     await saved();
     expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2]].sort() });
     await captureQuestionSurface(student, 'exam-mr-selected', () => student.locator('body'), file);
 
     // Offline: several toggles, then reconnect; only the final set reaches the server.
     await student.context().setOffline(true);
-    await B.click(); await B.click(); await E.click(); await A.click(); await A.click();
+    await tap(B); await tap(B); await tap(E); await tap(A); await tap(A);
     await student.context().setOffline(false);
     await saved();
     expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2], ids[4]].sort() });
@@ -248,11 +260,11 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     await expect(B).not.toBeChecked();
 
     // Clearing every option is a saved empty answer that reads "Belum dijawab" (O02-2).
-    await A.click(); await C.click(); await E.click();
+    await tap(A); await tap(C); await tap(E);
     await expect(saveStatus(student)).toHaveText('Belum dijawab');
     await expect.poll(stored).toEqual({ selectedOptionIds: [] });
     await captureQuestionSurface(student, 'exam-mr-cleared', () => student.locator('body'), file);
-    await A.click();
+    await tap(A);
     await saved();
 
     // Content this version cannot show: an explicit reload state, no endless loading.
@@ -279,7 +291,7 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     let releaseSave!: () => void;
     const held = new Promise<void>(resolve => { releaseSave = resolve; });
     await student.route('**/api/v1/assessment/answer/save', async route => { await held; await route.continue(); });
-    await C.click();
+    await tap(C);
     await expect(saveStatus(student)).toHaveText('Menyimpan...');
     const submitting = (async () => {
         await student.getByRole('button', { name: 'Selesaikan Ujian' }).click();
