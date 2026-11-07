@@ -5,7 +5,7 @@
 | Field | Preparation disposition |
 |---|---|
 | Classification | Existing active P11 Task; P0 identity journey; HIGH risk; R08/R09, P3 F02, P5 A09, P8 V01/V11/V12 |
-| Status | **VERIFYING — capture-only baseline PASS (§13.1); implementation candidate published for exact-content CI and independent implementation review (§13); DEC-048** |
+| Status | **DONE — final content 9f9c5f1, CI #141 attempt 1 eight SUCCESS, independent implementation and rendered review chains PASS, Delegated Acceptance (DEC-048) (§15); landing by delegated squash merge (00.13 §6)** |
 | Objective | Student submits a non-trusted registration claim; an explicitly scoped school verifier resolves it against the current official roster, then the same authoritative Person/canonical Account reaches explicit Student-controlled activation without duplicate identities or lost history |
 | Owner authorization | 2026-11-04: documentation preparation and SEC-001/AUTH-001/ADMIN-001 tracker reconciliation only. 2026-11-07 (Owner in chat, executor handoff): continue AUTH-002 contract finalization in the same four documentation paths, explicit D1/D2/D3 approval (§4.1) and a separate read-only Independent HIGH-risk Identity/Security contract review. Still no commit, push, PR, CI execution, production code, migration reservation/execution or Build |
 | Baseline | Preparation base 056a154d4ae2eb9c5a7c7923c6737496f396990d. Execution base main/origin/main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5 (GOV-EXEC-001 landing, §12.1) |
@@ -456,3 +456,96 @@ The reviewer was a fresh-context, read-only Identity/Security agent (00.13 §5.5
 - **Correction 4** (bound for the rendered gate: second failure, path 35 and E2E path 43 only):
   - The handoff details stack label above value below the `sm` breakpoint, and the ID may wrap only at its hyphens, so it stays whole and fully visible.
   - Every after-phase capture now also fails if any dialog `dt`, `dd` or `label` is clipped (scrollWidth > clientWidth), closing this gap in the rendered gate.
+
+## 15. Final evidence and Delegated Acceptance — 2026-11-07
+
+### 15.1 Content and CI
+
+**Final content:** 9f9c5f153583c8a6af76877095a30a0221b70780.
+
+**Content commits** on task/auth-002-student-claim-verification and its verification ref task/auth-002-student-claim-verification-c1, in order:
+
+| Commit | Content |
+|---|---|
+| ba1b2cd | registration |
+| b7f0b89 | capture-only baseline |
+| 660d69d | implementation |
+| 7b60c9d | correction 1 |
+| d0f19d2 | correction 2 |
+| 9ab11e4 | record repair |
+| 06bb285 | correction 3 |
+| 9f9c5f1 | correction 4 |
+
+Every commit has the Owner author and committer Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com> and a raw message without trailers or AI/tool attribution; each was inspected after commit.
+
+**Exact-content CI:** CI #141/run 42346405214, push, attempt 1, eight jobs SUCCESS on ubuntu-24.04.
+- Web job: typecheck, tests and build.
+- Runtime units: identity-access 31/31, tenant-access 14/14, academic-core 11/11, Secure Assessment 916/916.
+- Real PostgreSQL 16 integration: 234/234, none skipped (the 224 at main plus 10 AUTH-002 oracles).
+- Container image build and smoke test.
+- E2E: 26/26 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. That includes the unchanged existing journeys, the AUTH-002 entry capture and the AUTH-002 synthetic claim, approval, handoff and activation journey.
+
+**Artifacts:** the five workspace-visual artifacts were retrieved and validated.
+- 66 AUTH-002 captures per project (330 in all), every one phase `after` at the exact commit and frontend tree.
+- No page overflow, no target under 44 px, no clipped dialog value, and every handoff capture masked.
+
+**All CI runs of this Task, preserved without re-run:**
+
+| Run | Head | Result |
+|---|---|---|
+| #135 | ba1b2cd | SUCCESS |
+| #136 | b7f0b89 | SUCCESS |
+| #137 | 660d69d | integration step hung by the test-teardown defect (§14.1); left to conclude by itself as the Owner directed |
+| #138 | 7b60c9d | SUCCESS |
+| #139 | 9ab11e4 | mobile-360 E2E failure, a test logout race (§14.4) |
+| #140 | 06bb285 | SUCCESS |
+| #141 | 9f9c5f1 | SUCCESS |
+
+The final conclusion of #137 is recorded with the landing.
+
+### 15.2 Independent review chain (same fresh-context read-only Identity/Security reviewer, 00.13 §5.5)
+
+1. Implementation review on 660d69d: STOP, M1–M3 (§14.1).
+2. Targeted re-review on 7b60c9d: PASS (§14.3).
+3. Rendered-evidence review on CI #138: STOP, dialog control size (§14.3).
+4. Rendered re-review on CI #140: STOP, ELLIGBLE ID clipped at 360 px, introduced by correction 2 (§14.5).
+5. Rendered re-review on CI #141 at the final content SHA: PASS. The ID is whole in mobile-360 and webkit-390 at 360 and 390 and in desktop-1280; nothing regressed; the clipped gate is empty for all 330 captures.
+
+Every STOP was closed by a correction re-reviewed by the same reviewer. No reviewer was replaced. Code corrections stayed within the frozen contract and the 44-path allowlist (41 paths changed).
+
+### 15.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: public submission writes zero trusted rows; uniform 202 and no enumeration (integration test 1) |
+| C02 | PASS: exact NISN/date, NFC name rule; mismatch and unknown stay REVIEW_REQUIRED (units and integration test 1) |
+| C03 | PASS: Operator and own-rombel Homeroom only; wrong rombel, plain Teacher, other tenant and revoked authority refused; staff targets refused (integration tests 2, 3, C09 revocations) |
+| C04 | PASS: seven days exactly, equality boundary, ten failures on the claim-issued row, replay never extends, no Account lockout (tests 1 and 4) |
+| C05 | PASS: one open claim per roster identity and Person under concurrent keys; partial unique indexes (tests 1 and 5) |
+| C06 | PASS: failure injected at binding, enrollment, activation relation and event leaves an exact snapshot (test 4) |
+| C07 | PASS: roster correction, import and enrollment changes serialize or refuse stale (tests 5 and C09) |
+| C08 | PASS: explicit adjudications; existing Account reused without password change; staff, self, foreign and bound-elsewhere refused; legacy activation compatible (tests 2, 3, path 42) |
+| C09 | PASS: actual writers in both orders observed with `pg_blocking_pids`; post-wait expiry refuses (§14.2 tests) |
+| C10 | PASS: same-key replay returns the receipt without the code; altered intent 409; consumed or expired cannot activate again (tests 2 and 4) |
+| C11 | PASS: verification-only projection; no NISN, birth date or code in events or responses; masked evidence; scoped, paged queue (tests and the M1 oracle) |
+| C12 | PASS: 0057 rollback, repeat and no-backfill over 0056 data; immutability triggers (C12 test) |
+| C13 | PASS: five-browser rendered journey with keyboard dialog containment, purge, refusal, retry and activation; seven widths plus 200% text with scrolled dialogs; reviewer inspected the images |
+| C14 | PASS: 41 of 44 frozen paths; 33 Tasks and 78 edges unchanged; Owner identity, no attribution; exact-content attempt-1 CI with no re-run |
+| C15 | PASS: independent implementation and rendered review chains PASS (§15.2); Delegated Acceptance below |
+
+### 15.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every acceptance gate C01–C15 has PASSED with recorded evidence. The independent review PASSED on the final content SHA, and the reviewer inspected the actual rendered evidence. AUTH-002 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks, recorded and not decided here:**
+
+- the claim-bound activation path may take a few milliseconds longer than ordinary activation;
+- a plain staff membership with no assignment row cannot be told apart from a Student;
+- NEW_IDENTITY_REVIEWED relies on the recorded in-person attestation;
+- expired unmatched claims remain stored rows until G7 retention is decided;
+- Homeroom-revocation interleaving and reserve/legacy-INSERT interleaving are covered by the same lock pattern rather than separate tests;
+- at 200% text the shared Button labels do not scale (pre-existing).
+
+**Boundaries:** PB05 OPEN; G7 before any real data; no deployment, release or production claim.
+
+**Landing:** delegated squash merge of PR #23 under 00.13 §6, after automatic CI on the PR head (this evidence commit) completes with eight SUCCESS on attempt 1. The landing commit and its post-merge main CI are recorded by the next Task's first change, together with the tracker reconciliation: DONE 4/33, VERIFYING 0, BLOCKED 29.
