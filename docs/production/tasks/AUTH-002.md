@@ -436,3 +436,10 @@ The reviewer was a fresh-context, read-only Identity/Security agent (00.13 §5.5
   - the handed-over ELLIGBLE ID no longer breaks mid-identifier;
   - the text-200 captures add a scrolled capture of any open dialog, so the whole dialog is evidenced at 200% text.
 - **Local checks:** web typecheck and claimReview/designSystemGuard 13/13 PASS; e2e typecheck PASS.
+
+### 14.4 Correction-2 CI failure and correction 3
+
+- **CI #139/run 42342748394:** ref task/auth-002-student-claim-verification-c1, exact SHA 9ab11e4c, push, attempt 1. Seven jobs SUCCESS; Browser end-to-end (mobile-360) FAILURE, 25 passed and 1 failed. It was preserved: no re-run.
+- **Failing test:** the AUTH-002 after-phase journey timed out waiting for the activation link after the verifier's logout. The page snapshot showed "Gagal Terhubung ke Server".
+- **Diagnosis** from the retrieved e2e-report and server log: `POST /api/v1/auth/logout` is logged with `"aborted":true`, followed by `GET /api/v1/auth/session` 200. The test navigated (`open(page)`) while the logout request was still in flight. That is a race in the test step, independent of the claim feature; the same step passed in all five projects of CI #138.
+- **Correction 3** (E2E path 43 only): after "Keluar", the test waits for the login screen, which shows the logout completed, and then uses the activation link without a new navigation. No assertion is weakened and no product code changes.

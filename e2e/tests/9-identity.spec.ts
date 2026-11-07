@@ -280,9 +280,10 @@ if (authPhase === 'after') test('AUTH-002 synthetic claim, scoped approval, one-
         await expect(page.getByText(code)).toHaveCount(0);
         await expect(page.locator('#claim-review')).toContainText('Disetujui, menunggu aktivasi');
         await page.getByRole('button', { name: 'Keluar' }).click();
+        // Wait for the completed logout (login screen) instead of navigating while it is in flight.
+        await expect(page.getByRole('heading', { name: 'Masuk ke ELLIGBLE', exact: true })).toBeVisible();
 
         // Student sets their own password with the handed-over code; a wrong code is refused.
-        await open(page);
         await page.getByRole('button', { name: 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi' }).click();
         const fillActivation = async (value: string) => {
             await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(elligbleId);
