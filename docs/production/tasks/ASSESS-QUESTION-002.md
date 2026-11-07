@@ -504,3 +504,9 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
   - pointer input goes to the option card containing the checkbox; checked-state assertions still read the checkbox;
   - the test timeout is 10 minutes for the many rendered variants;
   - stepping to the PGK question waits for the progress heading after a reload and checks each step.
+
+### 11.7 CI #172 and correction 5
+
+- **CI #172/run 42388684029:** exact SHA f791b40, attempt 1. Runtime, Web and Container SUCCESS. The five E2E jobs FAILED at the first PGK step, after every capture up to exam-second. Preserved; no re-run.
+  - Cause: an editing script dropped the backslash in the progress-heading pattern (`/^Soal d dari 3$/`), so the heading "Soal 2 dari 3" was never matched.
+- **Correction 5** (row 30 only): the pattern is `/^Soal d dari 3$/`.
