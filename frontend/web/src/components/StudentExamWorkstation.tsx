@@ -824,13 +824,20 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // be answered or submitted before the local buffer and the server state are reconciled.
   if (phase === 'active' && contentUnsupported && questions.length === 0) {
     return (
+      // The same running-time pattern as the locked screen: a polite status, never an assertive
+      // alert, so the ticking time is not announced every second.
       <StatusPage
         title="Perlu Memuat Ulang"
-        role="alert"
+        role="status"
+        live="polite"
         actions={<Button onClick={() => window.location.reload()}>Muat Ulang</Button>}
       >
         <p>Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.</p>
-        <p className="tabular-nums">Sisa waktu: {formattedTime}. Waktu ujian tetap berjalan, dan jawaban yang sudah Anda pilih tetap dikirim otomatis.</p>
+        <p className="paused-remaining" aria-label={`Sisa waktu ${formattedTime}, tetap berjalan`}>
+          <span className="paused-remaining-label">Sisa waktu, tetap berjalan</span>
+          <span className="paused-remaining-value">{formattedTime}</span>
+        </p>
+        <p>Jawaban yang sudah Anda pilih tetap dikirim otomatis.</p>
       </StatusPage>
     );
   }

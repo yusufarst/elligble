@@ -171,7 +171,8 @@ describe('the exam screen with multiple response', () => {
       examSessionId: SESSION, optionId: 'pg-1', clientWriteIdentity: 'local-1', ownIdentities: [], baseVersion: null, localSequence: 1, capturedAt: Date.now() });
     route([], 'unsupported', saves);
     render(<StudentExamWorkstation />);
-    expect(await screen.findByText(/^Sisa waktu: \d/)).toBeTruthy();
+    expect(await screen.findByText('Sisa waktu, tetap berjalan')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
     await waitFor(() => expect(saves.map(x => [x.snapshotId, x.answerPayload])).toEqual([[PG, { selectedOptionId: 'pg-1' }]]));
     expect(await screen.findByRole('heading', { name: 'Perlu Memuat Ulang' })).toBeTruthy();
     expect(screen.getByText('Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.')).toBeTruthy();

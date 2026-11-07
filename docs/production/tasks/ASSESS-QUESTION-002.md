@@ -534,3 +534,18 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
 - **Correction 8** (row 30 only):
   - before that step the journey continues in a fresh tab of the same browser context: the tab's exam-session sessionStorage is carried over by an init script, the old tab is closed, and locators rebind to the new tab;
   - the application under test is unchanged.
+
+### 11.11 Re-review A PASS; rendered review B STOP; correction 9
+
+- **CI #178/run 42393498793:** exact SHA c5a256f, attempt 1, eight SUCCESS. The whole multiple-response journey passed in all five browser projects.
+- **Artifacts:** 5 × 90 after-phase pairs at c5a256f, with no overflow and no target under 44 px. Six import-preview captures (390×844 at 200 % text in all projects, and 1280 at 200 % on WebKit) are viewport-only because of the device-pixel cap; their overflow evidence is the recorded metrics.
+- **Targeted re-review A (corrections 3–8), same reviewer, on c5a256f: PASS.**
+- **Rendered review B, same reviewer: STOP, two material findings.**
+  - v1 screens are unchanged before and after; the checkbox variant, focus ring, instruction, "Belum dijawab", teacher key marking and import labels match the system; the baseline overflow is gone.
+  - **B1:** the unsupported page put the ticking time inside an assertive `role="alert"`.
+  - **B2:** the import card's file instruction still described the v1 single-letter key, while the template it offers is v2.
+- **Correction 9** (rows 21, 25 and 29):
+  - **B1:** the unsupported page uses the locked screen's pattern: `role="status"`, polite, and the shared "Sisa waktu, tetap berjalan" block. The unit test asserts no alert.
+  - **B2:** the instruction names the type column and the PGK key format.
+- **Pre-existing, not caused by this Task, recorded for a UI-SYSTEM follow-up:** at 200 % text the exam dock breaks words mid-word, and the native select truncates "Ulangan Harian". Both appear identically in the before baseline.
+

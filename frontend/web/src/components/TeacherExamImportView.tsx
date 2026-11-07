@@ -351,7 +351,7 @@ export const TeacherExamImportView: React.FC<{
         <CardHeader>
           <CardTitle>Berkas Soal</CardTitle>
           <CardDescription>
-            Satu baris per soal: nomor, teks soal, pilihan A sampai E, kunci jawaban (satu huruf) dan skor.
+            Satu baris per soal: nomor, tipe (PG atau PGK), teks soal, pilihan A sampai E, kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C) dan skor.
             Simpan sebagai CSV UTF-8; pemisah kolom boleh titik koma atau koma.
           </CardDescription>
         </CardHeader>
