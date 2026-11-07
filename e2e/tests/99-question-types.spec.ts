@@ -219,7 +219,7 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     // The native checkbox is visually hidden inside its option card: pointer input goes to the card.
     const tap = (box: Locator) => student.locator('.options-list label').filter({ has: box }).click();
     const saved = async () => { await expect(saveStatus(student)).toHaveText('Tersimpan'); };
-    const progress = student.getByRole('heading', { name: /^Soal d dari 3$/ });
+    const progress = student.getByRole('heading', { name: /^Soal \d dari 3$/ });
     // After a reload the screen may open on any question: wait for it, then step to the PGK one.
     const toMr = async () => {
         await expect(progress).toBeVisible({ timeout: 30_000 });

@@ -511,3 +511,4 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
   - Cause: an editing script dropped the backslash in the progress-heading pattern (`/^Soal d dari 3$/`), so the heading "Soal 2 dari 3" was never matched.
 - **Correction 5** (row 30 only): the pattern is `/^Soal d dari 3$/`.
 - **Correction 5a:** the first correction-5 commit (89b7ec3) recorded the fix but did not contain it, because the shell edit did not apply. Commit 5a applies the pattern to the spec.
+- **Correction 5b:** 544c7e1 also did not change the spec, because the replacement string was mangled. Commit 5b applies the pattern, verified in the file before committing. Only the last of these three SHAs carries the fix; the CI of the two earlier SHAs is superseded by the push.
