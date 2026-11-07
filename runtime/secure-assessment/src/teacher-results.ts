@@ -1,7 +1,7 @@
 import type * as pg from 'pg';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import type { FinalizationSource } from './submission.ts';
-import { BASELINE_SCORING_RULE, scoreBaselineAttempt, type ScorableQuestion } from './scoring.ts';
+import { BASELINE_SCORING_RULE, scoreAttempt, type ScorableQuestion } from './scoring.ts';
 import { readFinalizedResults } from './result-finalization.ts';
 
 // Provisional results of a teacher-managed exam for the teacher who manages it (D04.4-26A/C,
@@ -204,13 +204,15 @@ export async function readTeacherExamResults(
         const elligbleIds = await listElligbleIds(client, participants.rows.map(row => row.person_id as string));
         if (!transaction) await client.query('COMMIT');
 
-        const probe = scoreBaselineAttempt(questions, new Map());
+        // ASSESS-QUESTION-002 §4.4: all-v1 exams score exactly as before; a delivered new type
+        // selects the composite rule.
+        const probe = scoreAttempt(questions, new Map());
         const scoringAvailable = probe.type === 'scored';
         const results: ParticipantResult[] = participants.rows.map(row => {
             const status: ParticipantResultStatus = row.submitted_at ? 'SUBMITTED' : row.started_at ? 'IN_PROGRESS' : 'NOT_STARTED';
             let score: ParticipantScore | null = null;
             if (status === 'SUBMITTED' && scoringAvailable) {
-                const scored = scoreBaselineAttempt(questions, answersByAttempt.get(row.attempt_id) ?? new Map());
+                const scored = scoreAttempt(questions, answersByAttempt.get(row.attempt_id) ?? new Map());
                 if (scored.type === 'scored') {
                     const { correct, incorrect, unanswered, rawScore, maxScore, scaledScore } = scored.score;
                     score = { correct, incorrect, unanswered, rawScore, maxScore, scaledScore };
@@ -232,7 +234,7 @@ export async function readTeacherExamResults(
             results: {
                 exam: examInfo,
                 scoring: {
-                    rule: BASELINE_SCORING_RULE,
+                    rule: probe.type === 'scored' ? probe.score.rule : BASELINE_SCORING_RULE,
                     available: scoringAvailable,
                     questionCount: questions.length,
                     maxScore: probe.type === 'scored' ? probe.score.maxScore : null,

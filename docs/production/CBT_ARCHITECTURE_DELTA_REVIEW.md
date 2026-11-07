@@ -78,3 +78,22 @@ ASSESS-QUESTION-001 implements A01-1, A01-2 and A01-4 as a foundation (record §
 - the content key on queued client intents.
 
 It changes no migration, route, lock order or v1 row, and v1 history is not reinterpreted. A01-3 and A04 belong to their own Tasks. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-002 bounded implementation checkpoint — 2026-11-07
+
+Multiple response is the first new type on the A01 foundation.
+
+- **Content and rule:**
+  - descriptor `2:MULTIPLE_RESPONSE` with the rule `MULTIPLE_RESPONSE_EXACT_SET_V1` (exact set → maxScore, otherwise 0; an empty selection is an accepted versioned write that scores UNANSWERED);
+  - registered in the production registry next to v1;
+  - mixed exams finalize under `COMPOSITE_PER_ITEM_V1`.
+- **Import:**
+  - the `elligble-questions-v2` template adds a `type` column (PG stays v1 content; PGK is multiple response) and grows only by appending columns;
+  - migration 0060 lets the batch record v2;
+  - v1 files are unchanged.
+- **Client:**
+  - one canonical value string per answer (the sorted JSON id array for multiple response) in the existing local record, so the sync engine and the IndexedDB schema are unchanged;
+  - an explicit reload state for content the client cannot show.
+- **Unchanged:** routes, lock order and v1 rows.
+
+Authority and evidence: [ASSESS-QUESTION-002](tasks/ASSESS-QUESTION-002.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

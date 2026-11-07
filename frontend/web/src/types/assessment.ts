@@ -12,12 +12,55 @@ export interface StudentSafeOption {
  */
 export type QuestionContentKey = string;
 export const V1_SINGLE_CHOICE_KEY: QuestionContentKey = '1:MULTIPLE_CHOICE_SINGLE';
+/** Multiple response, "pilihan ganda kompleks" (ASSESS-QUESTION-002). */
+export const MULTIPLE_RESPONSE_KEY: QuestionContentKey = '2:MULTIPLE_RESPONSE';
 /** The content keys this client renders and saves; sent as the X-Question-Types header. */
-export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY]);
+export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY]);
 export const QUESTION_TYPES_HEADER = 'X-Question-Types';
 
 export function contentKeyOf(question: { schemaVersion: number; questionType: string }): QuestionContentKey {
   return `${question.schemaVersion}:${question.questionType}`;
+}
+
+/**
+ * Answer values (ASSESS-QUESTION-002 §4A.4), pure helpers shared by the sync adapter, the hook and
+ * the exam screen: one canonical string per answer. v1: the option id. Multiple response: the JSON
+ * array of the chosen ids sorted by UTF-16 code units ("[]" when cleared).
+ */
+export const EMPTY_SELECTION = '[]';
+
+export function canonicalSelection(ids: readonly string[]): string {
+  return JSON.stringify([...ids].sort());
+}
+
+/** The canonical value of a stored payload, or null when it is not one this client knows. */
+export function answerValueOf(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  if ('selectedOptionIds' in payload) {
+    const ids = (payload as { selectedOptionIds: unknown }).selectedOptionIds;
+    if (!Array.isArray(ids) || ids.some(id => typeof id !== 'string') || new Set(ids).size !== ids.length) return null;
+    return canonicalSelection(ids as string[]);
+  }
+  if ('selectedOptionId' in payload) {
+    const value = (payload as { selectedOptionId: unknown }).selectedOptionId;
+    return typeof value === 'string' ? value : null;
+  }
+  return null;
+}
+
+/** The ids of a canonical multiple-response value, or null when it is not canonical. */
+export function selectionOf(value: string): string[] | null {
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); } catch { return null; }
+  if (!Array.isArray(parsed) || parsed.some(id => typeof id !== 'string')) return null;
+  const ids = parsed as string[];
+  return new Set(ids).size === ids.length && canonicalSelection(ids) === value ? ids : null;
+}
+
+/** Whether a value counts as answered: v1 any choice, multiple response a non-empty set. */
+export function isAnsweredValue(contentKey: string, value: string | null | undefined): boolean {
+  if (value === null || value === undefined) return false;
+  return contentKey === MULTIPLE_RESPONSE_KEY ? value !== EMPTY_SELECTION : true;
 }
 
 export interface StudentSafeQuestion {
@@ -564,7 +607,7 @@ export interface TeacherExamImportInput {
 export type QuestionProblemCode =
   | 'not_text' | 'encoding_invalid' | 'csv_syntax' | 'header_invalid' | 'file_empty' | 'too_many_questions'
   | 'column_count' | 'number_out_of_order' | 'prompt_empty' | 'option_empty' | 'options_duplicate'
-  | 'correct_multiple' | 'correct_invalid' | 'score_invalid';
+  | 'correct_multiple' | 'correct_invalid' | 'score_invalid' | 'type_invalid' | 'correct_duplicate';
 
 export type SetupProblemCode =
   | 'file_too_large' | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
@@ -578,7 +621,8 @@ export type ImportProblem =
 export interface TeacherExamImportPreview {
   sourceSha256: string;
   problems: ImportProblem[];
-  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number }>;
+  /** type and correctLetters: ASSESS-QUESTION-002 (absent from older servers: PG with `correct`). */
+  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK'; correctLetters?: string[] }>;
   participants: Array<{ enrollmentId: string; elligbleId: string; included: boolean; conflict: boolean }>;
   window: { startsAt: string; endsAt: string } | null;
   totals: { questions: number; maxScore: number; participants: number };
@@ -609,6 +653,10 @@ export interface TeacherExamPreview {
     prompt: string;
     options: Array<{ id: string; content: string }>;
     correctOptionId: string | null;
+  /** ASSESS-QUESTION-002: the valid type (absent from older servers: single choice); null for invalid content. */
+  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | null;
+  /** Multiple response: the key options in authored order. */
+  correctOptionIds?: string[] | null;
     maxScore: number | null;
     valid: boolean;
   }>;

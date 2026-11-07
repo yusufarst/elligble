@@ -142,7 +142,9 @@ export async function readExamMonitoring(
              LEFT JOIN secure_assessment_timer_state t ON t.tenant_id = p.tenant_id AND t.exam_attempt_id = a.id
              LEFT JOIN secure_assessment_exam_submissions sub ON sub.tenant_id = p.tenant_id AND sub.exam_attempt_id = a.id
              LEFT JOIN LATERAL (
-                 SELECT count(*)::int AS answered, max(x.updated_at) AS last_accepted_at FROM secure_assessment_exam_answers x
+                 -- A cleared multiple-response answer (selectedOptionIds []) is not answered (O02-2).
+                 SELECT (count(*) FILTER (WHERE NOT (x.answer_payload ? 'selectedOptionIds' AND x.answer_payload->'selectedOptionIds' = '[]'::jsonb)))::int AS answered,
+                        max(x.updated_at) AS last_accepted_at FROM secure_assessment_exam_answers x
                  WHERE x.tenant_id = p.tenant_id AND x.exam_attempt_id = a.id
              ) ans ON TRUE
              WHERE p.tenant_id = $1 AND p.exam_instance_id = $2

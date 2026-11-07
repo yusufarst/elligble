@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, V1_SINGLE_CHOICE_KEY, type ResumeAnswer } from '../types/assessment.ts';
+import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, V1_SINGLE_CHOICE_KEY, answerValueOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -17,10 +17,19 @@ export function selectedOptionOf(payload: unknown): string | null {
   return null;
 }
 
+function payloadFor(contentKey: string, value: string): Record<string, unknown> | null {
+  if (contentKey === V1_SINGLE_CHOICE_KEY) return { selectedOptionId: value };
+  if (contentKey === MULTIPLE_RESPONSE_KEY) {
+    const ids = selectionOf(value);
+    return ids ? { selectedOptionIds: ids } : null;
+  }
+  return null;
+}
+
 export function toServerAnswerState(answer: ResumeAnswer): ServerAnswerState {
   return {
     snapshotId: answer.snapshotId,
-    optionId: selectedOptionOf(answer.answerPayload),
+    optionId: answerValueOf(answer.answerPayload),
     writeVersion: answer.writeVersion,
     clientWriteIdentity: answer.clientWriteIdentity,
   };
@@ -87,8 +96,10 @@ async function errorBody(res: Response): Promise<Record<string, unknown>> {
 export function createAnswerSyncApi(attemptId: string, examSessionId: string): SyncApi {
   return {
     async save(request) {
-      // The payload follows the question's content key; this client builds only v1.
-      if (request.contentKey !== V1_SINGLE_CHOICE_KEY) return { kind: 'rejected', code: 'question_type_unsupported' };
+      // The payload follows the question's content key; anything else is never sent.
+      if (!SUPPORTED_QUESTION_TYPES.includes(request.contentKey)) return { kind: 'rejected', code: 'question_type_unsupported' };
+      const answerPayload = payloadFor(request.contentKey, request.optionId);
+      if (!answerPayload) return { kind: 'rejected', code: 'invalid_answer_payload' };
       let res: Response;
       const sentAt = Date.now();
       try {
@@ -99,7 +110,7 @@ export function createAnswerSyncApi(attemptId: string, examSessionId: string): S
             attemptId: request.attemptId,
             sessionId: request.sessionId,
             snapshotId: request.snapshotId,
-            answerPayload: { selectedOptionId: request.optionId },
+            answerPayload,
             clientWriteIdentity: request.clientWriteIdentity,
             expectedWriteVersion: request.expectedWriteVersion,
             capturedAt: new Date(request.capturedAt).toISOString(),
@@ -150,8 +161,14 @@ export async function countUnreceivedLocalAnswers(tenantId: string, attemptId: s
   if (records.length === 0) return 0;
   try {
     const resume = await getResume(attemptId);
-    const accepted = new Map(resume.answers.map(answer => [answer.snapshotId, selectedOptionOf(answer.answerPayload)]));
-    return records.filter(record => accepted.get(record.snapshotId) !== record.optionId).length;
+    const accepted = new Map(resume.answers.map(answer => [answer.snapshotId, answerValueOf(answer.answerPayload)]));
+    // A cleared multiple-response choice is received when the server holds it or holds nothing:
+    // both are unanswered (ASSESS-QUESTION-002 §4A.4).
+    return records.filter(record => {
+      const server = accepted.get(record.snapshotId);
+      if (record.optionId === EMPTY_SELECTION && (record.contentKey ?? V1_SINGLE_CHOICE_KEY) === MULTIPLE_RESPONSE_KEY && (server === undefined || server === EMPTY_SELECTION)) return false;
+      return server !== record.optionId;
+    }).length;
   } catch {
     return records.length;
   }

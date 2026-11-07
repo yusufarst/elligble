@@ -60,7 +60,7 @@ test('C01 classification is total, deterministic and never reinterprets v1', () 
     const registered = classifyFrozenContent(testBoolean(true), TEST_REGISTRY);
     assert.equal(registered.kind, 'registered');
     assert.equal(classifyFrozenContent(testBoolean(true)).kind, 'unsupported', 'the production registry holds only v1');
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), [V1_SINGLE_CHOICE_KEY]);
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), [V1_SINGLE_CHOICE_KEY, '2:MULTIPLE_RESPONSE'], 'ASSESS-QUESTION-002 registers multiple response');
     assert.equal(V1_SINGLE_CHOICE_RULE, BASELINE_SCORING_RULE);
     assert.throws(() => createQuestionRegistry([V1_SINGLE_CHOICE_DESCRIPTOR, V1_SINGLE_CHOICE_DESCRIPTOR]), /duplicate/);
     assert.throws(() => createQuestionRegistry([{ ...TEST_DESCRIPTOR, key: 'bad' }]), /invalid descriptor key/);

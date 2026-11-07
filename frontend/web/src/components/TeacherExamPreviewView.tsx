@@ -24,6 +24,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
   const [current, setCurrent] = useState(0);
   const [showKey, setShowKey] = useState(false);
   const [tried, setTried] = useState<Record<string, string>>({});
+  const [triedSets, setTriedSets] = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
     setError(null);
@@ -119,7 +120,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           {/* The exam screen's own question card (workstation.css), so the preview looks the same. */}
           <section className="question-card" aria-label={`Soal nomor ${question.no}`}>
             <p className="m-0 mb-3 flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}</span>
+              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : ''}</span>
               {showKey && question.maxScore !== null && <span className="tabular-nums">Skor {formatScore(question.maxScore)}</span>}
             </p>
             {!question.valid && (
@@ -130,6 +131,31 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             )}
             <fieldset className="question-fieldset">
               <legend className="question-prompt whitespace-pre-wrap [overflow-wrap:anywhere]">{question.prompt}</legend>
+              {question.questionType === 'MULTIPLE_RESPONSE' ? (
+              <div className="options-list options-list-multiple" role="group" aria-label="Pilihan Jawaban" aria-describedby={`preview-hint-${question.snapshotId}`}>
+                <p id={`preview-hint-${question.snapshotId}`} className="options-instruction">Pilih semua jawaban yang benar.</p>
+                {question.options.map((option, i) => {
+                  const chosen = triedSets[question.snapshotId] ?? [];
+                  const selected = chosen.includes(option.id);
+                  const key = showKey && (question.correctOptionIds ?? []).includes(option.id);
+                  const inputId = `preview-${question.snapshotId}-${i}`;
+                  return (
+                    <label key={option.id} htmlFor={inputId} className={`option-item-label option-item-checkbox min-w-0 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${selected ? 'selected' : ''} ${key ? 'outline outline-2 outline-foreground' : ''}`}>
+                      <input
+                        type="checkbox"
+                        id={inputId}
+                        checked={selected}
+                        onChange={() => setTriedSets(prev => ({ ...prev, [question.snapshotId]: selected ? chosen.filter(id => id !== option.id) : [...chosen, option.id] }))}
+                        className="option-radio-input"
+                      />
+                      <span className="option-marker option-marker-square" aria-hidden="true">{String.fromCharCode(65 + i)}</span>
+                      <span className="option-text [overflow-wrap:anywhere]">{option.content}</span>
+                      {key && <span className="shrink-0 text-xs font-semibold text-foreground">Kunci jawaban</span>}
+                    </label>
+                  );
+                })}
+              </div>
+              ) : (
               <div className="options-list" role="radiogroup" aria-label="Pilihan Jawaban">
                 {question.options.map((option, i) => {
                   const selected = tried[question.snapshotId] === option.id;
@@ -152,6 +178,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
                   );
                 })}
               </div>
+              )}
             </fieldset>
           </section>
 

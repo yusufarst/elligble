@@ -1,5 +1,6 @@
 import type pg from 'pg';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
+import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
 
 // Teacher preview of an exam before it opens (ASSESS-TEACHER-002; D04.3-38 LOCKED: the
 // teacher previews the exam before READY, close to what students will see; D04.3-39 LOCKED:
@@ -17,8 +18,12 @@ export interface TeacherExamPreviewQuestion {
     options: Array<{ id: string; content: string }>;
     correctOptionId: string | null;
     maxScore: number | null;
-    /** False when the stored content is not a valid baseline question (readiness blocks the exam). */
+    /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
+    /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE';
+    /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
+    correctOptionIds?: string[] | null;
 }
 
 export interface TeacherExamPreview {
@@ -58,6 +63,18 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
             snapshotId, no, prompt: record.prompt,
             options: record.options.map(o => ({ id: o.id, content: o.content })),
             correctOptionId: record.correctOptionId, maxScore: record.maxScore, valid: true,
+            questionType: 'MULTIPLE_CHOICE_SINGLE', correctOptionIds: null,
+        };
+    }
+    if (content && typeof content === 'object' && !Array.isArray(content) && (content as Record<string, unknown>)['schemaVersion'] === 2
+        && MULTIPLE_RESPONSE_DESCRIPTOR.validateContent(content as Record<string, unknown>).ok) {
+        const record = content as { prompt: string; options: Array<{ id: string; content: string }>; correctOptionIds: string[]; maxScore: number };
+        const keys = new Set(record.correctOptionIds);
+        return {
+            snapshotId, no, prompt: record.prompt,
+            options: record.options.map(o => ({ id: o.id, content: o.content })),
+            correctOptionId: null, maxScore: record.maxScore, valid: true,
+            questionType: MULTIPLE_RESPONSE_TYPE, correctOptionIds: record.options.filter(o => keys.has(o.id)).map(o => o.id),
         };
     }
     // Show what is there, without trusting its shape.
@@ -70,6 +87,7 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
         : [];
     return {
         snapshotId, no, prompt: typeof record['prompt'] === 'string' ? record['prompt'] : '',
+        // No type fields: invalid content keeps exactly its earlier shape (record §11.3).
         options, correctOptionId: null, maxScore: null, valid: false,
     };
 }
