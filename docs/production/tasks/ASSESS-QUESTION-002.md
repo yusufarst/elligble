@@ -459,3 +459,30 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
   - A valid v1 item still carries `questionType` and `correctOptionIds: null`; a multiple-response item carries both.
   - This refines §4A.6 ("null for invalid content") to "absent for invalid content". The client already renders a missing `questionType` exactly as today.
 - **Correction 1** (rows 13 and 28 only): `teacher-exam-preview.ts` and the new integration test.
+
+### 11.4 CI #169, implementation review STOP and correction 2
+
+- **CI #169/run 42385656657:** exact SHA ffd4d97, push, attempt 1. Runtime FAILURE (integration). Container and E2E skipped. Preserved; no re-run.
+  - Cause: the new oracle called delivery and save without `X-Question-Types`. By the ASSESS-QUESTION-001 rule such a client declares v1 only, so the multiple-response row was refused with 409, as designed.
+  - The oracle now declares both keys, and also asserts the 409 for an undeclared client.
+- **Independent implementation review, same reviewer, on 625b7d2 + ffd4d97: STOP, three material findings.**
+  1. The results oracles read `results`; the route returns `participants`.
+  2. The full-page unsupported state departed from §4A.2, and by leaving the active phase it stopped the engine sending other pending answers, as well as the expiry flush.
+  3. Client evidence was missing for local recovery, adoption, "no correct set in any record", the save-path refusal and the teacher-preview view.
+- **Correction 2** (rows 10, 21, 28, 29, 30 and 1):
+  - **Finding 1:** the oracles read `participants` and `answeredCount`.
+  - **Finding 2, §4A.2 now implemented as written.** The refusal is a flag, not a phase, so the exam stays active: the timer and the answer engine (sending and the expiry flush) keep running, and questions are no longer requested.
+    - With no questions delivered, the page "Perlu Memuat Ulang" shows the remaining time and states that chosen answers are still sent.
+    - With questions on screen, after a save refusal, an alert with "Muat Ulang" appears above the question and the questions stay.
+    - Tests prove that a pending answer of another question is still sent in both cases.
+  - **Finding 3:** `multiple-response.test.tsx` adds:
+    - local recovery of an unsent set after a reload, with the canonical payload sent;
+    - "no correct set" in any stored record;
+    - adoption by another session (same value, version and identity) and discard of a newer foreign answer;
+    - the save-path refusal;
+    - the teacher-preview multiple-response view (instruction, local try-out, both keys, score).
+  - **Notes applied:**
+    - V06 now holds the save at the network until the submission has started;
+    - the `template` field indentation is fixed;
+    - the §11.3 refinement of §4A.6 (absent, not null, for invalid preview content) stands.
+- **Known limit (recorded, not blessed):** a local intent with a content key this client does not support (for example one left by a newer client before a rollback) is never cleared by this client, so the reload alert returns on each load until that newer client sends it or the attempt ends.

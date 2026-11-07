@@ -3,6 +3,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StudentExamWorkstation } from '../components/StudentExamWorkstation.tsx';
 import { MultipleResponseAnswer } from '../components/answers/MultipleResponseAnswer.tsx';
+import { TeacherExamPreviewView } from '../components/TeacherExamPreviewView.tsx';
+import { AnswerSyncEngine, type SaveOutcome, type SyncApi } from '../exam/answer-sync-engine.ts';
+import { MemoryAnswerStore } from '../exam/answer-store.ts';
 import type { StudentSafeQuestion, ResumeResponse } from '../types/assessment.ts';
 import { MULTIPLE_RESPONSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, canonicalSelection, isAnsweredValue, selectionOf } from '../types/assessment.ts';
 import { answerKey, attemptKey, openAnswerStore } from '../exam/answer-store.ts';
@@ -120,7 +123,7 @@ describe('the exam screen with multiple response', () => {
   });
   afterEach(() => { vi.restoreAllMocks(); window.history.pushState({}, '', '/'); });
 
-  const route = (answers: ResumeResponse['answers'], questions: StudentSafeQuestion[] | 'unsupported', saves: unknown[] = []) => fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+  const route = (answers: ResumeResponse['answers'], questions: StudentSafeQuestion[] | 'unsupported', saves: unknown[] = [], refuse: string[] = []) => fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
     if (url.includes('/api/v1/assessment/resume')) return new Response(JSON.stringify(resume(answers)), { status: 200 });
     if (url.includes('/api/v1/assessment/questions')) {
       return questions === 'unsupported'
@@ -130,6 +133,7 @@ describe('the exam screen with multiple response', () => {
     if (url.includes('/api/v1/assessment/answer/save')) {
       const body = JSON.parse(String(init?.body));
       saves.push(body);
+      if (refuse.includes(body.snapshotId)) return new Response(JSON.stringify({ error: 'question_type_unsupported' }), { status: 409 });
       return new Response(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: saves.length, serverTime: new Date().toISOString() }), { status: 200 });
     }
     return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
@@ -160,9 +164,15 @@ describe('the exam screen with multiple response', () => {
     expect(screen.getAllByRole('button', { name: /Pindah ke soal nomor 1, status sudah dijawab/ }).length).toBeGreaterThan(0);
   });
 
-  it('content this client cannot show stops the screen with a reload action', async () => {
-    route([], 'unsupported');
+  it('delivery refused: a reload page with the time, no more question requests, and pending answers still sent', async () => {
+    const saves: Array<{ snapshotId: string; answerPayload: unknown }> = [];
+    const store = await openAnswerStore();
+    await store.put({ key: answerKey('', ATTEMPT, PG), attemptKey: attemptKey('', ATTEMPT), tenantId: '', attemptId: ATTEMPT, snapshotId: PG,
+      examSessionId: SESSION, optionId: 'pg-1', clientWriteIdentity: 'local-1', ownIdentities: [], baseVersion: null, localSequence: 1, capturedAt: Date.now() });
+    route([], 'unsupported', saves);
     render(<StudentExamWorkstation />);
+    expect(await screen.findByText(/^Sisa waktu: \d/)).toBeTruthy();
+    await waitFor(() => expect(saves.map(x => [x.snapshotId, x.answerPayload])).toEqual([[PG, { selectedOptionId: 'pg-1' }]]));
     expect(await screen.findByRole('heading', { name: 'Perlu Memuat Ulang' })).toBeTruthy();
     expect(screen.getByText('Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Muat Ulang' })).toBeTruthy();
@@ -170,5 +180,111 @@ describe('the exam screen with multiple response', () => {
     await new Promise(resolve => setTimeout(resolve, 50));
     expect(fetchSpy.mock.calls.filter(c => String(c[0]).includes('/assessment/questions')).length).toBe(calls);
     expect(document.body.textContent).not.toMatch(/—/);
+  });
+});
+
+describe('the save-path refusal, local recovery and adoption', () => {
+  let fetchSpy: ReturnType<typeof vi.fn>;
+  beforeEach(async () => {
+    vi.restoreAllMocks();
+    fetchSpy = vi.fn();
+    globalThis.fetch = fetchSpy;
+    window.sessionStorage.clear();
+    storeExamSessionId(ATTEMPT, SESSION);
+    await (await openAnswerStore()).clearAttempt('', ATTEMPT);
+    window.history.pushState({}, '', `?attemptId=${ATTEMPT}`);
+  });
+  afterEach(() => { vi.restoreAllMocks(); window.history.pushState({}, '', '/'); });
+
+  const serve = (saves: Array<{ snapshotId: string; answerPayload: unknown }>, refuse: string[] = []) => fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.includes('/api/v1/assessment/resume')) return new Response(JSON.stringify(resume()), { status: 200 });
+    if (url.includes('/api/v1/assessment/questions')) return new Response(JSON.stringify({ attemptId: ATTEMPT, questions: [mrQuestion, pgQuestion] }), { status: 200 });
+    if (url.includes('/api/v1/assessment/answer/save')) {
+      const body = JSON.parse(String(init?.body));
+      saves.push(body);
+      if (refuse.includes(body.snapshotId)) return new Response(JSON.stringify({ error: 'question_type_unsupported' }), { status: 409 });
+      return new Response(JSON.stringify({ status: 'acknowledged', clientWriteIdentity: body.clientWriteIdentity, writeVersion: 1, serverTime: new Date().toISOString() }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+  });
+
+  it('a save refused as unsupported shows the reload alert; the questions stay and other answers are still sent', async () => {
+    const saves: Array<{ snapshotId: string; answerPayload: unknown }> = [];
+    serve(saves, [MR]);
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Pilih semua jawaban yang benar.')).toBeTruthy();
+    await userEvent.click(screen.getByLabelText(/^A\s*2/));
+    expect(await screen.findByRole('button', { name: 'Muat Ulang' })).toBeTruthy();
+    expect(screen.getByText('Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.')).toBeTruthy();
+    expect(screen.getByText('Bilangan prima di bawah 10 adalah')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Soal Berikutnya' }));
+    await userEvent.click(screen.getByLabelText(/Jakarta/));
+    await waitFor(() => expect(saves.some(x => x.snapshotId === PG && JSON.stringify(x.answerPayload) === JSON.stringify({ selectedOptionId: 'pg-1' }))).toBe(true));
+  });
+
+  it('an unsent set on this device is recovered after a reload and sent; no record holds a correct set', async () => {
+    const saves: Array<{ snapshotId: string; answerPayload: unknown }> = [];
+    const store = await openAnswerStore();
+    await store.put({ key: answerKey('', ATTEMPT, MR), attemptKey: attemptKey('', ATTEMPT), tenantId: '', attemptId: ATTEMPT, snapshotId: MR, examSessionId: SESSION,
+      contentKey: MULTIPLE_RESPONSE_KEY, optionId: '["opt-a","opt-c"]', clientWriteIdentity: 'local-mr', ownIdentities: [], baseVersion: null, localSequence: 1, capturedAt: Date.now() });
+    serve(saves);
+    render(<StudentExamWorkstation />);
+    expect(await screen.findByText('Pilih semua jawaban yang benar.')).toBeTruthy();
+    expect((screen.getByLabelText(/^A\s*2/) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText(/^C\s*5/) as HTMLInputElement).checked).toBe(true);
+    await waitFor(() => expect(saves.map(x => [x.snapshotId, x.answerPayload])).toEqual([[MR, { selectedOptionIds: ['opt-a', 'opt-c'] }]]));
+    await userEvent.click(screen.getByLabelText(/^E\s*9/));
+    const records = await (await openAnswerStore()).listForAttempt('', ATTEMPT);
+    for (const record of records) expect(JSON.stringify(record)).not.toMatch(/correct/i);
+  });
+
+  it('adoption by another session keeps value and version; a newer foreign answer is kept instead', async () => {
+    const calls: Array<{ snapshotId: string; optionId: string; contentKey: string; expectedWriteVersion: number | null; clientWriteIdentity: string }> = [];
+    const api: SyncApi = {
+      save: async req => { calls.push(req); return { kind: 'ack', writeVersion: (req.expectedWriteVersion ?? 0) + 1, clientWriteIdentity: req.clientWriteIdentity } as SaveOutcome; },
+      fetchServerAnswers: async () => [],
+    };
+    const store = new MemoryAnswerStore();
+    const old = (snapshotId: string, optionId: string, baseVersion: number | null) => ({ key: answerKey('t', ATTEMPT, snapshotId), attemptKey: attemptKey('t', ATTEMPT), tenantId: 't', attemptId: ATTEMPT,
+      snapshotId, examSessionId: 'old-session', contentKey: MULTIPLE_RESPONSE_KEY, optionId, clientWriteIdentity: `old-${snapshotId}`, ownIdentities: [], baseVersion, localSequence: 1, capturedAt: 0 });
+    await store.put(old('q-keep', '["opt-b","opt-d"]', 2));
+    await store.put(old('q-gone', '["opt-a"]', null));
+    const engine = new AnswerSyncEngine({ tenantId: 't', attemptId: ATTEMPT, examSessionId: SESSION, store, api,
+      events: { onChange: () => {}, onSessionInactive: () => {}, onTerminal: () => {}, onUnauthorized: () => {} }, newIdentity: () => 'n', random: () => 0 });
+    const result = await engine.initialize([
+      { snapshotId: 'q-keep', optionId: '["opt-b"]', writeVersion: 2, clientWriteIdentity: 'mine-earlier' },
+      { snapshotId: 'q-gone', optionId: '["opt-e"]', writeVersion: 3, clientWriteIdentity: 'someone-else' },
+    ]);
+    expect(result).toEqual({ adopted: 1, discarded: 1 });
+    await waitFor(() => expect(calls.map(c => [c.snapshotId, c.contentKey, c.optionId, c.expectedWriteVersion, c.clientWriteIdentity])).toEqual([['q-keep', MULTIPLE_RESPONSE_KEY, '["opt-b","opt-d"]', 2, 'old-q-keep']]));
+    expect(engine.view('q-gone')).toEqual({ optionId: '["opt-e"]', status: 'saved' });
+    engine.dispose();
+  });
+});
+
+describe('teacher preview of multiple response', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('shows the instruction, try-out checkboxes that send nothing, and every key option on request', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      exam: { examInstanceId: ATTEMPT, subjectLabel: 'Matematika', groupLabel: 'X-1', assessmentTypeLabel: 'Ulangan Harian', lifecycleState: 'SCHEDULED',
+        windowStartsAt: '2026-11-07T01:00:00.000Z', windowEndsAt: '2026-11-07T03:00:00.000Z', durationMinutes: 60 },
+      questions: [{ snapshotId: 'm1', no: 1, prompt: 'Bilangan prima di bawah 10 adalah', options: ['2', '4', '5', '8', '9'].map((content, i) => ({ id: `o${i}`, content })),
+        correctOptionId: null, correctOptionIds: ['o0', 'o2'], questionType: 'MULTIPLE_RESPONSE', maxScore: 2, valid: true }],
+    }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TeacherExamPreviewView examInstanceId={ATTEMPT} onBack={() => {}} />);
+    expect(await screen.findByText('Bilangan prima di bawah 10 adalah')).toBeTruthy();
+    expect(screen.getByText('Pilih semua jawaban yang benar.')).toBeTruthy();
+    expect(screen.getByText(/Pilihan ganda kompleks/)).toBeTruthy();
+    const boxes = screen.getAllByRole('checkbox').filter(box => (box as HTMLInputElement).closest('.options-list'));
+    expect(boxes).toHaveLength(5);
+    await userEvent.click(boxes[1]);
+    await userEvent.click(boxes[3]);
+    expect([(boxes[1] as HTMLInputElement).checked, (boxes[3] as HTMLInputElement).checked]).toEqual([true, true]);
+    expect(screen.queryByText('Kunci jawaban')).toBeNull();
+    await userEvent.click(screen.getByLabelText('Tampilkan kunci jawaban dan skor'));
+    expect(screen.getAllByText('Kunci jawaban')).toHaveLength(2);
+    expect(screen.getByText('Skor 2')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

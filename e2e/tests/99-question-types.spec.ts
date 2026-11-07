@@ -274,12 +274,21 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     await toMr();
 
     // V06: submit with a save still pending; the pending choice is sent before submission.
-    await student.context().setOffline(true);
+    // The save is held at the network until the submission has started.
+    let releaseSave!: () => void;
+    const held = new Promise<void>(resolve => { releaseSave = resolve; });
+    await student.route('**/api/v1/assessment/answer/save', async route => { await held; await route.continue(); });
     await C.click();
-    await student.context().setOffline(false);
-    await student.getByRole('button', { name: 'Selesaikan Ujian' }).click();
-    await student.getByRole('dialog').getByRole('checkbox').check();
-    await student.getByRole('button', { name: 'Kirim Jawaban Sekarang' }).click();
+    await expect(saveStatus(student)).toHaveText('Menyimpan...');
+    const submitting = (async () => {
+        await student.getByRole('button', { name: 'Selesaikan Ujian' }).click();
+        await student.getByRole('dialog').getByRole('checkbox').check();
+        await student.getByRole('button', { name: 'Kirim Jawaban Sekarang' }).click();
+    })();
+    await student.waitForTimeout(500);
+    releaseSave();
+    await submitting;
+    await student.unroute('**/api/v1/assessment/answer/save');
     await expect(student.getByText('Ujian Berhasil Dikumpulkan')).toBeVisible();
     expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2]].sort() });
 
@@ -290,6 +299,6 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     expect((await transition('finalize')).status).toBe(200);
     const final = await api(`/api/v1/assessment/teacher-exams/results?examInstanceId=${examId}`);
     expect(final.body.resultState).toBe('FINAL');
-    const mine = final.body.results.find((r: { elligbleId: string }) => r.elligbleId === STUDENT[0]);
+    const mine = final.body.participants.find((r: { elligbleId: string }) => r.elligbleId === STUDENT[0]);
     expect([mine.score.rawScore, mine.score.maxScore, mine.score.scaledScore, mine.score.correct]).toEqual([2, 5, 40, 1]);
 }

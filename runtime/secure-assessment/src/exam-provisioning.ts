@@ -120,8 +120,8 @@ export interface QuestionImportBatchInput {
     sourceFileName: string | null;
     sourceSha256: string;
     sourceLines: number[];
-        /** The question template of the file (elligble-questions-v1 when absent). */
-        template?: string;
+    /** The question template of the file (elligble-questions-v1 when absent). */
+    template?: string;
 }
 
 export interface EnrolledStudent {

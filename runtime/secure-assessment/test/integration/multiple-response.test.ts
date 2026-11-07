@@ -12,6 +12,9 @@ import { sha256Hex } from '../../src/teacher-exam-import.ts';
 // refusals change nothing; submit, finalize and results agree; monitoring does not count a
 // cleared choice; migration 0060 upgrade, rollback and repeat.
 
+/** A client of this version declares both content keys; one without the header handles v1 only. */
+const BOTH = { 'X-Question-Types': '1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE' };
+
 const FILE = [
     'no;type;prompt;option_a;option_b;option_c;option_d;option_e;correct;score',
     '1;PG;Ibu kota Indonesia adalah;Bandung;Jakarta;Surabaya;Medan;Makassar;B;1',
@@ -87,7 +90,7 @@ test('ASSESS-QUESTION-002 C03 multiple response end to end through production wi
         assert.equal((await c.request('/api/v1/assessment/session/activate', { method: 'POST', body: { attemptId, sessionId } })).status, 200);
         assert.equal((await c.request('/api/v1/assessment/timer/start', { method: 'POST', body: { attemptId } })).status, 200);
         const save = (snapshotId: string, answerPayload: unknown, expectedWriteVersion: number | null = null) => c.request('/api/v1/assessment/answer/save',
-            { method: 'POST', body: { attemptId, sessionId, snapshotId, answerPayload, clientWriteIdentity: randomUUID(), expectedWriteVersion } });
+            { method: 'POST', headers: BOTH, body: { attemptId, sessionId, snapshotId, answerPayload, clientWriteIdentity: randomUUID(), expectedWriteVersion } });
         return { c, attemptId, sessionId, save };
     };
     const a = await start(students[0]);
@@ -100,8 +103,10 @@ test('ASSESS-QUESTION-002 C03 multiple response end to end through production wi
     };
 
     await t.test('delivery projects no key; saves follow V1/V2/V6 and refusals V8–V10 change nothing', async () => {
-        const d = await a.c.request(`/api/v1/assessment/questions?attemptId=${a.attemptId}`);
-        assert.equal(d.status, 200);
+        const d = await a.c.request(`/api/v1/assessment/questions?attemptId=${a.attemptId}`, { headers: BOTH });
+        assert.equal(d.status, 200, JSON.stringify(d.body));
+        const undeclared = await a.c.request(`/api/v1/assessment/questions?attemptId=${a.attemptId}`);
+        assert.deepEqual([undeclared.status, undeclared.body], [409, { error: 'question_type_unsupported' }], 'no header: v1 only');
         assert.deepEqual(d.body.questions[1], { snapshotId: mrId, schemaVersion: 2, questionType: 'MULTIPLE_RESPONSE', prompt: 'Bilangan prima di bawah 10 adalah',
             options: [0, 1, 2, 3, 4].map(i => ({ id: opt(i), content: ['2', '4', '5', '8', '9'][i] })) });
         assert.doesNotMatch(JSON.stringify(d.body), /correct/);
@@ -123,7 +128,7 @@ test('ASSESS-QUESTION-002 C03 multiple response end to end through production wi
         const resumed = await b.c.request(`/api/v1/assessment/resume?attemptId=${b.attemptId}&examSessionId=${b.sessionId}`);
         assert.deepEqual(resumed.body.answers.map((x: any) => [x.snapshotId, x.answerPayload, x.writeVersion]), [[mrId, { selectedOptionIds: [] }, 2]]);
         const m = await monitoring();
-        const answered = Object.fromEntries((m.participants ?? m.rows ?? []).map((p: any) => [p.elligbleId, p.answeredCount ?? p.answered]));
+        const answered = Object.fromEntries(m.participants.map((p: any) => [p.elligbleId, p.answeredCount]));
         assert.equal(answered['siswa.mr.a'], 2);
         assert.equal(answered['siswa.mr.b'], 0, 'a cleared choice is not answered (O02-2)');
     });
@@ -133,7 +138,7 @@ test('ASSESS-QUESTION-002 C03 multiple response end to end through production wi
         const provisional = await teacherClient.request(`/api/v1/assessment/teacher-exams/results?examInstanceId=${exam}`);
         assert.equal(provisional.status, 200);
         assert.equal(provisional.body.scoring.rule, 'COMPOSITE_PER_ITEM_V1');
-        const scores = (body: any) => Object.fromEntries(body.results.map((r: any) => [r.elligbleId, r.score && [r.score.rawScore, r.score.maxScore, r.score.scaledScore, r.score.correct, r.score.unanswered]]));
+        const scores = (body: any) => Object.fromEntries(body.participants.map((r: any) => [r.elligbleId, r.score && [r.score.rawScore, r.score.maxScore, r.score.scaledScore, r.score.correct, r.score.unanswered]]));
         assert.deepEqual(scores(provisional.body), { 'siswa.mr.a': [3, 3, 100, 2, 0], 'siswa.mr.b': [0, 3, 0, 0, 2] });
         assert.equal((await act(exam, 'end')).status, 200);
         assert.equal((await act(exam, 'finalize')).status, 200);

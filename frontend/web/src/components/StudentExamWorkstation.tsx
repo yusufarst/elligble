@@ -25,8 +25,6 @@ import { StatusPage } from '@/components/ui/status-page';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type WorkstationPhase =
-  /** The server refused question content this client version cannot show (ASSESS-QUESTION-002 §4A.2). */
-  | 'unsupported_content'
   | 'invalid_attempt'
   | 'loading'
   | 'access_denied'
@@ -105,6 +103,11 @@ function waitForRetry(ms: number): Promise<void> {
 
 export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ examSessionId, onRequestTakeover, onExit }) => {
   const [phase, setPhase] = useState<WorkstationPhase>('loading');
+  // ASSESS-QUESTION-002 §4A.2: the server refused question content this client version cannot
+  // show. The exam stays active: the timer runs and pending answers keep being sent; questions
+  // are no longer requested; the page asks for a reload.
+  const [contentUnsupported, setContentUnsupported] = useState(false);
+  const contentUnsupportedRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [examContext, setExamContext] = useState<{subjectLabel: string | null, roomLabel: string | null} | null>(null);
@@ -326,7 +329,9 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
               return;
             }
             if (err.code === 'question_type_unsupported') {
-              setPhase('unsupported_content');
+              contentUnsupportedRef.current = true;
+              setContentUnsupported(true);
+              setPhase('active');
               return;
             }
             if (err.code === 'session_not_active') {
@@ -478,7 +483,9 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   // A save refused because this client cannot handle the question content: reload (§4A.2).
   const unsupportedContent = answers.unsupportedContent;
   useEffect(() => {
-    if (unsupportedContent) setPhase('unsupported_content');
+    if (!unsupportedContent) return;
+    contentUnsupportedRef.current = true;
+    setContentUnsupported(true);
   }, [unsupportedContent]);
 
   const loadQuestions = useCallback(async (id: string) => {
@@ -490,7 +497,8 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     } catch (err) {
       if (err instanceof ApiError && err.code === 'question_type_unsupported' && mountedRef.current) {
         // Stop asking: only a newer version of the page can show these questions.
-        setPhase('unsupported_content');
+        contentUnsupportedRef.current = true;
+        setContentUnsupported(true);
         return;
       }
       if (err instanceof ApiError && err.code === 'exam_paused' && mountedRef.current) {
@@ -546,7 +554,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     // The server's value replaces the local countdown (frozen while paused, exact on resume).
     timerControlRef.current?.applyServerRemaining(remaining);
     // Questions are fetched once the exam runs again (also retried by later checks).
-    if (state !== 'PAUSED' && lock === null && attemptId && questions.length === 0) void loadQuestions(attemptId);
+    if (state !== 'PAUSED' && lock === null && attemptId && questions.length === 0 && !contentUnsupportedRef.current) void loadQuestions(attemptId);
     if ((wasPaused && state !== 'PAUSED') || (wasLocked && lock === null)) answersRef.current?.flush();
   }, [noteExamState, noteLockState, isFreshState, noteMessageCount, attemptId, questions.length, loadQuestions]);
   runInfoRef.current = applyRunInfo;
@@ -658,19 +666,6 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     return (
       <StatusPage title="Akses Ditolak" role="alert">
         <p>Akses ditolak. Anda tidak memiliki izin untuk mengakses sesi pengerjaan ujian ini.</p>
-      </StatusPage>
-    );
-  }
-
-  if (phase === 'unsupported_content') {
-    return (
-      <StatusPage
-        title="Perlu Memuat Ulang"
-        role="alert"
-        actions={<Button onClick={() => window.location.reload()}>Muat Ulang</Button>}
-      >
-        <p>Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.</p>
-        <p>Jawaban yang sudah tersimpan tetap aman dan waktu ujian tetap dihitung oleh server.</p>
       </StatusPage>
     );
   }
@@ -827,6 +822,19 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
 
   // Questions appear only once this device's unsynced choices are restored, so nothing can
   // be answered or submitted before the local buffer and the server state are reconciled.
+  if (phase === 'active' && contentUnsupported && questions.length === 0) {
+    return (
+      <StatusPage
+        title="Perlu Memuat Ulang"
+        role="alert"
+        actions={<Button onClick={() => window.location.reload()}>Muat Ulang</Button>}
+      >
+        <p>Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.</p>
+        <p className="tabular-nums">Sisa waktu: {formattedTime}. Waktu ujian tetap berjalan, dan jawaban yang sudah Anda pilih tetap dikirim otomatis.</p>
+      </StatusPage>
+    );
+  }
+
   if (phase === 'loading' || (phase === 'active' && (!answers.ready || questions.length === 0))) {
     return (
       <StatusPage title="Memuat Ujian..." role="status" live="polite">
@@ -1034,6 +1042,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
         </nav>
 
         {/* Right Pane: Question Stimulus & Options */}
+        {contentUnsupported && (
+          <Alert variant="destructive" role="alert" className="mb-3">
+            <IconAlertCircle aria-hidden="true" />
+            <AlertDescription>
+              <span className="block">Soal ujian ini memerlukan versi aplikasi yang lebih baru. Muat ulang halaman untuk melanjutkan.</span>
+              <Button className="mt-2 min-h-11" onClick={() => window.location.reload()}>Muat Ulang</Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {currentQuestion && (
           <section className="question-card" aria-label={`Soal nomor ${currentIndex + 1}`}>
             <fieldset className="question-fieldset">
