@@ -252,7 +252,7 @@ export const TeacherExamImportView: React.FC<{
       {back}
       <PageHeader title={SCREEN_TITLE.examImport}>
         <p className="m-0 text-muted-foreground">
-          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG) atau pilihan ganda kompleks (PGK) dengan pilihan A sampai E dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
+          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK) atau benar/salah (BS) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
         </p>
       </PageHeader>
 
@@ -351,7 +351,7 @@ export const TeacherExamImportView: React.FC<{
         <CardHeader>
           <CardTitle>Berkas Soal</CardTitle>
           <CardDescription>
-            Satu baris per soal: nomor, tipe (PG atau PGK), teks soal, pilihan A sampai E, kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C) dan skor.
+            Satu baris per soal: nomor, tipe (PG, PGK atau BS), teks soal, pilihan A sampai E (kosong untuk BS), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS) dan skor.
             Simpan sebagai CSV UTF-8; pemisah kolom boleh titik koma atau koma.
           </CardDescription>
         </CardHeader>
@@ -495,10 +495,17 @@ const PreviewSection: React.FC<{
             {preview.questions.map(q => (
               <li key={q.no} className="flex flex-col gap-2 rounded-md border border-border bg-background px-4 py-3">
                 <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">Soal {q.no} · {q.type === 'PGK' ? 'Pilihan ganda kompleks' : 'Pilihan ganda'}</span>
+                  <span className="font-semibold text-foreground">Soal {q.no} · {q.type === 'PGK' ? 'Pilihan ganda kompleks' : q.type === 'BS' ? 'Benar/Salah' : 'Pilihan ganda'}</span>
                   <span className="tabular-nums">Skor {formatScore(q.score)}</span>
                 </p>
                 <p className="m-0 whitespace-pre-wrap text-[15px] [overflow-wrap:anywhere]">{q.prompt}</p>
+                {q.type === 'BS' && (
+                  <p className="m-0 flex gap-2 rounded-md border border-success-line bg-success-surface px-2 py-1 text-sm">
+                    <span className="min-w-0 flex-1">{q.correct}</span>
+                    <span className="shrink-0 text-xs font-semibold text-success-ink">Kunci jawaban</span>
+                  </p>
+                )}
+                {q.options.length > 0 && (
                 <ol className="m-0 flex list-none flex-col gap-1 p-0">
                   {q.options.map((option, i) => {
                     const letter = 'ABCDE'[i];
@@ -512,6 +519,7 @@ const PreviewSection: React.FC<{
                     );
                   })}
                 </ol>
+                )}
               </li>
             ))}
           </ol>

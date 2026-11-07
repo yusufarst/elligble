@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
+import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -9,6 +9,7 @@ import { clearBroadcastSeen, useBroadcastInbox } from '../hooks/useBroadcastInbo
 import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { MultipleResponseAnswer } from './answers/MultipleResponseAnswer.tsx';
+import { TrueFalseAnswer } from './answers/TrueFalseAnswer.tsx';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
 import { formatTime } from '../lib/format.ts';
@@ -1068,6 +1069,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   question={currentQuestion}
                   value={selectedOptions[currentQuestion.snapshotId]}
                   onChange={value => selectOption(currentQuestion.snapshotId, value, MULTIPLE_RESPONSE_KEY)}
+                />
+              ) : currentQuestion.questionType === 'TRUE_FALSE' ? (
+                <TrueFalseAnswer
+                  question={currentQuestion}
+                  value={selectedOptions[currentQuestion.snapshotId]}
+                  onChange={value => selectOption(currentQuestion.snapshotId, value, TRUE_FALSE_KEY)}
                 />
               ) : (
               <div className="options-list" role="radiogroup" aria-label="Pilihan Jawaban">

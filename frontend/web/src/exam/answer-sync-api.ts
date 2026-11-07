@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, V1_SINGLE_CHOICE_KEY, answerValueOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
+import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -23,6 +23,8 @@ function payloadFor(contentKey: string, value: string): Record<string, unknown> 
     const ids = selectionOf(value);
     return ids ? { selectedOptionIds: ids } : null;
   }
+  // True/false: only the canonical "true" or "false" is ever sent.
+  if (contentKey === TRUE_FALSE_KEY) return value === 'true' ? { value: true } : value === 'false' ? { value: false } : null;
   return null;
 }
 

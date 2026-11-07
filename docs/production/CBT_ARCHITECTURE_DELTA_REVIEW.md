@@ -97,3 +97,12 @@ Multiple response is the first new type on the A01 foundation.
 - **Unchanged:** routes, lock order and v1 rows.
 
 Authority and evidence: [ASSESS-QUESTION-002](tasks/ASSESS-QUESTION-002.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-003 bounded implementation checkpoint — 2026-11-08
+
+True/false is registered on the A01 foundation as `2:TRUE_FALSE`, rule `TRUE_FALSE_EXACT_V1`:
+- strict boolean `{value}`, exact match, no clearing;
+- authored as `BS` rows of the v2 template without new columns, under the append-only rule;
+- the client value is the canonical `"true"` or `"false"` in the existing local record.
+
+No route, lock order, migration or v1/multiple-response row changes. Authority and evidence: [ASSESS-QUESTION-003](tasks/ASSESS-QUESTION-003.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

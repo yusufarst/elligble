@@ -49,18 +49,18 @@ test('C01 classification is total, deterministic and never reinterprets v1', () 
         [{ schemaVersion: '1' }, 'malformed'], [{ schemaVersion: 1.5 }, 'malformed'], [{ schemaVersion: 0 }, 'malformed'], [{ schemaVersion: 100 }, 'malformed'],
         [v1(1), 'v1'], [{ schemaVersion: 1, questionType: 'INVALID' }, 'v1'], [{ schemaVersion: 1 }, 'v1'],
         [{ schemaVersion: 2 }, 'malformed'], [{ schemaVersion: 2, questionType: 'lower' }, 'malformed'], [{ schemaVersion: 2, questionType: 'X'.repeat(41) }, 'malformed'],
-        [{ schemaVersion: 2, questionType: 'TRUE_FALSE' }, 'unsupported'], [{ ...v1(1), schemaVersion: 2 }, 'unsupported'], [{ schemaVersion: 99, questionType: 'A' }, 'unsupported'],
+        [{ schemaVersion: 2, questionType: 'UNREGISTERED_EXAMPLE' }, 'unsupported'], [{ ...v1(1), schemaVersion: 2 }, 'unsupported'], [{ schemaVersion: 99, questionType: 'A' }, 'unsupported'],
     ];
     for (const [content, kind] of cases) {
         assert.equal(classifyFrozenContent(content).kind, kind, JSON.stringify(content));
         assert.deepEqual(classifyFrozenContent(content), classifyFrozenContent(content));
     }
-    const unsupported = classifyFrozenContent({ schemaVersion: 2, questionType: 'TRUE_FALSE' });
-    assert.deepEqual(unsupported, { kind: 'unsupported', key: '2:TRUE_FALSE' });
+    const unsupported = classifyFrozenContent({ schemaVersion: 2, questionType: 'UNREGISTERED_EXAMPLE' });
+    assert.deepEqual(unsupported, { kind: 'unsupported', key: '2:UNREGISTERED_EXAMPLE' });
     const registered = classifyFrozenContent(testBoolean(true), TEST_REGISTRY);
     assert.equal(registered.kind, 'registered');
     assert.equal(classifyFrozenContent(testBoolean(true)).kind, 'unsupported', 'the production registry holds only v1');
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), [V1_SINGLE_CHOICE_KEY, '2:MULTIPLE_RESPONSE'], 'ASSESS-QUESTION-002 registers multiple response');
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), [V1_SINGLE_CHOICE_KEY, '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE'], 'ASSESS-QUESTION-002/003 register multiple response and true/false');
     assert.equal(V1_SINGLE_CHOICE_RULE, BASELINE_SCORING_RULE);
     assert.throws(() => createQuestionRegistry([V1_SINGLE_CHOICE_DESCRIPTOR, V1_SINGLE_CHOICE_DESCRIPTOR]), /duplicate/);
     assert.throws(() => createQuestionRegistry([{ ...TEST_DESCRIPTOR, key: 'bad' }]), /invalid descriptor key/);

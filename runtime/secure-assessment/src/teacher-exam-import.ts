@@ -70,6 +70,8 @@ export interface PreviewQuestion {
     /** ASSESS-QUESTION-002 §4A.6. */
     type: ImportQuestionType;
     correctLetters: string[];
+    /** BS only (ASSESS-QUESTION-003 §4A.5). */
+    correctValue?: boolean;
 }
 
 export interface PreviewParticipant {
@@ -276,8 +278,10 @@ export async function runTeacherExamImport(
         sourceSha256,
         problems,
         questions: parsed.questions.map(q => ({
-            line: q.line, no: q.no, prompt: q.prompt, options: q.options, correct: q.correctIndexes.map(i => OPTION_LETTERS[i]).join(', '), score: q.maxScore,
-            type: q.type, correctLetters: q.correctIndexes.map(i => OPTION_LETTERS[i]),
+            line: q.line, no: q.no, prompt: q.prompt, options: q.options, score: q.maxScore, type: q.type,
+            correct: q.type === 'BS' ? (q.correctValue ? 'Benar' : 'Salah') : q.correctIndexes.map(i => OPTION_LETTERS[i]).join(', '),
+            correctLetters: q.correctIndexes.map(i => OPTION_LETTERS[i]),
+            ...(q.type === 'BS' ? { correctValue: q.correctValue === true } : {}),
         })),
         participants: [],
         window: null,

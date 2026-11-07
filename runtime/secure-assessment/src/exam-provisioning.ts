@@ -1,4 +1,5 @@
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
+import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
@@ -76,8 +77,16 @@ export function buildMultipleResponseFrozenContent(
     return content;
 }
 
-/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response. */
+/** Frozen TRUE_FALSE content (ASSESS-QUESTION-003 §4.1). */
+export function buildTrueFalseFrozenContent(input: { prompt: string; correctValue: boolean; maxScore: number }): Record<string, unknown> {
+    const content = { schemaVersion: 2, questionType: TRUE_FALSE_TYPE, prompt: input.prompt, correctValue: input.correctValue, maxScore: input.maxScore };
+    if (!TRUE_FALSE_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid true/false question');
+    return content;
+}
+
+/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false. */
 export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    if (q.type === 'BS') return buildTrueFalseFrozenContent({ prompt: q.prompt, correctValue: q.correctValue === true, maxScore: q.maxScore });
     return q.type === 'PGK'
         ? buildMultipleResponseFrozenContent({ prompt: q.prompt, options: q.options, correctIndexes: q.correctIndexes, maxScore: q.maxScore })
         : buildBaselineFrozenContent({ prompt: q.prompt, options: q.options, correctIndex: q.correctIndex, maxScore: q.maxScore });
