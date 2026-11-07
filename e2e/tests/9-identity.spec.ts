@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { login, open, withDatabase, state } from './helpers.ts';
 import { setSchoolOperator } from '../../runtime/tenant-access/src/school-operator.ts';
 
@@ -135,7 +135,7 @@ const AUTH_BASE_TREE = 'b11e1f64f2321ca05e3aa6d24ccde1fb9c041996';
 const authPhase = applicationTree === AUTH_BASE_TREE ? 'before' : 'after';
 const AUTH_WIDTHS = [360, 390, 430, 768, 1024, 1280, 1440];
 
-async function captureAuth(page: Page, scenario: string) {
+async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
     await page.evaluate(async () => {
         await document.fonts.ready;
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -153,13 +153,16 @@ async function captureAuth(page: Page, scenario: string) {
             verifierEntry: [...document.querySelectorAll('button,a')].filter(el => /verifikasi pendaftaran/i.test(el.textContent ?? '')).length,
             focus: { tag: active?.tagName ?? null, id: active?.id ?? null },
             targets: [...document.querySelectorAll<HTMLElement>('main button, main input, main a, main select, main textarea, [role=dialog] button, [role=dialog] input, [role=dialog] textarea')]
+                // A checkbox or radio is operated through its whole label, which is the measured target.
+                .map(el => (el instanceof HTMLInputElement && ['checkbox', 'radio'].includes(el.type) && el.closest('label')) ? el.closest('label')! : el)
                 .map(el => ({ name: el.getAttribute('aria-label') ?? el.textContent ?? el.id, width: box(el).width, height: box(el).height }))
                 .filter(t => t.width > 0 && t.height > 0),
         };
     });
-    await page.screenshot({ path: test.info().outputPath(`${name}.png`), fullPage: true, animations: 'disabled' });
+    // Activation codes are live secrets of the disposable CI database: masked, never captured.
+    await page.screenshot({ path: test.info().outputPath(`${name}.png`), fullPage: true, animations: 'disabled', mask });
     writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
-        task: 'AUTH-002', phase: authPhase, commit,
+        task: 'AUTH-002', masked: mask.length > 0, phase: authPhase, commit,
         baseline: { sourceTree: AUTH_BASE_TREE }, applicationTree, fixture: { synthetic: true, sha256: fixtureHash },
         browser: { engine: browser?.browserType().name(), version: browser?.version(), project: test.info().project.name },
         viewport, scenario, screenshot: `${name}.png`, metrics, physicalDevice: false,
@@ -170,15 +173,15 @@ async function captureAuth(page: Page, scenario: string) {
     }
 }
 
-async function captureAuthWidths(page: Page, scenario: string) {
+async function captureAuthWidths(page: Page, scenario: string, mask: Locator[] = []) {
     const original = page.viewportSize();
     for (const width of AUTH_WIDTHS) {
         await page.setViewportSize({ width, height: 800 });
-        await captureAuth(page, scenario);
+        await captureAuth(page, scenario, mask);
     }
     await page.setViewportSize({ width: 768, height: 360 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-    await captureAuth(page, `${scenario}-text-200`);
+    await captureAuth(page, `${scenario}-text-200`, mask);
     await page.evaluate(() => { document.documentElement.style.fontSize = ''; });
     if (original) await page.setViewportSize(original);
 }
@@ -194,4 +197,104 @@ test('AUTH-002 actual entry baseline: login, activation and verifier workspace',
     await login(page, 'guru.e2e', 'papan-tulis-hijau');
     await expect(page.getByRole('heading', { name: 'Pelaksanaan Ujian', exact: true })).toBeVisible();
     await captureAuthWidths(page, 'staff-workspace');
+});
+
+async function tabTo(page: Page, target: Locator) {
+    for (let step = 0; step < 60; step++) {
+        if (await target.evaluate(el => el === document.activeElement)) return;
+        await page.keyboard.press('Tab');
+    }
+    await expect(target).toBeFocused();
+}
+
+if (authPhase === 'after') test('AUTH-002 synthetic claim, scoped approval, one-time handoff and Student activation', async ({ page }) => {
+    const nisn = '9990000092', name = 'Siswa Klaim Sintetis', birth = '2010-04-05';
+    const fixture = await withDatabase(async c => {
+        const r = await c.query(`SELECT g.id AS group_id, g.academic_year_id, p.id AS period_id FROM academic_core_academic_groups g
+            JOIN academic_core_academic_periods p ON p.tenant_id = g.tenant_id AND p.academic_year_id = g.academic_year_id
+            WHERE g.tenant_id = $1 AND g.display_label = 'X-E2E'`, [state.tenantId]);
+        expect(r.rows).toHaveLength(1);
+        await c.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth,
+            academic_year_id, academic_period_id, academic_group_id) VALUES($1,'auth-002-ci',$2,'auth-002-nis',$3,$4,$5,$6,$7)`,
+            [state.tenantId, name, nisn, birth, r.rows[0].academic_year_id, r.rows[0].period_id, r.rows[0].group_id]);
+        const person = (await c.query('SELECT a.person_id FROM identity_user_accounts a JOIN identity_account_credentials cr ON cr.user_account_id=a.id WHERE cr.username=$1', ['guru.e2e'])).rows[0].person_id as string;
+        await c.query('BEGIN');
+        try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: person, action: 'ASSIGN', operator: 'Synthetic CI operator', caseReference: 'AUTH-002', reason: 'Synthetic claim verification' }); await c.query('COMMIT'); }
+        catch (e) { await c.query('ROLLBACK'); throw e; }
+        return { person };
+    });
+    const trusted = () => withDatabase(async c => (await c.query(`SELECT (SELECT count(*) FROM identity_persons)::int AS persons, (SELECT count(*) FROM identity_user_accounts)::int AS accounts,
+        (SELECT count(*) FROM identity_sessions)::int AS sessions, (SELECT count(*) FROM tenant_memberships)::int AS memberships`)).rows[0]);
+    try {
+        // Student: the school's claim link carries only its school code.
+        await open(page, `/?sekolah=${state.tenantId}`);
+        await page.getByRole('button', { name: 'Belum punya akun? Ajukan pendaftaran akun' }).click();
+        await expect(page.getByRole('heading', { name: 'Ajukan Pendaftaran Akun', exact: true })).toBeVisible();
+        await expect(page.locator('input[type=password]')).toHaveCount(0);
+        await captureAuthWidths(page, 'claim-form');
+        const before = await trusted();
+        await page.getByLabel('Nama Lengkap').fill(name);
+        await page.getByLabel('NISN').fill(nisn);
+        await page.getByLabel('Tanggal Lahir').fill(birth);
+        await page.getByRole('button', { name: 'Kirim Pengajuan' }).click();
+        await expect(page.getByRole('status')).toContainText('Pengajuan sudah dikirim');
+        await expect(page.getByRole('status')).toBeFocused();
+        expect(await trusted()).toEqual(before);
+        expect(page.url()).not.toContain(nisn);
+        await captureAuthWidths(page, 'claim-received');
+        await page.getByRole('button', { name: 'Kembali ke halaman masuk' }).click();
+
+        // Verifier: scoped queue, explicit adjudication, in-person confirmation, keyboard dialog.
+        await login(page, 'guru.e2e', 'papan-tulis-hijau');
+        await page.getByRole('button', { name: 'Verifikasi Pendaftaran', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Verifikasi Pendaftaran', exact: true })).toBeVisible();
+        await expect(page.locator('#claim-review')).toContainText(name);
+        await captureAuthWidths(page, 'verifier-queue');
+        const approve = page.getByRole('button', { name: `Setujui pengajuan ${name}` });
+        await tabTo(page, approve);
+        await page.keyboard.press('Enter');
+        const dialog = page.getByRole('dialog', { name: 'Setujui Pengajuan?' });
+        await expect(dialog).toBeVisible();
+        for (const key of ['Tab', 'Shift+Tab']) for (let n = 0; n < 8; n++) {
+            await page.keyboard.press(key);
+            await expect.poll(() => dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+        }
+        await dialog.getByLabel('Siswa belum punya akun ELLIGBLE').check();
+        await dialog.getByLabel('Saya sudah menanyakan langsung dan siswa tidak memiliki kartu atau ELLIGBLE ID lama.').check();
+        await dialog.getByLabel('Saya sudah memverifikasi siswa ini secara langsung.').check();
+        await dialog.getByRole('textbox', { name: 'Alasan tindakan' }).fill('Diverifikasi langsung dengan kartu pelajar sintetis');
+        await captureAuthWidths(page, 'verifier-approve');
+        await dialog.getByRole('button', { name: 'Setujui', exact: true }).click();
+        const handoff = page.getByRole('dialog', { name: 'Serahkan Kode Aktivasi' });
+        await expect(handoff).toBeVisible();
+        const values = handoff.locator('dd');
+        const elligbleId = (await values.nth(0).textContent())!.trim(), code = (await values.nth(1).textContent())!.trim();
+        expect(elligbleId).toMatch(/^elg-/);
+        await captureAuthWidths(page, 'verifier-handoff', [values.nth(1)]);
+        await handoff.getByRole('button', { name: 'Selesai, Tutup Kode' }).click();
+        await expect(page.getByText(code)).toHaveCount(0);
+        await expect(page.locator('#claim-review')).toContainText('Disetujui, menunggu aktivasi');
+        await page.getByRole('button', { name: 'Keluar' }).click();
+
+        // Student sets their own password with the handed-over code; a wrong code is refused.
+        await open(page);
+        await page.getByRole('button', { name: 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi' }).click();
+        const fillActivation = async (value: string) => {
+            await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(elligbleId);
+            await page.getByLabel('Kode Aktivasi').fill(value);
+            await page.getByLabel('Kata Sandi Baru', { exact: true }).fill('KlaimSintetisAman2026!');
+            await page.getByLabel('Ulangi Kata Sandi Baru').fill('KlaimSintetisAman2026!');
+            await page.getByRole('button', { name: 'Aktifkan dan Masuk' }).click();
+        };
+        await fillActivation('AAAA-BBBB-CCCC');
+        await expect(page.getByRole('alert')).toBeVisible();
+        await fillActivation(code);
+        await expect(page.getByRole('heading', { name: 'Belum Ada Ruang Kerja', exact: true })).toBeVisible();
+        await withDatabase(async c => {
+            const claim = (await c.query('SELECT state FROM identity_student_claims WHERE submitted_nisn = $1', [nisn])).rows;
+            expect(claim).toEqual([{ state: 'ACTIVATED' }]);
+        });
+    } finally {
+        await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: fixture.person, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-002', reason: 'End synthetic verification' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
+    }
 });

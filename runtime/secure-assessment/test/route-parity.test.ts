@@ -63,6 +63,9 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     'api/identity-client.ts': {
         previewRoster: m => m.previewRoster({academicYearId:ID,academicPeriodId:ID,csv:'invalid'}),
         confirmRoster: m => m.confirmRoster({academicYearId:ID,academicPeriodId:ID,csv:'invalid'},{requestKey:ID,reason:'Synthetic import',confirmed:true,inputDigest:'0'.repeat(64),stateDigest:'0'.repeat(64)}),
+        submitClaim: m => m.submitClaim({tenantId:ID,fullName:'Siswa Sintetis',nisn:'0012345678',birthDate:'2010-01-02',requestKey:ID}),
+        getClaimReview: m => m.getClaimReview(),
+        decideClaim: m => m.decideClaim({claimId:ID,expectedRevision:1,decision:'REJECT',reason:'Synthetic decision',confirmed:true,requestKey:ID}),
     },
     'api/auth-client.ts': {
         login: m => m.login('pengguna.uji', 'kata-sandi-uji'),
@@ -80,7 +83,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
     },
 };
 /** Exports that never call the network. */
-const PURE_EXPORTS = new Set(['RosterApiError', 'ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
+const PURE_EXPORTS = new Set(['RosterApiError', 'ClaimApiError', 'ApiError', 'LoginError', 'ActivationError', 'selectedOptionOf', 'toServerAnswerState', 'classifySaveFailure', 'countUnreceivedLocalAnswers']);
 
 const unavailablePool = {
     connect: async () => { throw new Error('database unavailable'); },

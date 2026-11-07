@@ -15,7 +15,9 @@ function tenantLabel(label: string | null, tenantId: string): string {
 export const LoginScreen: React.FC<{
   onLogin(username: string, password: string): Promise<void>;
   onActivate?(username: string, activationCode: string, newPassword: string): Promise<void>;
-}> = ({ onLogin, onActivate }) => {
+  /** AUTH-002: opens the non-trusted Student claim; absent where the claim is not offered. */
+  onClaim?(): void;
+}> = ({ onLogin, onActivate, onClaim }) => {
   const [mode, setMode] = useState<'login' | 'activate'>('login');
   const activating = mode === 'activate' && onActivate;
   return (
@@ -33,8 +35,13 @@ export const LoginScreen: React.FC<{
         <CardContent className="flex flex-col gap-4">
           {activating ? <ActivationForm onSubmit={onActivate} /> : <LoginForm onSubmit={onLogin} />}
           {onActivate && (
-            <Button variant="link" className="self-center" onClick={() => setMode(activating ? 'login' : 'activate')}>
+            <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={() => setMode(activating ? 'login' : 'activate')}>
               {activating ? 'Kembali ke halaman masuk' : 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi'}
+            </Button>
+          )}
+          {onClaim && !activating && (
+            <Button variant="link" className="h-auto min-h-11 self-center whitespace-normal py-2 text-center" onClick={onClaim}>
+              Belum punya akun? Ajukan pendaftaran akun
             </Button>
           )}
         </CardContent>

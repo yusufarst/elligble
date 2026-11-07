@@ -1,3 +1,5 @@
+> **AUTH-002 implementation checkpoint, 2026-11-07 (DEC-048):** capture-only baseline CI #136 attempt 1 eight SUCCESS and five artifacts PASS; implementation candidate published for exact-content CI and independent implementation review ([record §13](tasks/AUTH-002.md)). DONE 3/33 (9.09%), VERIFYING 1, BLOCKED 29, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
+
 > **AUTH-002 READY / Build checkpoint, 2026-11-07 (DEC-048):** GOV-EXEC-001 landed (PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5, post-merge CI #134 attempt 1 eight SUCCESS); DEC-048 effective. AUTH-002 formal READY PASS and Build started under DEC-048 ([record §12](tasks/AUTH-002.md)): frozen 44-path allowlist, reserved 0057, CI-first order §12.3. DONE 3/33 (9.09%), IN_PROGRESS 1, BLOCKED 29, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
 
 > **DEC-048 governance checkpoint, 2026-11-07:** GOV-EXEC-001 records the standing execution delegation (`docs/00-governance/00.13_STANDING_EXECUTION_DELEGATION.md`); effective only when every 00.13 §9 condition holds (Owner approval of the exact text, independent governance review PASS, GOV-EXEC-001 DONE, landing on `main`). Baseline counters unchanged; AUTH-002 local preparation is carried separately.
@@ -1102,8 +1104,8 @@ Current checkpoint, 2026-11-04: verified main/origin/main 056a154d4ae2eb9c5a7c79
 | Physical baseline | local main safely fast-forwarded to exact main above; clean entry; publication branch not created |
 | Completed predecessor | ADMIN-001 DONE, accepted 3df5b322/CI #129, final evidence 3baa7de, PR #21 merged; SEC-001/AUTH-001 remain DONE |
 | Last CI-verified main | [CI #131/run 41824758308](https://github.com/yusufarst/elligble/actions/runs/41824758308), exact main above, automatic attempt 1 eight SUCCESS, ubuntu-24.04 |
-| Current gate | AUTH-002 IN_PROGRESS under DEC-048; CI-first order record §12.3 (2026-11-07) |
-| Counters | 33 baseline/current, DONE 3 (9.09%)/IN_PROGRESS 1/BLOCKED 29/READY 0/VERIFYING 0; 78 acyclic edges/R01–R31/G1–G10 unchanged |
+| Current gate | AUTH-002 VERIFYING under DEC-048: exact-content CI and independent implementation review (record §13) |
+| Counters | 33 baseline/current, DONE 3 (9.09%)/VERIFYING 1/BLOCKED 29/READY 0/IN_PROGRESS 0; 78 acyclic edges/R01–R31/G1–G10 unchanged |
 | Authorized scope | DEC-048: frozen 44-path AUTH-002 allowlist (record §8/§12.2) on task/auth-002-student-claim-verification |
 | Frozen footprint | AUTH-002 §8: 44 paths; 0057_student_claim_verification.sql reserved (record §12.2) |
 | Security/release | Settled O01/O03/A03/P5/P6 preserved; excluded C/default-deny, PB05 OPEN, G7 before real data; production NOT READY |

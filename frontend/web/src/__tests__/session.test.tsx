@@ -173,6 +173,20 @@ describe('session gate', () => {
     expect(login).toHaveBeenCalledWith('siswa.satu', 'benar-sandi');
     expect(screen.getByText('Daftar Ujian Siswa')).toBeDefined();
   });
+  it('AUTH-002: the signed-out entry offers a non-trusted claim with the school code from the link', async () => {
+    window.history.replaceState({}, '', '/?sekolah=' + TENANT_A);
+    vi.mocked(getSession).mockResolvedValue(null);
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Belum punya akun? Ajukan pendaftaran akun' }));
+    expect(await screen.findByRole('heading', { name: 'Ajukan Pendaftaran Akun' })).toBeDefined();
+    expect(screen.queryByLabelText('Kode Sekolah')).toBeNull();
+    expect(document.querySelector('input[type=password]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+    expect(await screen.findByRole('heading', { name: 'Masuk ke ELLIGBLE' })).toBeDefined();
+    expect(login).not.toHaveBeenCalled();
+    expect(activate).not.toHaveBeenCalled();
+  });
+
   async function openActivation() {
     vi.mocked(getSession).mockResolvedValue(null);
     render(<App />);

@@ -33,9 +33,16 @@ export function parseRoster(input: RosterInput, parser: (text:string)=>CsvCells[
 }
 
 async function storedRows(c:ClientBase,tenant:string,lock=false):Promise<Stored[]> {
-    return (await c.query(`SELECT id,source_student_key,revision,full_name,nis,nisn,to_char(date_of_birth,'YYYY-MM-DD') AS birth,
-        academic_year_id,academic_period_id,academic_group_id,person_id FROM academic_core_student_roster_records
-        WHERE tenant_id=$1 ORDER BY id ${lock?'FOR UPDATE':''}`,[tenant])).rows;
+    // Effective identity: the immutable 0056 person_id or the AUTH-002 claim binding, so later
+    // corrections still check the same Person's enrollment. A disagreement is never resolved here.
+    const rows=(await c.query(`SELECT r.id,r.source_student_key,r.revision,r.full_name,r.nis,r.nisn,to_char(r.date_of_birth,'YYYY-MM-DD') AS birth,
+        r.academic_year_id,r.academic_period_id,r.academic_group_id,r.person_id AS recorded_person,b.person_id AS bound_person
+        FROM academic_core_student_roster_records r LEFT JOIN academic_core_roster_identity_bindings b ON b.roster_id=r.id AND b.tenant_id=r.tenant_id
+        WHERE r.tenant_id=$1 ORDER BY r.id ${lock?'FOR UPDATE OF r':''}`,[tenant])).rows;
+    return rows.map(({recorded_person,bound_person,...row})=>{
+        if(recorded_person&&bound_person&&recorded_person!==bound_person) throw new RosterRefusal(409,'REVIEW_REQUIRED');
+        return {...row,person_id:recorded_person??bound_person??null};
+    });
 }
 const same=(s:Stored,r:RosterRow,i:RosterInput)=>s.full_name===r.name && s.nis===r.nis && s.nisn===r.nisn && s.birth===r.birth && s.academic_group_id===r.group && s.academic_year_id===i.academicYearId.toLowerCase() && s.academic_period_id===i.academicPeriodId.toLowerCase();
 

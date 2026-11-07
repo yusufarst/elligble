@@ -5,7 +5,7 @@
 | Field | Preparation disposition |
 |---|---|
 | Classification | Existing active P11 Task; P0 identity journey; HIGH risk; R08/R09, P3 F02, P5 A09, P8 V01/V11/V12 |
-| Status | **IN_PROGRESS — formal READY PASS and Build started under DEC-048 on 2026-11-07 (§12); frozen 44-path allowlist, reserved 0057, CI-first order §12.3** |
+| Status | **VERIFYING — capture-only baseline PASS (§13.1); implementation candidate published for exact-content CI and independent implementation review (§13); DEC-048** |
 | Objective | Student submits a non-trusted registration claim; an explicitly scoped school verifier resolves it against the current official roster, then the same authoritative Person/canonical Account reaches explicit Student-controlled activation without duplicate identities or lost history |
 | Owner authorization | 2026-11-04: documentation preparation and SEC-001/AUTH-001/ADMIN-001 tracker reconciliation only. 2026-11-07 (Owner in chat, executor handoff): continue AUTH-002 contract finalization in the same four documentation paths, explicit D1/D2/D3 approval (§4.1) and a separate read-only Independent HIGH-risk Identity/Security contract review. Still no commit, push, PR, CI execution, production code, migration reservation/execution or Build |
 | Baseline | Preparation base 056a154d4ae2eb9c5a7c7923c6737496f396990d. Execution base main/origin/main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5 (GOV-EXEC-001 landing, §12.1) |
@@ -294,5 +294,65 @@ No CI re-run of any kind (TOOLCHAIN rule, 00.13 §5.3). An infrastructure failur
 **BLOCKED → READY → IN_PROGRESS** on 2026-11-07. Earlier BLOCKED / "not authorized" / "Owner approval pending" wording in §§1, 8, 9, 10 and 11 is preparation history.
 
 **Counters:** DONE 3/33 (9.09%), IN_PROGRESS 1, BLOCKED 29, READY/VERIFYING/TODO/SUPERSEDED 0. 33 IDs and 78 edges unchanged.
+
+**Boundaries:** PB05 OPEN. No real data, deployment or release claim.
+
+## 13. Implementation candidate and verification handoff — 2026-11-07
+
+### 13.1 CI-first steps 1 and 2
+
+- **Registration:** ba1b2cd1e354a68603a733dd02fb038e31b0ef54, PR #23, CI #135/run 42326609353, push, attempt 1, eight SUCCESS.
+- **Capture-only baseline:** b7f0b89b9d4db46f53e2bd438555852496d95858 changed only `e2e/tests/9-identity.spec.ts`. CI #136/run 42327185424, push, attempt 1, eight SUCCESS.
+- **Artifacts:** all five workspace-visual-* artifacts were retrieved (desktop-1280 13555817576, mobile-360 13555822882, webkit-390 13555878422, firefox-1280 13555967713, tablet-768 13556037466). Each holds 24 AUTH-002 screenshot/JSON pairs (login-entry, activation-entry, staff-workspace at seven widths plus 200% text).
+  - Every pair has the exact baseline commit, phase `before`, frontend tree b11e1f64f2321ca05e3aa6d24ccde1fb9c041996 and the unchanged fixture hash.
+  - Claim and verifier entries are absent (0) in every pair.
+  - The baseline passed before any application source change.
+- **Baseline defect recorded, not blessed:** the existing login screen overflowed horizontally at 360 and 390 px in all five projects. The activation link button is `whitespace-nowrap` and measured 428 px. The candidate fixes this in `SessionScreens.tsx` (allowlist path 36) by letting both entry links wrap with a 44 px minimum height. The after-phase gate re-asserts it.
+- **Frontend skill:** `react-typescript-vite`, verified at `~/.gemini/config/skills/react-typescript-vite/SKILL.md` with SHA-256 450285288fba41f497991f074f100a43ed2d714e51818caae3294663e5ccd558 (the registered stack hash), read before UI work. No DesainPakeAI access and no design-authority claim. Shared tokens and primitives only.
+
+### 13.2 Candidate content
+
+41 of the 44 frozen paths changed; nothing outside the allowlist. Paths 12, 13 and 42 needed no change. Contents:
+
+- **0057:** claims, claim events and the claim-to-activation relation (Identity); roster identity bindings and Homeroom responsibilities with events (Academic Core). Includes partial unique open-claim indexes, immutability triggers and the binding/0056 agreement guard. Empty at adoption.
+- **Identity** `claims.ts` holds the state, observation and issuance APIs. `index.ts` gains `activateInTransaction`, and the legacy `activate()` refuses a claim-issued code without counting.
+- **Academic Core:** `student-identity.ts` (matching, name rule, binding, enrollment, staff read) and `homeroom.ts` (responsibility, effective time, audited bootstrap). `roster-import.ts` now reads the effective binding.
+- **Tenant Access:** the staff-role exclusion read.
+- **Secure Assessment:** coordinator `claims.ts` in the §6A.3 order; routes; server, metrics and me-context wiring; activation routing in `auth-routes.ts`; the `homeroom assign|revoke` CLI.
+- **Web:** `StudentClaimView` and `ClaimReviewView`, the claim entry link and the `verifier` workspace.
+- **Tests:** units in all four runtime packages and the web; real-PostgreSQL integration `test/integration/claims.test.ts`; the after-phase E2E journey.
+- **Records:** P2/P3/P4/P5/P7 pointer checkpoints only.
+
+Engineering details resolved within the contract (00.13 §5.1):
+
+- **Approval:** requires an exact current match (state PENDING_REVIEW and NISN/date/name still equal); REVIEW_REQUIRED and unmatched claims can only be rejected or cancelled.
+- **Cancel and reject:** Cancel of an approved-pending claim revokes only its own code row. Reject applies only before approval.
+- **School code:** the Student claim takes the school code from the school's own link (`?sekolah=`) or as typed input. It is an untrusted locator, and the verifier screen shows it for sharing.
+- **Capture metric:** the E2E capture measures a checkbox or radio by its label, the actual target. The handoff activation code is masked in screenshots.
+
+### 13.3 Local verification (workstation limits, TASK_PLAN §4 item 9)
+
+- **Typecheck PASS:** identity-access, tenant-access, academic-core, secure-assessment (src and tests), web, e2e.
+- **Targeted Node units PASS:**
+  - identity claims 3/3;
+  - academic student-identity and homeroom 6/6;
+  - academic roster-import 5/5;
+  - Secure Assessment claims 4/4;
+  - route parity, metrics and server 24/24.
+- **Targeted web units PASS:** studentClaim, claimReview, session, designSystemGuard, onDemandScreens, screenFiles and schoolRosterImport, 7 files and 52 tests, after the session regression was added.
+- **Not run locally:** PostgreSQL, Docker, browsers and the full suites. C05–C10 and C12 real-database evidence and C13 five-browser rendered evidence come only from the exact-content CI.
+- **Corrections made before publication:** a review-list loading counter shared with the decision counter (it left a dialog busy) and a test query, found by the new units.
+
+### 13.4 Status and residual risks
+
+**Status:** IN_PROGRESS → VERIFYING. Counters: DONE 3, VERIFYING 1, BLOCKED 29, other statuses 0.
+
+**Pending:** exact-content CI attempt 1, artifact validation, independent implementation review on the final content SHA (C15), Delegated Acceptance and the evidence commit.
+
+**Residual risks, recorded honestly:**
+
+- The claim-bound activation path performs more database work than an ordinary activation. The routing query is constant, but end-to-end timing can differ by a few milliseconds, which could reveal that a username holds an approved-pending claim code.
+- A plain staff membership with no assignment row cannot be told apart from a Student (§6A.1).
+- NEW_IDENTITY_REVIEWED relies on the recorded in-person attestation.
 
 **Boundaries:** PB05 OPEN. No real data, deployment or release claim.

@@ -5,6 +5,7 @@ import {
 } from './crypto.ts';
 import { checkNewPassword, type PasswordRejection } from './password-policy.ts';
 import { createUnusableVerifier, issueActivationInTransaction } from './provisioning.ts';
+import { isClaimIssuedActivation } from './claims.ts';
 
 export { checkNewPassword, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, type PasswordRejection } from './password-policy.ts';
 
@@ -46,6 +47,12 @@ export type ActivationResult =
   | { success: true; userAccountId: string; personId: string; session: SessionCreationResult }
   | { success: false; error: 'INVALID_ACTIVATION' }
   | { success: false; error: 'PASSWORD_REJECTED'; reason: PasswordRejection };
+
+/** Effect of one activation attempt, for a claim-bound coordinator that records the claim outcome. */
+export type ActivationEffect = 'none' | 'failed' | 'exhausted' | 'consumed';
+
+/** Claim-bound guard: only this exact open code row may be used; any other open row refuses. */
+export interface ClaimActivationGuard { activationId: string }
 
 export interface SessionCreationResult {
   sessionId: string;
@@ -276,7 +283,36 @@ export class IdentityRuntime {
 
     await this.#pg.query('BEGIN');
     try {
-      const account = await this.#pg.query(`
+      const { result } = await this.#activateCore(trimmedUsername, code, newPassword, null);
+      await this.#pg.query('COMMIT');
+      return result;
+    } catch (err) {
+      await this.#pg.query('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /**
+   * Claim-bound activation (AUTH-002 §6A.6) inside the caller's transaction: the caller has
+   * already taken its claim locks; this takes credential then activation row locks, and
+   * consumes or counts only the guarded claim-issued code row. Same checks and errors as
+   * activate(); never commits.
+   */
+  async activateInTransaction(username: string, codeAttempt: string, newPassword: string, guard: ClaimActivationGuard): Promise<{ result: ActivationResult; effect: ActivationEffect }> {
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+    const code = normalizeActivationCode(codeAttempt);
+    const rejection = checkNewPassword(newPassword, { username: trimmedUsername });
+    if (rejection) return { result: { success: false, error: 'PASSWORD_REJECTED', reason: rejection }, effect: 'none' };
+    if (!trimmedUsername || !code) {
+      verifyPassword('invalid-activation', UNKNOWN_ACCOUNT_VERIFIER);
+      return { result: { success: false, error: 'INVALID_ACTIVATION' }, effect: 'none' };
+    }
+    return this.#activateCore(trimmedUsername, code, newPassword, guard);
+  }
+
+  async #activateCore(trimmedUsername: string, code: string, newPassword: string, guard: ClaimActivationGuard | null): Promise<{ result: ActivationResult; effect: ActivationEffect }> {
+    const invalid = { result: { success: false, error: 'INVALID_ACTIVATION' } as ActivationResult };
+    const account = await this.#pg.query(`
         SELECT c.user_account_id, c.is_valid, a.person_id
         FROM identity_account_credentials c
         JOIN identity_user_accounts a ON a.id = c.user_account_id
@@ -285,50 +321,47 @@ export class IdentityRuntime {
             WHERE r.origin = 'GENERATED' AND r.identifier_key = identity_identifier_key($1))))
         FOR UPDATE OF c
       `, [trimmedUsername]);
-      const creds = account.rows[0];
-      const activation = creds && creds.is_valid
-        ? (await this.#pg.query(`
-            SELECT id, code_verifier, expires_at, failed_attempts
-            FROM identity_account_activations
-            WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL
-            FOR UPDATE
-          `, [creds.user_account_id])).rows[0]
-        : undefined;
+    const creds = account.rows[0];
+    const activation = creds && creds.is_valid
+      ? (await this.#pg.query(`
+          SELECT id, code_verifier, expires_at, failed_attempts
+          FROM identity_account_activations
+          WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL
+          FOR UPDATE
+        `, [creds.user_account_id])).rows[0]
+      : undefined;
 
-      const now = this.#clock.now();
-      if (!activation || new Date(activation.expires_at).getTime() <= now.getTime()) {
-        await this.#pg.query('COMMIT');
-        verifyPassword(code, UNKNOWN_ACCOUNT_VERIFIER);
-        return { success: false, error: 'INVALID_ACTIVATION' };
-      }
-
-      if (!verifyPassword(code, activation.code_verifier)) {
-        const failures = activation.failed_attempts + 1;
-        await this.#pg.query(
-          `UPDATE identity_account_activations
-           SET failed_attempts = $2::int, revoked_at = CASE WHEN $2::int >= $3::int THEN $4::timestamptz ELSE NULL END
-           WHERE id = $1`,
-          [activation.id, failures, ACTIVATION_POLICY.MAX_FAILED_ATTEMPTS, now]
-        );
-        await this.#pg.query('COMMIT');
-        return { success: false, error: 'INVALID_ACTIVATION' };
-      }
-
-      await this.#pg.query(
-        `UPDATE identity_account_credentials
-         SET password_verifier = $2, failed_attempts_timeline = '[]'::jsonb, consecutive_failures_count = 0,
-             locked_until = NULL, last_successful_login_at = $3, updated_at = $3
-         WHERE user_account_id = $1`,
-        [creds.user_account_id, hashPassword(newPassword), now]
-      );
-      await this.#pg.query('UPDATE identity_account_activations SET consumed_at = $2 WHERE id = $1', [activation.id, now]);
-      const session = await this.#createSessionInternal(creds.user_account_id, now);
-      await this.#pg.query('COMMIT');
-      return { success: true, userAccountId: creds.user_account_id, personId: creds.person_id, session };
-    } catch (err) {
-      await this.#pg.query('ROLLBACK');
-      throw err;
+    const now = this.#clock.now();
+    // A claim-issued code is usable only through its claim-bound coordinator, and the
+    // coordinator only with its own row; either mismatch refuses without counting (§6A.6).
+    const claimIssued = activation ? await isClaimIssuedActivation(this.#pg, activation.id) : false;
+    const routeMismatch = guard ? !activation || activation.id !== guard.activationId : claimIssued;
+    if (!activation || routeMismatch || new Date(activation.expires_at).getTime() <= now.getTime()) {
+      verifyPassword(code, UNKNOWN_ACCOUNT_VERIFIER);
+      return { ...invalid, effect: 'none' };
     }
+
+    if (!verifyPassword(code, activation.code_verifier)) {
+      const failures = activation.failed_attempts + 1;
+      await this.#pg.query(
+        `UPDATE identity_account_activations
+         SET failed_attempts = $2::int, revoked_at = CASE WHEN $2::int >= $3::int THEN $4::timestamptz ELSE NULL END
+         WHERE id = $1`,
+        [activation.id, failures, ACTIVATION_POLICY.MAX_FAILED_ATTEMPTS, now]
+      );
+      return { ...invalid, effect: failures >= ACTIVATION_POLICY.MAX_FAILED_ATTEMPTS ? 'exhausted' : 'failed' };
+    }
+
+    await this.#pg.query(
+      `UPDATE identity_account_credentials
+       SET password_verifier = $2, failed_attempts_timeline = '[]'::jsonb, consecutive_failures_count = 0,
+           locked_until = NULL, last_successful_login_at = $3, updated_at = $3
+       WHERE user_account_id = $1`,
+      [creds.user_account_id, hashPassword(newPassword), now]
+    );
+    await this.#pg.query('UPDATE identity_account_activations SET consumed_at = $2 WHERE id = $1', [activation.id, now]);
+    const session = await this.#createSessionInternal(creds.user_account_id, now);
+    return { result: { success: true, userAccountId: creds.user_account_id, personId: creds.person_id, session }, effect: 'consumed' };
   }
 
   /**

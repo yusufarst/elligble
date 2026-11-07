@@ -66,3 +66,9 @@ Required future regression: each implemented method/path remains in route parity
 F01 candidate now wires POST /api/v1/identity/roster/preview and /confirm with authenticated tenant/active Operator, 1 MiB route-local JSON/1,000-row bounds, academicYearId/academicPeriodId/csv. Preview returns protocol/input/state digests and minimal per-row fields; confirm adds requestKey/reason/confirmed:true/inputDigest/stateDigest, reauthorizes/locks/revalidates then returns minimal receipt/counts. 400 malformed, 401 invalid session, 403 scope/role/Origin, 409 stale_conflict/REVIEW_REQUIRED/action_key_reused, 413 size, 503 persistence. No new general directory/export or sensitive verification route. Actual CI/evidence pending; current contract in ADMIN-001 §10–§11 supersedes only historical F01 MISSING wording for this bounded candidate.
 
 Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.
+
+## AUTH-002 bounded implementation checkpoint — 2026-11-07
+
+F02 wires POST /api/v1/identity/claims (public, non-trusted, uniform 202 receipt, 8 KiB body, exact fields tenantId/fullName/nisn/birthDate/requestKey), GET /api/v1/identity/claims/review (authenticated own-tenant School Operator or effective own-rombel Homeroom; at most 100 oldest open claims) and POST /api/v1/identity/claims/decision (claim/revision, roster revision, decision, reason, confirmed, request key, adjudication). Activation reuses POST /api/v1/auth/activate, routed to the claim-bound coordinator only for a claim-issued code. All responses are no-store; no polling, search or notification route.
+
+Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.

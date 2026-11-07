@@ -1,6 +1,8 @@
 import type * as http from 'node:http';
 import type * as pg from 'pg';
 import { IdentityRuntime } from '../../../identity-access/src/index.ts';
+import { resolveClaimActivationRoute } from '../../../identity-access/src/claims.ts';
+import { activateClaimBound } from '../claims.ts';
 import { TenantAccessRuntime, type PersonMembershipSummary } from '../../../tenant-access/src/index.ts';
 import { HttpError, readJsonObject, sendError, sendJson } from './http-utils.ts';
 import {
@@ -150,7 +152,12 @@ export async function handleActivate(req: http.IncomingMessage, res: http.Server
 
     try {
         const identity = new IdentityRuntime(client as unknown as pg.Client);
-        const result = await identity.activate(username, activationCode, newPassword);
+        // AUTH-002 §6A.6: one fixed unlocked pre-resolution; a claim-issued code goes through the
+        // claim-bound coordinator, every other code through the unchanged activation.
+        const route = await resolveClaimActivationRoute(client, username.trim());
+        const result = route
+            ? await activateClaimBound(client, route, username, activationCode, newPassword)
+            : await identity.activate(username, activationCode, newPassword);
         if (!result.success) {
             if (result.error === 'PASSWORD_REJECTED') {
                 sendJson(res, 400, { error: 'password_rejected', reason: result.reason });
