@@ -486,3 +486,12 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
     - the `template` field indentation is fixed;
     - the §11.3 refinement of §4A.6 (absent, not null, for invalid preview content) stands.
 - **Known limit (recorded, not blessed):** a local intent with a content key this client does not support (for example one left by a newer client before a rollback) is never cleared by this client, so the reload alert returns on each load until that newer client sends it or the attempt ends.
+
+### 11.5 Targeted re-review PASS; CI #170 and correction 3
+
+- **Targeted re-review, same reviewer, on a75c1d9: PASS.** Findings 1–3 are CLOSED and there is no new material finding. Precision (§11.4): `loadQuestions` sets the flag, and the guard sits at its only call site in `applyRunInfo`.
+- **CI #170/run 42386394275:** exact SHA a75c1d9, attempt 1. Runtime, Web and Container SUCCESS, which includes every new integration oracle. The five E2E jobs FAILED at the first after-phase gate, the recorded baseline overflow of the import view at 390 px with 200 % text (470 px, down from 537 px). Preserved; no re-run.
+  - The after-phase diagnostics named a single element: the back button "Kembali ke Pelaksanaan Ujian", which uses the shared `whitespace-nowrap` button style and is 462 px wide.
+- **Correction 3** (rows 25 and 30):
+  - the back button and the "Unduh Templat CSV" link wrap (`whitespace-normal`, `h-auto`, `max-w-full`) and keep their 44 px minimum;
+  - the after-phase layout gates are `expect.soft`, so one run reports every violating scenario; the test still fails on any of them.

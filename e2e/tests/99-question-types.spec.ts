@@ -105,8 +105,9 @@ async function captureQuestionSurface(page: Page, scenario: string, root: () => 
                     accessibilitySnapshot: await root().ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
                 }, null, 2));
                 if (phase === 'after') {
-                    expect(metrics.scrollWidth, `${scenario} ${v.width}x${v.height} text${v.text}: overflow`).toBeLessThanOrEqual(metrics.clientWidth);
-                    expect(metrics.targets.filter(t => t.width < 43.5 || t.height < 43.5), `${scenario}: targets below 44 px`).toEqual([]);
+                    // Soft: every scenario runs and every violation is reported; the test still fails.
+                    expect.soft(metrics.scrollWidth, `${scenario} ${v.width}x${v.height} text${v.text}: overflow`).toBeLessThanOrEqual(metrics.clientWidth);
+                    expect.soft(metrics.targets.filter(t => t.width < 43.5 || t.height < 43.5), `${scenario} ${v.width}x${v.height} text${v.text}: targets below 44 px`).toEqual([]);
                 }
             } finally {
                 if (v.text === 2) await page.evaluate(() => {

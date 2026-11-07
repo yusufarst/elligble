@@ -220,7 +220,7 @@ export const TeacherExamImportView: React.FC<{
   };
 
   const back = (
-    <Button variant="ghost" size="sm" className="-ml-3 min-h-11 self-start" onClick={onBack}>
+    <Button variant="ghost" size="sm" className="-ml-3 h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left" onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       Kembali ke Pelaksanaan Ujian
     </Button>
@@ -369,7 +369,7 @@ export const TeacherExamImportView: React.FC<{
           </div>
           <Button
             variant="link"
-            className="h-auto min-h-11 self-start px-0"
+            className="h-auto min-h-11 max-w-full self-start whitespace-normal px-0 text-left"
             onClick={() => downloadTextFile(QUESTION_TEMPLATE_CSV, QUESTION_TEMPLATE_FILE_NAME)}
           >
             Unduh Templat CSV
