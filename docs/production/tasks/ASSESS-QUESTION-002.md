@@ -527,3 +527,10 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
 
 - **CI #176:** exact SHA 194da60, attempt 1. Runtime, Web and Container SUCCESS, and **four E2E projects SUCCESS** (mobile-360, tablet-768, desktop-1280, firefox-1280), with the whole after-phase journey and every layout gate. WebKit-390 FAILED: the page crashed again, this time on the navigation (not a reload) while a Playwright route served the delivery 409. A plain reload earlier in the same run succeeded. Preserved; no re-run.
 - **Correction 7** (row 30 only): the delivery refusal is simulated inside the page. A context init script answers question delivery with the 409 while a localStorage flag is set; the step sets the flag and reloads, then clears it, and "Muat Ulang" loads normally. The application under test is unchanged.
+
+### 11.10 CI #177 and correction 8
+
+- **CI #177:** exact SHA 548c2b5, attempt 1. Runtime, Web and Container SUCCESS, and four E2E projects SUCCESS. WebKit-390 FAILED: the page crashed on the plain reload of the unsupported-content step, without any Playwright route. So the crash comes from the page itself, after many large captures at device pixel ratio 3, and not from interception. Preserved; no re-run.
+- **Correction 8** (row 30 only):
+  - before that step the journey continues in a fresh tab of the same browser context: the tab's exam-session sessionStorage is carried over by an init script, the old tab is closed, and locators rebind to the new tab;
+  - the application under test is unchanged.

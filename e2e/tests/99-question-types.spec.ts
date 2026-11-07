@@ -205,7 +205,8 @@ test('ASSESS-QUESTION-002 question surfaces: import preview, teacher preview and
 });
 
 /** C07: the five-browser multiple-response journey on the after phase. */
-async function multipleResponseJourney(teacher: Page, student: Page, examId: string, file: string) {
+async function multipleResponseJourney(teacher: Page, firstPage: Page, examId: string, file: string) {
+    let student = firstPage;
     const api = (path: string, body?: Record<string, unknown>) => teacher.evaluate(async ({ path, body, tenant }) => {
         const r = await fetch(path, { method: body ? 'POST' : 'GET', credentials: 'same-origin',
             headers: { 'X-Tenant-ID': tenant, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
@@ -217,12 +218,33 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     const ids: string[] = snapshot.frozen_content.options.map((o: { id: string }) => o.id);
     const stored = async () => (await withDatabase(async client => (await client.query(
         'SELECT answer_payload FROM secure_assessment_exam_answers WHERE exam_question_snapshot_id = $1', [snapshot.id])).rows[0]?.answer_payload ?? null));
-    const option = (text: RegExp | string) => student.getByRole('checkbox', { name: text });
-    const A = option(/^2 adalah/), B = student.getByRole('checkbox', { name: '4', exact: true }), C = option(/^5 adalah/), E = student.getByRole('checkbox', { name: '9', exact: true });
+    // Locators follow the current page: the journey moves to a fresh tab of the same context once.
+    let A!: Locator, B!: Locator, C!: Locator, E!: Locator, progress!: Locator;
+    const bind = () => {
+        A = student.getByRole('checkbox', { name: /^2 adalah/ });
+        B = student.getByRole('checkbox', { name: '4', exact: true });
+        C = student.getByRole('checkbox', { name: /^5 adalah/ });
+        E = student.getByRole('checkbox', { name: '9', exact: true });
+        progress = student.getByRole('heading', { name: /^Soal \d dari 3$/ });
+    };
+    bind();
+    // WebKit's renderer crashed reloading a page that had taken many large captures: continue in a
+    // fresh tab of the same context, with this tab's exam session (sessionStorage) carried over.
+    const freshTab = async () => {
+        const entries = await student.evaluate(() => Object.entries(sessionStorage));
+        const url = student.url();
+        const next = await student.context().newPage();
+        await next.addInitScript((pairs: Array<[string, string]>) => {
+            for (const [key, value] of pairs) if (sessionStorage.getItem(key) === null) sessionStorage.setItem(key, value);
+        }, entries);
+        await student.close();
+        student = next;
+        bind();
+        await student.goto(url);
+    };
     // The native checkbox is visually hidden inside its option card: pointer input goes to the card.
     const tap = (box: Locator) => student.locator('.options-list label').filter({ has: box }).click();
     const saved = async () => { await expect(saveStatus(student)).toHaveText('Tersimpan'); };
-    const progress = student.getByRole('heading', { name: /^Soal \d dari 3$/ });
     // After a reload the screen may open on any question: wait for it, then step to the PGK one.
     const toMr = async () => {
         await expect(progress).toBeVisible({ timeout: 30_000 });
@@ -285,7 +307,7 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
         };
     });
     await student.evaluate(() => localStorage.setItem('aq2-unsupported', '1'));
-    await student.reload();
+    await freshTab();
     await expect(student.getByRole('heading', { name: 'Perlu Memuat Ulang' })).toBeVisible();
     await expect(student.getByRole('button', { name: 'Muat Ulang' })).toBeVisible();
     await captureQuestionSurface(student, 'exam-unsupported', () => student.locator('body'), file, STATE_VARIANTS);
