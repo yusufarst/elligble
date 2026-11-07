@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 operational security; HIGH risk; R07/R23/R28/R29, P5 A14, P8 V01/V11/V16 |
-| Status | **IN_PROGRESS — security contract review chain PASS (§11); formal READY PASS and Build started under DEC-048 on 2026-11-07 (§12)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent security implementation review (§13); DEC-048** |
 | Objective | Replace the runbook's manual-SQL session revocation with an approved, case-scoped, audited owning-module command, and record the Owner's PB12 incident arrangements |
 | Owner decisions | 2026-11-07, Owner in chat (§4): the Owner is the named incident lead; intervention is a case-scoped platform-operator CLI; escalation runs from the lead to the affected school principal, manually. The Owner also designated a separate read-only fresh-context reviewer agent as the independent security reviewer for this Task and, by default, for later Tasks unless the Owner names another |
 | Execution authority | DEC-048 (00.13). Internal dependencies SEC-001 and AUTH-003 are DONE / MERGED (main b6dab652be382bd8c3dec78912e397b44dffaf86, post-merge CI #150 attempt 1 eight SUCCESS) |
@@ -227,3 +227,27 @@ The executor verified the evidence: 0035 sessions without a tenant; people.ts li
 
   There is no material UI, so there is no rendered baseline. No re-runs.
 - **Status:** BLOCKED → READY → IN_PROGRESS. Counters: DONE 5, IN_PROGRESS 1, BLOCKED 27. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+## 13. Implementation checkpoint — 2026-11-07
+
+- **CI-first step 1:** registration ea2113d, CI #151 (run 42370328524) attempt 1, eight SUCCESS.
+- **Implementation candidate (CI-first step 2),** inside the frozen allowlist rows 5–13 plus the Task-flow rows 1–4:
+  - `0059_platform_session_intervention.sql`: the `sessions_revoked` action, the `reason` column and the named constraints `ck_platform_provisioning_reason` and `ck_platform_provisioning_reason_required`. Existing rows unchanged, no backfill, the append-only trigger unchanged.
+  - Identity `revokeAccountSessionsInTransaction` (the owning function; it returns the updated-row count).
+  - The audit writer takes an optional trimmed `reason`.
+  - Coordinator `ops/provisioning/sessions.ts`, which takes a pool:
+    - one READ COMMITTED transaction: resolve the ID, require membership in the named school, list the other member schools;
+    - then the credential FOR UPDATE, the session revoke and the audit row, then COMMIT;
+    - the dry run counts and rolls back.
+  - CLI `session revoke`: operator, case and reason (1–200) and the ELLIGBLE ID are validated before any connection, also in a dry run; the output is the count and the other schools only.
+  - Runbook §6.3: the command replaces the manual SQL, with the PB12 arrangement and the no-personal-data warning. Matrix: one appended checkpoint.
+- **Tests:**
+  - `test/session-intervention.test.ts`: validation before connection, and the no-route assertion (C02).
+  - `test/integration/session-intervention.test.ts`:
+    - C01/C02/C03/C06 through the real CLI process;
+    - C04 audit-failure rollback;
+    - C05 both orders against login, Student session mutation, a paused verifier recovery issue, and claim CANCEL and expiry, plus a synthetic detected deadlock and an idempotent retry;
+    - C07 migration rollback and repeat.
+  - Locally: typechecks and the new unit file PASS. Integration oracles run in CI only (the 8 GB workstation rule).
+- **Next:** exact-content CI on the candidate head, then the independent security implementation review by the same reviewer, Delegated Acceptance and the evidence commit. No re-runs.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 5, VERIFYING 1, BLOCKED 27. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.

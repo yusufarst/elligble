@@ -1,6 +1,6 @@
 **Status:** ACTIVE (DEC-042), operational reference for the current release
 **Canonical:** YES for deployment and operations procedure. Does not override LOCKED decisions; open blockers are tracked only in `PRODUCTION_COMPLETION_PLAN.md`.
-**Last Updated:** 2026-09-30
+**Last Updated:** 2026-11-07
 
 # ELLIGBLE Operations Runbook
 
@@ -104,7 +104,22 @@ Without a metrics collector, the same conditions show in the logs: `http_request
 
 1. Check `/readyz` and the container state; then `ERROR` log lines, grouped by `requestId`.
 2. Database unavailable: students' answers stay in their browsers and are re-sent automatically once the service is back; the server timer keeps running (server-authoritative).
-3. Security incident: preserve logs, rotate the database password, and revoke sessions if needed (`UPDATE identity_sessions SET is_revoked = TRUE WHERE ...`; revoked sessions fail closed on the next request). There is no administration screen for this yet. The incident response owner, notification duties and contact list are part of PB12 (Owner decision).
+3. Security incident (SEC-OPS-001; PB12 arrangement decided by the Owner on 2026-11-07, PB12 itself stays OPEN until SEC-RELEASE-001 and OPS-001):
+   - **Incident lead:** the Owner. The lead decides and records the case, and is the only person who runs the intervention, including its dry run.
+   - **Duties:** preserve logs (`requestId` correlation, section 3); decide and record the case; revoke sessions with the command below; rotate the database password when credentials may be exposed; use `activation reissue` (section 7) when an Account's password must be reset.
+   - **Session intervention**, one school and one Account per case, from the platform-operator CLI only (there is no HTTP route or School Operator path):
+
+     ```text
+     node runtime/secure-assessment/src/ops/provision-cli.ts session revoke --tenant <school id> --elligble-id <ELLIGBLE ID> --reason "<reason>" --operator "<name>" --case "<case>" [--dry-run]
+     ```
+
+     - The Account must be a member of the named school; otherwise the command refuses with "no account with this ELLIGBLE ID in this school" and changes nothing.
+     - Sessions belong to the Account, so every session of that Account ends, in every school. Revoked sessions fail closed on the next request. The password and activation codes are untouched, so the person can sign in again; reset the password with `activation reissue` if it may be known to someone else.
+     - `--operator`, `--case` and `--reason` (1 to 200 characters each) are required, also for `--dry-run`. The dry run prints `{"wouldRevoke": n, "otherSchools": [...]}` and writes nothing.
+     - The command prints `{"revoked": n, "otherSchools": [{"tenantId": ..., "displayLabel": ...}]}` and records one append-only `sessions_revoked` row in `platform_provisioning_events` with the operator, case, reason and the summary `{sessions, userAccountId, otherSchoolMemberships}`. Rerunning the same case is safe (`revoked` 0, still recorded).
+     - **No personal data in `--case` or `--reason`:** audit rows are never changed or deleted. Use a case number and a short neutral reason, never a name, NISN or birth date.
+     - A failure (exit 3, for example a detected deadlock) changes nothing; rerun the same command.
+   - **Escalation:** the lead informs, manually, the principal of the school named in the case and of every other school the command lists. There is no automated notification or sanction. Statutory breach-notification duties to data subjects or regulators are not decided here; they stay with LEGAL-001/PB12.
 
 ## 7. Provisioning a pilot school
 
@@ -119,6 +134,7 @@ node runtime/secure-assessment/src/ops/provision-cli.ts <command> ... --operator
   exam import        --tenant <id> --file exam.json --questions questions.csv [--dry-run]
   exam types         --tenant <id> --type "Ulangan Harian" [--type "Kuis" ...] [--dry-run]
   activation reissue --tenant <id> --elligble-id <id> --sheet kartu-baru.html [--full-name "..."]
+  session revoke     --tenant <id> --elligble-id <id> --reason "<reason>" [--dry-run]   (security incident only, section 6)
 ```
 
 In the container: `docker run --rm -v "$PWD:/work" -w /work -e DATABASE_URL -e PGPASSWORD elligble:<version> node /app/runtime/secure-assessment/src/ops/provision-cli.ts ...`.

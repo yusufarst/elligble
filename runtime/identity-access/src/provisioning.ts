@@ -98,3 +98,13 @@ export async function issueActivationInTransaction(
     );
     return { code: formatActivationCode(code), expiresAt };
 }
+
+/**
+ * SEC-OPS-001: revokes every non-revoked session of one Account inside the caller's
+ * transaction. The caller holds the credential row lock first (credential → sessions, the
+ * activation reissue order). Returns the number of session rows revoked.
+ */
+export async function revokeAccountSessionsInTransaction(client: ClientBase, userAccountId: string): Promise<number> {
+    const r = await client.query('UPDATE identity_sessions SET is_revoked = TRUE WHERE user_account_id = $1 AND is_revoked = FALSE', [userAccountId]);
+    return r.rowCount ?? 0;
+}

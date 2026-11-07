@@ -170,3 +170,9 @@ Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer t
 A09 recovery is implemented only for the own-tenant School Operator and the effective Homeroom of the Student's current rombel. Staff, Teacher, Proctor, Operator and Homeroom Accounts, self and out-of-scope targets get one bounded refusal; completion rechecks binding, staff exclusion and issuer authority.
 
 Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.
+
+## SEC-OPS-001 bounded implementation checkpoint — 2026-11-07
+
+Session intervention is implemented only as the platform-operator CLI command `session revoke`, one school and one Account per case, with required operator, case and reason, also in a dry run. The target must be a member of the named school; the effect is Account-wide, and the other member schools are listed so the incident lead can inform each principal. There is no HTTP route and no School Operator, Homeroom, Teacher or Proctor path; platform CLI authority is not inherited by any product role. Revocation and its append-only audit row are one transaction.
+
+Authority and evidence: [SEC-OPS-001](tasks/SEC-OPS-001.md) §4/§6A/§13. Pointer to the Owner-decided PB12 arrangement and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 and PB12 stay OPEN.
