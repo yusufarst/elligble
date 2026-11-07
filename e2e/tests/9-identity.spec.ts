@@ -134,14 +134,20 @@ if(applicationTree!==BASE_TREE)test('ADMIN-001 Operator roster preview, keyboard
 const AUTH_BASE_TREE = 'b11e1f64f2321ca05e3aa6d24ccde1fb9c041996';
 const authPhase = applicationTree === AUTH_BASE_TREE ? 'before' : 'after';
 const AUTH_WIDTHS = [360, 390, 430, 768, 1024, 1280, 1440];
+// One capture routine serves each identity Task's own before/after evidence.
+interface CaptureTask { task: string; baseTree: string; phase: 'before' | 'after'; prefix: string }
+const AUTH002_CAPTURE: CaptureTask = { task: 'AUTH-002', baseTree: AUTH_BASE_TREE, phase: authPhase, prefix: 'workspace-auth-' };
+// AUTH-003 capture-only baseline (record §13): the frontend tree at main 38259da.
+const RECOVERY_BASE_TREE = '2a4f9f399167ac1947e4c2130eae354daf9ad9b3';
+const RECOVERY_CAPTURE: CaptureTask = { task: 'AUTH-003', baseTree: RECOVERY_BASE_TREE, phase: applicationTree === RECOVERY_BASE_TREE ? 'before' : 'after', prefix: 'workspace-recovery-' };
 
-async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
+async function captureAuth(page: Page, scenario: string, mask: Locator[] = [], ctx: CaptureTask = AUTH002_CAPTURE) {
     await page.evaluate(async () => {
         await document.fonts.ready;
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     });
     const viewport = page.viewportSize();
-    const name = `workspace-auth-${scenario}-${viewport?.width}x${viewport?.height}-${test.info().project.name}`;
+    const name = `${ctx.prefix}${scenario}-${viewport?.width}x${viewport?.height}-${test.info().project.name}`;
     const browser = page.context().browser();
     const metrics = await page.evaluate(() => {
         const box = (el: Element) => el.getBoundingClientRect();
@@ -151,6 +157,7 @@ async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
             heading: document.querySelector('h1')?.textContent ?? null,
             claimEntry: [...document.querySelectorAll('button,a')].filter(el => /pendaftaran akun/i.test(el.textContent ?? '')).length,
             verifierEntry: [...document.querySelectorAll('button,a')].filter(el => /verifikasi pendaftaran/i.test(el.textContent ?? '')).length,
+            recoveryEntry: [...document.querySelectorAll('button,a')].filter(el => /pemulihan/i.test(el.textContent ?? '')).length,
             focus: { tag: active?.tagName ?? null, id: active?.id ?? null },
             // Text cut off inside a scrolling dialog does not widen the page: measure each value cell.
             clipped: [...document.querySelectorAll<HTMLElement>('[role=dialog] dd, [role=dialog] dt, [role=dialog] label')]
@@ -165,31 +172,31 @@ async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
     // Activation codes are live secrets of the disposable CI database: masked, never captured.
     await page.screenshot({ path: test.info().outputPath(`${name}.png`), fullPage: true, animations: 'disabled', mask });
     writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
-        task: 'AUTH-002', masked: mask.length > 0, phase: authPhase, commit,
-        baseline: { sourceTree: AUTH_BASE_TREE }, applicationTree, fixture: { synthetic: true, sha256: fixtureHash },
+        task: ctx.task, masked: mask.length > 0, phase: ctx.phase, commit,
+        baseline: { sourceTree: ctx.baseTree }, applicationTree, fixture: { synthetic: true, sha256: fixtureHash },
         browser: { engine: browser?.browserType().name(), version: browser?.version(), project: test.info().project.name },
         viewport, scenario, screenshot: `${name}.png`, metrics, physicalDevice: false,
     }, null, 2));
-    if (authPhase === 'after') {
+    if (ctx.phase === 'after') {
         expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
         expect(metrics.targets.filter(t => t.width < 43.99 || t.height < 43.99)).toEqual([]);
         expect(metrics.clipped).toEqual([]);
     }
 }
 
-async function captureAuthWidths(page: Page, scenario: string, mask: Locator[] = []) {
+async function captureAuthWidths(page: Page, scenario: string, mask: Locator[] = [], ctx: CaptureTask = AUTH002_CAPTURE) {
     const original = page.viewportSize();
     for (const width of AUTH_WIDTHS) {
         await page.setViewportSize({ width, height: 800 });
-        await captureAuth(page, scenario, mask);
+        await captureAuth(page, scenario, mask, ctx);
     }
     await page.setViewportSize({ width: 768, height: 360 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-    await captureAuth(page, `${scenario}-text-200`, mask);
+    await captureAuth(page, `${scenario}-text-200`, mask, ctx);
     // A dialog scrolls inside the short viewport: also capture its end, so the whole dialog is evidenced.
     if (await page.locator('[role=dialog]').count()) {
         await page.locator('[role=dialog]').last().evaluate(el => { el.scrollTop = el.scrollHeight; });
-        await captureAuth(page, `${scenario}-text-200-scrolled`, mask);
+        await captureAuth(page, `${scenario}-text-200-scrolled`, mask, ctx);
     }
     await page.evaluate(() => { document.documentElement.style.fontSize = ''; });
     if (original) await page.setViewportSize(original);
@@ -306,5 +313,26 @@ if (authPhase === 'after') test('AUTH-002 synthetic claim, scoped approval, one-
         });
     } finally {
         await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: fixture.person, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-002', reason: 'End synthetic verification' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
+    }
+});
+
+test('AUTH-003 actual entry baseline: login and verifier workspace before recovery', async ({ page }) => {
+    await open(page);
+    await expect(page.getByRole('heading', { name: 'Masuk ke ELLIGBLE', exact: true })).toBeVisible();
+    await captureAuthWidths(page, 'login-entry', [], RECOVERY_CAPTURE);
+    const person = await withDatabase(async c => {
+        const id = (await c.query('SELECT a.person_id FROM identity_user_accounts a JOIN identity_account_credentials cr ON cr.user_account_id=a.id WHERE cr.username=$1', ['guru.e2e'])).rows[0].person_id as string;
+        await c.query('BEGIN');
+        try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: id, action: 'ASSIGN', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'Synthetic recovery baseline' }); await c.query('COMMIT'); }
+        catch (e) { await c.query('ROLLBACK'); throw e; }
+        return id;
+    });
+    try {
+        await login(page, 'guru.e2e', 'papan-tulis-hijau');
+        await page.getByRole('button', { name: 'Verifikasi Pendaftaran', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Verifikasi Pendaftaran', exact: true })).toBeVisible();
+        await captureAuthWidths(page, 'verifier-workspace', [], RECOVERY_CAPTURE);
+    } finally {
+        await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: person, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'End synthetic baseline' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
     }
 });
