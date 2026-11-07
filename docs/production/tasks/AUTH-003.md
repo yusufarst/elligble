@@ -316,7 +316,7 @@ The executor verified the cited evidence before correcting: provisioning.ts and 
   - Academic Core: the comparison read.
   - Secure Assessment: the coordinator `recovery.ts`, the F03 routes, wiring and metrics; `claims.ts` exports the shared helpers.
   - Web: `AccountRecoveryView`, `RecoveryForm`, the login entry, provider `recover`, the `recovery` workspace.
-  - Tests: units, real PostgreSQL integration (C01–C10 including the §6A.4 interleavings and post-wait expiry), the after-phase E2E journey with an honest expiry refusal and the masked handoff.
+  - Tests: units; real PostgreSQL integration for C01–C10 with part of the §6A.4 interleavings and post-wait expiry (completed by correction 1, §15); the after-phase E2E journey with an honest expiry refusal and the masked handoff.
   - Records: P2/P3/P4/P5/P7 pointers.
   - Unchanged in this candidate: rows 21 (account-activation integration) and 34 apart from the comparison read.
 - **Engineering details within the contract (00.13 §5.1):**
@@ -331,3 +331,25 @@ The executor verified the cited evidence before correcting: provisioning.ts and 
   Real PostgreSQL and five-browser evidence come only from CI.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 4, VERIFYING 1, BLOCKED 28.
 - **Pending:** exact-content CI, independent implementation and rendered review, Delegated Acceptance, the evidence commit and the merge.
+
+## 15. Implementation CI, independent review and correction 1 — 2026-11-07
+
+- **CI #147/run 42361477459:** exact SHA da32668, push, attempt 1.
+  - Web SUCCESS. Runtime FAILURE: real PostgreSQL integration 238/239. Container and the five browser jobs were skipped as dependents.
+  - Preserved: no re-run.
+  - Cause: the AUTH-003 C01 test took its zero-mutation snapshot before it created the out-of-scope target fixtures and the verifier sign-ins. Those new rows are the whole diff. This is a test-ordering defect; the code under test refused as expected.
+- **Independent implementation review, same Owner-designated reviewer, on da32668: STOP, one material finding.**
+  - C08 was only partly evidenced, and §14 overstated it.
+  - Missing interleavings: issue against `ensureMembership`, people import, allocation, roster import, verifier revocation, session revocation and claim decide; completion against issue (supersede), login, `activate`, session mutation and claim-bound activation; the revocation-first issuer case; the people-import staff grant.
+  - The reviewer found no authorization, lock-order, atomicity, privacy or scope defect in the code.
+- **Correction 1** (test and record only, rows 20 and 1; bound 1 of 3):
+  - The C01 fixtures and sign-ins now precede the snapshot.
+  - A new test adds every missing interleaving in both orders on the actual writers, each observed with `pg_blocking_pids`: issue against ensureMembership, allocation, verifier revocation, session revocation, people import, roster import and claim decide; completion against a teacher-grant people import, claim-bound activation, a new issue (supersede), login, legacy `activate`, Student session mutation, and revocation-first issuer revocation.
+  - Expected outcomes follow §6/§6A: a wait then serialize; 429 when completion meets a held tenant or identity key; a refusal without counting when scope, staff or issuer rechecks fail; `REPLACED_BY_ACTIVATION` after activate; every session revoked after completion.
+  - §14 wording is corrected.
+- **Non-material notes recorded:**
+  - 0058's roster foreign key couples Identity to an Academic row that is never deleted; issue holds the tenant fence.
+  - `issued_at` uses the database clock while expiry uses the application clock (single VPS).
+  - Timing and 429 reveal that a recovery is in progress for a username (bounded residual).
+  - An old code counts against a newer open code.
+  - Completion lists memberships after COMMIT, as activation does, so the F3 409 retry covers a 503.

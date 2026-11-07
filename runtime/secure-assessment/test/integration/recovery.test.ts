@@ -10,6 +10,9 @@ import { BrowserLikeClient, startProductionWiredServer } from '../support/test-s
 import { setSchoolOperator } from '../../../tenant-access/src/school-operator.ts';
 import { IdentityRuntime } from '../../../identity-access/src/index.ts';
 import { completeRecovery } from '../../src/recovery.ts';
+import { allocateStudentIdentity } from '../../../identity-access/src/student-identity.ts';
+import { ensureMembership } from '../../../tenant-access/src/provisioning.ts';
+import { importPeople } from '../../src/ops/provisioning/people.ts';
 
 // AUTH-003 real PostgreSQL oracles (record §9/§6A C01–C10). Synthetic data, production
 // wiring and real locks observed through pg_blocking_pids; teardown releases every barrier and
@@ -153,17 +156,19 @@ test('AUTH-003 C01/C02/C09 scoped preview and issue authority with one bounded r
     const cli = (u: string, g: string) => execFileSync(process.execPath, [CLI, 'homeroom', 'assign', '--tenant', s.tenant, '--elligble-id', u, '--group', g, '--period', s.period, '--operator', 'Synthetic', '--case', 'AUTH-003', '--reason', 'Synthetic'], { env: { ...process.env, DATABASE_URL: db.url }, stdio: 'pipe' });
     cli(hr.username, s.group); cli(wrong.username, elsewhere);
     const login = async (a: typeof hr) => { const c = new BrowserLikeClient(app.baseUrl); await c.login(a.username, a.password); c.tenantId = s.tenant; return c; };
-    assert.equal((await authorize(await login(hr), { elligbleId: target.username, confirmed: false })).status, 200);
-    const before = await snapshot(db.pool, TRUSTED);
-    assert.equal((await authorize(await login(wrong), { elligbleId: target.username, confirmed: false })).status, 404);
-    assert.equal((await authorize(await login(plain), { elligbleId: target.username, confirmed: false })).status, 404);
-    assert.equal((await authorize(new BrowserLikeClient(app.baseUrl), { elligbleId: target.username, confirmed: false })).status, 401);
-    // Unknown, foreign, unbound, staff, self and never-activated targets: one bounded refusal, zero mutation.
+    // Every fixture and sign-in exists before the zero-mutation snapshot.
+    const hrClient = await login(hr), wrongClient = await login(wrong), plainClient = await login(plain);
     const foreign = await student(db.pool, other as unknown as School, app.baseUrl);
     const unbound = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, unbound.personId);
     const fresh = await createPersonWithAccount(db.pool); await addMembership(db.pool, s.tenant, fresh.personId);
     await db.pool.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth, academic_year_id, academic_period_id, academic_group_id, person_id)
         VALUES($1,'never','Belum Aktif','nv1','0799999999','2010-01-01',$2,$3,$4,$5)`, [s.tenant, s.year, s.period, s.group, fresh.personId]);
+    assert.equal((await authorize(hrClient, { elligbleId: target.username, confirmed: false })).status, 200);
+    const before = await snapshot(db.pool, TRUSTED);
+    assert.equal((await authorize(wrongClient, { elligbleId: target.username, confirmed: false })).status, 404);
+    assert.equal((await authorize(plainClient, { elligbleId: target.username, confirmed: false })).status, 404);
+    assert.equal((await authorize(new BrowserLikeClient(app.baseUrl), { elligbleId: target.username, confirmed: false })).status, 401);
+    // Unknown, foreign, unbound, staff, self and never-activated targets: one bounded refusal, zero mutation.
     for (const id of ['elg-zzzz-zzzz-zzzz', foreign.username, unbound.username, s.teacher.username, opAccount.username, fresh.username]) {
         const r = await authorize(op, { elligbleId: id, confirmed: false });
         assert.equal(r.status, 404, id); assert.equal(r.body.error, 'not_found_in_scope');
@@ -443,4 +448,363 @@ test('AUTH-003 C10 migration 0058 upgrade, rollback and repeat with no backfill'
         assert.deepEqual(await snapshot(db.pool, tables), before);
         assert.equal((await c.query('SELECT count(*)::int AS n FROM identity_account_recovery_codes')).rows[0].n, 0);
     } finally { c.release(); }
+});
+
+test('AUTH-003 C08 remaining actual-writer interleavings in both orders (review correction 1)', { skip: skipWithoutDatabase, timeout: 300000 }, async t => {
+    const db = await disposable();
+    const ref: GateRef = { current: null };
+    const app = await startProductionWiredServer(gatedPool(db.pool, ref));
+    const watch = await db.pool.connect();
+    t.after(() => teardown(app, db));
+    const s = await school(db.pool);
+    const { client: op } = await verifier(db.pool, s, app.baseUrl);
+    const anonymous = new BrowserLikeClient(app.baseUrl);
+    const atCredential = (sql: string) => sql.includes('FROM identity_person_account_bindings b') && sql.includes('FOR UPDATE OF c');
+    const atRecoveryRow = (sql: string) => sql.includes('FROM identity_account_recovery_codes') && sql.includes('FOR UPDATE') && sql.includes('code_verifier');
+    const atSlot = (sql: string, params: unknown[]) => sql.includes('pg_try_advisory_xact_lock') && String(params[0] ?? '').startsWith('ac_enrollment:');
+    const atAccountLock = (sql: string) => sql.includes('FOR UPDATE OF c') && sql.includes('identity_login_identifiers');
+    const inTx = async <T>(run: (c: pg.PoolClient) => Promise<T>) => { const c = await db.pool.connect(); await c.query('BEGIN'); return { c, pending: settled(run(c)) }; };
+    const finish = async (c: pg.PoolClient) => { await c.query('COMMIT'); c.release(); };
+    const pidOf = async (c: pg.PoolClient) => (await c.query('SELECT pg_backend_pid() AS pid')).rows[0].pid as number;
+    const reached = async (g: Gate, pending: Promise<unknown>, label: string) =>
+        Promise.race([g.reached, pending.then(() => { throw new Error(`${label} missed its barrier`); })]);
+    const confirmBody = async (c: BrowserLikeClient, username: string) => {
+        const p = await authorize(c, { elligbleId: username, confirmed: false });
+        assert.equal(p.status, 200, JSON.stringify(p.body));
+        return { elligbleId: username, confirmed: true, expectedRosterRevision: p.body.roster.revision, reason: 'Uji C08', requestKey: randomUUID(), inPersonVerified: true };
+    };
+    // Writer first (holding its real locks in an open transaction), then the issue waits and serializes.
+    const issueAfterWriter = async (label: string, write: (c: pg.PoolClient, x: Awaited<ReturnType<typeof student>>) => Promise<unknown>, expected: number) => {
+        const x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username);
+        const w = await inTx(c => write(c, x));
+        const r0 = await w.pending; if (!r0.ok) throw r0.error;
+        const issuing = authorize(op, body);
+        await blockedBy(watch, await pidOf(w.c), issuing);
+        await finish(w.c);
+        assert.equal((await issuing).status, expected, label);
+    };
+    // Issue first (paused at the credential lock holding every earlier lock), then the writer waits.
+    const writerAfterIssue = async (label: string, write: (c: pg.PoolClient, x: Awaited<ReturnType<typeof student>>) => Promise<unknown>) => {
+        const x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username);
+        const g = gate(atCredential); ref.current = g;
+        const issuing = authorize(op, body);
+        await reached(g, issuing, label);
+        const w = await inTx(c => write(c, x));
+        await blockedBy(watch, g.pid, w.pending);
+        g.release();
+        assert.equal((await issuing).status, 200, label);
+        const r = await w.pending; assert.equal(r.ok, true, label); await finish(w.c);
+    };
+
+    // ensureMembership on the target (tenant_membership key).
+    const membership = (c: pg.PoolClient, x: { personId: string }) => ensureMembership(c, s.tenant, x.personId);
+    await issueAfterWriter('ensureMembership first', membership, 200);
+    await writerAfterIssue('ensureMembership second', membership);
+    // AUTH-001 allocation for the target (Person lock).
+    const allocation = (c: pg.PoolClient, x: { personId: string }) => allocateStudentIdentity(c, { tenantId: s.tenant, personId: x.personId }, randomUUID(), {
+        authorize: async (_c, scope) => scope.personId === x.personId ? { kind: 'platform_operator', ref: 'synthetic-c08' } : null, audit: async () => {} });
+    await issueAfterWriter('allocation first', allocation, 200);
+    await writerAfterIssue('allocation second', allocation);
+    // Verifier revocation: first, the issue refuses with no code row; second, the revocation waits.
+    {
+        const v = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s, app.baseUrl), body = await confirmBody(v.client, x.username);
+        const w = await inTx(c => setSchoolOperator(c, { tenantId: s.tenant, personId: v.account.personId, action: 'REVOKE', operator: 'Synthetic', caseReference: 'C08', reason: 'Revoke' }));
+        const r0 = await w.pending; if (!r0.ok) throw r0.error;
+        const issuing = authorize(v.client, body);
+        await blockedBy(watch, await pidOf(w.c), issuing);
+        await finish(w.c);
+        assert.equal((await issuing).status, 404);
+        assert.equal(await openCode(db.pool, x.accountId), undefined);
+        const v2 = await verifier(db.pool, s, app.baseUrl), y = await student(db.pool, s, app.baseUrl), body2 = await confirmBody(v2.client, y.username);
+        const g = gate(atCredential); ref.current = g;
+        const issuing2 = authorize(v2.client, body2);
+        await reached(g, issuing2, 'verifier revocation second');
+        const w2 = await inTx(c => setSchoolOperator(c, { tenantId: s.tenant, personId: v2.account.personId, action: 'REVOKE', operator: 'Synthetic', caseReference: 'C08', reason: 'Revoke' }));
+        await blockedBy(watch, g.pid, w2.pending);
+        g.release();
+        assert.equal((await issuing2).status, 200);
+        assert.equal((await w2.pending).ok, true); await finish(w2.c);
+    }
+    // Session revocation of the verifier: first, the issue is unauthorized; second, the revocation waits.
+    {
+        const v = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s, app.baseUrl), body = await confirmBody(v.client, x.username);
+        const sid = (await db.pool.query('SELECT id FROM identity_sessions WHERE user_account_id=$1 ORDER BY authenticated_at DESC LIMIT 1', [v.account.accountId])).rows[0].id;
+        const w = await inTx(c => c.query('UPDATE identity_sessions SET is_revoked = TRUE WHERE id = $1', [sid]));
+        await w.pending;
+        const issuing = authorize(v.client, body);
+        await blockedBy(watch, await pidOf(w.c), issuing);
+        await finish(w.c);
+        assert.equal((await issuing).status, 401);
+        assert.equal(await openCode(db.pool, x.accountId), undefined);
+        const v2 = await verifier(db.pool, s, app.baseUrl), y = await student(db.pool, s, app.baseUrl), body2 = await confirmBody(v2.client, y.username);
+        const sid2 = (await db.pool.query('SELECT id FROM identity_sessions WHERE user_account_id=$1 ORDER BY authenticated_at DESC LIMIT 1', [v2.account.accountId])).rows[0].id;
+        const g = gate(atCredential); ref.current = g;
+        const issuing2 = authorize(v2.client, body2);
+        await reached(g, issuing2, 'session revocation second');
+        const w2 = await inTx(c => c.query('UPDATE identity_sessions SET is_revoked = TRUE WHERE id = $1', [sid2]));
+        await blockedBy(watch, g.pid, w2.pending);
+        g.release();
+        assert.equal((await issuing2).status, 200);
+        assert.equal((await w2.pending).ok, true); await finish(w2.c);
+    }
+    // People import of the target (identifier and membership keys, Person), both orders, for issue and as a staff grant for completion.
+    const peopleRef: GateRef = { current: null };
+    const importPerson = (username: string, kind: 'student' | 'teacher') => importPeople(gatedPool(db.pool, peopleRef), {
+        tenantId: s.tenant, text: `elligble_id,full_name,kind\n${username},Writer Uji,${kind}`, context: { operator: 'Synthetic', caseReference: 'AUTH-003 C08' },
+        validForMs: 7 * 24 * 3600 * 1000, dryRun: false, linkExisting: false });
+    const atImportPerson = (sql: string) => sql.includes('FROM identity_persons WHERE id = $1 FOR NO KEY UPDATE');
+    {
+        const x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username);
+        const g = gate(atImportPerson); peopleRef.current = g;
+        const importing = settled(importPerson(x.username, 'student'));
+        await reached(g, importing, 'people import first');
+        const issuing = authorize(op, body);
+        await blockedBy(watch, g.pid, issuing);
+        g.release();
+        assert.equal((await importing).ok, true);
+        assert.equal((await issuing).status, 200);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username);
+        const g = gate(atCredential); ref.current = g;
+        const issuing = authorize(op, body);
+        await reached(g, issuing, 'people import second');
+        const importing = settled(importPerson(x.username, 'student'));
+        await blockedBy(watch, g.pid, importing);
+        g.release();
+        assert.equal((await issuing).status, 200);
+        assert.equal((await importing).ok, true);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username);
+        const g = gate(atImportPerson); peopleRef.current = g;
+        const importing = settled(importPerson(x.username, 'teacher'));
+        await reached(g, importing, 'teacher import first');
+        assert.equal((await complete(app.baseUrl, x.username, i.body.recoveryCode)).status, 429);
+        g.release();
+        assert.equal((await importing).ok, true);
+        assert.equal((await complete(app.baseUrl, x.username, i.body.recoveryCode)).status, 401);
+        assert.equal((await openCode(db.pool, x.accountId)).failed_attempts, 0);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username);
+        const g = gate(atRecoveryRow); ref.current = g;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await reached(g, completing, 'teacher import second');
+        const importing = settled(importPerson(x.username, 'teacher'));
+        await blockedBy(watch, g.pid, importing);
+        g.release();
+        assert.equal((await completing).status, 200);
+        assert.equal((await importing).ok, true);
+    }
+    // Roster import confirm against issue, both orders (shared roster-tenant fence).
+    const header = 'source_student_key,full_name,nis,nisn,date_of_birth,academic_group_id\n';
+    let rows = 0;
+    const prepared = async () => {
+        rows++;
+        const input = { academicYearId: s.year, academicPeriodId: s.period, csv: header + `imp${rows},Impor ${rows},nis-imp${rows},nisn-imp${rows},2010-01-01,${s.group}` };
+        const p = await op.request('/api/v1/identity/roster/preview', { method: 'POST', body: input });
+        return { ...input, inputDigest: p.body.inputDigest, stateDigest: p.body.stateDigest, requestKey: randomUUID(), reason: 'C08', confirmed: true };
+    };
+    {
+        const x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username), intent = await prepared();
+        const g = gate((sql, params) => sql.includes('pg_advisory_xact_lock') && String(params[0] ?? '') === `roster-tenant:${s.tenant}`); ref.current = g;
+        const importing = op.request('/api/v1/identity/roster/confirm', { method: 'POST', body: intent });
+        await reached(g, importing, 'roster import first');
+        const issuing = authorize(op, body);
+        await blockedBy(watch, g.pid, issuing);
+        g.release();
+        assert.equal((await importing).status, 200);
+        assert.equal((await issuing).status, 200);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username), intent = await prepared();
+        const g = gate(atCredential); ref.current = g;
+        const issuing = authorize(op, body);
+        await reached(g, issuing, 'roster import second');
+        const importing = op.request('/api/v1/identity/roster/confirm', { method: 'POST', body: intent });
+        await blockedBy(watch, g.pid, importing);
+        g.release();
+        assert.equal((await issuing).status, 200);
+        assert.equal((await importing).status, 200);
+    }
+    // AUTH-002 claim decide against issue and claim-bound activation against completion (roster-tenant).
+    let claims = 0;
+    const approvedClaim = async () => {
+        claims++;
+        const nisn = `0880${String(claims).padStart(6, '0')}`, name = `Klaim C08 ${claims}`;
+        const rosterId = (await db.pool.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth, academic_year_id, academic_period_id, academic_group_id)
+            VALUES($1,$2,$3,$4,$5,'2010-03-03',$6,$7,$8) RETURNING id`, [s.tenant, `clm-${claims}`, name, `cn-${claims}`, nisn, s.year, s.period, s.group])).rows[0].id;
+        assert.equal((await anonymous.request('/api/v1/identity/claims', { method: 'POST', body: { tenantId: s.tenant, fullName: name, nisn, birthDate: '2010-03-03', requestKey: randomUUID() } })).status, 202);
+        const claim = (await db.pool.query('SELECT id, revision FROM identity_student_claims WHERE roster_id=$1', [rosterId])).rows[0];
+        return { claimId: claim.id, expectedRevision: claim.revision, expectedRosterRevision: 1, decision: 'APPROVE', adjudication: 'NEW_IDENTITY_REVIEWED',
+            noExistingAccountConfirmed: true, reason: 'Uji C08', confirmed: true, requestKey: randomUUID() };
+    };
+    const decide = (b: Record<string, unknown>) => op.request('/api/v1/identity/claims/decision', { method: 'POST', body: b });
+    {
+        const decision = await approvedClaim(), x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username);
+        const g = gate(atSlot); ref.current = g;
+        const deciding = decide(decision);
+        await reached(g, deciding, 'claim decide first');
+        const issuing = authorize(op, body);
+        await blockedBy(watch, g.pid, issuing);
+        g.release();
+        assert.equal((await deciding).status, 200);
+        assert.equal((await issuing).status, 200);
+    }
+    {
+        const decision = await approvedClaim(), x = await student(db.pool, s, app.baseUrl), body = await confirmBody(op, x.username);
+        const g = gate(atCredential); ref.current = g;
+        const issuing = authorize(op, body);
+        await reached(g, issuing, 'claim decide second');
+        const deciding = decide(decision);
+        await blockedBy(watch, g.pid, deciding);
+        g.release();
+        assert.equal((await issuing).status, 200);
+        assert.equal((await deciding).status, 200);
+    }
+    {
+        const approved = await decide(await approvedClaim()), x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username);
+        const g = gate(atAccountLock); ref.current = g;
+        const activating = new BrowserLikeClient(app.baseUrl).request('/api/v1/auth/activate', { method: 'POST', body: { username: approved.body.elligbleId, activationCode: approved.body.activationCode, newPassword: NEW_PASSWORD } });
+        await reached(g, activating, 'claim-bound activation first');
+        assert.equal((await complete(app.baseUrl, x.username, i.body.recoveryCode)).status, 429);
+        g.release();
+        assert.equal((await activating).status, 200);
+        assert.equal((await complete(app.baseUrl, x.username, i.body.recoveryCode)).status, 200);
+    }
+    {
+        const approved = await decide(await approvedClaim()), x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username);
+        const g = gate(atRecoveryRow); ref.current = g;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await reached(g, completing, 'claim-bound activation second');
+        const activating = new BrowserLikeClient(app.baseUrl).request('/api/v1/auth/activate', { method: 'POST', body: { username: approved.body.elligbleId, activationCode: approved.body.activationCode, newPassword: NEW_PASSWORD } });
+        await blockedBy(watch, g.pid, activating);
+        g.release();
+        assert.equal((await completing).status, 200);
+        assert.equal((await activating).status, 200);
+    }
+    // Completion against a new issue (supersede, R4): completion first, the issue waits; issue first, completion is busy, then the old code counts on the new one.
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username), body = await confirmBody(op, x.username);
+        const g = gate(atRecoveryRow); ref.current = g;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await reached(g, completing, 'completion before supersede');
+        const issuing = authorize(op, body);
+        await blockedBy(watch, g.pid, issuing);
+        g.release();
+        assert.equal((await completing).status, 200);
+        assert.equal((await issuing).status, 200);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username), body = await confirmBody(op, x.username);
+        const g = gate(atCredential); ref.current = g;
+        const issuing = authorize(op, body);
+        await reached(g, issuing, 'supersede before completion');
+        assert.equal((await complete(app.baseUrl, x.username, i.body.recoveryCode)).status, 429);
+        g.release();
+        const issued = await issuing; assert.equal(issued.status, 200);
+        assert.equal((await complete(app.baseUrl, x.username, i.body.recoveryCode)).status, 401);
+        assert.equal((await openCode(db.pool, x.accountId)).failed_attempts, 1);
+        assert.equal((await complete(app.baseUrl, x.username, issued.body.recoveryCode)).status, 200);
+    }
+    // Completion against login and against legacy activation (credential-first writers), both orders.
+    const loginGated = (username: string, password: string, cref: GateRef) => settled((async () => {
+        const c = await db.pool.connect(); try { return await new IdentityRuntime(gatedClient(c, cref) as unknown as pg.Client).authenticate(username, password); } finally { c.release(); }
+    })());
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username), cref: GateRef = { current: null };
+        const g = gate(sql => sql.includes('c.password_verifier, c.is_valid') && sql.includes('FOR UPDATE OF c')); cref.current = g;
+        const logging = loginGated(x.username, x.password, cref);
+        await reached(g, logging, 'login first');
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await blockedBy(watch, g.pid, completing);
+        g.release();
+        const logged = await logging; assert.equal(logged.ok && logged.value.success, true);
+        assert.equal((await completing).status, 200);
+        if (logged.ok && logged.value.success) assert.equal((await db.pool.query('SELECT is_revoked FROM identity_sessions WHERE id=$1', [logged.value.session.sessionId])).rows[0].is_revoked, true);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username);
+        const g = gate(atRecoveryRow); ref.current = g;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await reached(g, completing, 'login second');
+        const logging = loginGated(x.username, x.password, { current: null });
+        await blockedBy(watch, g.pid, logging);
+        g.release();
+        assert.equal((await completing).status, 200);
+        const logged = await logging; assert.equal(logged.ok && logged.value.success, false);
+    }
+    const withCard = async () => {
+        const x = await student(db.pool, s, app.baseUrl);
+        const c = await db.pool.connect(); let card: { code: string } | null;
+        try { card = await new IdentityRuntime(c as unknown as pg.Client).issueActivation(x.accountId, { rotatePassword: false }); } finally { c.release(); }
+        const i = await issue(op, x.username);
+        return { x, card: card!, i };
+    };
+    {
+        const { x, card, i } = await withCard(), cref: GateRef = { current: null };
+        const g = gate(atAccountLock); cref.current = g;
+        const activating = settled((async () => { const c = await db.pool.connect(); try { return await new IdentityRuntime(gatedClient(c, cref) as unknown as pg.Client).activate(x.username, card.code, NEW_PASSWORD); } finally { c.release(); } })());
+        await reached(g, activating, 'activate first');
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await blockedBy(watch, g.pid, completing);
+        g.release();
+        const activated = await activating; assert.equal(activated.ok && activated.value.success, true);
+        assert.equal((await completing).status, 401);
+        assert.equal((await openCode(db.pool, x.accountId)).revoke_kind, 'REPLACED_BY_ACTIVATION');
+    }
+    {
+        const { x, card, i } = await withCard();
+        const g = gate(atRecoveryRow); ref.current = g;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await reached(g, completing, 'activate second');
+        const activating = settled((async () => { const c = await db.pool.connect(); try { return await new IdentityRuntime(c as unknown as pg.Client).activate(x.username, card.code, NEW_PASSWORD); } finally { c.release(); } })());
+        await blockedBy(watch, g.pid, activating);
+        g.release();
+        assert.equal((await completing).status, 200);
+        const activated = await activating; assert.equal(activated.ok && activated.value.success, false);
+    }
+    // Completion against a Student session mutation, both orders; the session ends revoked.
+    const sessionOf = async (accountId: string) => (await db.pool.query('SELECT id FROM identity_sessions WHERE user_account_id=$1 ORDER BY authenticated_at DESC LIMIT 1', [accountId])).rows[0].id as string;
+    const mutateSession = (c: pg.PoolClient, x: { session: BrowserLikeClient }) => {
+        const cookie = x.session.cookie ?? '', value = cookie.slice(cookie.indexOf('=') + 1), dot = value.indexOf('.');
+        const sid = value.slice(0, dot), secret = value.slice(dot + 1);
+        return new IdentityRuntime(c as unknown as pg.Client).resolveSessionForMutation(sid, secret);
+    };
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username), sid = await sessionOf(x.accountId);
+        const w = await inTx(c => mutateSession(c, x));
+        const r0 = await w.pending; if (!r0.ok) throw r0.error;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await blockedBy(watch, await pidOf(w.c), completing);
+        await finish(w.c);
+        assert.equal((await completing).status, 200);
+        assert.equal((await db.pool.query('SELECT is_revoked FROM identity_sessions WHERE id=$1', [sid])).rows[0].is_revoked, true);
+    }
+    {
+        const x = await student(db.pool, s, app.baseUrl), i = await issue(op, x.username), sid = await sessionOf(x.accountId);
+        const g = gate(atRecoveryRow); ref.current = g;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await reached(g, completing, 'session mutation second');
+        const w = await inTx(c => mutateSession(c, x));
+        const r0 = await w.pending; if (!r0.ok) throw r0.error;
+        g.release();
+        await blockedBy(watch, await pidOf(w.c), completing);
+        await finish(w.c);
+        assert.equal((await completing).status, 200);
+        assert.equal((await db.pool.query('SELECT is_revoked FROM identity_sessions WHERE id=$1', [sid])).rows[0].is_revoked, true);
+    }
+    // Issuer revocation committed first while completion waits on the assignment row: completion refuses, uncounted.
+    {
+        const v = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s, app.baseUrl), i = await issue(v.client, x.username);
+        const w = await inTx(c => setSchoolOperator(c, { tenantId: s.tenant, personId: v.account.personId, action: 'REVOKE', operator: 'Synthetic', caseReference: 'C08', reason: 'Revoke issuer' }));
+        const r0 = await w.pending; if (!r0.ok) throw r0.error;
+        const completing = complete(app.baseUrl, x.username, i.body.recoveryCode);
+        await blockedBy(watch, await pidOf(w.c), completing);
+        await finish(w.c);
+        assert.equal((await completing).status, 401);
+        const row = await openCode(db.pool, x.accountId);
+        assert.equal(row.consumed_at, null); assert.equal(row.failed_attempts, 0);
+    }
 });
