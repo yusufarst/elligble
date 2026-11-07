@@ -386,7 +386,7 @@ The reviewer confirmed the descriptor, vectors, PG-as-v1 choice, engine safety o
 - **Correction:** allowlist row 30 becomes `e2e/tests/99-question-types.spec.ts` (it sorts after `9-identity`). Its content, purpose and gates are unchanged. Row 30's old name is not created.
 - **Participant:** the spec's exam has one participant, `siswa.e2e.06`. The other fixture students are expected in `6-teacher-import`'s exam at an overlapping time, which would block scheduling (D04.2 conflict rule). The five browser projects run in separate CI jobs, each with its own database, so no cross-project conflict arises.
 - **Targeted re-review**, same reviewer, on SHA-256 1fce42a0942805669b4d39a16c3bce677ab97af6b42fd64b53eb8c9c8237fefb: **PASS** on §10A, and PASS on the draft spec as the capture-only step 2.
-  - Names folded: every earlier mention of  now reads .
+  - Names folded: every earlier mention of `10-question-types` (in §4A.7 and §10) now reads `99-question-types`; the only remaining mention of the old name is §10A's own explanation.
   - The 200 % text method is fixed before the baseline: each element's computed font size and line height are doubled, as in spec 6, and the method is identical in both phases.
   - The after phase adds explicit keyboard-focus captures, the multiple-response scenarios and the unsupported-content state. The before scenarios stay byte-for-byte the same.
   - The spec draft (written before this confirmation, uncommitted) and the descriptor, parser and builder drafts are pre-baseline working-tree work. The descriptor, parser and builder are reviewed with the implementation.
