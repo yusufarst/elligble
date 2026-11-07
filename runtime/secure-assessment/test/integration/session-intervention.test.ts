@@ -156,6 +156,8 @@ test('SEC-OPS-001 C01/C02/C03/C06 the CLI revokes, refuses and dry-runs with exa
     await addMembership(db.pool, other.tenant, target.personId);
     await addMembership(db.pool, third.tenant, target.personId);
     const first = await signIn(app.baseUrl, s, target), second = await signIn(app.baseUrl, other, target);
+    // Session cookie values (id and secret), captured before the intervention clears them.
+    const cookieSecrets = [first.cookie, second.cookie].map(c => { assert.ok(c); return c.split(';')[0].split('=').slice(1).join('='); });
     const bystander = await student(db.pool, s), bystanderClient = await signIn(app.baseUrl, s, bystander);
     const foreign = await student(db.pool, other as School);
     const sessionIds = (await db.pool.query('SELECT id FROM identity_sessions WHERE user_account_id=$1', [target.accountId])).rows.map(r => r.id as string);
@@ -215,7 +217,6 @@ test('SEC-OPS-001 C01/C02/C03/C06 the CLI revokes, refuses and dry-runs with exa
 
     // C06: no session id, secret, credential, NISN or birth date in any output or summary.
     const summaries = (await audits(db.pool, target.accountId)).map(r => JSON.stringify(r.summary));
-    const cookieSecrets = [first.cookie, second.cookie].map(c => String(c));
     for (const text of [...outputs, ...summaries]) {
         for (const secret of [...sessionIds, ...cookieSecrets, target.nisn, '2010-07-17', target.password, target.personId]) assert.ok(!text.includes(secret), `leak in ${text}`);
     }
@@ -319,7 +320,9 @@ test('SEC-OPS-001 C05 real contention in both orders against login, session muta
     };
     const codes = async (accountId: string) => (await db.pool.query('SELECT count(*)::int AS n FROM identity_account_recovery_codes WHERE user_account_id=$1', [accountId])).rows[0].n as number;
     {
-        const { client: op, account } = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s), body = await issueBody(op, x.username);
+        const { client: op, account } = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s);
+        await signIn(app.baseUrl, s, x); // recovery needs an Account that has signed in before
+        const body = await issueBody(op, x.username);
         const g = gate(atActorSession); ref.current = g;
         const issuing = op.request('/api/v1/identity/recovery/authorize', { method: 'POST', body });
         await reached(g, issuing, 'verifier first');
@@ -331,7 +334,9 @@ test('SEC-OPS-001 C05 real contention in both orders against login, session muta
         assert.equal((await op.request('/api/v1/auth/session')).status, 401);
     }
     {
-        const { client: op, account } = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s), body = await issueBody(op, x.username);
+        const { client: op, account } = await verifier(db.pool, s, app.baseUrl), x = await student(db.pool, s);
+        await signIn(app.baseUrl, s, x); // recovery needs an Account that has signed in before
+        const body = await issueBody(op, x.username);
         const g = gate(atSessionsUpdate); cref.current = g;
         const revoking = revoke(coordinator, s.tenant, account.username);
         await reached(g, revoking, 'revoke before verifier');
