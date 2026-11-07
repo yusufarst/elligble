@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 all eight formats; HIGH risk; R11, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation and rendered review (§11); DEC-048** |
+| Status | **DONE — final content a57c936, CI #179 attempt 1 eight SUCCESS, independent contract, implementation and rendered review chains PASS, Delegated Acceptance (DEC-048) (§12); landing by delegated squash merge (00.13 §6)** |
 | Objective | Deliver multiple response ("Pilihan ganda kompleks") end to end: author through the approved import format, teacher preview, Student answer with local recovery, submit, and score under the approved exact-set rule, on the ASSESS-QUESTION-001 foundation |
 | Owner decisions | O02-1, O02-2, O02-3 and O02-12, approved 2026-11-07 and recorded in [ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md); A01-1/A01-2/A01-4 as implemented there. Reviewer: the standing Owner-designated read-only subagent reviewer |
 | Execution authority | DEC-048 (00.13). Internal dependency ASSESS-QUESTION-001 is DONE / MERGED (main 8ade3ae4316a2839d91311be2037e8bfbb8c745f, post-merge CI #160 attempt 1 eight SUCCESS). O09 rests on the approved P5 content |
@@ -549,3 +549,88 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
   - **B2:** the instruction names the type column and the PGK key format.
 - **Pre-existing, not caused by this Task, recorded for a UI-SYSTEM follow-up:** at 200 % text the exam dock breaks words mid-word, and the native select truncates "Ulangan Harian". Both appear identically in the before baseline.
 
+- **Rendered review closed**, same reviewer, on a57c936 / CI #179 (run 42396054892): **PASS.**
+  - The reviewer checked all 450 after-phase JSON files independently: exact commit and phase, no overflow, no target under 44 px.
+  - B1 and B2 are closed in the images.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** a57c936850ec8c264ca7874effe532e8649c75fe.
+
+**Commits** on task/assess-question-002-multiple-response (PR #27):
+- registration b4a878e;
+- READY correction record c7ff705 and c37f656;
+- capture-only baseline 4b9b00f, 18ba220, 44d99f1 and 3138f06;
+- implementation 625b7d2;
+- corrections ffd4d97, a75c1d9, 2594cbd, f791b40, 89b7ec3, 544c7e1, 8b7c68f, 194da60, 548c2b5, c5a256f and a57c936.
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #179, push, attempt 1, eight jobs SUCCESS.
+- Runtime units: identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 933; all pass.
+- Real PostgreSQL 16 integration: 257/257, including the multiple-response journey and the 0060 migration oracle.
+- Web job: 40 files and 387 tests, plus typecheck and build. Container image build and smoke test.
+- E2E: 29/29 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. That includes the full multiple-response journey (C07) and the rendered captures (C08).
+
+**Artifacts:** baseline #167, 5 × 50 before pairs; final #179, 5 × 90 after pairs. Exact commits and trees, no overflow, no target under 44 px.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| #161 | SUCCESS (registration) |
+| #162 | cancelled by the next push |
+| #163 | SUCCESS |
+| #164 | baseline FAILURE: participant conflict |
+| #165 | baseline FAILURE: WebKit image size limit |
+| #166 | baseline FAILURE: device pixel ratio |
+| #167 | baseline SUCCESS |
+| #168 | FAILURE: integration status and preview shape |
+| #169 | FAILURE: integration header |
+| #170 | FAILURE: import-view overflow |
+| #171 | FAILURE: option-card click |
+| #172 | FAILURE: heading pattern |
+| #173, #174 | superseded |
+| #175 | FAILURE: pause locator; WebKit crash |
+| #176 | FAILURE: WebKit crash |
+| #177 | FAILURE: WebKit crash on reload |
+| #178 | SUCCESS (c5a256f) |
+| #179 | SUCCESS (a57c936, final) |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP → PASS (§9). READY correction (§10A): PASS.
+2. **Implementation:** STOP (three findings) → PASS (§11.4–§11.5). Corrections 3–8: PASS.
+3. **Rendered:** STOP (B1, B2) → PASS (§11.11, and above).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: descriptor vectors V1–V11 and the mixed-exam vectors (3/3 → 100; 1/3 → 33.33); the production registry is v1 plus multiple response |
+| C02 | PASS: v2 import vectors; v1 parser results and the v1 `column_count` shape unchanged; operator wording |
+| C03 | PASS: real PostgreSQL. Teacher v2 import (template v2, PG as v1 content); key-set preview; readiness and opening; no-key delivery; V1/V2/V6 saves; V8–V10 refusals with zero mutation; resume; monitoring does not count `[]`; composite finalization with per-item rules; provisional and final results agree |
+| C04 | PASS: v1 regression. Only the two §4A.1 assertions changed; every other existing test passed unchanged |
+| C05 | PASS: 0060 upgrade, synthetic rollback, repeat, constraint content |
+| C06 | PASS: canonical mapping; control; "Belum dijawab"; adapter refusals; `countUnreceivedLocalAnswers`; local recovery; adoption and discard; no correct set stored; the unsupported state on both paths, with the timer and sending kept |
+| C07 | PASS: five-browser journey. Teacher import and preview; keyboard and pointer; offline toggles with only the final set saved; reload recovery; clear and reselect; the reload state; read-only pause; submit with a held pending save (V06); end and finalize with the exact score (40) |
+| C08 | PASS: before and after captures across the frozen conditions (§4A.7, journey states reduced per §11.8); no overflow; 44 px targets; visible focus; rendered review PASS |
+| C09 | PASS: every changed path within rows 1–30 and 32–34 (row 31 withdrawn); 33 Tasks and 78 edges; attempt-1 CI with no re-run |
+| C10 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C10 has PASSED with recorded evidence. The independent contract, implementation and rendered review PASSED on the final content SHA. ASSESS-QUESTION-002 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- A local intent with an unsupported key, left by a newer client before a rollback, keeps the reload alert until it is sent or the attempt ends.
+- The checkbox card differs from the radio card mainly by marker radius, the instruction and the control role.
+- At 200 % text the exam dock breaks words and the native select truncates; both are pre-existing and are UI-SYSTEM follow-ups.
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 OPEN; G7 before real data; no deployment or release claim.
+
+**Landing:** delegated squash merge of PR #27 under 00.13 §6 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The landing is recorded by the next Task's first change, with DONE 8/33 (24.24%), VERIFYING 0, BLOCKED 25.
