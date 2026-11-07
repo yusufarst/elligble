@@ -6,7 +6,7 @@ import type { ClientBase } from 'pg';
 
 export type ProvisioningAction =
     | 'tenant_created' | 'people_imported' | 'activation_reissued' | 'academic_imported' | 'exam_imported'
-    | 'tenant_time_zone_set' | 'assessment_types_added';
+    | 'tenant_time_zone_set' | 'assessment_types_added' | 'sessions_revoked';
 
 export interface OperatorContext {
     operator: string;
@@ -26,13 +26,13 @@ export function sha256(...parts: string[]): string {
 
 export async function recordProvisioningEvent(
     client: ClientBase,
-    event: { tenantId: string | null; action: ProvisioningAction; context: OperatorContext; inputSha256: string | null; summary: Record<string, number | string> }
+    event: { tenantId: string | null; action: ProvisioningAction; context: OperatorContext; inputSha256: string | null; summary: Record<string, number | string>; reason?: string | null }
 ): Promise<string> {
     const batchId = randomUUID();
     await client.query(
-        `INSERT INTO platform_provisioning_events (batch_id, tenant_id, operator_label, case_reference, action, input_sha256, summary)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [batchId, event.tenantId, event.context.operator.trim(), event.context.caseReference.trim(), event.action, event.inputSha256, JSON.stringify(event.summary)]
+        `INSERT INTO platform_provisioning_events (batch_id, tenant_id, operator_label, case_reference, action, input_sha256, summary, reason)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [batchId, event.tenantId, event.context.operator.trim(), event.context.caseReference.trim(), event.action, event.inputSha256, JSON.stringify(event.summary), event.reason ? event.reason.trim() : null]
     );
     return batchId;
 }

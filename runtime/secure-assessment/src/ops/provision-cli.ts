@@ -1,5 +1,6 @@
 import { provisionSchoolOperator } from './provisioning/school-operator.ts';
 import { provisionHomeroom } from './provisioning/homeroom.ts';
+import { revokeAccountSessions } from './provisioning/sessions.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { env } from 'node:process';
 import { parseArgs } from 'node:util';
@@ -23,6 +24,8 @@ Usage: node runtime/secure-assessment/src/ops/provision-cli.ts <command> [option
   operator assign|revoke --tenant <id> --elligble-id <id> --reason <reason>
   homeroom assign|revoke --tenant <id> --elligble-id <id> --group <id> --period <id> --reason <reason> [--until <ISO time>]
                      (explicit Homeroom responsibility for one rombel and period; verifies Student claims)
+  session revoke     --tenant <id> --elligble-id <id> --reason <reason> [--dry-run]
+                     (security incident: ends every session of the Account; needs real --operator and --case even in a dry run)
   school create      --label <school name> --time-zone <IANA> [--allow-duplicate-label]
   school set-time-zone --tenant <id> --time-zone <IANA>
   people import      --tenant <id> --file <people.csv> --sheet <cards.html>
@@ -122,9 +125,15 @@ async function run(argv: string[]): Promise<number> {
     });
     const dryRun = values['dry-run'] === true;
     const command = `${group} ${action ?? ''}`.trim();
-    const knownCommands = ['operator assign', 'operator revoke', 'homeroom assign', 'homeroom revoke', 'school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import', 'exam types'];
+    const knownCommands = ['session revoke', 'operator assign', 'operator revoke', 'homeroom assign', 'homeroom revoke', 'school create', 'school set-time-zone', 'people import', 'activation reissue', 'academic import', 'exam import', 'exam types'];
     if (!knownCommands.includes(command)) throw new UsageError(`unknown command "${command}"`);
-    const context = operatorContext(values, dryRun);
+    // An incident intervention always names its operator, case and reason, also in a dry run.
+    const context = operatorContext(values, command === 'session revoke' ? false : dryRun);
+    if (command === 'session revoke') {
+        const reason = values.reason;
+        if (typeof reason !== 'string' || reason.trim().length === 0 || reason.trim().length > 200) throw new UsageError('--reason is required (1 to 200 characters)');
+        required(values['elligble-id'], 'elligble-id');
+    }
     // Validate options that do not need the database before connecting.
     const validForMs = command === 'people import' || command === 'activation reissue' ? validDays(values['valid-days']) : 0;
     timeZone(values['time-zone']);
@@ -144,6 +153,14 @@ async function run(argv: string[]): Promise<number> {
                 if (dryRun) throw new UsageError('operator assignment has no dry run');
                 const result = await provisionSchoolOperator(pool,{tenantId:tenant(values.tenant),elligbleId:required(values['elligble-id'],'elligble-id'),action:command==='operator assign'?'ASSIGN':'REVOKE',context,reason:required(values.reason,'reason')});
                 out(JSON.stringify(result)); return 0;
+            }
+            case 'session revoke': {
+                const result = await revokeAccountSessions(pool, {
+                    tenantId: tenant(values.tenant), elligbleId: values['elligble-id'] as string, reason: values.reason as string, context, dryRun,
+                });
+                if (!result.ok) { out(`Refused: ${result.problem}`); return 1; }
+                out(JSON.stringify(result.dryRun ? { wouldRevoke: result.wouldRevoke, otherSchools: result.otherSchools } : { revoked: result.revoked, otherSchools: result.otherSchools }));
+                return 0;
             }
             case 'homeroom assign':
             case 'homeroom revoke': {
