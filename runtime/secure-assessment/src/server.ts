@@ -1,5 +1,6 @@
 import { handleRoster } from './http/roster-routes.ts';
 import { handleClaimDecision, handleClaimReview, handleClaimSubmit } from './http/claim-routes.ts';
+import { handleRecoveryAuthorize, handleRecoveryComplete } from './http/recovery-routes.ts';
 import * as http from 'node:http';
 import { Readable } from 'node:stream';
 import * as pg from 'pg';
@@ -304,6 +305,12 @@ export function createServer(deps: ServerDependencies): http.Server {
             if (pathname === '/api/v1/identity/claims') return handleClaimSubmit(req, res, deps.pool);
             if (pathname === '/api/v1/identity/claims/review') return handleClaimReview(req, res, deps.pool, security.cookie);
             return handleClaimDecision(req, res, deps.pool, security.cookie);
+        }
+
+        if (pathname === '/api/v1/identity/recovery/authorize' || pathname === '/api/v1/identity/recovery/complete') {
+            if (!security) { sendError(res, 404, 'not found'); return; }
+            if (pathname === '/api/v1/identity/recovery/authorize') return handleRecoveryAuthorize(req, res, deps.pool, security.cookie);
+            return handleRecoveryComplete(req, res, deps.pool, security.cookie);
         }
 
         if (pathname === '/api/v1/me/context') {

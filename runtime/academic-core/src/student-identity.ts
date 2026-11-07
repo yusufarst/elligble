@@ -79,6 +79,17 @@ export async function rosterIdsInScope(client: ClientBase, tenantId: string, sco
     return r.rows.map(row => row.id as string);
 }
 
+/** AUTH-003 in-person comparison fields of one roster record (scoped verifier only). */
+export async function readRosterVerification(client: ClientBase, tenantId: string, rosterId: string): Promise<{ fullName: string; nisn: string; birthDate: string; groupLabel: string | null; revision: number } | null> {
+    requireUuid(tenantId, rosterId);
+    const r = await client.query(`SELECT r.full_name, r.nisn, to_char(r.date_of_birth, 'YYYY-MM-DD') AS birth, r.revision, g.display_label
+        FROM academic_core_student_roster_records r LEFT JOIN academic_core_academic_groups g ON g.id = r.academic_group_id AND g.tenant_id = r.tenant_id
+        WHERE r.id = $1 AND r.tenant_id = $2`, [rosterId.toLowerCase(), tenantId.toLowerCase()]);
+    if (r.rows.length !== 1) return null;
+    const row = r.rows[0];
+    return { fullName: row.full_name, nisn: row.nisn, birthDate: row.birth, groupLabel: row.display_label ?? null, revision: Number(row.revision) };
+}
+
 /** Does the claim's submitted NISN/date/name still match this current roster record exactly? */
 export async function rosterStillMatches(client: ClientBase, roster: RosterIdentity, submitted: { nisn: string; birth: string; name: string }): Promise<boolean> {
     const r = await client.query(`SELECT 1 FROM academic_core_student_roster_records WHERE id = $1 AND tenant_id = $2 AND nisn = $3 AND date_of_birth = $4::date`,

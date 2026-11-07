@@ -51,3 +51,13 @@ async function claimRequest<T>(url:string,init:{method:'GET'|'POST';json?:unknow
 export const submitClaim=(input:ClaimSubmission)=>claimRequest<ClaimReceipt>('/api/v1/identity/claims',{method:'POST',json:input});
 export const getClaimReview=(offset=0)=>claimRequest<ClaimReview>('/api/v1/identity/claims/review'+(offset>0?`?offset=${offset}`:''),{method:'GET'});
 export const decideClaim=(input:ClaimDecisionInput)=>claimRequest<ClaimDecisionResult>('/api/v1/identity/claims/decision',{method:'POST',json:input});
+
+// AUTH-003 in-person recovery (record §7): scoped verifier preview, then a reasoned issue.
+export interface RecoveryPreview { phase:'preview'; elligbleId:string; roster:{fullName:string;nisn:string;birthDate:string;groupLabel:string|null;revision:number} }
+export type RecoveryIssue =
+  | { phase:'issued'; elligbleId:string; recoveryCode:string; expiresAt:string; replayed:false }
+  | { phase:'issued'; elligbleId:string; expiresAt:string; replayed:true };
+export type RecoveryAuthorizeInput =
+  | { elligbleId:string; confirmed:false }
+  | { elligbleId:string; confirmed:true; expectedRosterRevision:number; reason:string; requestKey:string; inPersonVerified:true };
+export const authorizeRecovery=<T extends RecoveryPreview|RecoveryIssue>(input:RecoveryAuthorizeInput)=>claimRequest<T>('/api/v1/identity/recovery/authorize',{method:'POST',json:input});

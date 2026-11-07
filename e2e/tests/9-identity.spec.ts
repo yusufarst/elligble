@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { login, open, withDatabase, state } from './helpers.ts';
 import { setSchoolOperator } from '../../runtime/tenant-access/src/school-operator.ts';
+import { hashPassword } from '../../runtime/identity-access/src/crypto.ts';
 
 const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 const BASE_TREE = 'aef3abfb4c233105026f11167c92da13d2664337';
@@ -134,14 +135,20 @@ if(applicationTree!==BASE_TREE)test('ADMIN-001 Operator roster preview, keyboard
 const AUTH_BASE_TREE = 'b11e1f64f2321ca05e3aa6d24ccde1fb9c041996';
 const authPhase = applicationTree === AUTH_BASE_TREE ? 'before' : 'after';
 const AUTH_WIDTHS = [360, 390, 430, 768, 1024, 1280, 1440];
+// One capture routine serves each identity Task's own before/after evidence.
+interface CaptureTask { task: string; baseTree: string; phase: 'before' | 'after'; prefix: string }
+const AUTH002_CAPTURE: CaptureTask = { task: 'AUTH-002', baseTree: AUTH_BASE_TREE, phase: authPhase, prefix: 'workspace-auth-' };
+// AUTH-003 capture-only baseline (record §13): the frontend tree at main 38259da.
+const RECOVERY_BASE_TREE = '2a4f9f399167ac1947e4c2130eae354daf9ad9b3';
+const RECOVERY_CAPTURE: CaptureTask = { task: 'AUTH-003', baseTree: RECOVERY_BASE_TREE, phase: applicationTree === RECOVERY_BASE_TREE ? 'before' : 'after', prefix: 'workspace-recovery-' };
 
-async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
+async function captureAuth(page: Page, scenario: string, mask: Locator[] = [], ctx: CaptureTask = AUTH002_CAPTURE) {
     await page.evaluate(async () => {
         await document.fonts.ready;
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     });
     const viewport = page.viewportSize();
-    const name = `workspace-auth-${scenario}-${viewport?.width}x${viewport?.height}-${test.info().project.name}`;
+    const name = `${ctx.prefix}${scenario}-${viewport?.width}x${viewport?.height}-${test.info().project.name}`;
     const browser = page.context().browser();
     const metrics = await page.evaluate(() => {
         const box = (el: Element) => el.getBoundingClientRect();
@@ -151,6 +158,7 @@ async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
             heading: document.querySelector('h1')?.textContent ?? null,
             claimEntry: [...document.querySelectorAll('button,a')].filter(el => /pendaftaran akun/i.test(el.textContent ?? '')).length,
             verifierEntry: [...document.querySelectorAll('button,a')].filter(el => /verifikasi pendaftaran/i.test(el.textContent ?? '')).length,
+            recoveryEntry: [...document.querySelectorAll('button,a')].filter(el => /pemulihan/i.test(el.textContent ?? '')).length,
             focus: { tag: active?.tagName ?? null, id: active?.id ?? null },
             // Text cut off inside a scrolling dialog does not widen the page: measure each value cell.
             clipped: [...document.querySelectorAll<HTMLElement>('[role=dialog] dd, [role=dialog] dt, [role=dialog] label')]
@@ -165,31 +173,31 @@ async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
     // Activation codes are live secrets of the disposable CI database: masked, never captured.
     await page.screenshot({ path: test.info().outputPath(`${name}.png`), fullPage: true, animations: 'disabled', mask });
     writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
-        task: 'AUTH-002', masked: mask.length > 0, phase: authPhase, commit,
-        baseline: { sourceTree: AUTH_BASE_TREE }, applicationTree, fixture: { synthetic: true, sha256: fixtureHash },
+        task: ctx.task, masked: mask.length > 0, phase: ctx.phase, commit,
+        baseline: { sourceTree: ctx.baseTree }, applicationTree, fixture: { synthetic: true, sha256: fixtureHash },
         browser: { engine: browser?.browserType().name(), version: browser?.version(), project: test.info().project.name },
         viewport, scenario, screenshot: `${name}.png`, metrics, physicalDevice: false,
     }, null, 2));
-    if (authPhase === 'after') {
+    if (ctx.phase === 'after') {
         expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
         expect(metrics.targets.filter(t => t.width < 43.99 || t.height < 43.99)).toEqual([]);
         expect(metrics.clipped).toEqual([]);
     }
 }
 
-async function captureAuthWidths(page: Page, scenario: string, mask: Locator[] = []) {
+async function captureAuthWidths(page: Page, scenario: string, mask: Locator[] = [], ctx: CaptureTask = AUTH002_CAPTURE) {
     const original = page.viewportSize();
     for (const width of AUTH_WIDTHS) {
         await page.setViewportSize({ width, height: 800 });
-        await captureAuth(page, scenario, mask);
+        await captureAuth(page, scenario, mask, ctx);
     }
     await page.setViewportSize({ width: 768, height: 360 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-    await captureAuth(page, `${scenario}-text-200`, mask);
+    await captureAuth(page, `${scenario}-text-200`, mask, ctx);
     // A dialog scrolls inside the short viewport: also capture its end, so the whole dialog is evidenced.
     if (await page.locator('[role=dialog]').count()) {
         await page.locator('[role=dialog]').last().evaluate(el => { el.scrollTop = el.scrollHeight; });
-        await captureAuth(page, `${scenario}-text-200-scrolled`, mask);
+        await captureAuth(page, `${scenario}-text-200-scrolled`, mask, ctx);
     }
     await page.evaluate(() => { document.documentElement.style.fontSize = ''; });
     if (original) await page.setViewportSize(original);
@@ -306,5 +314,110 @@ if (authPhase === 'after') test('AUTH-002 synthetic claim, scoped approval, one-
         });
     } finally {
         await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: fixture.person, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-002', reason: 'End synthetic verification' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
+    }
+});
+
+test('AUTH-003 actual entry baseline: login and verifier workspace before recovery', async ({ page }) => {
+    await open(page);
+    await expect(page.getByRole('heading', { name: 'Masuk ke ELLIGBLE', exact: true })).toBeVisible();
+    await captureAuthWidths(page, 'login-entry', [], RECOVERY_CAPTURE);
+    const person = await withDatabase(async c => {
+        const id = (await c.query('SELECT a.person_id FROM identity_user_accounts a JOIN identity_account_credentials cr ON cr.user_account_id=a.id WHERE cr.username=$1', ['guru.e2e'])).rows[0].person_id as string;
+        await c.query('BEGIN');
+        try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: id, action: 'ASSIGN', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'Synthetic recovery baseline' }); await c.query('COMMIT'); }
+        catch (e) { await c.query('ROLLBACK'); throw e; }
+        return id;
+    });
+    try {
+        await login(page, 'guru.e2e', 'papan-tulis-hijau');
+        await page.getByRole('button', { name: 'Verifikasi Pendaftaran', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Verifikasi Pendaftaran', exact: true })).toBeVisible();
+        await captureAuthWidths(page, 'verifier-workspace', [], RECOVERY_CAPTURE);
+    } finally {
+        await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: person, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'End synthetic baseline' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
+    }
+});
+
+if (RECOVERY_CAPTURE.phase === 'after') test('AUTH-003 in-person recovery: scoped issue, one-time handoff, Student recovery and expiry', async ({ page }) => {
+    const oldPassword = 'SandiLamaSintetis2026!', newPassword = 'SandiBaruSintetis2026!';
+    const fixture = await withDatabase(async c => {
+        const r = await c.query(`SELECT g.id AS group_id, g.academic_year_id, p.id AS period_id FROM academic_core_academic_groups g
+            JOIN academic_core_academic_periods p ON p.tenant_id = g.tenant_id AND p.academic_year_id = g.academic_year_id
+            WHERE g.tenant_id = $1 AND g.display_label = 'X-E2E'`, [state.tenantId]);
+        const guru = (await c.query('SELECT a.person_id FROM identity_user_accounts a JOIN identity_account_credentials cr ON cr.user_account_id=a.id WHERE cr.username=$1', ['guru.e2e'])).rows[0].person_id as string;
+        const make = async (username: string, nisn: string) => {
+            const person = (await c.query('INSERT INTO identity_persons(id) VALUES(gen_random_uuid()) RETURNING id')).rows[0].id as string;
+            const account = (await c.query('INSERT INTO identity_user_accounts(id, person_id) VALUES(gen_random_uuid(), $1) RETURNING id', [person])).rows[0].id as string;
+            await c.query('INSERT INTO identity_account_credentials(user_account_id, username, password_verifier, last_successful_login_at) VALUES($1,$2,$3,now())', [account, username, hashPassword(oldPassword)]);
+            await c.query('INSERT INTO tenant_memberships(id, tenant_id, person_id) VALUES(gen_random_uuid(),$1,$2)', [state.tenantId, person]);
+            const roster = (await c.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth, academic_year_id, academic_period_id, academic_group_id, person_id)
+                VALUES($1,$2,'Siswa Pulih Sintetis',$3,$4,'2010-06-07',$5,$6,$7,$8) RETURNING id`, [state.tenantId, `rec-${username}`, `nis-${username}`, nisn, r.rows[0].academic_year_id, r.rows[0].period_id, r.rows[0].group_id, person])).rows[0].id as string;
+            return { person, account, roster };
+        };
+        const main = await make('pulih.e2e', '9990000093'), expired = await make('pulih.kedaluwarsa', '9990000094');
+        await c.query('BEGIN');
+        try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: guru, action: 'ASSIGN', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'Synthetic recovery verification' }); await c.query('COMMIT'); }
+        catch (e) { await c.query('ROLLBACK'); throw e; }
+        // A synthetic, already expired code renders the honest expiry refusal; no fixture change.
+        await c.query(`INSERT INTO identity_account_recovery_codes(tenant_id, user_account_id, person_id, roster_id, issuer_person_id, issuer_kind, reason, request_key, request_digest, code_verifier, issued_at, expires_at)
+            VALUES($1,$2,$3,$4,$5,'school_operator','Synthetic expired',gen_random_uuid(),repeat('0',64),$6,now() - interval '20 minutes',now() - interval '5 minutes')`,
+            [state.tenantId, expired.account, expired.person, expired.roster, guru, hashPassword('ABCDEFGHJKMN')]);
+        return { guru, main };
+    });
+    try {
+        await login(page, 'guru.e2e', 'papan-tulis-hijau');
+        await page.getByRole('button', { name: 'Pemulihan Akun', exact: true }).click();
+        await expect(page.getByRole('heading', { name: 'Pemulihan Akun', exact: true })).toBeVisible();
+        await captureAuthWidths(page, 'recovery-empty', [], RECOVERY_CAPTURE);
+        await page.getByLabel('ELLIGBLE ID siswa').fill('pulih.e2e');
+        await page.getByRole('button', { name: 'Periksa', exact: true }).click();
+        await expect(page.locator('#account-recovery')).toContainText('9990000093');
+        await captureAuthWidths(page, 'recovery-compare', [], RECOVERY_CAPTURE);
+        const trigger = page.getByRole('button', { name: 'Terbitkan Kode Pemulihan' });
+        await tabTo(page, trigger);
+        await page.keyboard.press('Enter');
+        const dialog = page.getByRole('dialog', { name: 'Terbitkan Kode Pemulihan?' });
+        await expect(dialog).toBeVisible();
+        for (const key of ['Tab', 'Shift+Tab']) for (let n = 0; n < 6; n++) {
+            await page.keyboard.press(key);
+            await expect.poll(() => dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+        }
+        await dialog.getByLabel('Saya sudah memverifikasi siswa ini secara langsung dengan kartu pelajar.').check();
+        await dialog.getByRole('textbox', { name: 'Alasan tindakan' }).fill('Lupa kata sandi, diverifikasi langsung');
+        await captureAuthWidths(page, 'recovery-issue', [], RECOVERY_CAPTURE);
+        await dialog.getByRole('button', { name: 'Terbitkan', exact: true }).click();
+        const handoff = page.getByRole('dialog', { name: 'Serahkan Kode Pemulihan' });
+        await expect(handoff).toBeVisible();
+        const code = (await handoff.locator('dd').nth(1).textContent())!.trim();
+        await captureAuthWidths(page, 'recovery-handoff', [handoff.locator('dd').nth(1)], RECOVERY_CAPTURE);
+        await handoff.getByRole('button', { name: 'Selesai, Tutup Kode' }).click();
+        await expect(page.getByText(code)).toHaveCount(0);
+        await expect(page.locator('#account-recovery')).not.toContainText('9990000093');
+        await page.getByRole('button', { name: 'Keluar' }).click();
+        await expect(page.getByRole('heading', { name: 'Masuk ke ELLIGBLE', exact: true })).toBeVisible();
+
+        // Student: expired code refused honestly, then the handed-over code recovers the same Account.
+        await page.getByRole('button', { name: 'Lupa kata sandi? Gunakan kode pemulihan dari sekolah' }).click();
+        await expect(page.getByRole('heading', { name: 'Pulihkan Akun', exact: true })).toBeVisible();
+        await captureAuthWidths(page, 'recovery-form', [], RECOVERY_CAPTURE);
+        const fill = async (username: string, value: string) => {
+            await page.getByLabel('ELLIGBLE ID', { exact: true }).fill(username);
+            await page.getByLabel('Kode Pemulihan').fill(value);
+            await page.getByLabel('Kata Sandi Baru', { exact: true }).fill(newPassword);
+            await page.getByLabel('Ulangi Kata Sandi Baru').fill(newPassword);
+            await page.getByRole('button', { name: 'Pulihkan dan Masuk' }).click();
+        };
+        await fill('pulih.kedaluwarsa', 'ABCD-EFGH-JKMN');
+        await expect(page.getByRole('alert')).toContainText('kedaluwarsa');
+        await captureAuthWidths(page, 'recovery-refused', [], RECOVERY_CAPTURE);
+        await fill('pulih.e2e', code);
+        await expect(page.getByRole('heading', { name: 'Belum Ada Ruang Kerja', exact: true })).toBeVisible();
+        await withDatabase(async c => {
+            const row = (await c.query('SELECT consumed_at IS NOT NULL AS consumed FROM identity_account_recovery_codes WHERE user_account_id = $1', [fixture.main.account])).rows;
+            expect(row).toEqual([{ consumed: true }]);
+            expect((await c.query('SELECT count(*)::int AS n FROM identity_user_accounts WHERE person_id = $1', [fixture.main.person])).rows[0].n).toBe(1);
+        });
+    } finally {
+        await withDatabase(async c => { await c.query('BEGIN'); try { await setSchoolOperator(c, { tenantId: state.tenantId, personId: fixture.guru, action: 'REVOKE', operator: 'Synthetic CI operator', caseReference: 'AUTH-003', reason: 'End synthetic verification' }); await c.query('COMMIT'); } catch (e) { await c.query('ROLLBACK'); throw e; } });
     }
 });

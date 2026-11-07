@@ -72,3 +72,13 @@ Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registrat
 F02 wires POST /api/v1/identity/claims (public, non-trusted, uniform 202 receipt, 8 KiB body, exact fields tenantId/fullName/nisn/birthDate/requestKey), GET /api/v1/identity/claims/review (authenticated own-tenant School Operator or effective own-rombel Homeroom; at most 100 oldest open claims) and POST /api/v1/identity/claims/decision (claim/revision, roster revision, decision, reason, confirmed, request key, adjudication). Activation reuses POST /api/v1/auth/activate, routed to the claim-bound coordinator only for a claim-issued code. All responses are no-store; no polling, search or notification route.
 
 Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.
+
+## AUTH-003 bounded implementation checkpoint — 2026-11-07
+
+F03 wires:
+- POST /api/v1/identity/recovery/authorize, for an authenticated own-tenant School Operator or a covering Homeroom. "confirmed: false" previews the comparison fields; "confirmed: true" with roster revision, reason, request key and in-person confirmation issues the code once, and replay discloses no code.
+- POST /api/v1/identity/recovery/complete, public. It answers like activation on success, 401 invalid_recovery, 409 recovery_already_completed, 429 busy and 400 password_rejected.
+
+All responses are no-store.
+
+Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.

@@ -6,6 +6,7 @@ import {
 import { checkNewPassword, type PasswordRejection } from './password-policy.ts';
 import { createUnusableVerifier, issueActivationInTransaction } from './provisioning.ts';
 import { isClaimIssuedActivation } from './claims.ts';
+import { RECOVERY_POLICY, revokeOpenRecoveryCodes } from './recovery.ts';
 
 export { checkNewPassword, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, type PasswordRejection } from './password-policy.ts';
 
@@ -56,6 +57,15 @@ export type ActivationEffect = 'none' | 'failed' | 'exhausted' | 'consumed';
  * (the claim's own lifetime), evaluated after the credential and activation row locks.
  */
 export interface ClaimActivationGuard { activationId: string; notAfter?: Date }
+
+/** Effect of one recovery completion attempt, for the coordinator's audit and tests. */
+export type RecoveryResult =
+  | { success: true; userAccountId: string; personId: string; session: SessionCreationResult }
+  | { success: false; error: 'INVALID_RECOVERY' | 'ALREADY_COMPLETED' }
+  | { success: false; error: 'PASSWORD_REJECTED'; reason: PasswordRejection };
+
+/** Only this open recovery row may be completed; anything else refuses without counting. */
+export interface RecoveryGuard { recoveryId: string }
 
 export interface SessionCreationResult {
   sessionId: string;
@@ -364,8 +374,77 @@ export class IdentityRuntime {
       [creds.user_account_id, hashPassword(newPassword), now]
     );
     await this.#pg.query('UPDATE identity_account_activations SET consumed_at = $2 WHERE id = $1', [activation.id, now]);
+    // AUTH-003 §6A.1: a completed activation closes an open recovery code of the Account.
+    await revokeOpenRecoveryCodes(this.#pg, creds.user_account_id, now, 'REPLACED_BY_ACTIVATION');
     const session = await this.#createSessionInternal(creds.user_account_id, now);
     return { result: { success: true, userAccountId: creds.user_account_id, personId: creds.person_id, session }, effect: 'consumed' };
+  }
+
+  /**
+   * AUTH-003 recovery completion inside the caller's transaction (record §6/§6A). Lock order:
+   * credential → recovery code → activation rows → sessions, the existing activation/reissue
+   * order. Success replaces the password, clears the login lockout, consumes the code, revokes
+   * every open activation code and every session of the Account, then opens one new session.
+   * Every refusal costs one verifier comparison; a stale or mismatched guard never counts.
+   */
+  async completeRecoveryInTransaction(username: string, codeAttempt: string, newPassword: string, guard: RecoveryGuard): Promise<RecoveryResult> {
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+    const code = normalizeActivationCode(codeAttempt);
+    const rejection = checkNewPassword(newPassword, { username: trimmedUsername });
+    if (rejection) return { success: false, error: 'PASSWORD_REJECTED', reason: rejection };
+    if (!trimmedUsername || !code) {
+      verifyPassword('invalid-recovery', UNKNOWN_ACCOUNT_VERIFIER);
+      return { success: false, error: 'INVALID_RECOVERY' };
+    }
+    const account = await this.#pg.query(`
+        SELECT c.user_account_id, c.is_valid, a.person_id
+        FROM identity_account_credentials c
+        JOIN identity_user_accounts a ON a.id = c.user_account_id
+        WHERE (c.username = $1 OR (NOT EXISTS (SELECT 1 FROM identity_account_credentials exact WHERE exact.username = $1)
+          AND c.user_account_id = (SELECT r.user_account_id FROM identity_login_identifiers r
+            WHERE r.origin = 'GENERATED' AND r.identifier_key = identity_identifier_key($1))))
+        FOR UPDATE OF c
+      `, [trimmedUsername]);
+    const creds = account.rows[0];
+    const now = this.#clock.now();
+    const open = creds && creds.is_valid
+      ? (await this.#pg.query(`SELECT id, code_verifier, expires_at, failed_attempts FROM identity_account_recovery_codes
+          WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL FOR UPDATE`, [creds.user_account_id])).rows[0]
+      : undefined;
+    const usable = open && open.id === guard.recoveryId && new Date(open.expires_at).getTime() > now.getTime();
+    if (!usable) {
+      // A retry after a lost response: the code of the latest consumed recovery, still in its lifetime.
+      const consumed = creds && !open
+        ? (await this.#pg.query(`SELECT code_verifier FROM identity_account_recovery_codes
+            WHERE user_account_id = $1 AND consumed_at IS NOT NULL AND expires_at > $2 ORDER BY consumed_at DESC LIMIT 1`, [creds.user_account_id, now])).rows[0]
+        : undefined;
+      if (consumed && verifyPassword(code, consumed.code_verifier)) return { success: false, error: 'ALREADY_COMPLETED' };
+      if (!consumed) verifyPassword(code, UNKNOWN_ACCOUNT_VERIFIER);
+      return { success: false, error: 'INVALID_RECOVERY' };
+    }
+    if (!verifyPassword(code, open.code_verifier)) {
+      const failures = open.failed_attempts + 1;
+      const exhausted = failures >= RECOVERY_POLICY.MAX_FAILED_ATTEMPTS;
+      await this.#pg.query(
+        `UPDATE identity_account_recovery_codes SET failed_attempts = $2::int,
+           revoked_at = CASE WHEN $3::boolean THEN GREATEST($4::timestamptz, issued_at) ELSE NULL END,
+           revoke_kind = CASE WHEN $3::boolean THEN 'FAILED_ATTEMPTS' ELSE NULL END
+         WHERE id = $1`, [open.id, failures, exhausted, now]);
+      return { success: false, error: 'INVALID_RECOVERY' };
+    }
+    await this.#pg.query(
+      `UPDATE identity_account_credentials
+       SET password_verifier = $2, failed_attempts_timeline = '[]'::jsonb, consecutive_failures_count = 0,
+           locked_until = NULL, last_successful_login_at = $3, updated_at = $3
+       WHERE user_account_id = $1`,
+      [creds.user_account_id, hashPassword(newPassword), now]
+    );
+    await this.#pg.query('UPDATE identity_account_recovery_codes SET consumed_at = GREATEST($2::timestamptz, issued_at) WHERE id = $1', [open.id, now]);
+    await this.#pg.query(`UPDATE identity_account_activations SET revoked_at = $2
+       WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL`, [creds.user_account_id, now]);
+    await this.#pg.query('UPDATE identity_sessions SET is_revoked = TRUE WHERE user_account_id = $1 AND is_revoked = FALSE', [creds.user_account_id]);
+    const session = await this.#createSessionInternal(creds.user_account_id, now);
+    return { success: true, userAccountId: creds.user_account_id, personId: creds.person_id, session };
   }
 
   /**

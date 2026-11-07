@@ -36,6 +36,8 @@ const COMPONENT_BY_PATH: Record<string, Component> = {
     '/api/v1/identity/claims': 'authentication',
     '/api/v1/identity/claims/review': 'administration',
     '/api/v1/identity/claims/decision': 'administration',
+    '/api/v1/identity/recovery/authorize': 'administration',
+    '/api/v1/identity/recovery/complete': 'authentication',
     '/api/v1/assessment/assigned-exams': 'attempt_runtime',
     '/api/v1/assessment/attempts/start': 'attempt_runtime',
     '/api/v1/assessment/session/activate': 'attempt_runtime',

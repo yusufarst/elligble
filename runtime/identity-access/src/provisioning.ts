@@ -1,6 +1,7 @@
 import type { ClientBase } from 'pg';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { formatActivationCode, generateActivationCode, hashPassword } from './crypto.ts';
+import { revokeOpenRecoveryCodes } from './recovery.ts';
 
 // Identity provisioning for operator imports (D02.3-01/02/10, D02.7-01/37). Every function
 // runs inside the caller's open transaction so a whole import commits or fails together.
@@ -79,6 +80,8 @@ export async function issueActivationInTransaction(
          WHERE user_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL`,
         [userAccountId, options.now]
     );
+    // AUTH-003 §6A.1: a new activation code closes an open recovery code of the Account.
+    await revokeOpenRecoveryCodes(client, userAccountId, options.now, 'REPLACED_BY_ACTIVATION');
     if (options.unusableVerifier) {
         await client.query(
             `UPDATE identity_account_credentials

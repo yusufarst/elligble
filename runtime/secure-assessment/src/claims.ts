@@ -116,9 +116,10 @@ export async function submitClaim(pool: Pool, body: Record<string, unknown>, clo
 // ---------------------------------------------------------------------------------------
 // Scoped verifier authority (C03): own-tenant School Operator or own-current-rombel Homeroom.
 
-type VerifierKind = 'school_operator' | 'homeroom';
+export type VerifierKind = 'school_operator' | 'homeroom';
 
-async function verifierAuthority(c: PoolClient, tenant: string, membershipId: string, roster: RosterIdentity | null, now: Date, lockRows: boolean): Promise<VerifierKind | null> {
+/** Shared with AUTH-003 recovery: own-tenant School Operator, else Homeroom covering the roster. */
+export async function verifierAuthority(c: PoolClient, tenant: string, membershipId: string, roster: RosterIdentity | null, now: Date, lockRows: boolean): Promise<VerifierKind | null> {
     if (await schoolOperatorAssignment(c, tenant, membershipId, lockRows)) return 'school_operator';
     if (!roster) return null;
     const homerooms = await activeHomeroomResponsibilities(c, tenant, membershipId, now, lockRows);
@@ -232,7 +233,7 @@ async function personHasProctorRole(c: PoolClient, personId: string): Promise<bo
 }
 
 /** §6A.1 N1: any staff, Teacher, Proctor, Operator or Homeroom row in any tenant and state. */
-async function hasStaffRole(c: PoolClient, personId: string): Promise<boolean> {
+export async function hasStaffRole(c: PoolClient, personId: string): Promise<boolean> {
     return await personHasTenantStaffRole(c, personId) || await personHasAcademicStaffRole(c, personId) || await personHasProctorRole(c, personId);
 }
 
