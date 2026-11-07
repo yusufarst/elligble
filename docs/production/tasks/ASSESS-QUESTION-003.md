@@ -311,3 +311,12 @@ The reviewer confirmed the clearing reading (no Owner decision needed), the impo
   - the §4A.1 assertions in rows 23–25.
 - **Local:** typechecks PASS (runtime, web, e2e); Secure Assessment units 938/938; the new web file 6/6 and the affected web files PASS. Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 8, VERIFYING 1, BLOCKED 24.
+
+### 11.1 CI #183 and correction 1
+
+- **CI #183:** exact SHA a0136e1, attempt 1. Runtime (including the true/false integration oracle), Web and Container SUCCESS. The five E2E jobs FAILED. Preserved; no re-run.
+  - **Four projects:** they reached V06. The step waited for the submission dialog while the save was held, but "Selesaikan Ujian" is disabled while a choice is unsent, so the dialog never opened.
+  - **Firefox:** it hung for the 10-minute test budget on the fresh-tab navigation used for the reload step.
+- **Correction 1** (row 22 only):
+  - V06 asserts that "Selesaikan Ujian" is disabled while the save is held, then releases it, and the submission completes;
+  - the reload step uses a plain `reload()`. Only about 40 captures precede it, the point where every browser reloaded safely in ASSESS-QUESTION-002, and the fresh-tab helper is removed.

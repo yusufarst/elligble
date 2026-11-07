@@ -135,7 +135,7 @@ test('ASSESS-QUESTION-003 true/false: import, preview, Student journey and rende
     await expect(card).toContainText('Berlangsung');
 
     const context = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC', reducedMotion: 'reduce' });
-    let student = await context.newPage();
+    const student = await context.newPage();
     await login(student, ...STUDENT);
     await student.getByTestId(`assignment-${examId}`).getByRole('button', { name: 'Mulai Ujian' }).click();
     await student.getByRole('button', { name: 'Mulai Ujian Sekarang' }).click();
@@ -166,19 +166,6 @@ test('ASSESS-QUESTION-003 true/false: import, preview, Student journey and rende
         }
         await expect(student.getByText(LONG_STATEMENT)).toBeVisible();
     };
-    // WebKit's renderer can crash reloading a page after many large captures: continue in a
-    // fresh tab of the same context with this tab's exam session (sessionStorage) carried over.
-    const freshTab = async () => {
-        const entries = await student.evaluate(() => Object.entries(sessionStorage));
-        const url = student.url();
-        const next = await context.newPage();
-        await next.addInitScript((pairs: Array<[string, string]>) => { for (const [k, v] of pairs) if (sessionStorage.getItem(k) === null) sessionStorage.setItem(k, v); }, entries);
-        await student.close();
-        student = next;
-        bind();
-        await student.goto(url);
-    };
-
     await toStatement();
     await expect(student.locator('.options-list input[type=radio]')).toHaveCount(2);
     await expect(student.locator('.options-list input[type=radio]:checked')).toHaveCount(0);
@@ -200,8 +187,8 @@ test('ASSESS-QUESTION-003 true/false: import, preview, Student journey and rende
     await expect(saveStatus(student)).toHaveText('Tersimpan');
     expect(await stored()).toEqual({ value: true });
 
-    // Reload (in a fresh tab): the value is restored from the server.
-    await freshTab();
+    // Reload: the value is restored from the server.
+    await student.reload();
     await toStatement();
     await expect(benar).toBeChecked();
 
@@ -223,7 +210,8 @@ test('ASSESS-QUESTION-003 true/false: import, preview, Student journey and rende
         await student.getByRole('dialog').getByRole('checkbox').check();
         await student.getByRole('button', { name: 'Kirim Jawaban Sekarang' }).click();
     })();
-    await expect(student.getByRole('dialog')).toBeVisible();
+    // Submission waits while a choice is unsent: the button stays disabled until the save lands.
+    await expect(student.getByRole('button', { name: 'Selesaikan Ujian' })).toBeDisabled();
     releaseSave();
     await submitting;
     await student.unroute('**/api/v1/assessment/answer/save');
