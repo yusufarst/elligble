@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 operational security; HIGH risk; R07/R23/R28/R29, P5 A14, P8 V01/V11/V16 |
-| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent security implementation review (§13); DEC-048** |
+| Status | **DONE — final content b836b7f, CI #153 attempt 1 eight SUCCESS, independent security contract and implementation review chains PASS, Delegated Acceptance (DEC-048) (§15); landing by delegated squash merge (00.13 §6)** |
 | Objective | Replace the runbook's manual-SQL session revocation with an approved, case-scoped, audited owning-module command, and record the Owner's PB12 incident arrangements |
 | Owner decisions | 2026-11-07, Owner in chat (§4): the Owner is the named incident lead; intervention is a case-scoped platform-operator CLI; escalation runs from the lead to the affected school principal, manually. The Owner also designated a separate read-only fresh-context reviewer agent as the independent security reviewer for this Task and, by default, for later Tasks unless the Owner names another |
 | Execution authority | DEC-048 (00.13). Internal dependencies SEC-001 and AUTH-003 are DONE / MERGED (main b6dab652be382bd8c3dec78912e397b44dffaf86, post-merge CI #150 attempt 1 eight SUCCESS) |
@@ -251,3 +251,88 @@ The executor verified the evidence: 0035 sessions without a tenant; people.ts li
   - Locally: typechecks and the new unit file PASS. Integration oracles run in CI only (the 8 GB workstation rule).
 - **Next:** exact-content CI on the candidate head, then the independent security implementation review by the same reviewer, Delegated Acceptance and the evidence commit. No re-runs.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 5, VERIFYING 1, BLOCKED 27. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+## 14. Implementation CI, independent review and correction 1 — 2026-11-07
+
+- **CI #152/run 42371598441:** exact SHA 4bce6ef, push, attempt 1.
+  - Web SUCCESS. Runtime FAILURE in real PostgreSQL integration. Container and the five browser jobs were skipped as dependents.
+  - Preserved: no re-run.
+  - Cause: two test-only defects; the code under test behaved as contracted.
+    - The C06 leak check compared against `String(null)` for a cleared cookie, which matched the null label of an unlabelled school.
+    - The two verifier recovery-issue C05 cases targeted a Student who had never signed in, so the issue refused (404 `not_found_in_scope`), as AUTH-003 requires.
+  - In that run C04, the deadlock case, C07 and the login and session-mutation C05 blocks passed.
+- **Independent security implementation review, same Owner-designated reviewer, on 4bce6ef: PASS**, no material finding, conditional on exact-content CI.
+- **Correction 1** (one test file, row 13): cookie values captured right after sign-in; the recovery targets sign in first. No source, migration or document change.
+- **Targeted re-review, same reviewer, on b836b7f: PASS**, conditional on exact-content CI.
+- **Non-material notes recorded:**
+  - The expiry cases run the observer directly, not under a verifier's session lock; the CANCEL cases prove that edge.
+  - In the revoke-first verifier case the request may wait at the non-mutation `resolveSession` activity UPDATE. This exposes an existing behaviour: a non-locking read can accept a session once after a concurrent revoke commits. It affects read routes only, is outside this Task, and is recorded for SEC-RELEASE-001.
+  - Which transaction a deadlock aborts depends on wait order; the revoke waits first in the oracle.
+  - Legacy ELLIGBLE IDs are case-sensitive, as at login, so a wrong-case ID is refused rather than mis-targeted.
+  - The no-route assertion is a source-text check, not a route-table check. The CLI deadlock path (exit 3) is evidenced at the coordinator level.
+  - C06 checks the full cookie value (`id.secret`) and the session ids; the secret alone cannot appear, since only verifiers are stored and the output holds counts and school ids and labels.
+
+## 15. Final evidence and Delegated Acceptance — 2026-11-07
+
+### 15.1 Content and CI
+
+**Final content:** b836b7fb25f8a3afb34f23450a5c6c76c140e48f.
+
+**Commits** on task/sec-ops-001-audited-intervention (PR #25):
+
+| Commit | Content |
+|---|---|
+| ea2113d | registration plus the AUTH-003 landing record |
+| 4bce6ef | implementation |
+| b836b7f | correction 1 (test fixtures) |
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #153/run 42371803186, push, attempt 1, eight jobs SUCCESS.
+- Runtime units: identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 921 (including the 3 new SEC-OPS-001 units); all pass.
+- Real PostgreSQL 16 integration: 245/245, including the 5 SEC-OPS-001 oracles.
+- Web job: typecheck, tests and build. Container image build and smoke test.
+- E2E: 28/28 in each of the five browser projects (existing journeys; this Task has no UI).
+
+**All runs, preserved without re-run:**
+
+| Run | Head | Result |
+|---|---|---|
+| #151 | ea2113d | SUCCESS |
+| #152 | 4bce6ef | Runtime FAILURE, the test defects of §14 |
+| #153 | b836b7f | SUCCESS |
+
+### 15.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. Contract: STOP → STOP → PASS (§11).
+2. Implementation on 4bce6ef: PASS; targeted re-review on b836b7f: PASS.
+
+No reviewer was replaced. There is no material UI, so there is no rendered review.
+
+### 15.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: the real CLI revokes every session of the Account (two schools' sign-ins) with one audit row (tenant, operator, case, trimmed reason, summary `{sessions, userAccountId, otherSchoolMemberships}`); the output lists the other member schools; old sessions get 401; a bystander is untouched |
+| C02 | PASS: missing or invalid operator, case, reason, ID or tenant is exit 2 before any connection, also in a dry run; unknown ID, other-school member and unknown tenant get one bounded refusal with zero mutation; no HTTP route or School Operator path |
+| C03 | PASS: the dry run reports the count and the schools with zero mutation and no audit row |
+| C04 | PASS: a real audit insert failure rolls back the revocation exactly |
+| C05 | PASS: both orders with `pg_blocking_pids` evidence against login, Student session mutation, a paused verifier recovery issue, and claim CANCEL and expiry; a detected deadlock (the revoke as victim, 40P01) leaves zero partial state and the rerun succeeds; a retry is idempotent (0 revoked, still audited) |
+| C06 | PASS: no session id, cookie value, password, NISN, birth date or Person id in any output or summary; the summary has exactly the three keys |
+| C07 | PASS: 0059 synthetic rollback leaves nothing; repeat apply; existing rows unchanged apart from `reason` NULL; the reason is required only for `sessions_revoked` and bounded; every earlier action still valid |
+| C08 | PASS: 13 changed paths, all within rows 1–13; 33 Tasks and 78 edges unchanged; exact-content attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 15.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent review PASSED on the final content SHA. SEC-OPS-001 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks:**
+- the intervention is Account-wide, so other schools' sessions also end; the lead informs each listed principal manually;
+- the password stays valid, so a person whose credential may be known needs `activation reissue`;
+- a non-locking read route can accept a session once after a concurrent revoke commits (recorded for SEC-RELEASE-001);
+- legacy ELLIGBLE IDs must be given in their exact case.
+
+**Boundaries:** PB05 and PB12 OPEN (tested readiness and closure belong to SEC-RELEASE-001 and OPS-001); G7 before real data; no deployment or release claim.
+
+**Landing:** delegated squash merge of PR #25 under 00.13 §6 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The landing is recorded by the next Task's first change, with DONE 6/33 (18.18%), VERIFYING 0, BLOCKED 27.
