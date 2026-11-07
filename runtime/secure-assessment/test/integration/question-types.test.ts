@@ -69,7 +69,7 @@ test('ASSESS-QUESTION-001 C03/C04/C05/C06 versioned content through real Postgre
     async function studentIn(exam: string) {
         const person = await createPersonWithAccount(pool);
         await addMembership(pool, tenant, person.personId);
-        await addParticipant(pool, tenant, exam, person.personId);
+        const participantId = await addParticipant(pool, tenant, exam, person.personId);
         const client = await loggedIn(person);
         const attemptId: string = (await client.request('/api/v1/assessment/attempts/start', { method: 'POST', body: { examInstanceId: exam } })).body.attemptId;
         const sessionId = randomUUID();
@@ -79,7 +79,7 @@ test('ASSESS-QUESTION-001 C03/C04/C05/C06 versioned content through real Postgre
         const save = (snapshotId: string, answerPayload: unknown, extra: { headers?: Record<string, string>; identity?: string; expected?: number | null } = {}) =>
             client.request('/api/v1/assessment/answer/save', { method: 'POST', headers: extra.headers,
                 body: { attemptId, sessionId, snapshotId, answerPayload, clientWriteIdentity: extra.identity ?? randomUUID(), expectedWriteVersion: extra.expected ?? null } });
-        return { person, client, attemptId, sessionId, deliver, save };
+        return { person, participantId, client, attemptId, sessionId, deliver, save };
     }
     const answerRows = async (attemptId: string) => (await pool.query('SELECT exam_question_snapshot_id, answer_payload, write_version, client_write_identity FROM secure_assessment_exam_answers WHERE exam_attempt_id=$1 ORDER BY exam_question_snapshot_id', [attemptId])).rows;
 
@@ -118,7 +118,7 @@ test('ASSESS-QUESTION-001 C03/C04/C05/C06 versioned content through real Postgre
         assert.equal((await s.deliver({ 'X-Question-Types': ' 1:MULTIPLE_CHOICE_SINGLE , 2:TRUE_FALSE' })).status, 200, 'undeclared extra keys are harmless');
     });
 
-    await t.test('C04 delivery keeps the existing refusals of a paused or submitted attempt ahead of an unsupported row', async () => {
+    await t.test('C04 delivery keeps the existing refusals of a paused, locked or submitted attempt ahead of an unsupported row', async () => {
         const paused = await examWith([testBoolean(true)]);
         const p = await studentIn(paused.exam);
         assert.equal((await act(paused.exam, 'pause')).status, 200);
@@ -131,6 +131,23 @@ test('ASSESS-QUESTION-001 C03/C04/C05/C06 versioned content through real Postgre
         const sr = await q.deliver();
         assert.equal(sr.status, 409);
         assert.equal(sr.body.error, 'attempt_already_submitted');
+        // A supervisor lock (review correction 1): the lock refusal, with its time, comes first.
+        const lockedExam = await examWith([baselineQuestion(1), testBoolean(true)]);
+        const l = await studentIn(lockedExam.exam);
+        const lock = await teacherClient.request('/api/v1/assessment/exam-monitoring/participant-lock', { method: 'POST',
+            body: { reason: 'Uji tipe soal', actionKey: randomUUID(), confirmed: true, examInstanceId: lockedExam.exam, participantId: l.participantId, action: 'lock' } });
+        assert.equal(lock.status, 200, JSON.stringify(lock.body));
+        const lr = await l.deliver();
+        assert.equal(lr.status, 409);
+        assert.equal(lr.body.error, 'attempt_locked');
+        assert.match(lr.body.lockedAt, /^\d{4}-\d{2}-\d{2}T/);
+        // §5A.6: in authored order the first row that cannot be delivered decides.
+        const invalidFirst = await examWith([{ ...baselineQuestion(1), options: [] }, testBoolean(true)]);
+        const i = await studentIn(invalidFirst.exam);
+        assert.deepEqual([(await i.deliver()).status, (await i.deliver()).body], [500, { error: 'internal_error' }]);
+        const unsupportedFirst = await examWith([testBoolean(true), { ...baselineQuestion(2), options: [] }]);
+        const u = await studentIn(unsupportedFirst.exam);
+        assert.deepEqual((await u.deliver()).body, UNSUPPORTED);
     });
 
     await t.test('C04 readiness keeps the v1 blocker for an unsupported row and activation is refused', async () => {

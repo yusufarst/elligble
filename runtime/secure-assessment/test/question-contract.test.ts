@@ -71,6 +71,7 @@ test('C02 v1 golden vectors: scoring, Student view and answer acceptance are unc
     const sets: ScorableQuestion[][] = [
         [], [q('a', v1(1)), q('b', v1(2, 'C', 2.5)), q('c', v1(3, 'A', 0.01))],
         [q('a', v1(1)), q('x', { schemaVersion: 2, questionType: 'TRUE_FALSE' })], [q('x', { ...v1(1), maxScore: 0 })], [q('m', { foo: 1 }), q('a', v1(1))],
+        [q('a', v1(1)), q('tiny', { ...v1(2), maxScore: 1e-9 })], [q('a', v1(1, 'B', 1000)), q('b', v1(2, 'E', 0.01))],
         Array.from({ length: 40 }, (_, i) => q(`q${i}`, v1(i, 'B', 1))), Array.from({ length: 45 }, (_, i) => q(`q${i}`, v1(i, 'D', 1))),
     ];
     const answerSets: Array<Map<string, unknown>> = [

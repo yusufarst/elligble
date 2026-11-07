@@ -349,7 +349,7 @@ The reviewer found the design faithful to A01-1/A01-2/A01-4/O02-2 otherwise. It 
   - **`question-contract.ts`:**
     - content keys, the total classification, the registry with only the v1 descriptor, `parseDeclaredQuestionTypes` and `effectiveSupport`;
     - the v1 descriptor wraps the unchanged v1 validator, view, answer check and rule;
-    - the rule literal equals `BASELINE_SCORING_RULE` (asserted), and the module imports no scoring code, to avoid an import cycle at load time.
+    - the rule literal equals `BASELINE_SCORING_RULE` (asserted). The module imports no scoring code. It does import `isAnswerForQuestion` from `answer.ts`, which imports the registry back. That cycle is safe in either load order: neither module uses the other's bindings at load time (a hoisted function called inside a method, and a default parameter evaluated at call time).
   - **Delivery:** the header is checked after the context check and before `pool.connect()`; rows are classified in the delivered order; 409 `question_type_unsupported` without content; invalid stays 500; v1 view unchanged.
   - **Save:** the same header point; `checkAnswerForContent` sits at the existing payload check (§5A.1); `isAnswerForQuestion` is unchanged.
   - **Readiness:** a registered version 2 or higher row is judged by its descriptor (`question_content_invalid`); every other row keeps the v1 result.
@@ -369,3 +369,18 @@ The reviewer found the design faithful to A01-1/A01-2/A01-4/O02-2 otherwise. It 
   Integration oracles run in CI only (the 8 GB workstation rule).
 - **Next:** exact-content CI on the candidate head, then the independent implementation review by the same reviewer, Delegated Acceptance and the evidence commit. No re-runs.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 6, VERIFYING 1, BLOCKED 26. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+## 12. Implementation CI, independent review and correction 1 — 2026-11-07
+
+- **CI #157/run 42376117971:** exact SHA 6454853, push, attempt 1, eight jobs SUCCESS. That includes every new unit, integration and client oracle on its first run.
+- **Independent implementation review, same reviewer, on 6454853: STOP, one material finding (evidence only).**
+  - C04 lists a locked attempt, and no test exercised it. The code was already correct: the lock refusal comes before classification.
+  - No code defect was found. v1 behaviour, precedence, header point, registry isolation, composite totals, client handling, the import cycle and scope were all confirmed.
+- **Correction 1** (tests and record only, rows 19, 20 and 1):
+  - the C04 test locks the attempt through the supervisor-lock route and asserts 409 `attempt_locked` with `lockedAt` ahead of an unsupported row;
+  - it adds the §5A.6 cases: an invalid row first gives 500, and an unsupported row first gives 409;
+  - C02 adds the `maxScore: 1e-9` and large/small maxScore vectors;
+  - §11 now records the safe `question-contract.ts` ↔ `answer.ts` import cycle.
+- **C02 evidence mapping:** equivalence holds by construction through the hand-off. The new representative vectors, the unchanged `test/scoring.test.ts` fixtures, and the unchanged integration finalization tests (which now run through `scoreAttempt`) are its evidence.
+- **Non-material notes recorded:** `contentKeyOf` is used only by tests until a type UI uses it, and the explicit `question_type_unsupported` case in `classifySaveFailure` matches the default branch.
+- **Targeted re-review: pending.**
