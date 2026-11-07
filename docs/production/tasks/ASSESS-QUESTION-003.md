@@ -345,3 +345,84 @@ The reviewer confirmed the clearing reading (no Owner decision needed), the impo
   - the fixed dock covers content in full-page captures;
   - the `::first-line` prompt style.
   These are left for UI-SYSTEM.
+
+### 11.3 Rendered re-review: PASS
+
+The same reviewer re-reviewed correction 2 on f9d9b3b against CI #185 artifacts, with independent scripts. **B1 is CLOSED, with no new material finding.**
+- **Diff:** row 18 and the record only.
+- **Artifacts:** 650 pairs at f9d9b3b, every hash matches; overflow 0/650; 7435 targets, none under 43.5 px (minimum 44).
+- **Intro:** the old text appears in 0 snapshots and the new text in 100 (every import-preview capture of both specs, all five projects, including the 200 % text variants).
+- **Against #184:**
+  - the 99-spec import preview differs only in the intro, the schedule times and the random student IDs; its length is unchanged, so the PG/PGK lists A–E and their key marks are intact;
+  - the true/false import preview loses only the two empty lists under BS items;
+  - every other surface is identical, apart from one benign save-state timing difference in a multiple-response focus capture.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** f9d9b3bac72e3abe48552b7f1e190efa8207df9a.
+
+**Commits** on task/assess-question-003-true-false (PR #28):
+- registration a0009ee;
+- implementation a0136e1;
+- corrections 55a4a9b and f9d9b3b.
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #185, push, attempt 1, eight jobs SUCCESS.
+- **Runtime units:** identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 938. All pass.
+- **Real PostgreSQL 16 integration:** 261/261, including the true/false journey and the 409 pair for a client without true/false.
+- **Web job:** 41 files and 393 tests, plus typecheck and build.
+- **Container:** image build and smoke test.
+- **E2E:** 30/30 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. This includes the true/false journey (C06) and the rendered captures (C07).
+
+**Artifacts:**
+- Baseline: #181 at a129a38, 450 pairs; manifest SHA-256 9cebdf0956b46c56795d066788f4b128b23ac48a33bc5ceabb56ce60fbab5ffa (§10).
+- Final: #185 at f9d9b3b, 650 pairs (450 regression pairs from the 99 spec, 200 true/false pairs). Exact commits; no overflow; no target under 44 px.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| #182 | SUCCESS (registration a0009ee) |
+| #183 | FAILURE: V06 dialog wait; Firefox fresh-tab hang (a0136e1) |
+| #184 | SUCCESS (55a4a9b) |
+| #185 | SUCCESS (f9d9b3b, final) |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP → STOP → PASS (§9).
+2. **Implementation:** PASS (§11.2).
+3. **Rendered:** STOP (B1) → PASS (§11.2–§11.3).
+
+No reviewer was replaced. An implementation reviewer spawned by mistake was stopped before it reported. The same contract reviewer then performed the implementation review.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: T1–T5 and the mixed-exam vector; the production registry holds v1, multiple response and true/false |
+| C02 | PASS: BS import vectors in the frozen order with operator wording; v1 and PG/PGK parser results unchanged |
+| C03 | PASS on real PostgreSQL:<br>• teacher v2 import with BS and PG;<br>• key preview;<br>• readiness;<br>• delivery without the key;<br>• T1/T2 saves and T4 refusals with zero mutation;<br>• 409 on delivery and save for a client without `2:TRUE_FALSE`, with zero mutation;<br>• resume and submit;<br>• composite finalization;<br>• provisional and final results agree |
+| C04 | PASS: regression; only the §4A.1 assertions changed |
+| C05 | PASS:<br>• canonical values both ways;<br>• local refusals;<br>• keyboard and pointer control;<br>• local recovery and adoption;<br>• no key in any record;<br>• the teacher preview |
+| C06 | PASS: five-browser journey:<br>• teacher import and preview;<br>• keyboard and pointer answers;<br>• an offline change with only the final value saved;<br>• reload recovery;<br>• read-only pause;<br>• V06 (submit disabled while the save is held, then completed);<br>• end, finalize and score |
+| C07 | PASS: #181 baseline and #185 after captures across the frozen conditions; no overflow; 44 px targets; visible focus; rendered review PASS |
+| C08 | PASS: every changed path is within the frozen allowlist; 33 Tasks and 78 edges; attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered review PASSED on the final content SHA. ASSESS-QUESTION-003 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- These pre-existing UI-SYSTEM follow-ups also appear at #181:
+  - at 200 % text the exam dock breaks words;
+  - the fixed dock and header cover content in full-page captures;
+  - the `::first-line` prompt style.
+- No frontend unit test asserts the BS import display; it is covered by E2E and the rendered evidence.
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 are OPEN. G7 is required before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge of PR #28 under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1. The next Task's first change records the landing, with DONE 9/33 (27.27%), VERIFYING 0, BLOCKED 24.
