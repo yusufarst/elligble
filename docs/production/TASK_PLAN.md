@@ -1,4 +1,10 @@
+> **AUTH-002 READY / Build checkpoint, 2026-11-07 (DEC-048):** GOV-EXEC-001 landed (PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5, post-merge CI #134 attempt 1 eight SUCCESS); DEC-048 effective. AUTH-002 formal READY PASS and Build started under DEC-048 ([record §12](tasks/AUTH-002.md)): frozen 44-path allowlist, reserved 0057, CI-first order §12.3. DONE 3/33 (9.09%), IN_PROGRESS 1, BLOCKED 29, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
+
 > **DEC-048 governance checkpoint, 2026-11-07:** GOV-EXEC-001 records the standing execution delegation (`docs/00-governance/00.13_STANDING_EXECUTION_DELEGATION.md`); effective only when every 00.13 §9 condition holds (Owner approval of the exact text, independent governance review PASS, GOV-EXEC-001 DONE, landing on `main`). Baseline counters unchanged; AUTH-002 local preparation is carried separately.
+
+> **AUTH-002 contract checkpoint, 2026-11-07:** Owner approved AUTH-002 D1/D2/D3 and designated a separate read-only reviewer; contract finalized ([record §4.1/§6A](tasks/AUTH-002.md)), 44-path future footprint, Independent Identity/Security contract review chain STOP → STOP → PASS ([§10.1](tasks/AUTH-002.md)). AUTH-002 still BLOCKED / NOT READY pending Owner approval of the exact 44 paths, 0057 migration path and four-document publication. DONE 3/33 (9.09%), BLOCKED 30, others 0; 78 edges unchanged. No commit/push/PR/CI/Build; PB05 OPEN.
+
+> **AUTH-002 preparation checkpoint, 2026-11-04:** ADMIN-001 DONE / MERGED, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d; exact-main CI #131/run 41824758308, automatic attempt 1, eight SUCCESS. SEC-001/AUTH-001/ADMIN-001 DONE 3/33 (9.09%); BLOCKED 30 including AUTH-002; READY/IN_PROGRESS/VERIFYING 0; 78 edges unchanged. Owner authorizes local documentation/decision preparation only, no commit/push/PR/CI/Build. AUTH-002 candidate and D1–D3/READY blockers: [Task record](tasks/AUTH-002.md). All earlier registration/Build checkpoints below are historical; PB05 OPEN, production NOT READY.
 
 > **ADMIN-001 candidate verification, 2026-11-03:** baseline ec4037c/CI #126 attempt 1 eight SUCCESS and five retrieved artifacts PASS before UI; exact 33-path implementation candidate now VERIFYING for full CI/after-rendered evidence/actual-source independent review. DONE 2/VERIFYING 1/BLOCKED 30/READY 0/IN_PROGRESS 0, 78 edges unchanged. Owner Build/CI-first authority in ADMIN-001 §10; PB05 OPEN. Earlier checkpoints are history.
 
@@ -9,7 +15,7 @@
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
 **Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
 **Completed transition:** GOV-P11-001 DONE for controlled tracker preparation/evidence only; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919, CI #110; excluded from the 33 implementation Tasks
-**Current Task:** ADMIN-001 READY for its frozen input contract; four-document registration on task/admin-001-authoritative-roster-import authorized, Build NOT AUTHORIZED. [ADMIN-001 §9.5](tasks/ADMIN-001.md) records formal inputs. AUTH-001/SEC-001 DONE; total 33/DONE 2/READY 1/BLOCKED 30/VERIFYING 0.
+**Current Task:** AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
 **Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
 **Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
@@ -18,7 +24,7 @@
 
 ## 1. Authority and activation boundary
 
-The Owner approved FINAL P11 Gate B on 2026-10-31 for the original candidate. This active finite baseline does not itself authorize implementation. SEC-001 remains DONE under its final record §17 and PR #19 landing. AUTH-001 is DONE under [its final record §13](tasks/AUTH-001.md), accepted content 82a96a55778c338dc9aa658f9b921c4b18a73b01, evidence d37017751e9a73f44aaa28f1f392a579f05f7127, PR #20/main ebcc4ca3270473543cbb465092954457b355fe23 and exact-main CI #124. ADMIN-001 is READY after its formal §9.5 input gate; the remaining 30 Tasks stay BLOCKED. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this is the official tracker; the [living plan](PRODUCTION_COMPLETION_PLAN.md) retains continuity. Owner authorizes only four-document ADMIN-001 registration, one controlled commit/normal push/PR and automatic exact-SHA CI; no source changes, Build or release. Earlier registration/Build checkpoints in §11 remain history.
+The Owner approved FINAL P11 Gate B on 2026-10-31 for the original candidate. This active finite baseline does not itself authorize implementation. SEC-001 remains DONE under its final record §17 and PR #19 landing. AUTH-001 is DONE under [its final record §13](tasks/AUTH-001.md), accepted content 82a96a55778c338dc9aa658f9b921c4b18a73b01, evidence d37017751e9a73f44aaa28f1f392a579f05f7127, PR #20/main ebcc4ca3270473543cbb465092954457b355fe23 and exact-main CI #124. ADMIN-001 is DONE under its final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and exact-main CI #131. AUTH-002 is IN_PROGRESS under DEC-048 (00.13, effective 2026-11-07 on landing of PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5); the remaining 29 Tasks stay BLOCKED. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this is the official tracker; the [living plan](PRODUCTION_COMPLETION_PLAN.md) retains continuity. Execution follows 00.13 §4–§6; every 00.13 §7 decision stays with the Owner. Earlier registration/Build checkpoints in §11 remain history.
 
 Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md), not a single-choice pilot. [P1](CBT_RELEASE_DEFINITION.md) acceptance is established by [GOV-REALIGN-003 §6](tasks/GOV-REALIGN-003.md); [GOV-REALIGN-004 §5](tasks/GOV-REALIGN-004.md) accepts P2–P6 planning and [GOV-REALIGN-005 §5](tasks/GOV-REALIGN-005.md) accepts P7–P10 planning. Historical draft headers do not erase those accepted planning outcomes or approve unresolved policies.
 
@@ -26,27 +32,27 @@ Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CB
 
 ## 2. Baseline accounting and status semantics
 
-Only the unique rows in §3 are counted. SEC-001 and AUTH-001 are completed baseline work; ADMIN-001 is VERIFYING its Owner-authorized implementation candidate; the remaining 30 Tasks are BLOCKED. Every completed PRE-P11 Task and the GOV-P11-001 governance transition are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
+Only the unique rows in §3 are counted. SEC-001, AUTH-001 and ADMIN-001 are completed baseline work; AUTH-002 is IN_PROGRESS; the remaining 29 Tasks are BLOCKED. Every completed PRE-P11 Task and GOV-P11-001 are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
 
 | Counter | Value |
 |---|---:|
 | Baseline Total | 33 |
 | Current Total | 33 |
-| DONE | 2 |
+| DONE | 3 |
 | READY | 0 |
-| IN_PROGRESS | 0 |
-| VERIFYING | 1 |
-| BLOCKED | 30 |
+| IN_PROGRESS | 1 |
+| VERIFYING | 0 |
+| BLOCKED | 29 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
-| Progress % | 6.06% |
+| Progress % | 9.09% |
 
-Baseline/Current Total remain 33. Progress is DONE / Current Total = 2 / 33 = 6.06% (rounded). Completed baseline Tasks are SEC-001 and AUTH-001; AUTH-001 final implementation/review/Owner Acceptance/evidence and PR #20/main/CI #124 support this next-Task reconciliation under DEC-045. No completed Task is reopened, no PRE-P11 outcome is counted, and no successor is made READY by predecessor completion alone.
+Baseline/Current Total remain 33. Progress = 3 / 33 = 9.09% (rounded). SEC-001, AUTH-001 and ADMIN-001 are DONE. ADMIN-001 final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and CI #131 support this authorized next-Task reconciliation under DEC-045. No completed Task is reopened. AUTH-002 passed formal READY under DEC-048 on 2026-11-07 and is IN_PROGRESS ([record §12](tasks/AUTH-002.md)).
 
-- BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; the 30 presently BLOCKED rows qualify.
+- BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; the 29 presently BLOCKED rows qualify.
 - TODO: included unstarted work without a currently identified blocker, still needing full contract readiness; none currently classified.
-- READY: dependencies DONE, applicable policies/contracts/scope/impacts/tests/tools/cost known and no blocking ambiguity. ADMIN-001 passed READY under §9.5, then entered Owner-authorized Build under §10 and candidate verification under §11. No other Task is READY or authorized.
-- IN_PROGRESS/VERIFYING/DONE/SUPERSEDED retain DEC-045 meanings; only reviewed evidence supports DONE. Only SEC-001 and AUTH-001 are checked as completed.
+- READY: dependencies DONE, applicable policies/contracts/scope/impacts/tests/tools/cost known and no blocking ambiguity. ADMIN-001 completed its full lifecycle; AUTH-002 passed READY and is IN_PROGRESS under DEC-048. No other Task is READY.
+- IN_PROGRESS/VERIFYING/DONE/SUPERSEDED retain DEC-045 meanings; only reviewed evidence supports DONE. SEC-001, AUTH-001 and ADMIN-001 are checked as completed.
 - Priorities indicate production ordering, not estimates or a waiver. Independent school/Owner decisions can be obtained without authorizing parallel executor Tasks. PARALLEL SAFE: NO for all rows unless a later explicit contract/Owner approval changes that.
 
 ## 3. Registered candidate rows
@@ -57,8 +63,8 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 |---|---|---|---|---|---|---|
 | SEC-001 | Enforce approved CBT permissions on existing routes | DONE | P0 / first implementation candidate | HIGH | NONE | O09 |
 | AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | DONE | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
-| ADMIN-001 | School Operator authoritative roster import | VERIFYING | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
-| AUTH-002 | Student claim and scoped verification/activation | BLOCKED | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
+| ADMIN-001 | School Operator authoritative roster import | DONE | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
+| AUTH-002 | Student claim and scoped verification/activation | IN_PROGRESS | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
 | AUTH-003 | In-person school-assisted recovery of the existing account | BLOCKED | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
 | ASSESS-QUESTION-001 | Versioned question/answer/scoring compatibility foundation | BLOCKED | P0 / question and answer integrity foundation | HIGH | SEC-001 | O02, O05, O09, A01 |
 | ASSESS-QUESTION-002 | Multiple response | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
@@ -93,8 +99,8 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 
 - [x] SEC-001 — Enforce approved CBT permissions on existing routes (DONE)
 - [x] AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation (DONE, PR #20/main ebcc4ca, CI #124)
-- [ ] ADMIN-001 — School Operator authoritative roster import (VERIFYING, candidate CI/actual implementation review pending)
-- [ ] AUTH-002 — Student claim and scoped verification/activation (BLOCKED)
+- [x] ADMIN-001 — School Operator authoritative roster import (DONE, PR #21/main 056a154, CI #131)
+- [ ] AUTH-002 — Student claim and scoped verification/activation (IN_PROGRESS)
 - [ ] AUTH-003 — In-person school-assisted recovery of the existing account (BLOCKED)
 - [ ] ASSESS-QUESTION-001 — Versioned question/answer/scoring compatibility foundation (BLOCKED)
 - [ ] ASSESS-QUESTION-002 — Multiple response (BLOCKED)
@@ -165,23 +171,20 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### ADMIN-001 — School Operator authoritative roster import
 
-- **Requirements / status / priority / risk:** R08/R09; READY, Build NOT AUTHORIZED; P0 identity input; HIGH. Exact [ADMIN-001 contract](tasks/ADMIN-001.md) §7/§8/§9.5 controls; no implementation acceptance implied.
-- **Dependencies and approvals:** AUTH-001 DONE/PR #20/main ebcc4ca/CI #124. Approved O01/O03/A03/P5 boundaries reused; Owner D1–D3 approved. Independent Identity/Security contract review's absent-slot and UUID lock-identity findings corrected and targeted PASS; reviewer assignment/availability confirmed.
-- **Acceptance:** Approved stable school-owned source key; Operator own-tenant read-only per-row preview and atomic reason/confirmation/audit/replay import; no Account creation/activation/Person binding/merge, deletion-by-omission or enrollment transfer. REVIEW_REQUIRED/stale-conflict has zero unauthorized mutation; no preview NISN/birth date; G7 before real data.
-- **Required tests/evidence:** C01–C15; actual PostgreSQL both enrollment writers/shared canonical UUID slot key, existing/empty and case variants, rollback/replay/revocation; full exact-candidate CI/five browsers, rendered/accessibility evidence, actual-source independent HIGH-risk review and Owner acceptance. These are future Build/completion outcomes, not already-passed tests.
-- **DB/API/UI/localization impacts:** 0056_school_operator_authoritative_roster.sql reserved, uncreated; Tenant Access Operator assignments, Academic Core roster/revisions/receipts, owning transaction coordinator; F01 preview/confirm and minimal capability; Operator screen/shared shell in Bahasa Indonesia. Shared validated lowercase enrollment key helper and narrow existing writer correction within 33-path footprint.
-- **Cost/vendor/tools:** Existing stack/CI only, no dependency/vendor/recurring-cost change. Four-document registration publication/automatic CI authorized; separate Task-specific Build/CI-first grant still mandatory.
-- **Frozen future implementation footprint:** Exactly 33 paths in record §7; only this record, tracker, living plan and manifest may change now. No migration execution, real data, source edits, merge, PB05 closure, deployment or successor authority.
+- **Requirements / status / priority / risk:** R08/R09; DONE / MERGED; P0 identity input; HIGH. [Completed contract/evidence §14](tasks/ADMIN-001.md) preserved, no reopening.
+- **Outcome:** own-tenant explicit Operator roster preview/atomic confirm, stable roster keys, no automatic Person/Account binding or activation, shared canonical enrollment locks, replay/rollback/audit/privacy and functional UI. C01–C15 PASS within approved 34-path scope (32 cumulative changed paths).
+- **Evidence:** accepted 3df5b32243245bfa5b2203be16b2aa5fe164fce9, CI #129 attempt 1 eight SUCCESS; original actual-source review STOP C11 only, correction/targeted PASS and Owner Acceptance; sole evidence 3baa7de40c494fe6f3f815f515072b216ed89412; PR #21 squash main 056a154d4ae2eb9c5a7c7923c6737496f396990d, CI #131/run 41824758308 attempt 1 eight SUCCESS.
+- **Boundaries:** D1–D3/owning-domain implementation reused; G7 before real data, PB05 OPEN, no release/production readiness. Future claim/recovery remains separate and independently gated.
 
 ### AUTH-002 — Student claim and scoped verification/activation
 
-- **Requirements / status / priority / risk:** R08, R09; BLOCKED; P0 / identity journey; HIGH.
+- **Requirements / status / priority / risk:** R08, R09; IN_PROGRESS; P0 / identity journey; HIGH.
 - **Dependencies and approvals:** ADMIN-001; external O01, O03, O09, A03. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Claim alone creates no trusted/active account. Match NISN/birth date with name confirmation; ambiguous cases stay in review. Homeroom Teacher acts only in own rombel, School Operator only own tenant; transaction rechecks latest roster and uniqueness; student sets password.
 - **Required tests/evidence:** P8 V01/V11/V12; simultaneous claim/approval, roster change mid-review, wrong rombel, replay, unauthorized sensitive fields and enumeration-safe errors; one official identity/account after retries. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.
-- **DB/API/UI/localization impacts:** DB: claim states/constraints and atomic activation pending O03/A03. API/UI: P3 F02, claim/review screens and native accessible inputs; no invented claim expiry or trust rule.
+- **DB/API/UI/localization impacts:** [AUTH-002 candidate §§4–8](tasks/AUTH-002.md): settled seven-day/ten-attempt inputs retained; Owner-approved D1 in-person verification/existing activation-card handoff, D2 explicit adjudication, D3 failure counting (2026-11-07, record §4.1/§6A). Proposed 0057 schema, 44-path future footprint, scoped F02 claim/review/activation composition and native accessible UI; no source write authority.
 - **Cost/vendor impact:** No new vendor or recurring dependency proposed; any implementation dependency/cost change requires explicit Owner approval.
-- **Proposed future execution paths:** `runtime/identity-access/src/claims.ts`; `runtime/tenant-access/src/index.ts`; `runtime/secure-assessment/src/http/claim-routes.ts`; `runtime/secure-assessment/src/server.ts`; `frontend/web/src/api/identity-client.ts`; `frontend/web/src/components/StudentClaimView.tsx`; `frontend/web/src/components/ClaimReviewView.tsx`; `frontend/web/src/session/AppShell.tsx`; `frontend/web/src/App.tsx`; `runtime/secure-assessment/test/integration/claims.test.ts`; `e2e/tests/9-identity.spec.ts`. Common documentation and unresolved exact migration/contract scope follow §4.4; no source path is authorized now.
+- **Proposed future execution paths:** exact 44-path candidate in [AUTH-002 §8](tasks/AUTH-002.md), replacing only this earlier impact sketch; contract review chain PASS (§10.1). READY-frozen under DEC-048 on 2026-11-07: exactly these 44 paths, reserved 0057, CI-first order in record §12.3. AUTH-002 IN_PROGRESS.
 
 ### AUTH-003 — In-person school-assisted recovery of the existing account
 
@@ -608,12 +611,31 @@ Subsequent completed history remains excluded: GOV-REALIGN-006 Gate-A-only DONE,
 
 ## 11. Change control and approval history
 
+### AUTH-002 READY and Build start under DEC-048 — 2026-11-07
+
+- **Authority/reason:** DEC-048 effective on landing of GOV-EXEC-001 (PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5, post-merge CI #134 attempt 1 eight SUCCESS); AUTH-002 selected as the highest-priority eligible Task (00.13 §4).
+- **Exact baseline delta:** AUTH-002 BLOCKED → READY → IN_PROGRESS; counters IN_PROGRESS 0→1, BLOCKED 30→29; DONE 3/33 (9.09%) unchanged. 33 IDs, 78 edges, priorities/risks/dependencies and R/G coverage unchanged.
+- **Current gate:** AUTH-002 CI-first order (record §12.3). PB05 OPEN; production NOT READY.
+
 ### DEC-048 standing execution delegation — 2026-11-07
 
 - **Authority/reason:** Owner instruction to prepare a standing delegation of routine execution (GOV-EXEC-001); DEC-048 in 00.13, effective only under its §9.
 - **Exact baseline delta:** no Task, status, counter, edge, priority, risk, dependency or R/G coverage change; GOV-EXEC-001 is excluded from baseline counters.
 - **Rule delta (only once effective):** the §4 item 2, 3, 4, 9 and 11 parts quoted in 00.13 §3 are replaced; the §4 note records this. Nothing else in §4 or §8 changes.
 - **Effect once effective:** the executor selects the single next eligible Task (00.13 §4), records READY, executes, and squash-merges under 00.13 §6; every decision in 00.13 §7 stays with the Owner.
+
+### AUTH-002 decisions and contract review — 2026-11-07
+
+- **Authority/reason:** Owner approved D1–D3 and designated the Independent Identity/Security reviewer in chat; contract finalized and reviewed (AUTH-002 §4.1/§6A/§10.1).
+- **Exact baseline delta:** none. Counters, 33 IDs, 78 edges, priorities/risks/dependencies and R/G coverage unchanged; AUTH-002 remains BLOCKED.
+- **Current gate:** Owner approval of exact 44-path footprint, 0057 path and four-document publication, then formal READY. No commit/push/PR/CI/Build; PB05 OPEN.
+
+### AUTH-002 preparation / ADMIN-001 landing reconciliation — 2026-11-04
+
+- **Authority/reason:** Owner authorized documentation-only AUTH-002 preparation and official tracker reconciliation; completed ADMIN-001 landed through PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d, CI #131 attempt 1 eight SUCCESS.
+- **Exact baseline delta:** ADMIN-001 VERIFYING → DONE; counters DONE 2→3, VERIFYING 1→0, progress 6.06%→9.09%; BLOCKED 30 and READY/IN_PROGRESS 0 unchanged. Checklist agrees.
+- **Scope/dependency impact:** Baseline/Current 33; all 33 IDs, 78 directed dependency edges, priorities/risks/outcomes and R01–R31/G1–G10 coverage unchanged. No split, new baseline Task or predecessor reopening.
+- **Current gate:** AUTH-002 BLOCKED; four local documentation paths only, exact candidate in its record §8. D1–D3/Independent review/technical freeze and separate publication/Build/CI-first authority pending. No commit/push/PR/CI/implementation authorized; PB05 OPEN and production NOT READY. Older checkpoints below are historical.
 
 ### Historical candidate and Gate-A/Gate-B contract checkpoint
 

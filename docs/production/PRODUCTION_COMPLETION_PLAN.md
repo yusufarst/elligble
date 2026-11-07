@@ -1,4 +1,10 @@
+> **AUTH-002 READY / Build checkpoint, 2026-11-07 (DEC-048):** GOV-EXEC-001 landed (PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5, post-merge CI #134 attempt 1 eight SUCCESS); DEC-048 effective. AUTH-002 formal READY PASS and Build started under DEC-048 ([record §12](tasks/AUTH-002.md)): frozen 44-path allowlist, reserved 0057, CI-first order §12.3. DONE 3/33 (9.09%), IN_PROGRESS 1, BLOCKED 29, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
+
 > **DEC-048 governance checkpoint, 2026-11-07:** GOV-EXEC-001 records the standing execution delegation (`docs/00-governance/00.13_STANDING_EXECUTION_DELEGATION.md`); effective only when every 00.13 §9 condition holds (Owner approval of the exact text, independent governance review PASS, GOV-EXEC-001 DONE, landing on `main`). Baseline counters unchanged; AUTH-002 local preparation is carried separately.
+
+> **AUTH-002 contract checkpoint, 2026-11-07:** Owner approved AUTH-002 D1/D2/D3 and designated a separate read-only reviewer; contract finalized ([record §4.1/§6A](tasks/AUTH-002.md)), 44-path future footprint, Independent Identity/Security contract review chain STOP → STOP → PASS ([§10.1](tasks/AUTH-002.md)). AUTH-002 still BLOCKED / NOT READY pending Owner approval of the exact 44 paths, 0057 migration path and four-document publication. DONE 3/33 (9.09%), BLOCKED 30, others 0; 78 edges unchanged. No commit/push/PR/CI/Build; PB05 OPEN.
+
+> **AUTH-002 preparation checkpoint, 2026-11-04:** ADMIN-001 DONE / MERGED, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d; exact-main CI #131/run 41824758308, automatic attempt 1, eight SUCCESS. SEC-001/AUTH-001/ADMIN-001 DONE 3/33 (9.09%); BLOCKED 30 including AUTH-002; READY/IN_PROGRESS/VERIFYING 0; 78 edges unchanged. Owner authorizes local documentation/decision preparation only, no commit/push/PR/CI/Build. AUTH-002 candidate and D1–D3/READY blockers: [Task record](tasks/AUTH-002.md). All earlier registration/Build checkpoints below are historical; PB05 OPEN, production NOT READY.
 
 > **ADMIN-001 candidate verification, 2026-11-03:** baseline ec4037c/CI #126 attempt 1 eight SUCCESS and five retrieved artifacts PASS before UI; exact 33-path implementation candidate now VERIFYING for full CI/after-rendered evidence/actual-source independent review. DONE 2/VERIFYING 1/BLOCKED 30/READY 0/IN_PROGRESS 0, 78 edges unchanged. Owner Build/CI-first authority in ADMIN-001 §10; PB05 OPEN. Earlier checkpoints are history.
 
@@ -8,7 +14,7 @@
 
 **Status:** LIVING PLAN (DEC-042, amended by DEC-045): live production state, gaps, evidence, Owner decisions and continuity checkpoint; Task records in `docs/production/tasks/`; official Task-status tracking is active in `docs/production/TASK_PLAN.md` after Owner merge of GOV-P11-001; this living plan retains production evidence and continuity
 **Canonical:** YES for current production state, gaps, critical path and next work. Does not override LOCKED decisions.
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-04
 **Audit Baseline:** `3a69883544ac3750b17fe5e4bdbd0f41b3608b07` (BU-090 terminal)
 
 # ELLIGBLE Production Completion Plan
@@ -117,14 +123,14 @@ Planning aids only: these identifiers are not Build Units and have no lifecycle 
 
 ### 6.1 Views
 
-**CRITICAL PATH:** SEC-001 and AUTH-001 DONE / MERGED. ADMIN-001 formal READY PASS for approved/reviewed frozen roster contract; publish only four authorized documents, one commit/normal push/PR and automatic exact-SHA attempt-1 eight-job CI. Then STOP for separate Owner Build/CI-first grant. DONE 2/33, READY 1, BLOCKED 30, VERIFYING 0; 78 edges/P5/P6 boundaries/PB05 OPEN/G1–G10 retained. No source change or successor authority.
+**CRITICAL PATH:** SEC-001, AUTH-001 and ADMIN-001 DONE / MERGED. ADMIN-001 PR #21 landed main 056a154d4ae2eb9c5a7c7923c6737496f396990d, exact-main CI #131/run 41824758308 attempt 1 eight SUCCESS. DEC-048 effective 2026-11-07 (PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5, CI #134). AUTH-002 IN_PROGRESS under DEC-048: formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order (record §12). DONE 3/33 (9.09%), IN_PROGRESS 1, BLOCKED 29, READY/VERIFYING 0; 78 edges unchanged. Execution per 00.13 §4–§6, Owner-reserved decisions per 00.13 §7; approved P5/P6/LOCKED boundaries, PB05 OPEN, cosmetic deferral and G1–G10 retained.
 
 | View | Tasks |
 |---|---|
-| IN PROGRESS | NONE; ADMIN-001 READY registration only, no Build |
-| READY QUEUE (by value) | ADMIN-001 only; D1–D3/contract review chain/formal inputs PASS, frozen 33-path contract. Build NOT AUTHORIZED |
-| BLOCKED | Other 30 implementation Tasks retain exact blockers/dependencies in TASK_PLAN. UI-SYSTEM-005 remains separately BLOCKED; no release blocker or deferred cosmetic scope closed |
-| RECENTLY COMPLETED | AUTH-001 (accepted 82a96a5/CI #122, evidence d370177, PR #20/main ebcc4ca/CI #124; second baseline DONE, PB05 OPEN), SEC-001 (accepted 7866a40/CI #117, evidence 55ab608, PR #19/main 89d725c/CI #119; first baseline DONE, PB05 OPEN), GOV-P11-001 (controlled tracker preparation/evidence DONE, PR #18/main 1653fc5/CI #110; tracker active, no implementation grant), GOV-PERF-001 (bounded numeric preparation DONE, PR #17/main 885a91d/CI #107; B09 excluded/B10 conditional/residual O07 unresolved), GOV-POLICY-001 (bounded P5/O09 preparation DONE, approved P/K preserved/C excluded, PR #16/main 067713a/CI #104), GOV-DESIGN-002 (limited documentation DONE, PR #15/main fffab09/CI #101; DEC-047 effective, no implementation), GOV-DESIGN-001 (accepted intent only, PR #14/main 6c01358/CI #98; no token supersession), GOV-REALIGN-006 (candidate-only DONE; PR #13/main 9b11ec5/CI #94; Gate B unsatisfied at its historical closure), GOV-REALIGN-005 (P7–P10 planning accepted, PR #12/main 77756e3/CI #89; O01–O09/PB05 OPEN, P6 PROPOSED), GOV-REALIGN-004 (P2–P6 planning accepted, PR #11/main CI #86, unresolved inputs preserved), GOV-REALIGN-003 (P1 approved, PR #10/main CI #83), UI-SYSTEM-004 Part 3 (PR #9, main CI #79), UI-SYSTEM-004 Part 2 (PR #8, main CI #74), UI-SYSTEM-002 Part 2 (PR #7, main CI #67), WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-003, UI-SYSTEM-001, ASSESS-SYNC-002, ASSESS-TEACHER-004, ASSESS-TEACHER-003 cancellation, ASSESS-TEACHER-003 rescheduling, ASSESS-PROCTOR-004, ASSESS-TEACHER-002, ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
+| IN PROGRESS | AUTH-002 under DEC-048 (record §12): CI-first registration → capture-only baseline → implementation → independent review → evidence → delegated merge |
+| READY QUEUE (by value) | NONE; next candidates follow 00.13 §4 eligibility after AUTH-002 lands |
+| BLOCKED | 29 implementation Tasks retain applicable blockers/dependencies in TASK_PLAN. UI-SYSTEM-005 remains separately BLOCKED; no release blocker/cosmetic scope closed |
+| RECENTLY COMPLETED | ADMIN-001 (final §14, accepted 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154/CI #131; third baseline DONE, PB05 OPEN), AUTH-001 (accepted 82a96a5/CI #122, evidence d370177, PR #20/main ebcc4ca/CI #124; second baseline DONE, PB05 OPEN), SEC-001 (accepted 7866a40/CI #117, evidence 55ab608, PR #19/main 89d725c/CI #119; first baseline DONE, PB05 OPEN), GOV-P11-001 (controlled tracker preparation/evidence DONE, PR #18/main 1653fc5/CI #110; tracker active, no implementation grant), GOV-PERF-001 (bounded numeric preparation DONE, PR #17/main 885a91d/CI #107; B09 excluded/B10 conditional/residual O07 unresolved), GOV-POLICY-001 (bounded P5/O09 preparation DONE, approved P/K preserved/C excluded, PR #16/main 067713a/CI #104), GOV-DESIGN-002 (limited documentation DONE, PR #15/main fffab09/CI #101; DEC-047 effective, no implementation), GOV-DESIGN-001 (accepted intent only, PR #14/main 6c01358/CI #98; no token supersession), GOV-REALIGN-006 (candidate-only DONE; PR #13/main 9b11ec5/CI #94; Gate B unsatisfied at its historical closure), GOV-REALIGN-005 (P7–P10 planning accepted, PR #12/main 77756e3/CI #89; O01–O09/PB05 OPEN, P6 PROPOSED), GOV-REALIGN-004 (P2–P6 planning accepted, PR #11/main CI #86, unresolved inputs preserved), GOV-REALIGN-003 (P1 approved, PR #10/main CI #83), UI-SYSTEM-004 Part 3 (PR #9, main CI #79), UI-SYSTEM-004 Part 2 (PR #8, main CI #74), UI-SYSTEM-002 Part 2 (PR #7, main CI #67), WEB-001, UI-SYSTEM-004 part 1, UI-SYSTEM-003, UI-SYSTEM-001, ASSESS-SYNC-002, ASSESS-TEACHER-004, ASSESS-TEACHER-003 cancellation, ASSESS-TEACHER-003 rescheduling, ASSESS-PROCTOR-004, ASSESS-TEACHER-002, ASSESS-TEACHER-001, E2E-001, OPS-003, OPS-002, ASSESS-PROCTOR-002, ASSESS-SYNC-001, ASSESS-PROCTOR-001, RESULT-002, RESULT-001, ASSESS-LIFE-002, ASSESS-LIFE-001, TOOL-001, ASSESS-PROCTOR-000, ASSESS-TEACHER-000, ASSESS-STUDENT-002, ASSESS-SCHOOL-000, ASSESS-TIME-000, E2E-000, PROV-000 (see 6.3) |
 
 ### 6.2 Active and backlog tasks
 
@@ -479,8 +485,8 @@ Owner-authorized 2026-10-30, HIGH, PRE-P11 / PRE-BASELINE, NOT COUNTED IN P11 BA
 |---|---|---|---|---|
 | RESULT-003 | Publish results to students | P1 | OWNER | Student result visibility decision (§7) |
 | SEC-001 | DONE bounded existing-route permission enforcement; no reopening | P0 | COMPLETED | Final record §17, PR #19/main 89d725c/CI #119; PB05 remains OPEN |
-| AUTH-001 | READY identity foundation; Build NOT AUTHORIZED | P0 | OWNER | Approved O01/O03/A03, reviewed exact contract; separate Build grant next |
-| ADMIN-001 | School-administrator self-service import | P2 | OWNER | PB05 (who is a school administrator) |
+| AUTH-001 | DONE identity foundation; no reopening | P0 | COMPLETED | Final §13, PR #20/main ebcc4ca/CI #124; PB05 OPEN |
+| ADMIN-001 | DONE authoritative roster import; no reopening | P0 | COMPLETED | Final §14, PR #21/main 056a154/CI #131; PB05 OPEN |
 | ASSESS-STUDENT-001 | Answers delivered after time expiry | P2 | OWNER | D04.5-48 deferred policy (P1-22) |
 | UI-SYSTEM-005 | Token convergence to the DesainPakeAI direction | P2 | OWNER | Access to the approved DesainPakeAI project `b5a22aa4-...` again: the stored CLI key resolves to another project (§10) |
 | ASSESS-PROCTOR-003 | Device signals and incidents | P2 | canonical review | D04.7 preset scope for teacher-managed exams |
@@ -492,6 +498,7 @@ SEC-001 is the first completed P11 implementation Task: final record §17, accep
 
 | ID | Result | Evidence |
 |---|---|---|
+| ADMIN-001 | DONE own-tenant authoritative roster import; independent implementation/C11 closure and Owner Acceptance PASS | Final §14, accepted 3df5b322/CI #129, evidence 3baa7de; PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d; CI #131/run 41824758308, attempt 1 eight SUCCESS |
 | GOV-P11-001 | DONE, controlled tracker preparation/evidence only, excluded from baseline counters; official tracker active after Owner landing | Content c408962/CI #108, evidence 5bb64c7; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919; CI #110/run 41174246591 attempt 1 eight SUCCESS, ubuntu-24.04 |
 | GOV-PERF-001 | DONE, bounded numeric approval preparation only, HIGH / PRE-P11 / PRE-BASELINE; excluded from baseline DONE | Record §7, approved 94fb79f/CI #105, evidence cf1036f; PR #17/main 885a91d/CI #107 attempt 1 eight SUCCESS. B09 excluded, B10 conditional, residual O07/PBs/release unresolved |
 | GOV-POLICY-001 | DONE — bounded P5/O09 preparation; Owner-approved P01–P05/P in A01–A14, K preserved/C excluded; no PB05/P11/implementation approval | Reviewed beaf4eb/CI #102, evidence 5811a7e; PR #16/main 067713afe23cad0d9712ef5acafb4000f5642db8; CI #104 (41159308615), attempt 1 eight SUCCESS |
@@ -1056,6 +1063,9 @@ UI-SYSTEM-004 Part 2 current checkpoint: Owner-approved harness `dbe626535d363f0
 
 UI-SYSTEM-004 Part 2 rendered refinement: first UI content `b412d6c4807016fcc014800e166b80917fa9f058`, CI #71 (40430856364), push attempt 1, terminal eight SUCCESS; web 344/344, all five browser projects 22/22. Five after artifacts retrieved and all 96 pairs compared with #70: identical fixtures/browser profiles/accessible radio names and states; >=44px targets, 2px visible option focus, no measured horizontal overflow, 16px/24px choices and 7.09:1 warning ink. Actual render inspection identified a 12px header/question offset from a 24px main-grid gap and missing legend-to-choice separation. Final in-scope refinement changes only those two CSS properties plus these records, after #71 completed without cancellation. This new SHA requires its own full CI/after evidence; Task VERIFYING, human visual reviews and final evidence commit still pending.
 
+
+AUTH-002 preparation reconciliation, 2026-11-04: ADMIN-001 PR #21 merged as 056a154d4ae2eb9c5a7c7923c6737496f396990d; main CI #131/run 41824758308 automatic attempt 1 eight SUCCESS, web 356/356, Secure Assessment 912/912, PostgreSQL 224/224, image/smoke and five browsers 24/24 each. Final record §14/accepted 3df5b322/CI #129/evidence 3baa7de/review chain/Owner Acceptance preserved. This next-Task local reconciliation records DONE 3/33, not an extra ADMIN-001 evidence commit; AUTH-002 remains BLOCKED, preparation only.
+
 ## 12. Friction reducers (automation)
 
 Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support/pg-harness.ts`, migrated or empty) and fixtures; migration runner/verifier; demo seed for local work (`test/support/seed-demo.ts`); environment validation and startup preflight; CI workflow with image smoke test (green on GitHub Actions); route parity check (`test/route-parity.test.ts`: every web client API function is called against the production-wired server and must reach an existing route with an allowed method, every server route must have a client caller or be listed as server-only; mutation-checked with a misspelled path and a wrong method). Browser E2E runner (`e2e/`, `npx playwright test`, runbook §8): starts the production process on a fresh database, provisions it only through the operator CLI, cleans up the database and process even when the setup fails, and runs in CI with the report and server log kept on failure; `e2e/ci-failure-details.sh` also prints the page at the failure, the step timeline, the requests and the end of the server log into the job log, for readers who cannot fetch the uploaded report. The workflow is checked with actionlint before pushing (a job-level `runner` context once made GitHub reject the whole workflow); actionlint is not installed on the executor machine, so a workflow change states how it is checked (`docs/production/TOOLCHAIN.md`). Every CI job runs on the pinned `ubuntu-24.04` image (E2E-003, Owner decision D-4). The manifest SHA256 synchronization chore is retired (DEC-042).
@@ -1063,7 +1073,7 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 ## 13. Next engineering work
 > DEC-045: one Owner-authorized bounded Task at a time; planning acceptance is not feature/deployment authority.
 
-Current Task **ADMIN-001 READY, Build NOT AUTHORIZED**: D1–D3, contract review chain and formal READY inputs PASS in its record §9.5. Publish only four docs and verify automatic exact-SHA eight-job CI, then STOP for separate Build/CI-first authority. AUTH-001/SEC-001 DONE 2/33 (6.06%), READY 1/BLOCKED 30/VERIFYING 0; 78 edges unchanged. PB05 OPEN; no production/source action.
+Current Task **AUTH-002 IN_PROGRESS under DEC-048 (record §12)**. Preparation history follows: Local four-document package records ADMIN-001 landing/CI #131 and DONE 3/33 (9.09%), BLOCKED 30/READY 0/IN_PROGRESS 0/VERIFYING 0, 78 edges preserved. [AUTH-002 §4/§10](tasks/AUTH-002.md) consolidates remaining Task-specific decisions and formal READY gates; do not repeat completed reviews. No publication, Build, CI execution, migration, real data or successor authorized.
 
 Historical registration of **GOV-REALIGN-006**, HIGH, PRE-P11 / PRE-BASELINE, NOT COUNTED IN P11 BASELINE: one finite unapproved/inactive P11 candidate. Four-file contract in `tasks/GOV-REALIGN-006.md`; candidate `TASK_PLAN.md` registers 33 BLOCKED Tasks, no implementation READY or baseline DONE. Final P11 approval remains BLOCKED on P1 §8 applicable gates, explicitly P5/O09 and P6 numeric/workload O07 approval, plus Independent HIGH-risk and Owner reviews. Own exact-content CI/publication pending; after CI STOP for those reviews/final P11 decision, no evidence commit or successor authorization.
 
@@ -1084,6 +1094,22 @@ UI-SYSTEM-004 Part 3 implementation entry: baseline `1d2fcea8961ef1e19c920e6fff0
 UI-SYSTEM-004 Part 3 targeted correction: content `d1ac5da16b9c2e44c1efe14416cc5ac35d14796c`, CI #76 (40485141852), push attempt 1, terminal FAILURE: web typecheck PASS, 343/344 tests (paused participantTime notification missing), build/browser/image skipped; runtime/PostgreSQL SUCCESS. Failure DOM retains initial 42:10. Read-only assessment supports an asynchronous test-readiness race, exact CI interleaving unproven. Owner explicitly authorizes one correction only in participantTime.test.tsx and the two records: async initial act, ready UI, one online event, new timer-request assertion, unchanged 3-minute/45:10 assertions. No Student/UI/E2E/fixture/workflow change, timeout/sleep/retry or #76 rerun. Baseline #75 retained; own new full CI and matched after evidence mandatory; Part 3 NOT DONE. Task record §9.4.
 
 ## 14. Continuity checkpoint
+
+Current checkpoint, 2026-11-04: verified main/origin/main 056a154d4ae2eb9c5a7c7923c6737496f396990d, PR #21 MERGED, CI #131 attempt 1 eight SUCCESS. AUTH-002 local documentation/decision preparation only, BLOCKED / NOT READY; [candidate record](tasks/AUTH-002.md).
+
+| Item | Current state (2026-11-04) |
+|---|---|
+| Physical baseline | local main safely fast-forwarded to exact main above; clean entry; publication branch not created |
+| Completed predecessor | ADMIN-001 DONE, accepted 3df5b322/CI #129, final evidence 3baa7de, PR #21 merged; SEC-001/AUTH-001 remain DONE |
+| Last CI-verified main | [CI #131/run 41824758308](https://github.com/yusufarst/elligble/actions/runs/41824758308), exact main above, automatic attempt 1 eight SUCCESS, ubuntu-24.04 |
+| Current gate | AUTH-002 IN_PROGRESS under DEC-048; CI-first order record §12.3 (2026-11-07) |
+| Counters | 33 baseline/current, DONE 3 (9.09%)/IN_PROGRESS 1/BLOCKED 29/READY 0/VERIFYING 0; 78 acyclic edges/R01–R31/G1–G10 unchanged |
+| Authorized scope | DEC-048: frozen 44-path AUTH-002 allowlist (record §8/§12.2) on task/auth-002-student-claim-verification |
+| Frozen footprint | AUTH-002 §8: 44 paths; 0057_student_claim_verification.sql reserved (record §12.2) |
+| Security/release | Settled O01/O03/A03/P5/P6 preserved; excluded C/default-deny, PB05 OPEN, G7 before real data; production NOT READY |
+| Next safe action | AUTH-002 CI-first step in record §12.3; on any stop condition (00.13 §8) escalate to the Owner |
+
+### Historical ADMIN-001 registration checkpoint — 2026-11-03
 
 Current checkpoint, 2026-11-03: approved/reviewed ADMIN-001 contract formally READY; four-document publication authorized on the existing preparation branch/base. No commit records its own SHA; publication CI is reported from its actual SHA. Historical checkpoints below remain evidence only.
 
