@@ -420,3 +420,19 @@ The reviewer was a fresh-context, read-only Identity/Security agent (00.13 §5.5
   Real PostgreSQL and browser evidence come only from CI.
 
 **Status:** VERIFYING. Pending: exact-content CI of the correction, then targeted re-review by the same reviewer.
+
+### 14.3 Correction-1 verification, rendered review STOP and correction 2
+
+- **Targeted re-review, same reviewer, on 7b60c9d9c76a5c55308e80f177d23ba48edf08e5: PASS.**
+  - M1, M2 and M3 are CLOSED; no new material defect.
+  - Non-material residuals: Homeroom-responsibility revocation during decide is not separately interleaved; reserve and the legacy credential INSERT share the allocation's Person-lock pattern.
+- **CI #138/run 42339912468:** ref task/auth-002-student-claim-verification-c1, exact SHA 7b60c9d, push, attempt 1, eight jobs SUCCESS.
+  - Counts: Secure Assessment units 916/916; other runtime units 31, 14 and 11; real PostgreSQL integration 234/234 (224 before plus the 10 new oracles, none skipped); E2E 26/26 in each of the five projects, including the AUTH-002 after-phase journey.
+  - Artifacts: the five workspace-visual artifacts hold 64 AUTH-002 captures each, all phase  at the exact commit, with no overflow, no target under 44 px, and every handoff capture masked.
+  - The temporary verification ref keeps the original CI #137 on PR #23 running, as the Owner directed; it is not a second Task branch.
+- **Rendered-evidence review, same reviewer: STOP, one material finding.** In the approval dialog the radio and checkbox indicators shrank to about 10 px when their labels wrapped (flex items without  under ) and used the browser default colour. Evidence:  and its webkit-390 counterpart. Everything else met the contract, including the fixed login overflow, copy, labels, queue states, the shared primitives and handoff masking.
+- **Correction 2** (bound 2 of 3, path 35 and E2E path 43 only):
+  - the four dialog inputs use the existing  pattern of ParticipantChoiceList;
+  - the handed-over ELLIGBLE ID no longer breaks mid-identifier;
+  - the text-200 captures add a scrolled capture of any open dialog, so the whole dialog is evidenced at 200% text.
+- **Local checks:** web typecheck and claimReview/designSystemGuard 13/13 PASS; e2e typecheck PASS.

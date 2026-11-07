@@ -221,7 +221,7 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
               ) : (
                 <>
                   <label className="flex min-h-11 items-start gap-3 text-sm">
-                    <input type="radio" name={ids.adjudication} className="mt-1 size-5" checked={adjudication === 'EXISTING_ACCOUNT_CONTINUITY'}
+                    <input type="radio" name={ids.adjudication} className="mt-0.5 size-4 shrink-0 accent-primary" checked={adjudication === 'EXISTING_ACCOUNT_CONTINUITY'}
                       onChange={() => edit(setAdjudication)('EXISTING_ACCOUNT_CONTINUITY')} />
                     <span>Siswa sudah punya akun ELLIGBLE dan menunjukkan ELLIGBLE ID-nya</span>
                   </label>
@@ -232,20 +232,20 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
                     </div>
                   )}
                   <label className="flex min-h-11 items-start gap-3 text-sm">
-                    <input type="radio" name={ids.adjudication} className="mt-1 size-5" checked={adjudication === 'NEW_IDENTITY_REVIEWED'}
+                    <input type="radio" name={ids.adjudication} className="mt-0.5 size-4 shrink-0 accent-primary" checked={adjudication === 'NEW_IDENTITY_REVIEWED'}
                       onChange={() => edit(setAdjudication)('NEW_IDENTITY_REVIEWED')} />
                     <span>Siswa belum punya akun ELLIGBLE</span>
                   </label>
                   {adjudication === 'NEW_IDENTITY_REVIEWED' && (
                     <label htmlFor={ids.attest} className="flex min-h-11 items-start gap-3 pl-8 text-sm">
-                      <input id={ids.attest} type="checkbox" className="mt-1 size-5" checked={attested} onChange={e => edit(setAttested)(e.target.checked)} />
+                      <input id={ids.attest} type="checkbox" className="mt-0.5 size-4 shrink-0 accent-primary" checked={attested} onChange={e => edit(setAttested)(e.target.checked)} />
                       <span>Saya sudah menanyakan langsung dan siswa tidak memiliki kartu atau ELLIGBLE ID lama.</span>
                     </label>
                   )}
                 </>
               )}
               <label htmlFor={ids.inPerson} className="flex min-h-11 items-start gap-3 text-sm">
-                <input id={ids.inPerson} type="checkbox" className="mt-1 size-5" checked={inPerson} onChange={e => edit(setInPerson)(e.target.checked)} />
+                <input id={ids.inPerson} type="checkbox" className="mt-0.5 size-4 shrink-0 accent-primary" checked={inPerson} onChange={e => edit(setInPerson)(e.target.checked)} />
                 <span>Saya sudah memverifikasi siswa ini secara langsung.</span>
               </label>
             </fieldset>
@@ -273,7 +273,7 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
           </DialogHeader>
           {handoff && (
             <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
-              <dt className="text-sm">ELLIGBLE ID</dt><dd className="m-0 break-all font-mono font-semibold">{handoff.elligbleId}</dd>
+              <dt className="text-sm">ELLIGBLE ID</dt><dd className="m-0 whitespace-nowrap font-mono font-semibold">{handoff.elligbleId}</dd>
               {handoff.activationCode && <><dt className="text-sm">Kode aktivasi</dt><dd className="m-0 break-all font-mono text-lg font-semibold">{handoff.activationCode}</dd></>}
               {handoff.claimExpiresAt && <><dt className="text-sm">Aktivasi paling lambat</dt><dd className="m-0">{formatDateTime(handoff.claimExpiresAt)}</dd></>}
             </dl>

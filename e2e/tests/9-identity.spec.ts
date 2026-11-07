@@ -182,6 +182,11 @@ async function captureAuthWidths(page: Page, scenario: string, mask: Locator[] =
     await page.setViewportSize({ width: 768, height: 360 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
     await captureAuth(page, `${scenario}-text-200`, mask);
+    // A dialog scrolls inside the short viewport: also capture its end, so the whole dialog is evidenced.
+    if (await page.locator('[role=dialog]').count()) {
+        await page.locator('[role=dialog]').last().evaluate(el => { el.scrollTop = el.scrollHeight; });
+        await captureAuth(page, `${scenario}-text-200-scrolled`, mask);
+    }
     await page.evaluate(() => { document.documentElement.style.fontSize = ''; });
     if (original) await page.setViewportSize(original);
 }
