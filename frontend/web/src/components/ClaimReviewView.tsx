@@ -272,8 +272,8 @@ export function ClaimReviewView({ tenantId }: ClaimReviewViewProps) {
             </DialogDescription>
           </DialogHeader>
           {handoff && (
-            <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
-              <dt className="text-sm">ELLIGBLE ID</dt><dd className="m-0 whitespace-nowrap font-mono font-semibold">{handoff.elligbleId}</dd>
+            <dl className="m-0 grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-y-2">
+              <dt className="text-sm">ELLIGBLE ID</dt><dd className="m-0 font-mono font-semibold [overflow-wrap:normal]">{handoff.elligbleId}</dd>
               {handoff.activationCode && <><dt className="text-sm">Kode aktivasi</dt><dd className="m-0 break-all font-mono text-lg font-semibold">{handoff.activationCode}</dd></>}
               {handoff.claimExpiresAt && <><dt className="text-sm">Aktivasi paling lambat</dt><dd className="m-0">{formatDateTime(handoff.claimExpiresAt)}</dd></>}
             </dl>

@@ -152,6 +152,9 @@ async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
             claimEntry: [...document.querySelectorAll('button,a')].filter(el => /pendaftaran akun/i.test(el.textContent ?? '')).length,
             verifierEntry: [...document.querySelectorAll('button,a')].filter(el => /verifikasi pendaftaran/i.test(el.textContent ?? '')).length,
             focus: { tag: active?.tagName ?? null, id: active?.id ?? null },
+            // Text cut off inside a scrolling dialog does not widen the page: measure each value cell.
+            clipped: [...document.querySelectorAll<HTMLElement>('[role=dialog] dd, [role=dialog] dt, [role=dialog] label')]
+                .filter(el => el.scrollWidth > el.clientWidth + 1).map(el => el.textContent ?? ''),
             targets: [...document.querySelectorAll<HTMLElement>('main button, main input, main a, main select, main textarea, [role=dialog] button, [role=dialog] input, [role=dialog] textarea')]
                 // A checkbox or radio is operated through its whole label, which is the measured target.
                 .map(el => (el instanceof HTMLInputElement && ['checkbox', 'radio'].includes(el.type) && el.closest('label')) ? el.closest('label')! : el)
@@ -170,6 +173,7 @@ async function captureAuth(page: Page, scenario: string, mask: Locator[] = []) {
     if (authPhase === 'after') {
         expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
         expect(metrics.targets.filter(t => t.width < 43.99 || t.height < 43.99)).toEqual([]);
+        expect(metrics.clipped).toEqual([]);
     }
 }
 

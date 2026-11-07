@@ -443,3 +443,16 @@ The reviewer was a fresh-context, read-only Identity/Security agent (00.13 §5.5
 - **Failing test:** the AUTH-002 after-phase journey timed out waiting for the activation link after the verifier's logout. The page snapshot showed "Gagal Terhubung ke Server".
 - **Diagnosis** from the retrieved e2e-report and server log: `POST /api/v1/auth/logout` is logged with `"aborted":true`, followed by `GET /api/v1/auth/session` 200. The test navigated (`open(page)`) while the logout request was still in flight. That is a race in the test step, independent of the claim feature; the same step passed in all five projects of CI #138.
 - **Correction 3** (E2E path 43 only): after "Keluar", the test waits for the login screen, which shows the logout completed, and then uses the activation link without a new navigation. No assertion is weakened and no product code changes.
+
+### 14.5 Correction-3 verification, rendered re-review STOP and correction 4
+
+- **CI #140/run 42343859000:** ref task/auth-002-student-claim-verification-c1, exact SHA 06bb2856c1fa90b9c4f4821284afd63ea28d4322, push, attempt 1, eight jobs SUCCESS.
+  - Counts: units 916, 31, 14 and 11; integration 234/234; E2E 26/26 in each of the five projects.
+  - Artifacts: 66 AUTH-002 captures per project, all `after` at the exact commit, no page overflow, no target under 44 px, all handoff captures masked.
+- **Targeted rendered re-review, same reviewer:**
+  - The dialog controls and the scrolled text-200 evidence are CLOSED.
+  - Correction 3 weakens nothing in E2E: it adds a wait for the login screen.
+  - **STOP, one new material finding** introduced by correction 2: at 360 px the handed-over ELLIGBLE ID was clipped at the dialog edge (`whitespace-nowrap` in a clipping dialog). Evidence: `workspace-auth-verifier-handoff-360x800-mobile-360.png` and its webkit-390 counterpart. The page-level gate could not detect it.
+- **Correction 4** (bound for the rendered gate: second failure, path 35 and E2E path 43 only):
+  - The handoff details stack label above value below the `sm` breakpoint, and the ID may wrap only at its hyphens, so it stays whole and fully visible.
+  - Every after-phase capture now also fails if any dialog `dt`, `dd` or `label` is clipped (scrollWidth > clientWidth), closing this gap in the rendered gate.
