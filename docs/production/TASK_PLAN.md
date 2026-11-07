@@ -1,3 +1,7 @@
+> **SEC-OPS-001 READY / Build checkpoint, 2026-11-07 (DEC-048):** Owner decided PB12 (Owner incident lead, case-scoped CLI intervention, escalation to every member school's principal; legal not applicable to this Task) and designated the standing reviewer; security contract review chain STOP → STOP → PASS; formal READY PASS, frozen allowlist, reserved 0059 ([record §12](tasks/SEC-OPS-001.md)). The Owner also approved the 25-row O02/O05/A01/A04 question and institution package in chat; it is recorded with the first Task that uses it. DONE 5/33 (15.15%), IN_PROGRESS 1, BLOCKED 27, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
+> **AUTH-003 landing and next-Task checkpoint, 2026-11-07 (DEC-048):** AUTH-003 DONE / MERGED: PR #24 squash main b6dab652be382bd8c3dec78912e397b44dffaf86 (tree equal to evidence head 285847e), PR-head CI #149 and post-merge main CI #150 attempt 1 eight SUCCESS; final record §16 (Delegated Acceptance). DONE 5/33 (15.15%), BLOCKED 28, others 0; 78 edges unchanged. No baseline Task is eligible (00.13 §4.1): SEC-OPS-001 needs PB12 (named incident lead, duties, contacts, escalation) and its intervention policy; ASSESS-QUESTION-001/ASSESS-INSTITUTION-001 need OPEN O02/O05 and A01/A04; OPS-STAGING-001 and LEGAL-001 are prepare-only. Owner decision package presented in chat (00.13 §4.5); this record stays local until publication is authorized or the next eligible Task's first change includes it. PB05 OPEN; production NOT READY.
+
 > **AUTH-003 implementation checkpoint, 2026-11-07 (DEC-048):** baseline CI #146 attempt 1 eight SUCCESS and five artifacts PASS; implementation candidate published for exact-content CI and independent review ([record §14](tasks/AUTH-003.md)). DONE 4/33 (12.12%), VERIFYING 1, BLOCKED 28, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
 
 > **AUTH-003 READY / Build checkpoint, 2026-11-07 (DEC-048):** Owner decided the AUTH-003 recovery policy R1–R4 and designated the reviewer; contract review chain STOP → PASS ([record §4/§6A/§12](tasks/AUTH-003.md)); formal READY PASS, frozen 36-path allowlist, reserved 0058, CI-first order ([§13](tasks/AUTH-003.md)). DONE 4/33 (12.12%), IN_PROGRESS 1, BLOCKED 28, others 0; 78 edges unchanged. PB05 OPEN; production NOT READY.
@@ -46,14 +50,14 @@ Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-0
 |---|---:|
 | Baseline Total | 33 |
 | Current Total | 33 |
-| DONE | 4 |
+| DONE | 5 |
 | READY | 0 |
-| IN_PROGRESS | 0 |
-| VERIFYING | 1 |
-| BLOCKED | 28 |
+| IN_PROGRESS | 1 |
+| VERIFYING | 0 |
+| BLOCKED | 27 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
-| Progress % | 12.12% |
+| Progress % | 15.15% |
 
 Baseline/Current Total remain 33. Progress = 4 / 33 = 12.12% (rounded). SEC-001, AUTH-001, ADMIN-001 and AUTH-002 are DONE; AUTH-002 final record §15, final content 9f9c5f1/CI #141, evidence d879179/CI #143, PR #23/main 38259da885197ae3d207df3743d98c89d2bed9ac and CI #144. ADMIN-001 final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and CI #131 support this authorized next-Task reconciliation under DEC-045. No completed Task is reopened. AUTH-002 completed under DEC-048 on 2026-11-07 ([record §12–§15](tasks/AUTH-002.md)).
 
@@ -73,7 +77,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 | AUTH-001 | Final ELLIGBLE ID generation and uniqueness implementation | DONE | P0 / identity foundation | HIGH | SEC-001 | O01, O03, A03 |
 | ADMIN-001 | School Operator authoritative roster import | DONE | P0 / identity input | HIGH | AUTH-001 | O01, O03, O09, A03 |
 | AUTH-002 | Student claim and scoped verification/activation | DONE | P0 / identity journey | HIGH | ADMIN-001 | O01, O03, O09, A03 |
-| AUTH-003 | In-person school-assisted recovery of the existing account | VERIFYING | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
+| AUTH-003 | In-person school-assisted recovery of the existing account | DONE | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
 | ASSESS-QUESTION-001 | Versioned question/answer/scoring compatibility foundation | BLOCKED | P0 / question and answer integrity foundation | HIGH | SEC-001 | O02, O05, O09, A01 |
 | ASSESS-QUESTION-002 | Multiple response | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-003 | True/false | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
@@ -93,7 +97,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 | ASSESS-PROCTOR-003 | STANDAR risk feed and human incident journey | BLOCKED | P1 / honest supervision evidence | HIGH | SEC-001, ASSESS-INSTITUTION-003 | O08, O09, A05 |
 | RESULT-004 | Full-type and institution result finalization/reporting | BLOCKED | P1 / trustworthy complete results | HIGH | ASSESS-QUESTION-002, ASSESS-QUESTION-003, ASSESS-QUESTION-004, ASSESS-QUESTION-005, ASSESS-QUESTION-006, ASSESS-QUESTION-007, ASSESS-QUESTION-008, ASSESS-INSTITUTION-001 | O02, O05, O09, A01 |
 | RESULT-003 | Teacher publication and Student own finalized score | BLOCKED | P1 / result delivery | HIGH | RESULT-004 | O05, O09 |
-| SEC-OPS-001 | Audited operational/session intervention | BLOCKED | P0 / operational security | HIGH | SEC-001, AUTH-003 | O03, O09, PB12 |
+| SEC-OPS-001 | Audited operational/session intervention | IN_PROGRESS | P0 / operational security | HIGH | SEC-001, AUTH-003 | O03, O09, PB12 |
 | OPS-STAGING-001 | Authorized isolated synthetic staging and measurement readiness | BLOCKED | P0 / external environment prerequisite | HIGH | NONE | O07, S01-S16, ACCESS, COST |
 | PERF-001 | Production-equivalent full-workload capacity evidence | BLOCKED | P0 / G4 evidence | HIGH | OPS-STAGING-001, AUTH-003, ASSESS-QUESTION-010, ASSESS-ROOM-001, ASSESS-PROCTOR-003, RESULT-003 | O07, O02, O06, O08, LOAD-TOOL |
 | OPS-001 | School VPS TLS, automated off-host backup and restore proof | BLOCKED | P0 / G8 operational evidence | HIGH | OPS-STAGING-001, ASSESS-MEDIA-001, SEC-OPS-001 | O07, S01-S16, PB02, PB12, ACCESS, COST |
@@ -109,7 +113,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 - [x] AUTH-001 — Final ELLIGBLE ID generation and uniqueness implementation (DONE, PR #20/main ebcc4ca, CI #124)
 - [x] ADMIN-001 — School Operator authoritative roster import (DONE, PR #21/main 056a154, CI #131)
 - [x] AUTH-002 — Student claim and scoped verification/activation (DONE)
-- [ ] AUTH-003 — In-person school-assisted recovery of the existing account (VERIFYING)
+- [x] AUTH-003 — In-person school-assisted recovery of the existing account (DONE)
 - [ ] ASSESS-QUESTION-001 — Versioned question/answer/scoring compatibility foundation (BLOCKED)
 - [ ] ASSESS-QUESTION-002 — Multiple response (BLOCKED)
 - [ ] ASSESS-QUESTION-003 — True/false (BLOCKED)
@@ -129,7 +133,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 - [ ] ASSESS-PROCTOR-003 — STANDAR risk feed and human incident journey (BLOCKED)
 - [ ] RESULT-004 — Full-type and institution result finalization/reporting (BLOCKED)
 - [ ] RESULT-003 — Teacher publication and Student own finalized score (BLOCKED)
-- [ ] SEC-OPS-001 — Audited operational/session intervention (BLOCKED)
+- [ ] SEC-OPS-001 — Audited operational/session intervention (IN_PROGRESS)
 - [ ] OPS-STAGING-001 — Authorized isolated synthetic staging and measurement readiness (BLOCKED)
 - [ ] PERF-001 — Production-equivalent full-workload capacity evidence (BLOCKED)
 - [ ] OPS-001 — School VPS TLS, automated off-host backup and restore proof (BLOCKED)
@@ -196,7 +200,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### AUTH-003 — In-person school-assisted recovery of the existing account
 
-- **Requirements / status / priority / risk:** R09; VERIFYING; P0 / account continuity; HIGH.
+- **Requirements / status / priority / risk:** R09; DONE; P0 / account continuity; HIGH.
 - **Dependencies and approvals:** AUTH-002; external O03, O09, A03. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Scoped verifier authorizes reset of the existing identity/account after approved in-person proof. Single-use/expiry/revocation/notification follow O03; concurrent completion/replay cannot allocate a new identity or consume a token twice. Never expose credential/proof data.
 - **Required tests/evidence:** P8 V01/V03/V11; expired/consumed/forged proof, wrong verifier/rombel/tenant, concurrent reset and old-session behavior; real PostgreSQL and browser recovery. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.
@@ -396,7 +400,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### SEC-OPS-001 — Audited operational/session intervention
 
-- **Requirements / status / priority / risk:** R07, R23, R28, R29; BLOCKED; P0 / operational security; HIGH.
+- **Requirements / status / priority / risk:** R07, R23, R28, R29; IN_PROGRESS; P0 / operational security; HIGH.
 - **Dependencies and approvals:** SEC-001, AUTH-003; external O03, O09, PB12. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Replace runbook manual-SQL session revocation with an approved case-scoped audited owning-module command/path. Prove required revocation behavior, actor/reason/outcome and failure handling; no broad platform academic bypass or agent production SQL.
 - **Required tests/evidence:** P8 V01/V11/V16; unauthorized/cross-case/tenant denial, atomic audit+revocation, retries, old session refusal and no credential logging; synthetic CLI/HTTP integration only. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.
