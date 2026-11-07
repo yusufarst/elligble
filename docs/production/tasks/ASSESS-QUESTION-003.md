@@ -435,3 +435,12 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
 - **Chain stopped** under 00.13 §6/§8 and escalated. **Owner decision (2026-11-08, in chat):** "Buka ulang 003, uji saja (Recommended)": reopen ASSESS-QUESTION-003 for a test-only correction, then continue with ASSESS-QUESTION-004.
 - **Correction** (branch task/assess-question-003-firefox-reload from b7d02ee): row 22 (the 99b spec) and the ASSESS-QUESTION-002 spec `e2e/tests/99-question-types.spec.ts` (a path-only addition, test-only, no acceptance change) call `reloadPage()` instead of `page.reload()`. Nothing else changes.
 - **Verification:** exact-SHA CI, then review by the same reviewer, a delegated squash merge and post-merge main CI. The trackers keep ASSESS-QUESTION-003 at VERIFYING until that CI passes; the next Task's first change then records the landing.
+
+### 13.1 Review and correction 2 of the post-merge fix
+
+- **CI #188** (run 42416082132, f12ade7, attempt 1): eight jobs SUCCESS.
+- **Review by the same reviewer: STOP F1.**
+  - The diagnosis, the reload change and its assertion strength are confirmed. There is no product impact.
+  - F1: `99-question-types.spec.ts` `freshTab()` still calls `student.goto(url)`. That is the first navigation of a new page into the client, which waits for the load event. It is the same Firefox hazard `helpers.ts` `open()` documents (CI runs 28/29), and it already hung 99b in CI #183 (§11.1).
+- **Path authority.** The reviewer confirmed after the fact that the `99-question-types.spec.ts` path is necessary: test-only, no acceptance change, needed to keep C04/C08 green. 00.13 §5.2 asks for that confirmation before the edit. The authority for this path is therefore the Owner's explicit decision "Buka ulang 003, uji saja" (§13), with the reviewer's necessity confirmation recorded here.
+- **Correction 2:** `freshTab()` calls `open(student, url)` instead of `student.goto(url)`. No direct `goto()` or `reload()` remains in either spec.
