@@ -1,6 +1,7 @@
 import type pg from 'pg';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
+import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 
 // Teacher preview of an exam before it opens (ASSESS-TEACHER-002; D04.3-38 LOCKED: the
 // teacher previews the exam before READY, close to what students will see; D04.3-39 LOCKED:
@@ -21,7 +22,9 @@ export interface TeacherExamPreviewQuestion {
     /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
     /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
-    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE';
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE';
+    /** True/false only: the key (ASSESS-QUESTION-003 §4A.5); absent on every other item. */
+    correctValue?: boolean;
     /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
     correctOptionIds?: string[] | null;
 }
@@ -75,6 +78,14 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
             options: record.options.map(o => ({ id: o.id, content: o.content })),
             correctOptionId: null, maxScore: record.maxScore, valid: true,
             questionType: MULTIPLE_RESPONSE_TYPE, correctOptionIds: record.options.filter(o => keys.has(o.id)).map(o => o.id),
+        };
+    }
+    if (content && typeof content === 'object' && !Array.isArray(content) && (content as Record<string, unknown>)['schemaVersion'] === 2
+        && TRUE_FALSE_DESCRIPTOR.validateContent(content as Record<string, unknown>).ok) {
+        const record = content as { prompt: string; correctValue: boolean; maxScore: number };
+        return {
+            snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
+            questionType: TRUE_FALSE_TYPE, correctOptionIds: null, correctValue: record.correctValue,
         };
     }
     // Show what is there, without trusting its shape.

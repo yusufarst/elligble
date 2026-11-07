@@ -120,7 +120,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           {/* The exam screen's own question card (workstation.css), so the preview looks the same. */}
           <section className="question-card" aria-label={`Soal nomor ${question.no}`}>
             <p className="m-0 mb-3 flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : ''}</span>
+              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : ''}</span>
               {showKey && question.maxScore !== null && <span className="tabular-nums">Skor {formatScore(question.maxScore)}</span>}
             </p>
             {!question.valid && (
@@ -131,7 +131,30 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             )}
             <fieldset className="question-fieldset">
               <legend className="question-prompt whitespace-pre-wrap [overflow-wrap:anywhere]">{question.prompt}</legend>
-              {question.questionType === 'MULTIPLE_RESPONSE' ? (
+              {question.questionType === 'TRUE_FALSE' ? (
+              <div className="options-list" role="radiogroup" aria-label="Pilihan Jawaban">
+                {([['true', 'B', 'Benar'], ['false', 'S', 'Salah']] as const).map(([choice, marker, label]) => {
+                  const selected = tried[question.snapshotId] === choice;
+                  const key = showKey && question.correctValue === (choice === 'true');
+                  const inputId = `preview-${question.snapshotId}-${choice}`;
+                  return (
+                    <label key={choice} htmlFor={inputId} className={`option-item-label min-w-0 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ${selected ? 'selected' : ''} ${key ? 'outline outline-2 outline-foreground' : ''}`}>
+                      <input
+                        type="radio"
+                        id={inputId}
+                        name={`preview-${question.snapshotId}`}
+                        checked={selected}
+                        onChange={() => setTried(prev => ({ ...prev, [question.snapshotId]: choice }))}
+                        className="option-radio-input"
+                      />
+                      <span className="option-marker" aria-hidden="true">{marker}</span>
+                      <span className="option-text">{label}</span>
+                      {key && <span className="shrink-0 text-xs font-semibold text-foreground">Kunci jawaban</span>}
+                    </label>
+                  );
+                })}
+              </div>
+              ) : question.questionType === 'MULTIPLE_RESPONSE' ? (
               <div className="options-list options-list-multiple" role="group" aria-label="Pilihan Jawaban" aria-describedby={`preview-hint-${question.snapshotId}`}>
                 <p id={`preview-hint-${question.snapshotId}`} className="options-instruction">Pilih semua jawaban yang benar.</p>
                 {question.options.map((option, i) => {

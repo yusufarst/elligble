@@ -16,6 +16,7 @@ export const QUESTION_TEMPLATE_CSV = '\uFEFF' + [
   'no;type;prompt;option_a;option_b;option_c;option_d;option_e;correct;score',
   '1;PG;Ibu kota Indonesia adalah;Bandung;Jakarta;Surabaya;Medan;Makassar;B;1',
   '2;PGK;Bilangan prima di bawah 10 adalah;2;4;5;8;9;A,C;1,5',
+  '3;BS;Matahari terbit dari arah timur;;;;;;B;1',
 ].join('\r\n') + '\r\n';
 
 export const LATEST_START_OPTIONS: Array<{ value: LatestStartPolicy; label: string; description: string }> = [
@@ -57,10 +58,11 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'option_empty': return `${at}pilihan ${letters(problem.letters)} kosong. Setiap soal perlu lima pilihan, A sampai E.`;
       case 'options_duplicate': return `${at}pilihan ${letters(problem.letters)} sama. Setiap pilihan harus berbeda.`;
       case 'correct_multiple': return `${at}kunci jawaban harus satu huruf. Setiap soal hanya punya satu jawaban benar.`;
-      case 'correct_invalid': return `${at}kunci jawaban harus salah satu huruf A, B, C, D, atau E.`;
+      case 'correct_invalid': return problem.type === 'BS' ? `${at}kunci jawaban BS harus B (Benar) atau S (Salah).` : `${at}kunci jawaban harus salah satu huruf A, B, C, D, atau E.`;
       case 'score_invalid': return `${at}skor harus angka lebih dari 0 sampai ${limits.maxQuestionScore}, dengan paling banyak dua angka di belakang koma.`;
-      case 'type_invalid': return `${at}tipe soal harus PG atau PGK.`;
+      case 'type_invalid': return `${at}tipe soal harus PG, PGK atau BS.`;
       case 'correct_duplicate': return `${at}huruf kunci jawaban tidak boleh berulang.`;
+      case 'options_not_allowed': return `${at}soal Benar/Salah (BS) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`;
     }
   }
   switch (problem.code) {

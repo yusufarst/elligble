@@ -20,7 +20,7 @@ export const QUESTIONS_HEADER = ['no', 'prompt', 'option_a', 'option_b', 'option
 export const QUESTIONS_TEMPLATE_V2 = 'elligble-questions-v2';
 export const QUESTIONS_HEADER_V2 = ['no', 'type', 'prompt', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct', 'score'] as const;
 export type QuestionTemplate = typeof QUESTIONS_TEMPLATE | typeof QUESTIONS_TEMPLATE_V2;
-export type ImportQuestionType = 'PG' | 'PGK';
+export type ImportQuestionType = 'PG' | 'PGK' | 'BS';
 export const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 /** Implementation limits (plan §7): questions per file and the largest score of one question. */
 export const MAX_IMPORT_QUESTIONS = 200;
@@ -42,7 +42,8 @@ export type QuestionProblemCode =
     | 'correct_invalid'
     | 'score_invalid'
     | 'type_invalid'
-    | 'correct_duplicate';
+    | 'correct_duplicate'
+    | 'options_not_allowed';
 
 export interface QuestionProblem {
     code: QuestionProblemCode;
@@ -54,21 +55,25 @@ export interface QuestionProblem {
     found?: number;
     /** option_empty and options_duplicate: the letters concerned. */
     letters?: string[];
+    /** correct_invalid on a BS row only (ASSESS-QUESTION-003 §4A.2); absent otherwise. */
+    type?: 'BS';
 }
 
 export interface ParsedQuestion {
     line: number;
     no: number;
     prompt: string;
-    /** Five option texts in the authored order, shown as A to E. */
+    /** Five option texts in the authored order, shown as A to E; empty for BS. */
     options: string[];
-    /** PG: the correct option (0-4). PGK: -1; use correctIndexes. */
+    /** PG: the correct option (0-4). PGK and BS: -1. */
     correctIndex: number;
     maxScore: number;
     /** PG for every v1 row. */
     type: ImportQuestionType;
-    /** The correct options in A-E order: one for PG, one to five for PGK. */
+    /** The correct options in A-E order: one for PG, one to five for PGK, none for BS. */
     correctIndexes: number[];
+    /** BS only: the key (true = Benar). */
+    correctValue?: boolean;
 }
 
 export interface QuestionFile {
@@ -160,7 +165,7 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         const typeCell = v2 ? cells[1].toUpperCase() : 'PG';
         const [no, prompt, a, b, c, d, e, correct, score] = v2 ? [cells[0], ...cells.slice(2)] : cells;
-        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' ? typeCell : null;
+        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' ? typeCell : null;
         const options = [a, b, c, d, e];
         if (no !== String(index + 1)) {
             problems.push({ code: 'number_out_of_order', line, expected: index + 1 });
@@ -172,6 +177,26 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         if (!prompt) {
             problems.push({ code: 'prompt_empty', line });
+            return;
+        }
+        if (type === 'BS') {
+            // Benar/Salah: no option cells; the key is B, S, Benar or Salah (§4.2, §4A.5 order).
+            if (options.some(option => option.length > 0)) {
+                problems.push({ code: 'options_not_allowed', line });
+                return;
+            }
+            const key = correct.trim().toUpperCase();
+            const correctValue = key === 'B' || key === 'BENAR' ? true : key === 'S' || key === 'SALAH' ? false : null;
+            if (correctValue === null) {
+                problems.push({ code: 'correct_invalid', line, type: 'BS' });
+                return;
+            }
+            const bsScore = SCORE_FORMAT.test(score) ? Number(score.replace(',', '.')) : NaN;
+            if (!(bsScore > 0 && bsScore <= MAX_QUESTION_SCORE)) {
+                problems.push({ code: 'score_invalid', line });
+                return;
+            }
+            questions.push({ line, no: index + 1, prompt, options: [], correctIndex: -1, maxScore: bsScore, type, correctIndexes: [], correctValue });
             return;
         }
         const missing = OPTION_LETTERS.filter((_, i) => !options[i]);
@@ -240,9 +265,10 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
         case 'option_empty': return `${at}all five options (A to E) are required; missing ${problem.letters?.join(', ')}`;
         case 'options_duplicate': return `${at}options must be different from each other (${problem.letters?.join(', ')})`;
         case 'correct_multiple': return `${at}"correct" must be exactly one of A, B, C, D, E (single-answer questions)`;
-        case 'correct_invalid': return `${at}"correct" must be one of A, B, C, D, E`;
+        case 'correct_invalid': return problem.type === 'BS' ? `${at}"correct" must be B (true) or S (false) for BS` : `${at}"correct" must be one of A, B, C, D, E`;
         case 'score_invalid': return `${at}"score" must be a positive number with at most two decimals, up to ${MAX_QUESTION_SCORE}`;
-        case 'type_invalid': return `${at}"type" must be PG (single answer) or PGK (multiple answers)`;
+        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false) or PGK (multiple answers)`;
         case 'correct_duplicate': return `${at}"correct" lists a letter more than once`;
+        case 'options_not_allowed': return `${at}options must be empty for BS`;
     }
 }

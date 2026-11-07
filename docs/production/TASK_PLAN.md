@@ -1,3 +1,5 @@
+> **ASSESS-QUESTION-003 implementation checkpoint, 2026-11-08 (DEC-048):** implementation candidate published for exact-content CI and the independent implementation and rendered review ([record §11](tasks/ASSESS-QUESTION-003.md)). DONE 8/33 (24.24%), VERIFYING 1, BLOCKED 24, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
 > **ASSESS-QUESTION-003 READY / Build checkpoint, 2026-11-08 (DEC-048):** contract review chain STOP → STOP → PASS; formal READY PASS, frozen allowlist, no migration; rendered baseline = exact-main CI #181 artifacts (450 pairs, manifest recorded) ([record §10](tasks/ASSESS-QUESTION-003.md)). DONE 8/33 (24.24%), IN_PROGRESS 1, BLOCKED 24, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
 
 > **ASSESS-QUESTION-002 landing and ASSESS-QUESTION-003 contract checkpoint, 2026-11-08 (DEC-048):** ASSESS-QUESTION-002 DONE / MERGED: PR #27 squash main a129a38672f1da050999b6d677d7c4eac0d78194 (tree equal to evidence head 729da27), PR-head CI #180 and post-merge main CI #181 attempt 1 eight SUCCESS; final record §12 (Delegated Acceptance). ASSESS-QUESTION-003 is eligible (00.13 §4.1); its contract is prepared and under independent review; NOT READY. DONE 8/33 (24.24%), VERIFYING 0, BLOCKED 25, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
@@ -45,7 +47,7 @@
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
 **Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
 **Completed transition:** GOV-P11-001 DONE for controlled tracker preparation/evidence only; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919, CI #110; excluded from the 33 implementation Tasks
-**Current Task:** ASSESS-QUESTION-003 IN_PROGRESS under DEC-048 ([record §10](tasks/ASSESS-QUESTION-003.md)): formal READY PASS, after ASSESS-QUESTION-002 DONE / MERGED (main a129a38, CI #181; [record §12](tasks/ASSESS-QUESTION-002.md)). Earlier: ASSESS-QUESTION-002 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-002.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-002.md)): formal READY PASS, reserved 0060, CI-first order with a capture-only baseline, after ASSESS-QUESTION-001 DONE / MERGED (main 8ade3ae, CI #160; [record §13](tasks/ASSESS-QUESTION-001.md)). Earlier: ASSESS-QUESTION-001 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-001.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-001.md)): formal READY PASS, frozen 17-path allowlist, CI-first order, after SEC-OPS-001 DONE / MERGED (main aa2c042, CI #155; [record §15](tasks/SEC-OPS-001.md)). Earlier: SEC-OPS-001 VERIFYING under DEC-048 ([record §13](tasks/SEC-OPS-001.md)), after AUTH-003 DONE / MERGED (main b6dab65, CI #150; [record §16](tasks/AUTH-003.md)). Earlier: AUTH-003 VERIFYING under DEC-048 ([record §14](tasks/AUTH-003.md)), after AUTH-002 DONE / MERGED (main 38259da, CI #144; [record §15](tasks/AUTH-002.md)). Earlier: AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
+**Current Task:** ASSESS-QUESTION-003 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-003.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-003.md)): formal READY PASS, after ASSESS-QUESTION-002 DONE / MERGED (main a129a38, CI #181; [record §12](tasks/ASSESS-QUESTION-002.md)). Earlier: ASSESS-QUESTION-002 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-002.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-002.md)): formal READY PASS, reserved 0060, CI-first order with a capture-only baseline, after ASSESS-QUESTION-001 DONE / MERGED (main 8ade3ae, CI #160; [record §13](tasks/ASSESS-QUESTION-001.md)). Earlier: ASSESS-QUESTION-001 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-001.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-001.md)): formal READY PASS, frozen 17-path allowlist, CI-first order, after SEC-OPS-001 DONE / MERGED (main aa2c042, CI #155; [record §15](tasks/SEC-OPS-001.md)). Earlier: SEC-OPS-001 VERIFYING under DEC-048 ([record §13](tasks/SEC-OPS-001.md)), after AUTH-003 DONE / MERGED (main b6dab65, CI #150; [record §16](tasks/AUTH-003.md)). Earlier: AUTH-003 VERIFYING under DEC-048 ([record §14](tasks/AUTH-003.md)), after AUTH-002 DONE / MERGED (main 38259da, CI #144; [record §15](tasks/AUTH-002.md)). Earlier: AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
 **Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
 **Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
@@ -70,8 +72,8 @@ Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-0
 | Current Total | 33 |
 | DONE | 8 |
 | READY | 0 |
-| IN_PROGRESS | 1 |
-| VERIFYING | 0 |
+| IN_PROGRESS | 0 |
+| VERIFYING | 1 |
 | BLOCKED | 24 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
@@ -98,7 +100,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 | AUTH-003 | In-person school-assisted recovery of the existing account | DONE | P0 / account continuity | HIGH | AUTH-002 | O03, O09, A03 |
 | ASSESS-QUESTION-001 | Versioned question/answer/scoring compatibility foundation | DONE | P0 / question and answer integrity foundation | HIGH | SEC-001 | O02, O05, O09, A01 |
 | ASSESS-QUESTION-002 | Multiple response | DONE | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
-| ASSESS-QUESTION-003 | True/false | IN_PROGRESS | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
+| ASSESS-QUESTION-003 | True/false | VERIFYING | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-004 | Matching | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-005 | Ordering | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-006 | Short answer | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001, ASSESS-QUESTION-008 | O02, O09 |
@@ -134,7 +136,7 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 - [x] AUTH-003 — In-person school-assisted recovery of the existing account (DONE)
 - [x] ASSESS-QUESTION-001 — Versioned question/answer/scoring compatibility foundation (DONE, PR #26/main 8ade3ae, CI #160)
 - [x] ASSESS-QUESTION-002 — Multiple response (DONE, PR #27/main a129a38, CI #181)
-- [ ] ASSESS-QUESTION-003 — True/false (IN_PROGRESS)
+- [ ] ASSESS-QUESTION-003 — True/false (VERIFYING)
 - [ ] ASSESS-QUESTION-004 — Matching (BLOCKED)
 - [ ] ASSESS-QUESTION-005 — Ordering (BLOCKED)
 - [ ] ASSESS-QUESTION-006 — Short answer (BLOCKED)
@@ -248,7 +250,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### ASSESS-QUESTION-003 — True/false
 
-- **Requirements / status / priority / risk:** R12, R02, R03, R25, R30; IN_PROGRESS; P1 / all eight formats; HIGH.
+- **Requirements / status / priority / risk:** R12, R02, R03, R25, R30; VERIFYING; P1 / all eight formats; HIGH.
 - **Dependencies and approvals:** ASSESS-QUESTION-001; external O02, O09. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Deliver a real synthetic author/import → preview → Student answer → recovery → submit → score/grade journey for this type under the approved contract. Strict boolean payload and approved exact-match scoring; no string coercion; unanswered remains distinguishable. Extend the shared type registry and existing primitives; no separate timer/save pipeline.
 - **Required tests/evidence:** P8 V02–V06/V09–V12: true/false/blank, string/null rejection and recovery; empty/upgrade database tests if schema changes, no-key projection and five-browser E2E. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.

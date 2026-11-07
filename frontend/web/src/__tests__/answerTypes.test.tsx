@@ -56,7 +56,7 @@ afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('declared question types', () => {
   it('the supported list is exactly v1 and keys are built from the delivered question', () => {
-    expect(SUPPORTED_QUESTION_TYPES).toEqual(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE']);
+    expect(SUPPORTED_QUESTION_TYPES).toEqual(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE']);
     expect(contentKeyOf({ schemaVersion: 1, questionType: 'MULTIPLE_CHOICE_SINGLE' })).toBe(V1_SINGLE_CHOICE_KEY);
   });
 
@@ -73,8 +73,8 @@ describe('declared question types', () => {
     const headersOf = (i: number) => new Headers((fetchMock.mock.calls[i] as unknown as [string, RequestInit])[1].headers);
     const urls = fetchMock.mock.calls.map(c => c[0] as string);
     const q = urls.findIndex(u => u.includes('/assessment/questions')), s = urls.findIndex(u => u.includes('/answer/save'));
-    expect(headersOf(q).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE');
-    expect(headersOf(s).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE');
+    expect(headersOf(q).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE,2:TRUE_FALSE');
+    expect(headersOf(s).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE,2:TRUE_FALSE');
     const body = JSON.parse((fetchMock.mock.calls[s] as unknown as [string, RequestInit])[1].body as string);
     expect(body.answerPayload).toEqual({ selectedOptionId: 'B' });
     expect(Object.keys(body).sort()).toEqual(['answerPayload', 'attemptId', 'capturedAt', 'clientWriteIdentity', 'expectedWriteVersion', 'sessionId', 'snapshotId']);
@@ -152,7 +152,7 @@ describe('queued intents carry their content key', () => {
   it('an intent for a content key this client does not handle is never sent and never shown as saved', async () => {
     const server = new FakeServer();
     const store = new MemoryAnswerStore();
-    await store.put(storedRecord('q-x', 'A', { contentKey: '2:TRUE_FALSE' }));
+    await store.put(storedRecord('q-x', 'A', { contentKey: '2:UNREGISTERED_EXAMPLE' }));
     const { engine } = makeEngine(server.api(), store);
     await engine.initialize([]);
     await settle(); await settle();
@@ -162,11 +162,11 @@ describe('queued intents carry their content key', () => {
     await settle(); await settle();
     expect(server.calls).toEqual([]);
     expect(engine.view('q-y').status).toBe('failed');
-    expect((await store.listForAttempt(TENANT, ATTEMPT)).map(r => [r.snapshotId, r.contentKey]).sort()).toEqual([['q-x', '2:TRUE_FALSE'], ['q-y', '2:MATCHING']]);
+    expect((await store.listForAttempt(TENANT, ATTEMPT)).map(r => [r.snapshotId, r.contentKey]).sort()).toEqual([['q-x', '2:UNREGISTERED_EXAMPLE'], ['q-y', '2:MATCHING']]);
     // The HTTP adapter refuses to build a payload for it as well.
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const outcome = await createAnswerSyncApi(ATTEMPT, SESSION).save({ attemptId: ATTEMPT, sessionId: SESSION, snapshotId: 'q-x', contentKey: '2:TRUE_FALSE', optionId: 'A', clientWriteIdentity: 'c', expectedWriteVersion: null, capturedAt: 0 });
+    const outcome = await createAnswerSyncApi(ATTEMPT, SESSION).save({ attemptId: ATTEMPT, sessionId: SESSION, snapshotId: 'q-x', contentKey: '2:UNREGISTERED_EXAMPLE', optionId: 'A', clientWriteIdentity: 'c', expectedWriteVersion: null, capturedAt: 0 });
     expect(outcome).toEqual({ kind: 'rejected', code: 'question_type_unsupported' });
     expect(fetchMock).not.toHaveBeenCalled();
     engine.dispose();

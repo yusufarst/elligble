@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 all eight formats; HIGH risk; R12, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → STOP → PASS (§9); formal READY PASS and Build started under DEC-048 on 2026-11-08 (§10)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation and rendered review (§11); DEC-048** |
 | Objective | Deliver true/false ("Benar/Salah") end to end on the versioned foundation: author through the v2 import, teacher preview, Student answer with local recovery, submit and exact-match score |
 | Owner decisions | O02-1, O02-2, O02-4 and O02-12, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); A01. Reviewer: the standing Owner-designated read-only subagent reviewer |
 | Execution authority | DEC-048 (00.13). Internal dependency ASSESS-QUESTION-001 is DONE / MERGED. ASSESS-QUESTION-002 is DONE / MERGED (main a129a38672f1da050999b6d677d7c4eac0d78194, post-merge CI #181 attempt 1 eight SUCCESS); its v2 template, client answer values and E2E harness are reused. O09 rests on the approved P5 content |
@@ -283,3 +283,31 @@ The reviewer confirmed the clearing reading (no Owner decision needed), the impo
 - **Frontend skill checkpoint:** as ASSESS-QUESTION-002 §4A.8: three verified skills, DesainPakeAI not consulted, no authority claim.
 - **Frozen CI-first order:** registration (this commit) → implementation → exact-SHA CI → independent implementation and rendered review by the same reviewer → Delegated Acceptance and the evidence commit → PR-head CI, delegated squash merge, post-merge main CI. No re-runs.
 - **Status:** BLOCKED → READY → IN_PROGRESS. Counters: DONE 8, IN_PROGRESS 1, BLOCKED 24. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+## 11. Implementation checkpoint — 2026-11-08
+
+- **Step 1:** registration a0009ee carries the #181 baseline manifest (§10).
+- **Implementation candidate**, inside rows 5–25 plus the Task-flow rows 1–4:
+  - **Descriptor** `question-types/true-false.ts`, registered.
+  - **Parser:**
+    - BS rows follow the frozen order (number → type → prompt → `options_not_allowed` → correct → score);
+    - `correctValue` is on `ParsedQuestion`; BS-only `type` on `correct_invalid`;
+    - operator wording as frozen.
+  - **Builder:** `buildTrueFalseFrozenContent`, dispatched by `buildImportedFrozenContent`.
+  - **Import preview item:** `correct` "Benar"/"Salah", `correctLetters` [], `correctValue`.
+  - **Teacher preview item:** `{questionType, correctValue, correctOptionId: null, correctOptionIds: null, options: []}`; invalid content keeps its earlier shape.
+  - **Client:**
+    - `TRUE_FALSE_KEY` is supported; `answerValueOf` maps a strict boolean; the adapter sends `{value}` only from "true"/"false";
+    - `TrueFalseAnswer` uses radio option cards B/S, rendered by type on the exam screen;
+    - teacher-preview and import-preview views by type;
+    - the template has a BS row; the wording and the import card instruction are as frozen.
+  - **`StudentSafeQuestion.options`** stays required (§4A.6).
+  - **Document:** the P4 pointer.
+- **Tests:**
+  - `test/true-false.test.ts` (C01/C02);
+  - `test/integration/true-false.test.ts` (C03, including the 409 pair for a client without true/false);
+  - `frontend/web/src/__tests__/true-false.test.tsx` (C05);
+  - `e2e/tests/99b-true-false.spec.ts` (C06/C07, with the ASSESS-QUESTION-002 WebKit lessons applied);
+  - the §4A.1 assertions in rows 23–25.
+- **Local:** typechecks PASS (runtime, web, e2e); Secure Assessment units 938/938; the new web file 6/6 and the affected web files PASS. Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 8, VERIFYING 1, BLOCKED 24.

@@ -14,8 +14,10 @@ export type QuestionContentKey = string;
 export const V1_SINGLE_CHOICE_KEY: QuestionContentKey = '1:MULTIPLE_CHOICE_SINGLE';
 /** Multiple response, "pilihan ganda kompleks" (ASSESS-QUESTION-002). */
 export const MULTIPLE_RESPONSE_KEY: QuestionContentKey = '2:MULTIPLE_RESPONSE';
+/** True/false, "Benar/Salah" (ASSESS-QUESTION-003). */
+export const TRUE_FALSE_KEY: QuestionContentKey = '2:TRUE_FALSE';
 /** The content keys this client renders and saves; sent as the X-Question-Types header. */
-export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY]);
+export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY]);
 export const QUESTION_TYPES_HEADER = 'X-Question-Types';
 
 export function contentKeyOf(question: { schemaVersion: number; questionType: string }): QuestionContentKey {
@@ -40,6 +42,11 @@ export function answerValueOf(payload: unknown): string | null {
     const ids = (payload as { selectedOptionIds: unknown }).selectedOptionIds;
     if (!Array.isArray(ids) || ids.some(id => typeof id !== 'string') || new Set(ids).size !== ids.length) return null;
     return canonicalSelection(ids as string[]);
+  }
+  // True/false: a strict boolean becomes "true" or "false" (ASSESS-QUESTION-003 §4.4).
+  if ('value' in payload) {
+    const value = (payload as { value: unknown }).value;
+    return typeof value === 'boolean' ? String(value) : null;
   }
   if ('selectedOptionId' in payload) {
     const value = (payload as { selectedOptionId: unknown }).selectedOptionId;
@@ -607,7 +614,7 @@ export interface TeacherExamImportInput {
 export type QuestionProblemCode =
   | 'not_text' | 'encoding_invalid' | 'csv_syntax' | 'header_invalid' | 'file_empty' | 'too_many_questions'
   | 'column_count' | 'number_out_of_order' | 'prompt_empty' | 'option_empty' | 'options_duplicate'
-  | 'correct_multiple' | 'correct_invalid' | 'score_invalid' | 'type_invalid' | 'correct_duplicate';
+  | 'correct_multiple' | 'correct_invalid' | 'score_invalid' | 'type_invalid' | 'correct_duplicate' | 'options_not_allowed';
 
 export type SetupProblemCode =
   | 'file_too_large' | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
@@ -615,14 +622,14 @@ export type SetupProblemCode =
   | 'schedule_conflict' | 'not_ready';
 
 export type ImportProblem =
-  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[] }
+  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' }
   | { source: 'setup'; code: SetupProblemCode; count?: number; blocker?: string };
 
 export interface TeacherExamImportPreview {
   sourceSha256: string;
   problems: ImportProblem[];
   /** type and correctLetters: ASSESS-QUESTION-002 (absent from older servers: PG with `correct`). */
-  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK'; correctLetters?: string[] }>;
+  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS'; correctLetters?: string[]; correctValue?: boolean }>;
   participants: Array<{ enrollmentId: string; elligbleId: string; included: boolean; conflict: boolean }>;
   window: { startsAt: string; endsAt: string } | null;
   totals: { questions: number; maxScore: number; participants: number };
@@ -654,9 +661,11 @@ export interface TeacherExamPreview {
     options: Array<{ id: string; content: string }>;
     correctOptionId: string | null;
   /** ASSESS-QUESTION-002: the valid type (absent from older servers: single choice); null for invalid content. */
-  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | null;
+  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | null;
   /** Multiple response: the key options in authored order. */
   correctOptionIds?: string[] | null;
+  /** True/false only: the key. */
+  correctValue?: boolean;
     maxScore: number | null;
     valid: boolean;
   }>;
