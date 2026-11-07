@@ -444,3 +444,19 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
   - F1: `99-question-types.spec.ts` `freshTab()` still calls `student.goto(url)`. That is the first navigation of a new page into the client, which waits for the load event. It is the same Firefox hazard `helpers.ts` `open()` documents (CI runs 28/29), and it already hung 99b in CI #183 (§11.1).
 - **Path authority.** The reviewer confirmed after the fact that the `99-question-types.spec.ts` path is necessary: test-only, no acceptance change, needed to keep C04/C08 green. 00.13 §5.2 asks for that confirmation before the edit. The authority for this path is therefore the Owner's explicit decision "Buka ulang 003, uji saja" (§13), with the reviewer's necessity confirmation recorded here.
 - **Correction 2:** `freshTab()` calls `open(student, url)` instead of `student.goto(url)`. No direct `goto()` or `reload()` remains in either spec.
+
+### 13.2 Final evidence of the post-merge fix
+
+- **Final content:** 45924f3b98c2b743b5e6a2a6e749d86d1150072b on task/assess-question-003-firefox-reload (PR #29).
+- **Commits:**
+  - correction 1, f12ade7 (CI #188, attempt 1, eight SUCCESS);
+  - correction 2, 45924f3 (CI #189, run 42417342209, attempt 1, eight SUCCESS).
+  - Owner author and committer on every commit; no trailers or attribution.
+- **Review, by the same reviewer:** STOP F1, then PASS on 45924f3. F1 is closed and the §13/§13.1 wording was confirmed accurate.
+- **Scope:**
+  - the 99b and 99 specs (test-only);
+  - this record;
+  - one checkpoint line in each tracker.
+  - No product, workflow or acceptance change.
+- **Acceptance:** ASSESS-QUESTION-003 stays accepted under DEC-048 (§12.4); this fix restores the C06/C08 gates on `main`.
+- **Landing:** a delegated squash merge of PR #29 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, then post-merge main CI. The next Task's first change records the landing, with DONE 9/33 (27.27%), VERIFYING 0, BLOCKED 24.
