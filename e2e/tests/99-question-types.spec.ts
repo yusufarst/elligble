@@ -45,11 +45,14 @@ async function settle(page: Page) {
 }
 
 /** One screenshot/JSON pair per variant; layout gates are enforced in the after phase only. */
-async function captureQuestionSurface(page: Page, scenario: string, root: () => Locator, fixture: string): Promise<void> {
+/** Journey states after the full set: a reduced set of variants (narrow, tablet, wide, short landscape, 200 % text). */
+const STATE_VARIANTS = [{ width: 360, height: 800, text: 1 }, { width: 768, height: 800, text: 1 }, { width: 1280, height: 800, text: 1 }, { width: 640, height: 360, text: 1 }, { width: 390, height: 844, text: 2 }];
+
+async function captureQuestionSurface(page: Page, scenario: string, root: () => Locator, fixture: string, only?: typeof STATE_VARIANTS): Promise<void> {
     const original = page.viewportSize();
     const browser = page.context().browser();
     if (!original || !browser) throw new Error('A real browser and viewport are required');
-    const variants = [
+    const variants = only ?? [
         ...WIDTHS.map(width => ({ width, height: 800, text: 1 })),
         { width: 640, height: 360, text: 1 },
         { width: 390, height: 844, text: 2 },
@@ -240,11 +243,11 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     await A.focus();
     await student.keyboard.press('Space');
     await expect(A).toBeChecked();
-    await captureQuestionSurface(student, 'exam-mr-keyboard-focus', () => student.locator('body'), file);
+    await captureQuestionSurface(student, 'exam-mr-keyboard-focus', () => student.locator('body'), file, STATE_VARIANTS);
     await tap(C);
     await saved();
     expect(await stored()).toEqual({ selectedOptionIds: [ids[0], ids[2]].sort() });
-    await captureQuestionSurface(student, 'exam-mr-selected', () => student.locator('body'), file);
+    await captureQuestionSurface(student, 'exam-mr-selected', () => student.locator('body'), file, STATE_VARIANTS);
 
     // Offline: several toggles, then reconnect; only the final set reaches the server.
     await student.context().setOffline(true);
@@ -263,16 +266,16 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     await tap(A); await tap(C); await tap(E);
     await expect(saveStatus(student)).toHaveText('Belum dijawab');
     await expect.poll(stored).toEqual({ selectedOptionIds: [] });
-    await captureQuestionSurface(student, 'exam-mr-cleared', () => student.locator('body'), file);
+    await captureQuestionSurface(student, 'exam-mr-cleared', () => student.locator('body'), file, STATE_VARIANTS);
     await tap(A);
     await saved();
 
     // Content this version cannot show: an explicit reload state, no endless loading.
     await student.route('**/api/v1/assessment/questions**', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'question_type_unsupported' }) }));
-    await student.reload();
+    await student.goto(student.url());
     await expect(student.getByRole('heading', { name: 'Perlu Memuat Ulang' })).toBeVisible();
     await expect(student.getByRole('button', { name: 'Muat Ulang' })).toBeVisible();
-    await captureQuestionSurface(student, 'exam-unsupported', () => student.locator('body'), file);
+    await captureQuestionSurface(student, 'exam-unsupported', () => student.locator('body'), file, STATE_VARIANTS);
     await student.unroute('**/api/v1/assessment/questions**');
     await student.getByRole('button', { name: 'Muat Ulang' }).click();
     await toMr();
@@ -280,7 +283,7 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
 
     // Read-only while paused: no question content at all, then the exam continues.
     expect((await transition('pause')).status).toBe(200);
-    await expect(student.getByText('Ujian Dijeda')).toBeVisible({ timeout: 30_000 });
+    await expect(student.getByRole('heading', { name: 'Ujian Dijeda' })).toBeVisible({ timeout: 30_000 });
     await expect(student.locator('.options-list')).toHaveCount(0);
     expect((await transition('resume')).status).toBe(200);
     await expect(student.getByText(/Soal \d dari 3/).first()).toBeVisible({ timeout: 30_000 });

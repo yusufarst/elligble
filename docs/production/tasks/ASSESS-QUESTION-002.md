@@ -512,3 +512,13 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
 - **Correction 5** (row 30 only): the pattern is `/^Soal d dari 3$/`.
 - **Correction 5a:** the first correction-5 commit (89b7ec3) recorded the fix but did not contain it, because the shell edit did not apply. Commit 5a applies the pattern to the spec.
 - **Correction 5b:** 544c7e1 also did not change the spec, because the replacement string was mangled. Commit 5b applies the pattern, verified in the file before committing. Only the last of these three SHAs carries the fix; the CI of the two earlier SHAs is superseded by the push.
+
+### 11.8 CI #175 and correction 6
+
+- **CI #175:** exact SHA 8b7c68f, attempt 1. Runtime, Web and Container SUCCESS. Earlier pushes superseded #173 (89b7ec3) and #174 (544c7e1), which carried no fix. E2E FAILED, preserved, no re-run:
+  - in four projects, every capture and journey step up to the pause **passed with no soft layout violation**; the step then failed because the text "Ujian Dijeda" matched two elements (strict mode);
+  - in WebKit (device pixel ratio 3) the page crashed on the reload of the unsupported-content step, after about 70 large full-page captures.
+- **Correction 6** (row 30 only):
+  - the pause step reads the heading "Ujian Dijeda";
+  - the journey states (keyboard focus, selected, cleared, unsupported) are captured at a reduced set: 360, 768 and 1280 px, 640×360, and 200 % text at 390 px. The surfaces themselves (import preview, teacher preview, exam screen with v1 and PGK content) keep the full set of §4A.7;
+  - the unsupported-content step navigates to the same URL instead of reloading.
