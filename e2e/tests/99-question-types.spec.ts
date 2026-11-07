@@ -85,12 +85,14 @@ async function captureQuestionSurface(page: Page, scenario: string, root: () => 
                 });
                 const name = ['workspace-question', phase, scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
                 const screenshot = `${name}.png`;
-                await page.screenshot({ path: test.info().outputPath(screenshot), fullPage: true, animations: 'disabled', caret: 'hide' });
+                // Engines refuse images above 32767 px: a taller page is captured at the viewport.
+                const fullPage = (await page.evaluate(() => document.documentElement.scrollHeight)) <= 30000;
+                await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
                 writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
                     task: 'ASSESS-QUESTION-002', phase, commit, baseline: { commit: BASE_COMMIT, frontendTree: BASE_FRONTEND_TREE }, frontendTree,
                     fixture: { synthetic: true, globalSetupSha256: fixtureSha256, questionsSha256: createHash('sha256').update(fixture).digest('hex') },
                     browser: { project: test.info().project.name, engine: browser.browserType().name(), version: browser.version() },
-                    viewport: page.viewportSize(), textScale: v.text, textScaleMethod: 'computed font-size and line-height doubled per element', scenario, screenshot,
+                    viewport: page.viewportSize(), fullPage, textScale: v.text, textScaleMethod: 'computed font-size and line-height doubled per element', scenario, screenshot,
                     screenshotSha256: createHash('sha256').update(readFileSync(test.info().outputPath(screenshot))).digest('hex'),
                     accessibilitySnapshot: await root().ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
                 }, null, 2));
