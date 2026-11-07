@@ -18,6 +18,11 @@ export interface PendingAnswerRecord {
   snapshotId: string;
   /** Exam session under which the intent was captured (device/tab binding). */
   examSessionId: string;
+  /**
+   * Versioned content key of the question (ASSESS-QUESTION-001, A01-4). Always written by
+   * this client; a record written before it existed is a v1 single-choice intent.
+   */
+  contentKey?: string;
   optionId: string;
   clientWriteIdentity: string;
   /** Identities this device already wrote for the snapshot, to recognise its own writes. */

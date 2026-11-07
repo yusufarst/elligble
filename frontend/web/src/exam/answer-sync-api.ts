@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import type { ResumeAnswer } from '../types/assessment.ts';
+import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, V1_SINGLE_CHOICE_KEY, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -63,6 +63,9 @@ export function classifySaveFailure(status: number, code: string, body: Record<s
         if (lockedAt === null) return { kind: 'retry' };
         return { kind: 'captured_during_lock', lockedAt, unlockedAt: instantOrNull(body.unlockedAt) };
       }
+      // A01-4: the server cannot accept this question's content version; never retried.
+      case 'question_type_unsupported':
+        return { kind: 'rejected', code };
       default:
         return { kind: 'rejected', code };
     }
@@ -84,11 +87,14 @@ async function errorBody(res: Response): Promise<Record<string, unknown>> {
 export function createAnswerSyncApi(attemptId: string, examSessionId: string): SyncApi {
   return {
     async save(request) {
+      // The payload follows the question's content key; this client builds only v1.
+      if (request.contentKey !== V1_SINGLE_CHOICE_KEY) return { kind: 'rejected', code: 'question_type_unsupported' };
       let res: Response;
       const sentAt = Date.now();
       try {
         res = await apiFetch('/api/v1/assessment/answer/save', {
           method: 'POST',
+          headers: { [QUESTION_TYPES_HEADER]: SUPPORTED_QUESTION_TYPES.join(',') },
           json: {
             attemptId: request.attemptId,
             sessionId: request.sessionId,

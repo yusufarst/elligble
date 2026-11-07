@@ -3,6 +3,7 @@ import { checkExamInstanceExistingReadinessChecksCompositionPreflight } from './
 import { checkExamInstanceParticipantProctorScheduleConflictReadiness } from './exam-instance-participant-proctor-schedule-conflict-readiness-preflight.ts';
 import { checkExamInstanceBaselineQuestionSnapshotContentReadiness } from './exam-instance-baseline-question-snapshot-content-readiness-preflight.ts';
 import type { BaselineQuestionSnapshotBlocker } from './question-snapshot-baseline-frozen-content-contract.ts';
+import type { QUESTION_CONTENT_INVALID } from './question-contract.ts';
 
 export type CapabilityContext = {
   tenantId: string;
@@ -53,7 +54,7 @@ export type BaselineReadinessChecksCompositionResult =
       category: 'question_snapshot_content';
       blocker: 'question_snapshot_content_invalid';
       snapshotId: string;
-      contentBlocker: BaselineQuestionSnapshotBlocker;
+      contentBlocker: BaselineQuestionSnapshotBlocker | typeof QUESTION_CONTENT_INVALID;
     }
   | { type: 'invalid_state' }
   | { type: 'denied' }

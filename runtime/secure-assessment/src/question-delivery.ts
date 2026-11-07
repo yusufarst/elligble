@@ -2,10 +2,13 @@ import * as http from 'node:http';
 import * as pg from 'pg';
 import { type AuthorizedAssessmentContext } from './answer.ts';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
+import { classifyFrozenContent, effectiveSupport, parseDeclaredQuestionTypes, PRODUCTION_QUESTION_REGISTRY, QUESTION_TYPES_HEADER, V1_SINGLE_CHOICE_DESCRIPTOR, type QuestionRegistry } from './question-contract.ts';
 
 export interface QuestionDeliveryDependencies {
     pool: pg.Pool;
     getAuthorizedContext: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
+    /** Test injection only; production wiring always uses the production registry. */
+    questionRegistry?: QuestionRegistry;
 }
 
 function isValidUUID(uuid: string): boolean {
@@ -52,6 +55,16 @@ export async function handleQuestionDelivery(
         res.end(JSON.stringify({ error: 'forbidden' }));
         return;
     }
+
+    // A01-4: the content keys this client renders; validated before any database work.
+    const registry = deps.questionRegistry ?? PRODUCTION_QUESTION_REGISTRY;
+    const declared = parseDeclaredQuestionTypes(req.headers[QUESTION_TYPES_HEADER]);
+    if (!declared.ok) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request' }));
+        return;
+    }
+    const supported = effectiveSupport(declared.keys, registry);
 
     let client: pg.PoolClient;
     try {
@@ -221,27 +234,31 @@ export async function handleQuestionDelivery(
         try {
             const projectedQuestions = [];
 
+            // In authored order, the first row that cannot be delivered decides (§5A.6):
+            // unsupported or undeclared -> 409 without content; invalid -> 500 as before.
             for (const row of snapshotsRes.rows) {
+                const kind = classifyFrozenContent(row.frozen_content, registry);
+                if ((kind.kind === 'unsupported' || kind.kind === 'registered' || kind.kind === 'v1') && !supported.has(kind.key)) {
+                    res.writeHead(409, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'question_type_unsupported' }));
+                    return;
+                }
+                if (kind.kind === 'registered') {
+                    if (!kind.descriptor.validateContent(kind.content).ok) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'internal_error' }));
+                        return;
+                    }
+                    projectedQuestions.push({ snapshotId: row.id, ...kind.descriptor.studentView(kind.content) });
+                    continue;
+                }
                 const validation = validateBaselineQuestionSnapshotFrozenContent(row.frozen_content);
                 if (validation.type !== 'baseline_question_snapshot_content_valid') {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'internal_error' }));
                     return;
                 }
-
-                const frozen = row.frozen_content as Record<string, unknown>;
-                const options = Array.isArray(frozen.options) ? frozen.options : [];
-
-                projectedQuestions.push({
-                    snapshotId: row.id,
-                    schemaVersion: 1,
-                    questionType: 'MULTIPLE_CHOICE_SINGLE',
-                    prompt: frozen.prompt,
-                    options: options.map((opt: Record<string, unknown>) => ({
-                        id: opt.id,
-                        content: opt.content
-                    }))
-                });
+                projectedQuestions.push({ snapshotId: row.id, ...V1_SINGLE_CHOICE_DESCRIPTOR.studentView(row.frozen_content as Record<string, unknown>) });
             }
 
             res.writeHead(200, { 'Content-Type': 'application/json' });

@@ -6,10 +6,24 @@ export interface StudentSafeOption {
   content: string;
 }
 
+/**
+ * Versioned question content key "<schemaVersion>:<questionType>" (ASSESS-QUESTION-001, A01-4).
+ * The client declares the keys it renders; the server refuses any other key explicitly.
+ */
+export type QuestionContentKey = string;
+export const V1_SINGLE_CHOICE_KEY: QuestionContentKey = '1:MULTIPLE_CHOICE_SINGLE';
+/** The content keys this client renders and saves; sent as the X-Question-Types header. */
+export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY]);
+export const QUESTION_TYPES_HEADER = 'X-Question-Types';
+
+export function contentKeyOf(question: { schemaVersion: number; questionType: string }): QuestionContentKey {
+  return `${question.schemaVersion}:${question.questionType}`;
+}
+
 export interface StudentSafeQuestion {
   snapshotId: string;
   schemaVersion: number;
-  questionType: 'MULTIPLE_CHOICE_SINGLE';
+  questionType: string;
   prompt: string;
   options: StudentSafeOption[];
 }

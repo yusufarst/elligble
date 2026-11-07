@@ -64,3 +64,17 @@ Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer t
 Migration 0058 adds the Identity-owned identity_account_recovery_codes table: one open code per Account, immutable identity, and a single close. Issue and completion compose the owning APIs in the reviewed lock orders (record §6/§6A). Completion uses the existing credential → activation → sessions order, with non-blocking tenant and identity keys.
 
 Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-001 bounded implementation checkpoint — 2026-11-07
+
+The Owner approved the A01 (question/answer/grading compatibility) and A04 (institution, transfer and supervisor scope) designs on 2026-11-07; the text is in [ASSESS-QUESTION-001 §4.2](tasks/ASSESS-QUESTION-001.md).
+
+ASSESS-QUESTION-001 implements A01-1, A01-2 and A01-4 as a foundation (record §5/§5A):
+- a content-key registry (`schemaVersion:questionType`) that holds only v1 single choice;
+- client-declared types;
+- explicit 409 `question_type_unsupported` on delivery and save;
+- readiness blocking;
+- a per-item rule identity and the composite rule `COMPOSITE_PER_ITEM_V1` for future mixed exams;
+- the content key on queued client intents.
+
+It changes no migration, route, lock order or v1 row, and v1 history is not reinterpreted. A01-3 and A04 belong to their own Tasks. This is a pointer, not a release PASS. PB05 stays OPEN.

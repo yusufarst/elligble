@@ -4,6 +4,7 @@ import {
   type BaselineQuestionSnapshotBlocker
 } from './question-snapshot-baseline-frozen-content-contract.ts';
 import { isReadinessEvaluableState } from './readiness-states.ts';
+import { classifyFrozenContent, PRODUCTION_QUESTION_REGISTRY, QUESTION_CONTENT_INVALID, type QuestionRegistry } from './question-contract.ts';
 
 export type CapabilityContext = {
   tenantId: string;
@@ -29,7 +30,7 @@ export type BaselineQuestionSnapshotContentReadinessResult =
       type: 'not_ready';
       blocker: 'question_snapshot_content_invalid';
       snapshotId: string;
-      contentBlocker: BaselineQuestionSnapshotBlocker;
+      contentBlocker: BaselineQuestionSnapshotBlocker | typeof QUESTION_CONTENT_INVALID;
     }
   | {
       type: 'invalid_state';
@@ -47,7 +48,8 @@ export async function checkExamInstanceBaselineQuestionSnapshotContentReadiness(
   client: PoolClient,
   tenantId: string,
   examInstanceId: string,
-  evaluateCapability: CapabilityEvaluator
+  evaluateCapability: CapabilityEvaluator,
+  registry: QuestionRegistry = PRODUCTION_QUESTION_REGISTRY
 ): Promise<BaselineQuestionSnapshotContentReadinessResult> {
   if (!UUID_REGEX.test(tenantId) || !UUID_REGEX.test(examInstanceId)) {
     return { type: 'denied' };
@@ -98,6 +100,15 @@ export async function checkExamInstanceBaselineQuestionSnapshotContentReadiness(
     }
 
     for (const snapshot of snapshots) {
+      // ASSESS-QUESTION-001 §5A.2: only a registered version 2+ row is judged by its descriptor;
+      // every other row keeps exactly the v1 validator's result and blocker.
+      const kind = classifyFrozenContent(snapshot.frozen_content, registry);
+      if (kind.kind === 'registered') {
+        if (!kind.descriptor.validateContent(kind.content).ok) {
+          return { type: 'not_ready', blocker: 'question_snapshot_content_invalid', snapshotId: snapshot.snapshot_id, contentBlocker: QUESTION_CONTENT_INVALID };
+        }
+        continue;
+      }
       const validation = validateBaselineQuestionSnapshotFrozenContent(snapshot.frozen_content);
       if (validation.type === 'invalid_content') {
         return {
