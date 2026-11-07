@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { login, withDatabase, state } from './helpers.ts';
+import { login, open, withDatabase, state } from './helpers.ts';
 import { setSchoolOperator } from '../../runtime/tenant-access/src/school-operator.ts';
 
 const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim();
@@ -126,4 +126,72 @@ if(applicationTree!==BASE_TREE)test('ADMIN-001 Operator roster preview, keyboard
     }finally{
         await withDatabase(async c=>{await c.query('BEGIN');try{await setSchoolOperator(c,{tenantId:state.tenantId,personId:academic.person,action:'REVOKE',operator:'Synthetic CI operator',caseReference:'ADMIN-001',reason:'End synthetic verification'});await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}});
     }
+});
+
+// AUTH-002 capture-only baseline (record §12.3 step 2): the same capture runs before and after
+// the claim/review implementation. Before, it records the existing Login/Activation screens and
+// the absent claim/verifier entries without asserting them; after, it enforces the UI gates.
+const AUTH_BASE_TREE = 'b11e1f64f2321ca05e3aa6d24ccde1fb9c041996';
+const authPhase = applicationTree === AUTH_BASE_TREE ? 'before' : 'after';
+const AUTH_WIDTHS = [360, 390, 430, 768, 1024, 1280, 1440];
+
+async function captureAuth(page: Page, scenario: string) {
+    await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
+    const viewport = page.viewportSize();
+    const name = `workspace-auth-${scenario}-${viewport?.width}x${viewport?.height}-${test.info().project.name}`;
+    const browser = page.context().browser();
+    const metrics = await page.evaluate(() => {
+        const box = (el: Element) => el.getBoundingClientRect();
+        const active = document.activeElement as HTMLElement | null;
+        return {
+            scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth,
+            heading: document.querySelector('h1')?.textContent ?? null,
+            claimEntry: [...document.querySelectorAll('button,a')].filter(el => /pendaftaran akun/i.test(el.textContent ?? '')).length,
+            verifierEntry: [...document.querySelectorAll('button,a')].filter(el => /verifikasi pendaftaran/i.test(el.textContent ?? '')).length,
+            focus: { tag: active?.tagName ?? null, id: active?.id ?? null },
+            targets: [...document.querySelectorAll<HTMLElement>('main button, main input, main a, main select, main textarea, [role=dialog] button, [role=dialog] input, [role=dialog] textarea')]
+                .map(el => ({ name: el.getAttribute('aria-label') ?? el.textContent ?? el.id, width: box(el).width, height: box(el).height }))
+                .filter(t => t.width > 0 && t.height > 0),
+        };
+    });
+    await page.screenshot({ path: test.info().outputPath(`${name}.png`), fullPage: true, animations: 'disabled' });
+    writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
+        task: 'AUTH-002', phase: authPhase, commit,
+        baseline: { sourceTree: AUTH_BASE_TREE }, applicationTree, fixture: { synthetic: true, sha256: fixtureHash },
+        browser: { engine: browser?.browserType().name(), version: browser?.version(), project: test.info().project.name },
+        viewport, scenario, screenshot: `${name}.png`, metrics, physicalDevice: false,
+    }, null, 2));
+    if (authPhase === 'after') {
+        expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
+        expect(metrics.targets.filter(t => t.width < 43.99 || t.height < 43.99)).toEqual([]);
+    }
+}
+
+async function captureAuthWidths(page: Page, scenario: string) {
+    const original = page.viewportSize();
+    for (const width of AUTH_WIDTHS) {
+        await page.setViewportSize({ width, height: 800 });
+        await captureAuth(page, scenario);
+    }
+    await page.setViewportSize({ width: 768, height: 360 });
+    await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+    await captureAuth(page, `${scenario}-text-200`);
+    await page.evaluate(() => { document.documentElement.style.fontSize = ''; });
+    if (original) await page.setViewportSize(original);
+}
+
+test('AUTH-002 actual entry baseline: login, activation and verifier workspace', async ({ page }) => {
+    await open(page);
+    await expect(page.getByRole('heading', { name: 'Masuk ke ELLIGBLE', exact: true })).toBeVisible();
+    await captureAuthWidths(page, 'login-entry');
+    await page.getByRole('button', { name: 'Belum pernah masuk? Aktifkan akun dengan kode aktivasi' }).click();
+    await expect(page.getByRole('heading', { name: 'Aktivasi Akun', exact: true })).toBeVisible();
+    await captureAuthWidths(page, 'activation-entry');
+    await page.getByRole('button', { name: 'Kembali ke halaman masuk' }).click();
+    await login(page, 'guru.e2e', 'papan-tulis-hijau');
+    await expect(page.getByRole('heading', { name: 'Pelaksanaan Ujian', exact: true })).toBeVisible();
+    await captureAuthWidths(page, 'staff-workspace');
 });
