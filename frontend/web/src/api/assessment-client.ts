@@ -31,6 +31,7 @@ import type {
   TeacherExamAddParticipantsInput,
   TeacherExamAddParticipantsResult,
 } from '../types/assessment.ts';
+import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
 import { observeServerTime } from '../exam/server-clock.ts';
 
@@ -74,7 +75,7 @@ export async function getResume(attemptId: string, examSessionId?: string | null
 
 export async function getQuestions(attemptId: string): Promise<QuestionsResponse> {
   const url = `/api/v1/assessment/questions?attemptId=${encodeURIComponent(attemptId)}`;
-  const res = await apiFetch(url, { method: 'GET' });
+  const res = await apiFetch(url, { method: 'GET', headers: { [QUESTION_TYPES_HEADER]: SUPPORTED_QUESTION_TYPES.join(',') } });
   return handleResponse<QuestionsResponse>(res);
 }
 
@@ -85,7 +86,7 @@ export async function getTimer(attemptId: string): Promise<TimerResponse> {
 
 export async function postSaveAnswer(req: SaveAnswerRequest): Promise<SaveAnswerResponse> {
   const url = '/api/v1/assessment/answer/save';
-  const res = await apiFetch(url, { method: 'POST', json: req });
+  const res = await apiFetch(url, { method: 'POST', json: req, headers: { [QUESTION_TYPES_HEADER]: SUPPORTED_QUESTION_TYPES.join(',') } });
   return handleResponse<SaveAnswerResponse>(res);
 }
 

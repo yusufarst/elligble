@@ -1,5 +1,6 @@
 import type * as pg from 'pg';
-import { BASELINE_SCORING_RULE, scoreBaselineAttempt, selectedOptionOf, type ScorableQuestion } from './scoring.ts';
+import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, selectedOptionOf, type ScorableQuestion } from './scoring.ts';
+import { PRODUCTION_QUESTION_REGISTRY, V1_SINGLE_CHOICE_RULE, type QuestionRegistry } from './question-contract.ts';
 
 // Result finalization (D04.8-17/18/19/20/56/57, D04.2-83; Owner decision 2026-09-30, ENDED
 // point 5): an ended exam whose attempts are all finished is finalized explicitly, and its
@@ -37,7 +38,9 @@ export async function freezeExamResults(
     client: pg.PoolClient,
     tenantId: string,
     examInstanceId: string,
-    actorPersonId: string
+    actorPersonId: string,
+    /** Test injection only (ASSESS-QUESTION-001 C06); production uses the production registry. */
+    registry: QuestionRegistry = PRODUCTION_QUESTION_REGISTRY
 ): Promise<FreezeOutcome> {
     // Attempts whose time ran out but that the expiry sweep has not reached yet are
     // finalized from their accepted answers now, as the sweep would (D04.5-47).
@@ -71,7 +74,9 @@ export async function freezeExamResults(
         [tenantId, examInstanceId]
     );
     const questions: ScorableQuestion[] = snapshots.rows.map(row => ({ id: row.id, frozenContent: row.frozen_content }));
-    const probe = scoreBaselineAttempt(questions, new Map());
+    // All-v1 exams are scored exactly as before; a registered version 2+ question selects the
+    // composite rule (A01-2).
+    const probe = scoreAttempt(questions, new Map(), registry);
     if (probe.type !== 'scored') return { type: 'scoring_unavailable' };
 
     // The original (first) attempt of each participant, as the results show it.
@@ -115,9 +120,27 @@ export async function freezeExamResults(
             continue;
         }
         const answers = answersByAttempt.get(row.attempt_id) ?? new Map<string, unknown>();
-        const scored = scoreBaselineAttempt(questions, answers);
+        const scored = scoreAttempt(questions, answers, registry);
         if (scored.type !== 'scored') return { type: 'scoring_unavailable' };
         const score = scored.score;
+        if (isCompositeScore(score)) {
+            // Micro-points are exact integers far below 2^53, written without a float round trip.
+            frozen.push({
+                exam_participant_id: row.participant_id, exam_attempt_id: row.attempt_id, standing: 'SUBMITTED',
+                finalization_source: row.finalization_source ?? null, submitted_at: new Date(row.submitted_at).toISOString(),
+                correct_count: score.correct, incorrect_count: score.incorrect, unanswered_count: score.unanswered,
+                raw_score_micro: Number(score.rawScoreMicro), max_score_micro: Number(score.maxScoreMicro), scaled_score: score.scaledScore,
+                item_outcomes: score.items.map(item => ({
+                    questionSnapshotId: item.questionSnapshotId,
+                    ruleId: item.ruleId,
+                    ...(item.ruleId === V1_SINGLE_CHOICE_RULE ? { selectedOptionId: selectedOptionOf(answers.get(item.questionSnapshotId)) } : {}),
+                    outcome: item.outcome,
+                    scoreMicro: Number(item.scoreMicro),
+                    maxScoreMicro: Number(item.maxScoreMicro),
+                })),
+            });
+            continue;
+        }
         frozen.push({
             exam_participant_id: row.participant_id,
             exam_attempt_id: row.attempt_id,
@@ -145,7 +168,8 @@ export async function freezeExamResults(
             (tenant_id, exam_instance_id, finalized_by_person_id, scoring_rule, question_count, max_score_micro, pending_issues)
          VALUES ($1, $2, $3, $4, $5, $6, '[]'::jsonb)
          RETURNING id`,
-        [tenantId, examInstanceId, actorPersonId, BASELINE_SCORING_RULE, questions.length, toMicro(probe.score.maxScore)]
+        [tenantId, examInstanceId, actorPersonId, isCompositeScore(probe.score) ? probe.score.rule : BASELINE_SCORING_RULE, questions.length,
+            isCompositeScore(probe.score) ? Number(probe.score.maxScoreMicro) : toMicro(probe.score.maxScore)]
     );
     const finalizationId: string = finalization.rows[0].id;
     if (frozen.length > 0) {

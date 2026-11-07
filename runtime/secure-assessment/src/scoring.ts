@@ -1,4 +1,5 @@
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
+import { classifyFrozenContent, PRODUCTION_QUESTION_REGISTRY, type QuestionRegistry } from './question-contract.ts';
 
 // Baseline objective scoring (D04.8-01/03/04/06/07, D04.3-47/49/50/57/58/59).
 //
@@ -98,6 +99,78 @@ export function scoreBaselineAttempt(questions: readonly ScorableQuestion[], ans
             unanswered: count('UNANSWERED'),
             rawScore: fromMicro(rawMicro),
             maxScore: fromMicro(maxMicro),
+            scaledScore: scaleToHundred(rawMicro, maxMicro),
+        },
+    };
+}
+
+// ASSESS-QUESTION-001 (A01-2). An exam with no registered version 2+ question is scored
+// exactly by scoreBaselineAttempt, so every exam that exists today keeps its result. Otherwise
+// each item is scored by its own descriptor and rule, and the attempt carries the composite
+// rule; totals stay bigint micro-points and are scaled with scaleToHundred.
+export const COMPOSITE_SCORING_RULE = 'COMPOSITE_PER_ITEM_V1';
+
+export interface CompositeScoredItem extends ScoredItem {
+    ruleId: string;
+    scoreMicro: bigint;
+    maxScoreMicro: bigint;
+}
+
+export interface CompositeAttemptScore {
+    rule: typeof COMPOSITE_SCORING_RULE;
+    items: CompositeScoredItem[];
+    correct: number;
+    incorrect: number;
+    unanswered: number;
+    rawScore: number;
+    maxScore: number;
+    rawScoreMicro: bigint;
+    maxScoreMicro: bigint;
+    scaledScore: number;
+}
+
+export type VersionedScoringResult = ScoringResult | { type: 'scored'; score: CompositeAttemptScore };
+
+export function isCompositeScore(score: AttemptScore | CompositeAttemptScore): score is CompositeAttemptScore {
+    return score.rule === COMPOSITE_SCORING_RULE;
+}
+
+export function scoreAttempt(questions: readonly ScorableQuestion[], answers: ReadonlyMap<string, unknown>, registry: QuestionRegistry = PRODUCTION_QUESTION_REGISTRY): VersionedScoringResult {
+    const kinds = questions.map(q => classifyFrozenContent(q.frozenContent, registry));
+    if (!kinds.some(k => k.kind === 'registered')) return scoreBaselineAttempt(questions, answers);
+    const items: CompositeScoredItem[] = [];
+    let rawMicro = 0n;
+    let maxMicro = 0n;
+    for (let i = 0; i < questions.length; i++) {
+        const question = questions[i], kind = kinds[i];
+        let descriptor;
+        let content: Record<string, unknown>;
+        if (kind.kind === 'registered') {
+            descriptor = kind.descriptor; content = kind.content;
+            if (!descriptor.validateContent(content).ok) return { type: 'unscorable', reason: 'invalid_question', questionSnapshotId: question.id };
+        } else if (kind.kind === 'v1') {
+            descriptor = registry.get(kind.key);
+            content = question.frozenContent as Record<string, unknown>;
+            if (!descriptor || !descriptor.validateContent(content).ok) return { type: 'unscorable', reason: 'invalid_question', questionSnapshotId: question.id };
+        } else {
+            return { type: 'unscorable', reason: 'invalid_question', questionSnapshotId: question.id };
+        }
+        const scored = descriptor.score(content, answers.get(question.id));
+        if (scored.maxMicro <= 0n) return { type: 'unscorable', reason: 'invalid_question', questionSnapshotId: question.id };
+        rawMicro += scored.earnedMicro;
+        maxMicro += scored.maxMicro;
+        items.push({
+            questionSnapshotId: question.id, ruleId: descriptor.scoringRuleId, outcome: scored.outcome,
+            score: fromMicro(scored.earnedMicro), maxScore: fromMicro(scored.maxMicro), scoreMicro: scored.earnedMicro, maxScoreMicro: scored.maxMicro,
+        });
+    }
+    const count = (outcome: ItemOutcome) => items.filter(item => item.outcome === outcome).length;
+    return {
+        type: 'scored',
+        score: {
+            rule: COMPOSITE_SCORING_RULE, items,
+            correct: count('CORRECT'), incorrect: count('INCORRECT'), unanswered: count('UNANSWERED'),
+            rawScore: fromMicro(rawMicro), maxScore: fromMicro(maxMicro), rawScoreMicro: rawMicro, maxScoreMicro: maxMicro,
             scaledScore: scaleToHundred(rawMicro, maxMicro),
         },
     };

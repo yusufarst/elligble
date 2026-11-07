@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import * as pg from 'pg';
 import { isDeepStrictEqual } from 'node:util';
 import { findLockCovering, findPauseCovering, parseCapturedAt, readAttemptExamState, readOpenLock } from './exam-pause.ts';
+import { classifyFrozenContent, effectiveSupport, parseDeclaredQuestionTypes, PRODUCTION_QUESTION_REGISTRY, QUESTION_TYPES_HEADER, V1_SINGLE_CHOICE_KEY, type QuestionRegistry } from './question-contract.ts';
 
 /**
  * The baseline answer contract (MULTIPLE_CHOICE_SINGLE, D04.3-21): exactly
@@ -37,6 +38,25 @@ export interface SaveAnswerRequest {
 export interface AnswerDependencies {
     pool: pg.Pool;
     getAuthorizedContext: (req: http.IncomingMessage) => AuthorizedAssessmentContext | null;
+    /** Test injection only; production wiring always uses the production registry. */
+    questionRegistry?: QuestionRegistry;
+}
+
+/**
+ * ASSESS-QUESTION-001 §5A.1. 'unsupported': 409, zero mutation. Otherwise whether the payload
+ * is acceptable: registered version 2+ rows by their descriptor (an empty value is accepted
+ * when the type allows it, O02-2); every other row by the unchanged v1 check.
+ */
+export function checkAnswerForContent(frozenContent: unknown, answerPayload: unknown, supported: ReadonlySet<string>, registry: QuestionRegistry = PRODUCTION_QUESTION_REGISTRY): 'unsupported' | 'valid' | 'invalid' {
+    const kind = classifyFrozenContent(frozenContent, registry);
+    if ((kind.kind === 'unsupported' || kind.kind === 'registered') && !supported.has(kind.key)) return 'unsupported';
+    if (kind.kind === 'v1' && !supported.has(V1_SINGLE_CHOICE_KEY)) return 'unsupported';
+    if (kind.kind === 'registered') {
+        if (!kind.descriptor.validateContent(kind.content).ok) return 'invalid';
+        const r = kind.descriptor.validateAnswer(kind.content, answerPayload);
+        return r.ok && (!r.empty || kind.descriptor.allowsEmpty) ? 'valid' : 'invalid';
+    }
+    return isAnswerForQuestion(frozenContent, answerPayload) ? 'valid' : 'invalid';
 }
 
 function isValidUUID(uuid: string): boolean {
@@ -56,6 +76,17 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
         res.end(JSON.stringify({ error: 'forbidden' }));
         return;
     }
+
+    // A01-4: the content keys this client handles; validated before any database work.
+    const registry = deps.questionRegistry ?? PRODUCTION_QUESTION_REGISTRY;
+    const declared = parseDeclaredQuestionTypes(req.headers[QUESTION_TYPES_HEADER]);
+    if (!declared.ok) {
+        req.resume();
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'invalid_request' }));
+        return;
+    }
+    const supported = effectiveSupport(declared.keys, registry);
 
     let body = '';
     req.on('data', chunk => {
@@ -168,7 +199,14 @@ export async function handleSaveAnswer(req: http.IncomingMessage, res: http.Serv
                     return;
                 }
 
-                if (!isAnswerForQuestion(snapshotRes.rows[0].frozen_content, answerPayload)) {
+                const answerCheck = checkAnswerForContent(snapshotRes.rows[0].frozen_content, answerPayload, supported, registry);
+                if (answerCheck === 'unsupported') {
+                    await client.query('ROLLBACK');
+                    res.writeHead(409, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'question_type_unsupported' }));
+                    return;
+                }
+                if (answerCheck === 'invalid') {
                     await client.query('ROLLBACK');
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'invalid_answer_payload' }));

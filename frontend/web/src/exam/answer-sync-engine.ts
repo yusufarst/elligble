@@ -1,3 +1,4 @@
+import { SUPPORTED_QUESTION_TYPES, V1_SINGLE_CHOICE_KEY } from '../types/assessment.ts';
 import { answerKey, attemptKey, type AnswerStore, type IntentHistoryEntry, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
 
@@ -63,6 +64,8 @@ export interface SyncApi {
     attemptId: string;
     sessionId: string;
     snapshotId: string;
+    /** Versioned content key of the question (ASSESS-QUESTION-001). */
+    contentKey: string;
     optionId: string;
     clientWriteIdentity: string;
     expectedWriteVersion: number | null;
@@ -280,7 +283,7 @@ export class AnswerSyncEngine {
     return { adopted, discarded };
   }
 
-  async capture(snapshotId: string, optionId: string): Promise<void> {
+  async capture(snapshotId: string, optionId: string, contentKey: string = V1_SINGLE_CHOICE_KEY): Promise<void> {
     // A choice made while the stored intents are still loading must not be overwritten by
     // an older stored intent for the same question.
     if (!this.initialized && this.initialization) await this.initialization;
@@ -302,6 +305,7 @@ export class AnswerSyncEngine {
       attemptId: this.opts.attemptId,
       snapshotId,
       examSessionId: this.opts.examSessionId,
+      contentKey,
       optionId,
       clientWriteIdentity: this.opts.newIdentity(),
       ownIdentities: [...new Set(ownIdentities)].slice(-MAX_OWN_IDENTITIES),
@@ -399,6 +403,13 @@ export class AnswerSyncEngine {
   private async sendOne(record: PendingAnswerRecord): Promise<boolean> {
     const snapshotId = record.snapshotId;
     const sentIdentity = record.clientWriteIdentity;
+    // A01-4: an intent for content this client does not handle is never sent; it stays failed.
+    const contentKey = record.contentKey ?? V1_SINGLE_CHOICE_KEY;
+    if (!SUPPORTED_QUESTION_TYPES.includes(contentKey)) {
+      this.rejected.set(snapshotId, 'question_type_unsupported');
+      this.opts.events.onChange();
+      return true;
+    }
     this.inFlight.add(snapshotId);
     this.opts.events.onChange();
     let outcome: SaveOutcome;
@@ -407,6 +418,7 @@ export class AnswerSyncEngine {
         attemptId: this.opts.attemptId,
         sessionId: this.opts.examSessionId,
         snapshotId,
+        contentKey,
         optionId: record.optionId,
         clientWriteIdentity: record.clientWriteIdentity,
         expectedWriteVersion: record.baseVersion,

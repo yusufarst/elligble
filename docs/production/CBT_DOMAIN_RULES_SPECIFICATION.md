@@ -170,3 +170,12 @@ In-person recovery follows O03 and Owner R1–R4:
 - no notification channel and no Account lockout.
 
 Authority and evidence: [AUTH-003](tasks/AUTH-003.md) §4/§6A/§13. Pointer to the Owner-approved R1–R4 and the reviewed contract only; it decides no new policy, role, channel or architecture item and is not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-001 decision checkpoint — 2026-11-07
+
+The Owner approved the O02 type rules (O02-1 to O02-12) and the O05 institution rules (O05-1 to O05-6) on 2026-11-07. They settle the type limits, credit, text and numeric rules, grading, revision, import and clear semantics, institution composition, preparation deadline, controls, transfer and publication withdrawal for this release.
+- Their exact text is recorded once, in [ASSESS-QUESTION-001 §4.1](tasks/ASSESS-QUESTION-001.md).
+- ASSESS-QUESTION-001 implements only the foundation part (O02-2 empty-value semantics and the unchanged v1 truth).
+- Each type, institution, transfer and result Task implements its own rows and freezes its expected vectors before its READY.
+
+This is a pointer, not a release PASS. PB05 stays OPEN.

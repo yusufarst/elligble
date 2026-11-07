@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 question and answer integrity foundation; HIGH risk; R02, R03, R10–R17, R25, R26; P8 V02–V06, V09–V11 |
-| Status | **IN_PROGRESS — contract review chain STOP → STOP → PASS (§9); formal READY PASS and Build started under DEC-048 on 2026-11-07 (§10)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation review (§11); DEC-048** |
 | Objective | Freeze and implement the approved discriminated question/answer/scoring contract and compatibility policy (A01) so that later type Tasks plug in without touching v1 truth. No new question type is delivered here |
 | Owner decisions | 2026-11-07, Owner in chat: all 18 O02/O05 defaults ("Setujui semua default") and all 7 A01/A04 designs ("Setujui semua desain") of the question and institution package, recorded verbatim in §4. The architecture/assessment and security reviewer is the standing Owner-designated read-only subagent reviewer |
 | Execution authority | DEC-048 (00.13). Internal dependency SEC-001 is DONE / MERGED. O02 (approved rules), O05 (approved composition, result shape), O09 (approved P5 content under GOV-POLICY-001) and A01 (approved design) are settled inputs |
@@ -341,3 +341,31 @@ The reviewer found the design faithful to A01-1/A01-2/A01-4/O02-2 otherwise. It 
 
   There is no material UI, so there is no rendered baseline. No re-runs.
 - **Status:** BLOCKED → READY → IN_PROGRESS. Counters: DONE 6, IN_PROGRESS 1, BLOCKED 26. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+## 11. Implementation checkpoint — 2026-11-07
+
+- **CI-first step 1:** registration 4a8fd30, CI #156 (run 42375034561) attempt 1, eight SUCCESS.
+- **Implementation candidate (CI-first step 2):** inside the frozen allowlist rows 5–21 plus the Task-flow rows 1–4; it includes the pre-READY draft named in §10, now completed.
+  - **`question-contract.ts`:**
+    - content keys, the total classification, the registry with only the v1 descriptor, `parseDeclaredQuestionTypes` and `effectiveSupport`;
+    - the v1 descriptor wraps the unchanged v1 validator, view, answer check and rule;
+    - the rule literal equals `BASELINE_SCORING_RULE` (asserted), and the module imports no scoring code, to avoid an import cycle at load time.
+  - **Delivery:** the header is checked after the context check and before `pool.connect()`; rows are classified in the delivered order; 409 `question_type_unsupported` without content; invalid stays 500; v1 view unchanged.
+  - **Save:** the same header point; `checkAnswerForContent` sits at the existing payload check (§5A.1); `isAnswerForQuestion` is unchanged.
+  - **Readiness:** a registered version 2 or higher row is judged by its descriptor (`question_content_invalid`); every other row keeps the v1 result.
+  - **Scoring:** `scoreAttempt` hands off to `scoreBaselineAttempt` when no registered version 2 or higher row exists; otherwise `COMPOSITE_PER_ITEM_V1` with per-item rules and bigint totals. `freezeExamResults` takes an optional registry; all-v1 output is unchanged.
+  - **Client:** content key types and `SUPPORTED_QUESTION_TYPES`; the header on delivery and on the real save path; `contentKey` on new records (optional in the type); unsupported keys are never sent and end failed; `question_type_unsupported` is rejected.
+  - **Documents:** appended decision pointers in P2 and P4.
+  - Registries can be injected only through handler dependencies and function arguments. The production server wiring is unchanged, so a request cannot reach a test registry.
+- **Tests:**
+  - `test/question-contract.test.ts`: C01 classification; C02 v1 golden equivalence for scoring, view and answer acceptance, including minimal content and the version 2 single choice refusal; C03 header parsing and handler-level ordering with a never-connected pool; C06 composite scoring.
+  - `test/integration/question-types.test.ts` (real PostgreSQL): C03 zero mutation, C04 refusals, readiness and activation, C05 v1 regression through production wiring, and C06 empty versioned writes and composite finalization with a test-only registry.
+  - `frontend/web/src/__tests__/answerTypes.test.tsx`: C07.
+- **Local verification:**
+  - typechecks PASS for Secure Assessment and the web client;
+  - Secure Assessment units PASS (the new file, plus 173 existing answer, delivery, scoring, readiness and contract tests);
+  - web tests PASS: the new file 7/7, and the existing sync engine, storage, workstation, resilience, pause, flags, messages and participant-time files.
+
+  Integration oracles run in CI only (the 8 GB workstation rule).
+- **Next:** exact-content CI on the candidate head, then the independent implementation review by the same reviewer, Delegated Acceptance and the evidence commit. No re-runs.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 6, VERIFYING 1, BLOCKED 26. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
