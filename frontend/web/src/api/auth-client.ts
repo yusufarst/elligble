@@ -18,6 +18,8 @@ export interface WorkspaceCapabilities {
   proctor: boolean;
   teacher: boolean;
   schoolOperator?: boolean;
+  /** AUTH-002: may open the scoped claim verification queue. */
+  claimVerifier?: boolean;
 }
 
 export interface MeContext {

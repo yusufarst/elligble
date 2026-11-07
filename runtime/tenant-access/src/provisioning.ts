@@ -102,3 +102,19 @@ export async function findActiveTeacherAssignment(client: ClientBase, tenantId: 
     );
     return res.rowCount === 1 ? res.rows[0].id : null;
 }
+
+/**
+ * AUTH-002 §6A.1 (N1) fail-closed exclusion read: does the Person hold, in any school and in
+ * any state (active, ended or revoked), a Teacher or School Operator assignment row?
+ */
+export async function personHasTenantStaffRole(client: ClientBase, personId: string): Promise<boolean> {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(personId)) throw new Error('Invalid person');
+    const res = await client.query(
+        `SELECT EXISTS (SELECT 1 FROM tenant_teacher_assignments t JOIN tenant_memberships m ON m.id = t.membership_id AND m.tenant_id = t.tenant_id
+                WHERE m.person_id = $1)
+             OR EXISTS (SELECT 1 FROM tenant_school_operator_assignments o JOIN tenant_memberships m ON m.id = o.membership_id AND m.tenant_id = o.tenant_id
+                WHERE m.person_id = $1) AS staff`,
+        [personId.toLowerCase()]
+    );
+    return res.rows[0]?.staff === true;
+}

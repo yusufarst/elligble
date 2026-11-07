@@ -1,4 +1,5 @@
 import { schoolOperatorAssignment } from '../../../tenant-access/src/school-operator.ts';
+import { activeHomeroomResponsibilities } from '../../../academic-core/src/homeroom.ts';
 import type * as http from 'node:http';
 import type * as pg from 'pg';
 import { AuthenticationError, buildAuthenticatedContext } from './authenticated-context.ts';
@@ -20,6 +21,8 @@ export interface WorkspaceCapabilities {
     proctor: boolean;
     teacher: boolean;
     schoolOperator?: boolean;
+    /** AUTH-002: may open the scoped claim verification queue (Operator or effective Homeroom). */
+    claimVerifier?: boolean;
 }
 
 export async function handleMeContextGet(req: http.IncomingMessage, res: http.ServerResponse, deps: MeContextDependencies): Promise<void> {
@@ -77,6 +80,9 @@ export async function handleMeContextGet(req: http.IncomingMessage, res: http.Se
             teacher: Boolean(row?.teacher),
         };
         if (await schoolOperatorAssignment(deps.pool,membership.tenantId,membership.membershipId)) capabilities.schoolOperator = true;
+        if (capabilities.schoolOperator || (await activeHomeroomResponsibilities(deps.pool, membership.tenantId, membership.membershipId, new Date())).length > 0) {
+            capabilities.claimVerifier = true;
+        }
         sendJson(res, 200, {
             tenantId: membership.tenantId,
             tenantDisplayLabel: row?.display_label ?? null,

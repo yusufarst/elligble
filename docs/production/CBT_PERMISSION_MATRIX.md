@@ -158,3 +158,9 @@ The targeted A03 contract re-review PASS covers atomic legacy credential INSERT 
 A09 ADMIN-001 candidate implements only authorized own-tenant Operator roster preview/confirm and auditable existing-authority CLI assignment/revocation. Actor/session/membership/assignment derived server-side; authority rechecked before replay and after waits. Raw NISN/birth date/full CSV are not response/export/cache/log fields. Reason, explicit confirmation, canonical request digest and immutable same-transaction receipt; cross-tenant/other-role/revoked/forged/stale cases deny without business mutation. No Homeroom verification/claim/reset, arbitrary role management or excluded C grant. PB05 OPEN; actual implementation security review pending.
 
 Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.
+
+## AUTH-002 bounded implementation checkpoint — 2026-11-07
+
+A09 is implemented only as: anonymous non-trusted claim submission; claim review and decision by an authenticated own-tenant School Operator or an effective own-current-rombel Homeroom responsibility, assigned only through the audited existing-authority CLI. A Teacher label, teaching assignment or Proctor role grants nothing. Staff, Teacher, Proctor, Operator and Homeroom Persons are never bound or issued a code.
+
+Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.

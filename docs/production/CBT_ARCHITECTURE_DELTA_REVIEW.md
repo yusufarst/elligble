@@ -52,3 +52,9 @@ Required outputs before implementation: explicit Oxx decisions/accepted technica
 A03 foundation AUTH-001 is DONE/merged main ebcc4ca/CI #124. ADMIN-001 candidate adds reserved 0056: Tenant-owned Operator assignment/events and Academic-owned official roster/revisions/receipts. Existing privileged CLI owns bootstrap; membership/session/assignment guards coordinate confirm. Both Academic enrollment writers use one validated lowercase enrollmentSlotKey; roster try-locks sorted slots including absent entries, then locks group/roster rows, rereads enrollment and rolls back on conflict. No Identity allocation, credential or Assessment writes. Original contract review/targeted closure remains input evidence, not actual implementation approval. CI/migration/real-race evidence pending.
 
 Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.
+
+## AUTH-002 bounded implementation checkpoint — 2026-11-07
+
+Migration 0057 adds Identity-owned claims, claim events and the claim-to-activation relation, and Academic-owned roster identity bindings and Homeroom responsibilities with append-only events. The Secure Assessment coordinator composes owning APIs in one READ COMMITTED transaction with the reviewed total lock order (record §6A.3). 0056 roster person_id and all prior migrations are unchanged; Identity never reads Academic tables.
+
+Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.

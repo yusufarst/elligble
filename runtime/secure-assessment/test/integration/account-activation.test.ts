@@ -3,7 +3,8 @@ import * as assert from 'node:assert/strict';
 import type pg from 'pg';
 import { IdentityRuntime } from '../../../identity-access/src/index.ts';
 import { createDisposableDatabase, skipWithoutDatabase } from '../support/pg-harness.ts';
-import { addMembership, createPersonWithAccount, createTenant } from '../support/fixtures.ts';
+import { addMembership, createPersonWithAccount, createTeachingContext, createTenant } from '../support/fixtures.ts';
+import { setSchoolOperator } from '../../../tenant-access/src/school-operator.ts';
 import { BrowserLikeClient, startProductionWiredServer } from '../support/test-server.ts';
 import { randomUUID } from 'node:crypto';
 import { allocateStudentIdentity } from '../../../identity-access/src/student-identity.ts';
@@ -354,4 +355,47 @@ test('account activation (real PostgreSQL, production wiring)', { skip: skipWith
         );
         assert.equal(open.rows[0].n, 1);
     });
+});
+
+test('AUTH-002 legacy activation refuses a claim-issued code without counting; ordinary cards keep their semantics', { skip: skipWithoutDatabase, timeout: 60000 }, async t => {
+    const db = await createDisposableDatabase(); const app = await startProductionWiredServer(db.pool);
+    t.after(async () => { await app.close(); await db.close(); });
+    const tenant = await createTenant(db.pool), verifier = await createPersonWithAccount(db.pool), membership = await addMembership(db.pool, tenant, verifier.personId);
+    const teaching = await createTeachingContext(db.pool, tenant, membership);
+    const { academic_year_id: year } = (await db.pool.query('SELECT academic_year_id FROM academic_core_academic_groups WHERE id=$1', [teaching.academicGroupId])).rows[0];
+    const { academic_period_id: period } = (await db.pool.query('SELECT o.academic_period_id FROM academic_core_subject_offerings o JOIN academic_core_teaching_assignments a ON a.subject_offering_id=o.id WHERE a.id=$1', [teaching.teachingAssignmentId])).rows[0];
+    const c0 = await db.pool.connect();
+    try { await c0.query('BEGIN'); await setSchoolOperator(c0, { tenantId: tenant, personId: verifier.personId, action: 'ASSIGN', operator: 'Synthetic', caseReference: 'AUTH-002', reason: 'Compatibility' }); await c0.query('COMMIT'); } finally { c0.release(); }
+    await db.pool.query(`INSERT INTO academic_core_student_roster_records(tenant_id, source_student_key, full_name, nis, nisn, date_of_birth, academic_year_id, academic_period_id, academic_group_id)
+        VALUES($1,'compat','Siswa Kompatibel','c1','0101','2010-01-01',$2,$3,$4)`, [tenant, year, period, teaching.academicGroupId]);
+    const anonymous = new BrowserLikeClient(app.baseUrl);
+    assert.equal((await anonymous.request('/api/v1/identity/claims', { method: 'POST', body: { tenantId: tenant, fullName: 'Siswa Kompatibel', nisn: '0101', birthDate: '2010-01-01', requestKey: randomUUID() } })).status, 202);
+    const op = new BrowserLikeClient(app.baseUrl); assert.equal((await op.login(verifier.username, verifier.password)).status, 200); op.tenantId = tenant;
+    const claim = (await db.pool.query('SELECT id, revision FROM identity_student_claims')).rows[0];
+    const approved = await op.request('/api/v1/identity/claims/decision', { method: 'POST', body: {
+        claimId: claim.id, expectedRevision: claim.revision, expectedRosterRevision: 1, decision: 'APPROVE', adjudication: 'NEW_IDENTITY_REVIEWED',
+        noExistingAccountConfirmed: true, reason: 'Kompatibilitas', confirmed: true, requestKey: randomUUID() } });
+    assert.equal(approved.status, 200, JSON.stringify(approved.body));
+    const elligbleId = approved.body.elligbleId as string, code = approved.body.activationCode as string;
+    const counter = async () => (await db.pool.query('SELECT a.failed_attempts, a.consumed_at FROM identity_student_claim_activations r JOIN identity_account_activations a ON a.id = r.activation_id')).rows[0];
+    const c = await db.pool.connect();
+    try {
+        const runtime = new IdentityRuntime(c as unknown as pg.Client);
+        // The unchanged entry point, called directly (the race closure of §6A.6): refused, nothing counted or consumed.
+        assert.equal((await runtime.activate(elligbleId, code, 'KompatibelAman2026!')).success, false);
+        assert.equal((await runtime.activate(elligbleId, 'AAAA-BBBB-CCCC', 'KompatibelAman2026!')).success, false);
+        assert.deepEqual(await counter(), { failed_attempts: 0, consumed_at: null });
+        // Approval created no usable password.
+        assert.equal((await runtime.authenticate(elligbleId, 'KompatibelAman2026!')).success, false);
+        // An ordinary card of another Account still counts failures and activates as before.
+        const other = await createPersonWithAccount(db.pool);
+        const card = await runtime.issueActivation(other.accountId); assert.ok(card);
+        assert.equal((await runtime.activate(other.username, 'AAAA-BBBB-CCCC', 'KompatibelAman2026!')).success, false);
+        assert.equal((await c.query('SELECT failed_attempts FROM identity_account_activations WHERE user_account_id=$1 AND revoked_at IS NULL AND consumed_at IS NULL', [other.accountId])).rows[0].failed_attempts, 1);
+        assert.equal((await runtime.activate(other.username, card.code, 'KompatibelAman2026!')).success, true);
+    } finally { c.release(); }
+    // Through HTTP the claim-issued code is routed to the claim-bound coordinator and activates.
+    assert.equal((await new BrowserLikeClient(app.baseUrl).request('/api/v1/auth/activate', { method: 'POST', body: { username: elligbleId, activationCode: code, newPassword: 'KompatibelAman2026!' } })).status, 200);
+    assert.notEqual((await counter()).consumed_at, null);
+    assert.equal((await db.pool.query('SELECT state FROM identity_student_claims WHERE id=$1', [claim.id])).rows[0].state, 'ACTIVATED');
 });

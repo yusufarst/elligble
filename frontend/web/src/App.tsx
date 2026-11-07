@@ -21,6 +21,8 @@ import { setDisplayTimeZone } from './lib/format.ts';
 import { SCREEN_TITLE } from './lib/screen-titles.ts';
 
 const SchoolRosterImportView = React.lazy(() => import('./components/SchoolRosterImportView.tsx').then(module => ({ default: module.SchoolRosterImportView })));
+const ClaimReviewView = React.lazy(() => import('./components/ClaimReviewView.tsx').then(module => ({ default: module.ClaimReviewView })));
+const StudentClaimView = React.lazy(() => import('./components/StudentClaimView.tsx').then(module => ({ default: module.StudentClaimView })));
 
 interface RouteState {
   attemptId: string | null;
@@ -92,6 +94,9 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   if (current === 'operator') {
     title = 'Data Siswa';
     content = <SchoolRosterImportView key={me.tenantId} />;
+  } else if (current === 'verifier') {
+    title = 'Verifikasi Pendaftaran';
+    content = <ClaimReviewView key={me.tenantId} tenantId={me.tenantId} />;
   } else if (current === 'student') {
     content = <AssignedExamDiscovery onSelectAttempt={attemptId => navigate(`?attemptId=${encodeURIComponent(attemptId)}`)} />;
   } else if (current === 'proctor') {
@@ -165,6 +170,24 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   );
 };
 
+/** Signed-out entry: login and activation, or the non-trusted Student claim (AUTH-002). */
+const AnonymousEntry: React.FC<{
+  onLogin(username: string, password: string): Promise<void>;
+  onActivate(username: string, activationCode: string, newPassword: string): Promise<void>;
+}> = ({ onLogin, onActivate }) => {
+  // The school's own claim link may carry its school code; it is a locator, never trust.
+  const [school] = useState(() => new URLSearchParams(window.location.search).get('sekolah'));
+  const [claiming, setClaiming] = useState(false);
+  if (claiming) {
+    return (
+      <Suspense fallback={<StatusScreen title="Memuat..." />}>
+        <StudentClaimView initialTenantId={school} onBack={() => setClaiming(false)} />
+      </Suspense>
+    );
+  }
+  return <LoginScreen onLogin={onLogin} onActivate={onActivate} onClaim={() => setClaiming(true)} />;
+};
+
 const SessionGate: React.FC = () => {
   const session = useSession();
   const { phase } = session;
@@ -182,7 +205,7 @@ const SessionGate: React.FC = () => {
         />
       );
     case 'anonymous':
-      return <LoginScreen onLogin={session.login} onActivate={session.activate} />;
+      return <AnonymousEntry onLogin={session.login} onActivate={session.activate} />;
     case 'no_membership':
       return <NoMembershipScreen onLogout={session.logout} />;
     case 'selecting_tenant':

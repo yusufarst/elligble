@@ -107,3 +107,9 @@ Acceptance: every required Cxx/Rxx either implemented/tested or truthfully block
 C15 bounded Operator roster candidate: shared AppShell/Data Siswa, reference inputs/file selection, per-row state cards, accessible reason/confirmation Dialog, honest ACK/error/retry, same-key retries, Cancel/focus restoration and memory-only CSV. No global token/primitive redesign or generic directory/export. Baseline #126 has 40 retrieved actual screenshot/manifest pairs across five browser artifacts. New import-state screenshots/keyboard/200%-text/responsive checks are candidate-only scenarios; final rendered inspection/Owner review remains required. Claim/verification/recovery portions of C15 remain AUTH-002/003, not delivered here.
 
 Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.
+
+## AUTH-002 bounded implementation checkpoint — 2026-11-07
+
+Functional screens: the signed-out entry offers "Ajukan Pendaftaran Akun" (school code from the school's link or typed; name, NISN, birth date; no password; uniform received state); the "Verifikasi Pendaftaran" workspace lists scoped open claims, opens a reasoned decision dialog with explicit adjudication and in-person confirmation, and shows the ELLIGBLE ID and activation code once. Existing shared primitives only; rendered evidence per record §9.
+
+Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.

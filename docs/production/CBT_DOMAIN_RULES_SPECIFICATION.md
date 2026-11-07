@@ -153,3 +153,9 @@ PB01/02/03/10 legal artifacts, PB12 incident responsibility/contacts, PB06 real-
 ADMIN-001 Owner-authorized implementation candidate composes Academic Core official roster with Tenant Access explicit Operator assignment. Stable school source key; per-row preview and whole-file reason/confirmation/audit/replay; no Account creation/activation/Person binding/merge, no deletion by omission/enrollment transfer. NISN/birth date stored as protected official truth, never returned by roster preview/receipt. D1–D3 and AUTH-001 decisions unchanged; AUTH-002/003 and legal G7 remain separate. Source/migration/tests prepared; acceptance/CI/actual implementation review pending, not DONE.
 
 Authority and evidence: [ADMIN-001](tasks/ADMIN-001.md). Earlier draft/registration checkpoints remain history; no policy supersession or release PASS.
+
+## AUTH-002 bounded implementation checkpoint — 2026-11-07
+
+The Student claim follows the settled O03 values (seven days from server creation, expired at now >= expires_at, ten failures) and Owner-approved D1–D3: in-person verification with the existing single-use activation code issued at approval; explicit adjudication EXISTING_BINDING, EXISTING_ACCOUNT_CONTINUITY or NEW_IDENTITY_REVIEWED; failures counted only on the claim-issued code. Claim states: PENDING_REVIEW, REVIEW_REQUIRED, APPROVED_PENDING_ACTIVATION (open); APPROVED_EXISTING_ACCOUNT, REJECTED, CANCELLED, ACTIVATED, EXPIRED, EXHAUSTED, CLOSED_BY_REISSUE (terminal). Name confirmation is NFC, trimmed, whitespace-collapsed, case-folded exact equality.
+
+Authority and evidence: [AUTH-002](tasks/AUTH-002.md) §4.1/§6A/§12. Pointer to the Owner-approved D1–D3 and the reviewed contract only; it decides no new policy, role, channel, retention period or architecture item, and it is not a release PASS. PB05 stays OPEN.

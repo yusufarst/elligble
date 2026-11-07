@@ -1,4 +1,5 @@
 import { handleRoster } from './http/roster-routes.ts';
+import { handleClaimDecision, handleClaimReview, handleClaimSubmit } from './http/claim-routes.ts';
 import * as http from 'node:http';
 import { Readable } from 'node:stream';
 import * as pg from 'pg';
@@ -296,6 +297,13 @@ export function createServer(deps: ServerDependencies): http.Server {
         if (pathname === '/api/v1/identity/roster/preview' || pathname === '/api/v1/identity/roster/confirm') {
             if (!security) { sendError(res,404,'not found'); return; }
             return handleRoster(req,res,deps.pool,security.cookie,pathname.endsWith('/confirm'));
+        }
+
+        if (pathname === '/api/v1/identity/claims' || pathname === '/api/v1/identity/claims/review' || pathname === '/api/v1/identity/claims/decision') {
+            if (!security) { sendError(res, 404, 'not found'); return; }
+            if (pathname === '/api/v1/identity/claims') return handleClaimSubmit(req, res, deps.pool);
+            if (pathname === '/api/v1/identity/claims/review') return handleClaimReview(req, res, deps.pool, security.cookie);
+            return handleClaimDecision(req, res, deps.pool, security.cookie);
         }
 
         if (pathname === '/api/v1/me/context') {
