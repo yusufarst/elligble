@@ -271,12 +271,25 @@ async function multipleResponseJourney(teacher: Page, student: Page, examId: str
     await saved();
 
     // Content this version cannot show: an explicit reload state, no endless loading.
-    await student.route('**/api/v1/assessment/questions**', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'question_type_unsupported' }) }));
-    await student.goto(student.url());
+    // The refusal is simulated inside the page (WebKit crashed when a Playwright route served a
+    // navigation-time request): an init script answers question delivery with the 409 while a flag is set.
+    await student.context().addInitScript(() => {
+        if (localStorage.getItem('aq2-unsupported') !== '1') return;
+        const real = window.fetch.bind(window);
+        window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+            if (url.includes('/api/v1/assessment/questions')) {
+                return new Response(JSON.stringify({ error: 'question_type_unsupported' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+            }
+            return real(input, init);
+        };
+    });
+    await student.evaluate(() => localStorage.setItem('aq2-unsupported', '1'));
+    await student.reload();
     await expect(student.getByRole('heading', { name: 'Perlu Memuat Ulang' })).toBeVisible();
     await expect(student.getByRole('button', { name: 'Muat Ulang' })).toBeVisible();
     await captureQuestionSurface(student, 'exam-unsupported', () => student.locator('body'), file, STATE_VARIANTS);
-    await student.unroute('**/api/v1/assessment/questions**');
+    await student.evaluate(() => localStorage.removeItem('aq2-unsupported'));
     await student.getByRole('button', { name: 'Muat Ulang' }).click();
     await toMr();
     await expect(A).toBeChecked();

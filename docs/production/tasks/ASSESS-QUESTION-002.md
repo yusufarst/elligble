@@ -522,3 +522,8 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
   - the pause step reads the heading "Ujian Dijeda";
   - the journey states (keyboard focus, selected, cleared, unsupported) are captured at a reduced set: 360, 768 and 1280 px, 640×360, and 200 % text at 390 px. The surfaces themselves (import preview, teacher preview, exam screen with v1 and PGK content) keep the full set of §4A.7;
   - the unsupported-content step navigates to the same URL instead of reloading.
+
+### 11.9 CI #176 and correction 7
+
+- **CI #176:** exact SHA 194da60, attempt 1. Runtime, Web and Container SUCCESS, and **four E2E projects SUCCESS** (mobile-360, tablet-768, desktop-1280, firefox-1280), with the whole after-phase journey and every layout gate. WebKit-390 FAILED: the page crashed again, this time on the navigation (not a reload) while a Playwright route served the delivery 409. A plain reload earlier in the same run succeeded. Preserved; no re-run.
+- **Correction 7** (row 30 only): the delivery refusal is simulated inside the page. A context init script answers question delivery with the 409 while a localStorage flag is set; the step sets the flag and reloads, then clears it, and "Muat Ulang" loads normally. The application under test is unchanged.
