@@ -20,10 +20,10 @@ export interface TeacherExamPreviewQuestion {
     maxScore: number | null;
     /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
-    /** ASSESS-QUESTION-002 §4A.6: the valid type, null for invalid content. */
-    questionType: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | null;
-    /** Multiple response: the key options in authored order; null otherwise. */
-    correctOptionIds: string[] | null;
+    /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE';
+    /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
+    correctOptionIds?: string[] | null;
 }
 
 export interface TeacherExamPreview {
@@ -87,7 +87,8 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
         : [];
     return {
         snapshotId, no, prompt: typeof record['prompt'] === 'string' ? record['prompt'] : '',
-        options, correctOptionId: null, maxScore: null, valid: false, questionType: null, correctOptionIds: null,
+        // No type fields: invalid content keeps exactly its earlier shape (record §11.3).
+        options, correctOptionId: null, maxScore: null, valid: false,
     };
 }
 

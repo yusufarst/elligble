@@ -60,7 +60,7 @@ test('ASSESS-QUESTION-002 C03 multiple response end to end through production wi
     assert.deepEqual(preview.body.problems, []);
     assert.deepEqual(preview.body.questions.map((q: any) => [q.no, q.type, q.correct, q.correctLetters, q.score]), [[1, 'PG', 'B', ['B'], 1], [2, 'PGK', 'A, C', ['A', 'C'], 2]]);
     const imported = await teacherClient.request('/api/v1/assessment/teacher-exams/import', { method: 'POST', body: { importKey: randomUUID(), expectedSha256: sha256Hex(FILE), ...body } });
-    assert.equal(imported.status, 200, JSON.stringify(imported.body));
+    assert.equal(imported.status, 201, JSON.stringify(imported.body));
     const exam: string = imported.body.examInstanceId;
     const batch = (await pool.query('SELECT template, question_count FROM secure_assessment_question_import_batches WHERE exam_instance_id=$1', [exam])).rows[0];
     assert.deepEqual(batch, { template: 'elligble-questions-v2', question_count: 2 });

@@ -449,3 +449,13 @@ Inside the frozen allowlist (rows 5–30 and 32–34). Rows 22–23 needed no ch
 
   A full local web run timed out in four heavy UI files under workstation load. They pass in smaller groups, and CI is the oracle. Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 7, VERIFYING 1, BLOCKED 25. 33 IDs and 78 edges unchanged. PB05 and PB12 OPEN.
+
+### 11.3 CI #168 and implementation correction 1
+
+- **CI #168/run 42385334232:** exact SHA 625b7d2, push, attempt 1. Web SUCCESS. Runtime FAILURE (real PostgreSQL integration). Container and E2E skipped as dependents. Preserved; no re-run.
+- **Cause 1:** the new multiple-response oracle expected 200 from the import confirm; the route answers 201 Created, as before this Task. The test is corrected.
+- **Cause 2:** the unchanged `teacher-exam-preview` oracle compares an invalid item with `deepEqual`. Adding `questionType: null` and `correctOptionIds: null` changed that shape.
+  - Correction: invalid content now carries **no** type fields, so it keeps exactly its earlier shape.
+  - A valid v1 item still carries `questionType` and `correctOptionIds: null`; a multiple-response item carries both.
+  - This refines §4A.6 ("null for invalid content") to "absent for invalid content". The client already renders a missing `questionType` exactly as today.
+- **Correction 1** (rows 13 and 28 only): `teacher-exam-preview.ts` and the new integration test.
