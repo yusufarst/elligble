@@ -409,3 +409,63 @@ No re-runs, and no push while the previous commit's CI runs.
   - the client template parses with the server parser without problems.
   - Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 11, VERIFYING 1, BLOCKED 21.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on ffe9f62 (CI #207), with no material finding. Scope: 31 paths, all within rows 1–31. The reviewer ran the descriptor, parser, builder and template against the real code and verified the client, workstation drafts, §4.6 and security. Non-material residuals: (1) a narrow window during engine startup in which a draft can be dropped while invalid text is still shown; (2) a doc comment of buildOrderingFrozenContent now sits above buildNumericFrozenContent; (3) the .numeric-* sizes are literals, like the .ordering-status precedent, while colours and gaps are tokens; (4) the key-line weight differs between the teacher preview and the import preview.
+- **Rendered review:** PASS across all five projects on the #207 artifacts: 1300 pairs at ffe9f62, tree f4f6eb58, every hash matching, overflow 0, no target under 44 px, after-manifest SHA-256 a9c2d11a3baf23157e297ccd0cbcc3f8f492355ae85395a492ce499ab040feda. Against #205, 115 of 215 pairs per project are identical; the 100 that differ change only the intro, the card instruction, schedule times and random IDs. The IA surfaces show: empty "Belum dijawab"; focus on the 48 px field; the D1 hint with "Belum tersimpan" and the aria-invalid border; the answered state; the import and teacher key lines with a muted Toleransi; no em dash. Non-material: key-line weight; "Belum tersimpan" in the neutral tone; the question list counts the last captured value; capture-method effects.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** ffe9f6289906c47f733f6ec35c780e4fdd869167. The registration was 817c007. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #207, push, attempt 1, eight jobs SUCCESS.
+- **Runtime units:** identity-access 34, tenant-access 14, academic-core 11 and Secure Assessment 957, all passing.
+- **Real PostgreSQL 16 integration:** 273/273, including the numeric journey, the 409 pair, monitoring and results.
+- **Web:** 44 files and 414 tests, plus typecheck and build.
+- **Container:** image build and smoke test.
+- **E2E:** 33/33 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. This includes the numeric journey (C06) and the rendered captures (C07).
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| #206 | SUCCESS (registration 817c007) |
+| #207 | SUCCESS (implementation ffe9f62, final) |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F9), then STOP (R1), then PASS (§9).
+2. **Implementation:** PASS (§11.1).
+3. **Rendered:** PASS (§11.1).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: N1–N7; tolerance 0; precision extremes; large, negative and zero values; mixed vector 10/12 → 83.33; the registry holds six keys |
+| C02 | PASS: IA import vectors in 10-, 32- and 33-column files; tolerance problems; normalization; earlier parser results unchanged; the template parses |
+| C03 | PASS on real PostgreSQL:<br>• import of IA with and without tolerance, and PG;<br>• canonical preview;<br>• delivery without the key;<br>• N1/N2/N3/N4 saves and N6 refusals with zero mutation;<br>• the 409 pair;<br>• monitoring {3, 1, 0};<br>• provisional and final results agree |
+| C04 | PASS: regression; only the §4.6 assertions changed |
+| C05 | PASS:<br>• text kept as typed;<br>• local refusals;<br>• incomplete prefixes stay silent until blur;<br>• the D1 hint, "Belum tersimpan" and the draft surviving navigation;<br>• "" reads "Belum dijawab";<br>• `countUnreceivedLocalAnswers`;<br>• recovery as typed;<br>• no key in any record;<br>• teacher preview |
+| C06 | PASS: the five-browser journey:<br>• import and preview;<br>• empty, comma, dot and negative input;<br>• invalid text never sent;<br>• the hint with "Belum tersimpan";<br>• the question list and submit dialog;<br>• offline;<br>• reload;<br>• clear;<br>• read-only pause;<br>• V06;<br>• score 3/4 = 75 |
+| C07 | PASS: the #205 baseline and the after captures across the frozen conditions; no overflow; 44 px targets; visible focus; rendered review PASS |
+| C08 | PASS: every changed path is within rows 1–31; 33 Tasks and 78 edges; attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-QUESTION-007 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- While the field has focus and holds an incomplete prefix, the save-state area keeps its earlier state until blur.
+- Playwright cannot prove the iOS minus key.
+- The D1 hint does not name the 30-character limit.
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge of PR #32 under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 12/33 (36.36%).
