@@ -488,3 +488,92 @@ Non-material notes, applied at READY:
   - The same element must still receive focus; the test still fails if it never does.
   - Nothing else changes.
   - The new SHA runs the full CI on attempt 1. The implementation review verifies that the diff is exactly this line.
+
+### 11.3 CI #195, implementation review and rendered review: PASS
+
+- **CI #195** (run 42439646604, 8c51f73, attempt 1): eight jobs SUCCESS.
+- **Artifacts:** 875 `workspace-question-*` pairs at 8c51f73, frontend tree 6019c22b:
+  - 450 from the 99 spec;
+  - 200 from 99b;
+  - 225 from 99c (45 × 5 projects).
+  - Every hash matches; zero overflow; zero targets under 44 px.
+  - Manifest SHA-256: 51c74c626e99cd1a510ca53c638767e0ab5a63db89abdbd23c1bf735f442dadc.
+- **Implementation review by the same reviewer: PASS.**
+  - Conformance to §4/§4A/§9.1 was verified, including parser vectors run against the real code.
+  - §4.6 matched exactly, and row 30 is exactly one line.
+  - Scope was rows 1–30 (30 files). No security defect.
+- **Rendered review: PASS.**
+  - Against #191 (normalized accessibility snapshots), 550 of 650 are identical. The 100 that differ are import previews whose only changed lines are the intro and the card instruction. The assessment-type select renders the same tree through `NativeSelect`.
+  - The MJ surfaces are consistent with FDS §21: visible focus on the select in all five projects, and long items wrap.
+  - The partial state is clear: a green pair, "Belum lengkap: 1 dari 3 pernyataan dipasangkan." and the header "Belum dijawab", as in D1.
+- **Non-material notes:**
+  - **N1.** The paired-row success green and its 10 px radius differ slightly from the exam radio card's selected green and its 8 px radius. Left for UI-SYSTEM convergence.
+  - **N2.** The teacher-preview key list uses the success surface under its own "Kunci jawaban" heading.
+  - **N3.** These are pre-existing 200 % text artifacts and are unchanged: the dock breaks words, and the WebKit native select is grey.
+  - **N4.** The status sits below the rows; it is announced politely, and the header state stays visible.
+  - **N5.** Test gaps: no matching-specific `countUnreceivedLocalAnswers` unit; adoption relies on the generic engine tests; the MJ import display is covered by E2E and the rendered evidence.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** 8c51f73fa23bb8eb840cb9cd001f1b7f1a51eaf8.
+
+**Commits** on task/assess-question-004-matching (PR #30):
+- registration e2ecf76;
+- implementation aeb077e;
+- corrections a6513d7 and 8c51f73.
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #195, push, attempt 1, eight jobs SUCCESS.
+- **Runtime units:** identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 944; all pass.
+- **Real PostgreSQL 16 integration:** 265/265, including the matching journey with D1, the 409 pair and the monitoring counts.
+- **Web job:** 42 files and 399 tests, plus typecheck and build.
+- **Container:** image build and smoke test.
+- **E2E:** 31/31 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390, including the matching journey (C06) and the rendered captures (C07).
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| #192 | SUCCESS (registration e2ecf76) |
+| #193 | FAILURE: 99c question list on narrow viewports (aeb077e) |
+| #194 | FAILURE: the pre-existing studentClaim focus race in the Web job (a6513d7) |
+| #195 | SUCCESS (8c51f73, final) |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F5) → Owner decision D1 → PASS (§9, §9.1).
+2. **Path-only row 30:** confirmed before the edit (§11.2).
+3. **Implementation:** PASS (§11.3).
+4. **Rendered:** PASS (§11.3).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: M1–M8 including D1 and the cross-list ids, and the mixed vector 6/8 → 75; the production registry holds four keys |
+| C02 | PASS: MJ import vectors and frozen problem shapes and wording; v1 and ten-column v2 unchanged; the client template parses |
+| C03 | PASS on real PostgreSQL:<br>• extended v2 import with MJ and PG;<br>• key previews;<br>• readiness;<br>• delivery without the key;<br>• M1/M2/M3/M4/M5 saves and M7 refusals with zero mutation;<br>• the 409 pair;<br>• monitoring counts {2, 0, 1, 0};<br>• M4 UNANSWERED;<br>• provisional and final results agree |
+| C04 | PASS: regression; only the §4.6 assertions and the confirmed row 30 changed |
+| C05 | PASS:<br>• canonical values;<br>• local refusals;<br>• control with used items disabled;<br>• unpairing;<br>• D1 save state and status;<br>• recovery;<br>• no key in any record;<br>• teacher preview |
+| C06 | PASS: five-browser journey:<br>• import and preview;<br>• keyboard and pointer;<br>• a partial answer unanswered in the list and the submit dialog;<br>• swap after unpairing;<br>• offline with only the final value saved;<br>• reload recovery;<br>• unpair all as Belum dijawab;<br>• read-only pause;<br>• V06;<br>• end, finalize and score 3/4 = 75 |
+| C07 | PASS: #191 baseline and #195 after captures across the frozen conditions; no overflow; 44 px targets; visible focus; rendered review PASS |
+| C08 | PASS: every changed path is within rows 1–30; 33 Tasks and 78 edges; attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered review PASSED on the final content SHA. ASSESS-QUESTION-004 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- The paired-row green and radius differ slightly from the exam radio card (N1, UI-SYSTEM).
+- Swapping two pairs needs an unpair first, by design (E2).
+- The 200 % text dock word breaks are pre-existing.
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 are OPEN. G7 is required before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge of PR #30 under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, then post-merge main CI. The next Task's first change records the landing, with DONE 10/33 (30.30%), VERIFYING 0, BLOCKED 23.
