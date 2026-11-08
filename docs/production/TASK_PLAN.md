@@ -1,3 +1,7 @@
+> **ASSESS-QUESTION-008 READY / Build checkpoint, 2026-11-08 (DEC-048):** contract review chain STOP → STOP → PASS by the Owner-designated reviewer; Owner decisions D1–D4 (graded essays counted separately; over-limit text is a draft that is not saved; no rubric cap; two appended CSV columns); formal READY PASS, frozen 54-row allowlist, migration 0061 (append-only essay grade revisions); rendered baseline = exact-main CI #209 artifacts (1300 pairs, manifest recorded) ([record §10](tasks/ASSESS-QUESTION-008.md)). DONE 12/33 (36.36%), IN_PROGRESS 1, BLOCKED 20, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
+> **ASSESS-QUESTION-007 landing and ASSESS-QUESTION-008 contract checkpoint, 2026-11-08 (DEC-048):** ASSESS-QUESTION-007 DONE / MERGED: PR #32 squash main 7e5141c3676733db34c9320592486d49d33d12b2 (tree equal to evidence head b883f05), PR-head CI #208 and post-merge main CI #209 attempt 1 eight SUCCESS; final record §12 (Delegated Acceptance). ASSESS-QUESTION-008 is eligible (00.13 §4.1); its contract was prepared and reviewed (STOP → STOP → PASS) with Owner decisions D1–D4. DONE 12/33 (36.36%), VERIFYING 0, BLOCKED 21, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
 > **ASSESS-QUESTION-007 implementation checkpoint, 2026-11-08 (DEC-048):** registration CI #206 attempt 1 eight SUCCESS; implementation candidate published for exact-content CI and the independent implementation and rendered review ([record §11](tasks/ASSESS-QUESTION-007.md)). DONE 11/33 (33.33%), VERIFYING 1, BLOCKED 21, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
 
 > **ASSESS-QUESTION-007 READY / Build checkpoint, 2026-11-08 (DEC-048):** contract review chain STOP → STOP → PASS by the Owner-designated reviewer; Owner decision D1 (invalid numeric input is not saved; a hint shows); formal READY PASS, frozen allowlist, no migration; rendered baseline = exact-main CI #205 artifacts (1075 pairs, manifest recorded) ([record §10](tasks/ASSESS-QUESTION-007.md)). DONE 11/33 (33.33%), IN_PROGRESS 1, BLOCKED 21, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
@@ -67,7 +71,7 @@
 **Status:** OWNER-APPROVED ACTIVE P11 BASELINE / OFFICIAL TASK-STATUS TRACKER (PR #18 landed)
 **Preparation Task:** GOV-REALIGN-006, DONE for PRE-P11 candidate preparation only; NOT COUNTED IN P11 BASELINE
 **Completed transition:** GOV-P11-001 DONE for controlled tracker preparation/evidence only; PR #18/main 1653fc5d63be5e6e62c34f2099eb82d66af03919, CI #110; excluded from the 33 implementation Tasks
-**Current Task:** ASSESS-QUESTION-007 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-007.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-007.md)): formal READY PASS, Owner decision D1, after ASSESS-QUESTION-005 DONE / MERGED (main 42a281c, CI #205; [record §12](tasks/ASSESS-QUESTION-005.md)). Earlier: ASSESS-QUESTION-005 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-005.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-005.md)): formal READY PASS, after ASSESS-QUESTION-004 DONE / MERGED (main 01d58bb, CI #199; [record §12–§13](tasks/ASSESS-QUESTION-004.md)). Earlier: ASSESS-QUESTION-004 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-004.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-004.md)): formal READY PASS, Owner decision D1, after ASSESS-QUESTION-003 DONE / MERGED (main b7d02ee and post-merge fix e5d0b3f, CI #191; [record §12–§13](tasks/ASSESS-QUESTION-003.md)). Earlier: ASSESS-QUESTION-003 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-003.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-003.md)): formal READY PASS, after ASSESS-QUESTION-002 DONE / MERGED (main a129a38, CI #181; [record §12](tasks/ASSESS-QUESTION-002.md)). Earlier: ASSESS-QUESTION-002 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-002.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-002.md)): formal READY PASS, reserved 0060, CI-first order with a capture-only baseline, after ASSESS-QUESTION-001 DONE / MERGED (main 8ade3ae, CI #160; [record §13](tasks/ASSESS-QUESTION-001.md)). Earlier: ASSESS-QUESTION-001 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-001.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-001.md)): formal READY PASS, frozen 17-path allowlist, CI-first order, after SEC-OPS-001 DONE / MERGED (main aa2c042, CI #155; [record §15](tasks/SEC-OPS-001.md)). Earlier: SEC-OPS-001 VERIFYING under DEC-048 ([record §13](tasks/SEC-OPS-001.md)), after AUTH-003 DONE / MERGED (main b6dab65, CI #150; [record §16](tasks/AUTH-003.md)). Earlier: AUTH-003 VERIFYING under DEC-048 ([record §14](tasks/AUTH-003.md)), after AUTH-002 DONE / MERGED (main 38259da, CI #144; [record §15](tasks/AUTH-002.md)). Earlier: AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
+**Current Task:** ASSESS-QUESTION-008 IN_PROGRESS under DEC-048 ([record §10](tasks/ASSESS-QUESTION-008.md)): formal READY PASS, Owner decisions D1–D4, reserved 0061, after ASSESS-QUESTION-007 DONE / MERGED (main 7e5141c, CI #209; [record §12](tasks/ASSESS-QUESTION-007.md)). Earlier: ASSESS-QUESTION-007 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-007.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-007.md)): formal READY PASS, Owner decision D1, after ASSESS-QUESTION-005 DONE / MERGED (main 42a281c, CI #205; [record §12](tasks/ASSESS-QUESTION-005.md)). Earlier: ASSESS-QUESTION-005 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-005.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-005.md)): formal READY PASS, after ASSESS-QUESTION-004 DONE / MERGED (main 01d58bb, CI #199; [record §12–§13](tasks/ASSESS-QUESTION-004.md)). Earlier: ASSESS-QUESTION-004 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-004.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-004.md)): formal READY PASS, Owner decision D1, after ASSESS-QUESTION-003 DONE / MERGED (main b7d02ee and post-merge fix e5d0b3f, CI #191; [record §12–§13](tasks/ASSESS-QUESTION-003.md)). Earlier: ASSESS-QUESTION-003 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-003.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-003.md)): formal READY PASS, after ASSESS-QUESTION-002 DONE / MERGED (main a129a38, CI #181; [record §12](tasks/ASSESS-QUESTION-002.md)). Earlier: ASSESS-QUESTION-002 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-002.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-002.md)): formal READY PASS, reserved 0060, CI-first order with a capture-only baseline, after ASSESS-QUESTION-001 DONE / MERGED (main 8ade3ae, CI #160; [record §13](tasks/ASSESS-QUESTION-001.md)). Earlier: ASSESS-QUESTION-001 VERIFYING under DEC-048 ([record §11](tasks/ASSESS-QUESTION-001.md)). Earlier: IN_PROGRESS ([record §10](tasks/ASSESS-QUESTION-001.md)): formal READY PASS, frozen 17-path allowlist, CI-first order, after SEC-OPS-001 DONE / MERGED (main aa2c042, CI #155; [record §15](tasks/SEC-OPS-001.md)). Earlier: SEC-OPS-001 VERIFYING under DEC-048 ([record §13](tasks/SEC-OPS-001.md)), after AUTH-003 DONE / MERGED (main b6dab65, CI #150; [record §16](tasks/AUTH-003.md)). Earlier: AUTH-003 VERIFYING under DEC-048 ([record §14](tasks/AUTH-003.md)), after AUTH-002 DONE / MERGED (main 38259da, CI #144; [record §15](tasks/AUTH-002.md)). Earlier: AUTH-002 IN_PROGRESS under DEC-048 ([record §12](tasks/AUTH-002.md)): formal READY PASS, frozen 44-path allowlist, reserved 0057, CI-first order §12.3. Completed SEC-001/AUTH-001/ADMIN-001 remain DONE.
 **Candidate base:** `77756e38ff4e289e7b6ebcda63d753749854756d`; verified 2026-10-30
 **Owner Gate B approval:** 2026-10-31; exact main `885a91d845059b00900daf85d719604826be8dd3`; original candidate Git blob `e940f7b3293e5ace699aad0c2d590170506023c7`
 **Authority:** Owner-approved finite CBT-R1 baseline under DEC-044/045, ADR-001 and accepted P1–P10 planning sufficiency; no additional policy, implementation or release approval
@@ -90,11 +94,11 @@ Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-0
 |---|---:|
 | Baseline Total | 33 |
 | Current Total | 33 |
-| DONE | 11 |
+| DONE | 12 |
 | READY | 0 |
-| IN_PROGRESS | 0 |
-| VERIFYING | 1 |
-| BLOCKED | 21 |
+| IN_PROGRESS | 1 |
+| VERIFYING | 0 |
+| BLOCKED | 20 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
 | Progress % | 15.15% |
@@ -124,8 +128,8 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 | ASSESS-QUESTION-004 | Matching | DONE | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-005 | Ordering | DONE | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-QUESTION-006 | Short answer | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001, ASSESS-QUESTION-008 | O02, O09 |
-| ASSESS-QUESTION-007 | Numeric answer | VERIFYING | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
-| ASSESS-QUESTION-008 | Essay and authorized human grading | BLOCKED | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
+| ASSESS-QUESTION-007 | Numeric answer | DONE | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
+| ASSESS-QUESTION-008 | Essay and authorized human grading | IN_PROGRESS | P1 / all eight formats | HIGH | ASSESS-QUESTION-001 | O02, O09 |
 | ASSESS-STUDENT-001 | Approved late-delivery disposition and expiry integrity | BLOCKED | P0 / integrity decision gate | HIGH | ASSESS-QUESTION-001 | O04 |
 | ASSESS-MEDIA-001 | Safe pinned prompt and option image delivery | BLOCKED | P1 / required question media | HIGH | SEC-001, ASSESS-QUESTION-001 | O06, O07, O09, A02 |
 | ASSESS-QUESTION-009 | Scoped question bank and browser authoring | BLOCKED | P1 / content preparation | HIGH | ASSESS-QUESTION-002, ASSESS-QUESTION-003, ASSESS-QUESTION-004, ASSESS-QUESTION-005, ASSESS-QUESTION-006, ASSESS-QUESTION-007, ASSESS-QUESTION-008, ASSESS-MEDIA-001 | O02, O06, O09 |
@@ -160,8 +164,8 @@ Internal dependency IDs refer only to this table. External gates are defined onc
 - [x] ASSESS-QUESTION-004 — Matching (DONE, PR #30/main 01d58bb, CI #199)
 - [x] ASSESS-QUESTION-005 — Ordering (DONE, PR #31/main 42a281c, CI #205)
 - [ ] ASSESS-QUESTION-006 — Short answer (BLOCKED)
-- [ ] ASSESS-QUESTION-007 — Numeric answer (VERIFYING)
-- [ ] ASSESS-QUESTION-008 — Essay and authorized human grading (BLOCKED)
+- [x] ASSESS-QUESTION-007 — Numeric answer (DONE, PR #32/main 7e5141c, CI #209)
+- [ ] ASSESS-QUESTION-008 — Essay and authorized human grading (IN_PROGRESS)
 - [ ] ASSESS-STUDENT-001 — Approved late-delivery disposition and expiry integrity (BLOCKED)
 - [ ] ASSESS-MEDIA-001 — Safe pinned prompt and option image delivery (BLOCKED)
 - [ ] ASSESS-QUESTION-009 — Scoped question bank and browser authoring (BLOCKED)
@@ -310,7 +314,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### ASSESS-QUESTION-007 — Numeric answer
 
-- **Requirements / status / priority / risk:** R16, R02, R03, R25, R30; VERIFYING; P1 / all eight formats; HIGH.
+- **Requirements / status / priority / risk:** R16, R02, R03, R25, R30; DONE; P1 / all eight formats; HIGH.
 - **Dependencies and approvals:** ASSESS-QUESTION-001; external O02, O09. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Deliver a real synthetic author/import → preview → Student answer → recovery → submit → score/grade journey for this type under the approved contract. Preserve numeric input text and use approved exact decimal/separator/unit/exponent/tolerance rules; no floating-point assumptions. Extend the shared type registry and existing primitives; no separate timer/save pipeline.
 - **Required tests/evidence:** P8 V02–V06/V09–V12: exact/boundary/outside, comma/dot, units, NaN/infinity/malformed/precision and recovery; empty/upgrade database tests if schema changes, no-key projection and five-browser E2E. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.
@@ -320,7 +324,7 @@ The following fields apply to **each** §5 card, in addition to its specific acc
 
 ### ASSESS-QUESTION-008 — Essay and authorized human grading
 
-- **Requirements / status / priority / risk:** R17, R02, R03, R25, R30; BLOCKED; P1 / all eight formats; HIGH.
+- **Requirements / status / priority / risk:** R17, R02, R03, R25, R30; IN_PROGRESS; P1 / all eight formats; HIGH.
 - **Dependencies and approvals:** ASSESS-QUESTION-001; external O02, O09. **Unblock:** required predecessors DONE and the Task-applicable §8 READY input prerequisites plus §4 conditions; the same Task’s §8 DONE/release evidence is produced during execution and is not an entry prerequisite. No inferred approval.
 - **Acceptance:** Deliver a real synthetic author/import → preview → Student answer → recovery → submit → score/grade journey for this type under the approved contract. Exact essay text survives all recovery paths; assigned Teacher records revision-safe bounded human score/rubric history. Ungraded is not zero and prevents finalization; no AI/file-upload answer. Extend the shared type registry and existing primitives; no separate timer/save pipeline.
 - **Required tests/evidence:** P8 V02–V06/V09–V12: concurrent/stale grades, unauthorized reader/grader, ungraded finalization refusal and result reconstruction; empty/upgrade database tests if schema changes, no-key projection and five-browser E2E. Also §4's full applicable CI/regression/independent-review and material-UI evidence gates.
