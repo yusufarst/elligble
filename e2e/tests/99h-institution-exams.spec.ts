@@ -135,6 +135,9 @@ const examCard = (page: Page, examId: string) => page.getByTestId(`institution-e
 
 async function openPeriod(page: Page, label: string): Promise<void> {
     const card = periodCard(page, label);
+    // Wait for the overview to render the card first: isVisible() does not wait, so before the list
+    // loads it would skip the click and leave the period closed (CI #222).
+    await expect(card).toBeVisible();
     const open = card.getByRole('button', { name: 'Buka Periode' });
     if (await open.isVisible()) await open.click();
     await expect(card.getByRole('button', { name: 'Tambah Sesi' })).toBeVisible();

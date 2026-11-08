@@ -619,3 +619,9 @@ No re-runs, and no push while the previous commit's CI runs.
 - **CI #221** (run 42513709043, 5bf5b3e, attempt 1): FAILURE, preserved without re-run. Web passed; Runtime failed; E2E and Container were skipped.
   - **The one failure, out of 310 integration tests:** the existing SEC-001 test "migration upgrades populated 0053 and is repeat-safe" (`test/integration/permission-enforcement.test.ts`). It migrates only to 0053, then calls the current `cancelTeacherExam`, which received `unavailable` instead of `cancelled`. The new read of `i.institution_session_id` in `managed-exam.ts` cannot run on a schema without the 0062 column. Every new institution integration test passed.
 - **Correction (row: managed-exam.ts, inside the allowlist):** the teacher-managed lookup now reads the column as `to_jsonb(i) ->> 'institution_session_id'`. On a pre-0062 schema that is null, the teacher-managed meaning; on the current schema it is identical. No test changed.
+
+### 11.0.1 Exact-content CI of the second candidate
+
+- **CI #222** (run 42514037710, fd159cc, attempt 1): FAILURE, preserved without re-run. Web, Runtime (all 310 integration tests, including the 0053 upgrade test) and Container passed. All five E2E jobs failed at the same step, with every earlier spec passing (36/36 each); the capture test did not run.
+  - `openPeriod` (99h :140, called at :303) used Playwright `isVisible()`, which does not wait. Before the overview had rendered the period card, it returned false and skipped "Buka Periode". The period stayed closed, so "Tambah Sesi" never appeared. The page snapshot shows the period present and closed.
+- **Correction (row 31, test only):** `openPeriod` first waits for the period card to be visible, then opens it when it is closed. No product code changed.
