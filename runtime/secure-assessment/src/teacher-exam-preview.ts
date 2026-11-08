@@ -1,6 +1,7 @@
 import type pg from 'pg';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
+import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 
 // Teacher preview of an exam before it opens (ASSESS-TEACHER-002; D04.3-38 LOCKED: the
@@ -22,11 +23,15 @@ export interface TeacherExamPreviewQuestion {
     /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
     /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
-    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE';
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING';
     /** True/false only: the key (ASSESS-QUESTION-003 §4A.5); absent on every other item. */
     correctValue?: boolean;
     /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
     correctOptionIds?: string[] | null;
+    /** Matching only (ASSESS-QUESTION-004 §4.3): the items in authored order and the key; absent on every other item. */
+    leftItems?: Array<{ id: string; content: string }>;
+    rightItems?: Array<{ id: string; content: string }>;
+    correctPairs?: Array<{ leftId: string; rightId: string }>;
 }
 
 export interface TeacherExamPreview {
@@ -86,6 +91,22 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
         return {
             snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
             questionType: TRUE_FALSE_TYPE, correctOptionIds: null, correctValue: record.correctValue,
+        };
+    }
+    if (content && typeof content === 'object' && !Array.isArray(content) && (content as Record<string, unknown>)['schemaVersion'] === 2
+        && MATCHING_DESCRIPTOR.validateContent(content as Record<string, unknown>).ok) {
+        const record = content as {
+            prompt: string; maxScore: number;
+            leftItems: Array<{ id: string; content: string }>; rightItems: Array<{ id: string; content: string }>;
+            correctPairs: Array<{ leftId: string; rightId: string }>;
+        };
+        const items = (list: Array<{ id: string; content: string }>) => list.map(i => ({ id: i.id, content: i.content }));
+        const keyOf = new Map(record.correctPairs.map(p => [p.leftId, p.rightId]));
+        return {
+            snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
+            questionType: MATCHING_TYPE, correctOptionIds: null,
+            leftItems: items(record.leftItems), rightItems: items(record.rightItems),
+            correctPairs: record.leftItems.map(i => ({ leftId: i.id, rightId: keyOf.get(i.id) as string })),
         };
     }
     // Show what is there, without trusting its shape.

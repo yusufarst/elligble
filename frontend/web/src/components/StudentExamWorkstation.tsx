@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
+import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -9,6 +9,7 @@ import { clearBroadcastSeen, useBroadcastInbox } from '../hooks/useBroadcastInbo
 import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { MultipleResponseAnswer } from './answers/MultipleResponseAnswer.tsx';
+import { MatchingAnswer } from './answers/MatchingAnswer.tsx';
 import { TrueFalseAnswer } from './answers/TrueFalseAnswer.tsx';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
@@ -853,11 +854,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
-  // A cleared multiple-response answer is "Belum dijawab" (O02-2): only answered values count.
+  // A cleared multiple-response answer is "Belum dijawab" (O02-2): only answered values count. A
+  // matching answer counts only with every left item paired (Owner D1, ASSESS-QUESTION-004 §4A.1).
   const answeredOptions: Record<string, string> = {};
   for (const q of questions) {
     const value = selectedOptions[q.snapshotId];
-    if (isAnsweredValue(contentKeyOf(q), value)) answeredOptions[q.snapshotId] = value;
+    if (isAnsweredValue(contentKeyOf(q), value, q.leftItems?.length)) answeredOptions[q.snapshotId] = value;
   }
   const answeredCount = questions.filter(q => !!answeredOptions[q.snapshotId]).length;
   const unansweredCount = totalQuestions - answeredCount;
@@ -885,8 +887,10 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
           text: 'Menyimpan...',
         };
       case 'saved':
-        // An acknowledged empty selection is saved, but it is not an answer.
-        if (currentQuestion && contentKeyOf(currentQuestion) === MULTIPLE_RESPONSE_KEY && selectedOptions[currentQuestion.snapshotId] === EMPTY_SELECTION) {
+        // An acknowledged empty selection, or an incomplete matching answer (D1), is saved, but it
+        // is not an answer (ASSESS-QUESTION-004 §4A.1).
+        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY].includes(contentKeyOf(currentQuestion))
+          && !isAnsweredValue(contentKeyOf(currentQuestion), selectedOptions[currentQuestion.snapshotId], currentQuestion.leftItems?.length)) {
           return { statusClass: 'unanswered', text: 'Belum dijawab' };
         }
         return {
@@ -1069,6 +1073,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   question={currentQuestion}
                   value={selectedOptions[currentQuestion.snapshotId]}
                   onChange={value => selectOption(currentQuestion.snapshotId, value, MULTIPLE_RESPONSE_KEY)}
+                />
+              ) : currentQuestion.questionType === 'MATCHING' ? (
+                <MatchingAnswer
+                  question={currentQuestion}
+                  value={selectedOptions[currentQuestion.snapshotId]}
+                  onChange={value => selectOption(currentQuestion.snapshotId, value, MATCHING_KEY)}
                 />
               ) : currentQuestion.questionType === 'TRUE_FALSE' ? (
                 <TrueFalseAnswer

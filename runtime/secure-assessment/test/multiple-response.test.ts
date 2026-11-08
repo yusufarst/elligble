@@ -20,7 +20,7 @@ const SUPPORTED = new Set(['1:MULTIPLE_CHOICE_SINGLE', MULTIPLE_RESPONSE_KEY]);
 const score = (payload: unknown) => MULTIPLE_RESPONSE_DESCRIPTOR.score(mr(), payload);
 
 test('C01 the production registry holds v1 and multiple response; content is classified as registered', () => {
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', MULTIPLE_RESPONSE_KEY, '2:TRUE_FALSE']);
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', MULTIPLE_RESPONSE_KEY, '2:TRUE_FALSE', '2:MATCHING']);
     assert.equal(classifyFrozenContent(mr()).kind, 'registered');
     assert.equal(MULTIPLE_RESPONSE_DESCRIPTOR.scoringRuleId, MULTIPLE_RESPONSE_RULE);
     assert.equal(MULTIPLE_RESPONSE_DESCRIPTOR.allowsEmpty, true);

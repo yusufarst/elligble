@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 all eight formats; HIGH risk; R13, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → PASS (§9); Owner decision D1 (§4A.1); formal READY PASS and Build started under DEC-048 on 2026-11-08 (§10)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation and rendered review (§11); DEC-048** |
 | Objective | Deliver matching ("Menjodohkan") end to end on the versioned foundation: author it through the v2 import, preview it as a teacher, answer it as a Student with local recovery, then submit and score all-or-nothing |
 | Owner decisions | O02-1, O02-2, O02-5 and O02-12, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); A01; **D1 (partial matching answers), decided by the Owner on 2026-11-08 (§4A.1)**. Reviewer: the standing Owner-designated read-only subagent reviewer |
 | Execution authority | DEC-048 (00.13). The internal dependency ASSESS-QUESTION-001 is DONE / MERGED. ASSESS-QUESTION-003 is DONE / MERGED: PR #28 landed as main b7d02ee. Its post-merge CI #187 failed in firefox-1280 on a direct reload in the 99b spec, and the Owner-authorized test-only fix landed as PR #29, main e5d0b3f6aaa47ef4a36704f1526d26a02a28b216, post-merge CI #191 attempt 1 eight SUCCESS ([record §13](ASSESS-QUESTION-003.md)). Its v2 import, client value pattern and E2E harness are reused, including the Firefox-safe `reloadPage()`/`open()` helpers. O09 rests on the approved P5 content |
@@ -410,3 +410,47 @@ Non-material notes, applied at READY:
   - Manifest: one line per pair, "project scenario viewport text sha256", sorted. SHA-256 304af80bd6a1990a52e32690fecbe3884570ea1aed2b17241175b0116d88394b.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 9, IN_PROGRESS 1, VERIFYING 0, BLOCKED 23.
+
+## 11. Implementation checkpoint — 2026-11-08
+
+- **Step 1:** registration e2ecf76 (CI #192, attempt 1, eight SUCCESS), carrying the #191 baseline manifest (§10).
+- **Implementation candidate,** inside rows 5–29 plus the Task-flow rows 1–4:
+  - **Descriptor** `question-types/matching.ts`, registered:
+    - item ids are unique across both lists;
+    - the answer `{pairs}` is order-free and strictly one-to-one;
+    - scoring: incomplete is UNANSWERED (D1); complete and exact is CORRECT; complete and wrong is INCORRECT.
+  - **Parser:**
+    - the extended v2 header (`QUESTIONS_HEADER_V2_EXTENDED`, 32 columns) beside the unchanged v1 and ten-column v2 headers;
+    - `MJ` rows in the frozen check order;
+    - `items_not_allowed` for PG/PGK/BS rows;
+    - `MATCHING_RIGHT_LETTERS` A–L;
+    - the frozen operator wording (§4.2, §4A.2).
+  - **Builder:** `buildMatchingFrozenContent`, dispatched by `buildImportedFrozenContent`.
+  - **Import preview item:** `leftItems`, `rightItems`, and `correctLetters` in left order.
+  - **Teacher preview item:** the §4.3 shape.
+  - **Monitoring:** the guarded count of §4A.1.
+  - **Client:**
+    - `MATCHING_KEY` is supported;
+    - helpers `canonicalPairs`, `pairsOf`, `isEmptyValue`, and `isAnsweredValue(key, value, leftCount)`;
+    - the adapter sends `{pairs}` only from a canonical value;
+    - `countUnreceivedLocalAnswers` uses `isEmptyValue`;
+    - `MatchingAnswer`: the right list, one `NativeSelect` (size `exam`) per left item, used items disabled with "(sudah dipakai)", the status text of §4A.1, and the `.matching-row`/`.paired` tokens-only variant;
+    - the exam screen renders by type and uses one key-aware save-state check;
+    - the teacher preview shows the try-out control and the key list;
+    - the import page has the intro, the card instruction, the MJ preview, and `NativeSelect` for the assessment type;
+    - the extended template has PG, PGK, BS and MJ rows, and the teacher wording is as frozen.
+  - **Document:** the P4 pointer.
+- **Tests:**
+  - `test/matching.test.ts` (C01/C02);
+  - `test/integration/matching.test.ts` (C03: four Students covering M1/M2, M3, M4 and M5; refusals with zero mutation; the 409 pair; monitoring counts; results);
+  - `frontend/web/src/__tests__/matching.test.tsx` (C05);
+  - `e2e/tests/99c-matching.spec.ts` (C06/C07, using only the shared navigation helpers);
+  - the §4.6 assertions in rows 24–27.
+- **Local:**
+  - typechecks PASS (runtime, web, e2e);
+  - Secure Assessment units 944/944;
+  - the new and affected web files PASS;
+  - the client template parses with the server parser without problems.
+  - The full local web run had eight timing-sensitive failures under machine load. Each failing file then passed when run alone, and `onDemandScreens` behaves the same on the main tree.
+  - Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 9, VERIFYING 1, BLOCKED 23.

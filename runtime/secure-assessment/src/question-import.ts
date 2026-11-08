@@ -19,8 +19,21 @@ export const QUESTIONS_HEADER = ['no', 'prompt', 'option_a', 'option_b', 'option
  */
 export const QUESTIONS_TEMPLATE_V2 = 'elligble-questions-v2';
 export const QUESTIONS_HEADER_V2 = ['no', 'type', 'prompt', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct', 'score'] as const;
+/** Right-item letters of a matching (MJ) row: A to L (ASSESS-QUESTION-004 §4A.6). */
+export const MATCHING_RIGHT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] as const;
+export const MATCHING_LEFT_COLUMNS = 10;
+/**
+ * ASSESS-QUESTION-004 (§4.2): the extended v2 header appends the matching item columns
+ * left_1..left_10 and right_a..right_l after "score" (32 columns). The ten-column v2 header
+ * stays valid; only MJ rows need the extended one.
+ */
+export const QUESTIONS_HEADER_V2_EXTENDED = [
+    ...QUESTIONS_HEADER_V2,
+    ...Array.from({ length: MATCHING_LEFT_COLUMNS }, (_, i) => `left_${i + 1}`),
+    ...MATCHING_RIGHT_LETTERS.map(l => `right_${l.toLowerCase()}`),
+] as readonly string[];
 export type QuestionTemplate = typeof QUESTIONS_TEMPLATE | typeof QUESTIONS_TEMPLATE_V2;
-export type ImportQuestionType = 'PG' | 'PGK' | 'BS';
+export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ';
 export const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 /** Implementation limits (plan §7): questions per file and the largest score of one question. */
 export const MAX_IMPORT_QUESTIONS = 200;
@@ -43,7 +56,11 @@ export type QuestionProblemCode =
     | 'score_invalid'
     | 'type_invalid'
     | 'correct_duplicate'
-    | 'options_not_allowed';
+    | 'options_not_allowed'
+    | 'columns_missing'
+    | 'matching_items_invalid'
+    | 'items_duplicate'
+    | 'items_not_allowed';
 
 export interface QuestionProblem {
     code: QuestionProblemCode;
@@ -55,8 +72,13 @@ export interface QuestionProblem {
     found?: number;
     /** option_empty and options_duplicate: the letters concerned. */
     letters?: string[];
-    /** correct_invalid on a BS row only (ASSESS-QUESTION-003 §4A.2); absent otherwise. */
-    type?: 'BS';
+    /**
+     * correct_invalid on a BS row (ASSESS-QUESTION-003 §4A.2); correct_invalid, correct_duplicate
+     * and options_not_allowed on an MJ row (ASSESS-QUESTION-004 §4.2). Absent otherwise.
+     */
+    type?: 'BS' | 'MJ';
+    /** matching_items_invalid and items_duplicate: the side of the matching items concerned. */
+    side?: 'left' | 'right';
 }
 
 export interface ParsedQuestion {
@@ -74,6 +96,11 @@ export interface ParsedQuestion {
     correctIndexes: number[];
     /** BS only: the key (true = Benar). */
     correctValue?: boolean;
+    /** MJ only: the left items (2-10) and right items (as many plus at most 2), in authored order. */
+    leftItems?: string[];
+    rightItems?: string[];
+    /** MJ only: the right item index of each left item, in left order. */
+    correctPairIndexes?: number[];
 }
 
 export interface QuestionFile {
@@ -92,11 +119,14 @@ function lineOf(text: string, index: number): number {
     return line;
 }
 
-function headerOf(row: CsvRow | undefined): QuestionTemplate | null {
+interface Header { template: QuestionTemplate; columns: number }
+
+function headerOf(row: CsvRow | undefined): Header | null {
     if (!row) return null;
-    for (const [template, header] of [[QUESTIONS_TEMPLATE, QUESTIONS_HEADER], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2]] as const) {
+    const headers: Array<[QuestionTemplate, readonly string[]]> = [[QUESTIONS_TEMPLATE, QUESTIONS_HEADER], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2_EXTENDED]];
+    for (const [template, header] of headers) {
         const cells = trimTrailingEmpty(row.cells.map(c => c.trim().toLowerCase()), header.length);
-        if (cells.length === header.length && cells.every((c, i) => c === header[i])) return template;
+        if (cells.length === header.length && cells.every((c, i) => c === header[i])) return { template, columns: header.length };
     }
     return null;
 }
@@ -108,24 +138,24 @@ function trimTrailingEmpty(cells: string[], columns: number = QUESTIONS_HEADER.l
     return end === cells.length ? cells : cells.slice(0, end);
 }
 
-function readRows(text: string): { rows: CsvRow[]; template: QuestionTemplate } | { problem: QuestionProblem } {
+function readRows(text: string): { rows: CsvRow[]; header: Header } | { problem: QuestionProblem } {
     // The header decides the separator: commas, or semicolons as spreadsheets set to
     // Indonesian save them.
     const lines = (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text).split('\n').map(l => l.replace(/\r$/, ''));
     const headerIndex = lines.findIndex(l => l.trim() !== '');
     if (headerIndex < 0) return { problem: { code: 'file_empty', line: null } };
-    let template: QuestionTemplate | null = null;
+    let header: Header | null = null;
     const delimiter = ([',', ';'] as const).find(candidate => {
         try {
-            template = headerOf(parseCsv(lines[headerIndex], candidate)[0]);
-            return template !== null;
+            header = headerOf(parseCsv(lines[headerIndex], candidate)[0]);
+            return header !== null;
         } catch {
             return false;
         }
     });
-    if (!delimiter || !template) return { problem: { code: 'header_invalid', line: headerIndex + 1 } };
+    if (!delimiter || !header) return { problem: { code: 'header_invalid', line: headerIndex + 1 } };
     try {
-        return { rows: parseCsv(text, delimiter), template };
+        return { rows: parseCsv(text, delimiter), header };
     } catch (err) {
         if (err instanceof CsvError) return { problem: { code: 'csv_syntax', line: err.line } };
         throw err;
@@ -143,9 +173,10 @@ export function parseQuestionFile(text: string): QuestionFile {
     }
     const read = readRows(text);
     if ('problem' in read) return { questions: [], problems: [read.problem], template: QUESTIONS_TEMPLATE };
-    const template = read.template;
+    const template = read.header.template;
     const v2 = template === QUESTIONS_TEMPLATE_V2;
-    const columns = v2 ? QUESTIONS_HEADER_V2.length : QUESTIONS_HEADER.length;
+    const columns = read.header.columns;
+    const extended = columns === QUESTIONS_HEADER_V2_EXTENDED.length;
 
     const rows = read.rows.slice(1);
     const problems: QuestionProblem[] = [];
@@ -164,8 +195,10 @@ export function parseQuestionFile(text: string): QuestionFile {
             return;
         }
         const typeCell = v2 ? cells[1].toUpperCase() : 'PG';
-        const [no, prompt, a, b, c, d, e, correct, score] = v2 ? [cells[0], ...cells.slice(2)] : cells;
-        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' ? typeCell : null;
+        const [no, prompt, a, b, c, d, e, correct, score] = v2 ? [cells[0], ...cells.slice(2, 10)] : cells;
+        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' ? typeCell : null;
+        const leftCells = extended ? cells.slice(10, 10 + MATCHING_LEFT_COLUMNS) : [];
+        const rightCells = extended ? cells.slice(10 + MATCHING_LEFT_COLUMNS) : [];
         const options = [a, b, c, d, e];
         if (no !== String(index + 1)) {
             problems.push({ code: 'number_out_of_order', line, expected: index + 1 });
@@ -177,6 +210,17 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         if (!prompt) {
             problems.push({ code: 'prompt_empty', line });
+            return;
+        }
+        if (type === 'MJ') {
+            const question = parseMatchingRow(line, index + 1, prompt, options, correct, score, extended, leftCells, rightCells);
+            if ('code' in question) problems.push(question);
+            else questions.push(question);
+            return;
+        }
+        // The matching item columns belong to MJ rows only (§4A.6: after the prompt).
+        if ([...leftCells, ...rightCells].some(cell => cell.length > 0)) {
+            problems.push({ code: 'items_not_allowed', line });
             return;
         }
         if (type === 'BS') {
@@ -239,7 +283,7 @@ export function parseQuestionFile(text: string): QuestionFile {
             correctIndexes = [index];
         }
         const correctIndex = type === 'PG' ? correctIndexes[0] : -1;
-        const maxScore = SCORE_FORMAT.test(score) ? Number(score.replace(',', '.')) : NaN;
+        const maxScore = scoreOf(score);
         if (!(maxScore > 0 && maxScore <= MAX_QUESTION_SCORE)) {
             problems.push({ code: 'score_invalid', line });
             return;
@@ -249,6 +293,53 @@ export function parseQuestionFile(text: string): QuestionFile {
     return { questions, problems, template };
 }
 
+function scoreOf(score: string): number {
+    return SCORE_FORMAT.test(score) ? Number(score.replace(',', '.')) : NaN;
+}
+
+/** The number of leading filled cells, or -1 when a filled cell follows an empty one. */
+function filledInOrder(cells: string[]): number {
+    const count = cells.findIndex(cell => cell.length === 0);
+    const filled = count < 0 ? cells.length : count;
+    return cells.slice(filled).some(cell => cell.length > 0) ? -1 : filled;
+}
+
+function hasDuplicate(items: string[]): boolean {
+    const seen = new Set(items.map(item => item.toLocaleLowerCase('id-ID').replace(/\s+/g, ' ')));
+    return seen.size !== items.length;
+}
+
+/**
+ * One MJ (menjodohkan) row, checked in the frozen order (ASSESS-QUESTION-004 §4.2): options
+ * empty, item columns present, left items, right items, duplicates (left first), key, score.
+ */
+function parseMatchingRow(line: number, no: number, prompt: string, options: string[], correct: string, score: string,
+    extended: boolean, leftCells: string[], rightCells: string[]): ParsedQuestion | QuestionProblem {
+    if (options.some(option => option.length > 0)) return { code: 'options_not_allowed', line, type: 'MJ' };
+    if (!extended) return { code: 'columns_missing', line };
+    const left = filledInOrder(leftCells);
+    if (left < 2) return { code: 'matching_items_invalid', line, side: 'left' };
+    const right = filledInOrder(rightCells);
+    if (right < left || right > left + 2) return { code: 'matching_items_invalid', line, side: 'right' };
+    const leftItems = leftCells.slice(0, left);
+    const rightItems = rightCells.slice(0, right);
+    if (hasDuplicate(leftItems)) return { code: 'items_duplicate', line, side: 'left' };
+    if (hasDuplicate(rightItems)) return { code: 'items_duplicate', line, side: 'right' };
+    // One right letter per left item, in left order, separated by commas and/or spaces.
+    const letters = correct.toUpperCase().split(/[\s,]+/).filter(part => part.length > 0);
+    const known = MATCHING_RIGHT_LETTERS.slice(0, right) as readonly string[];
+    if (!/^[A-Za-z\s,]+$/.test(correct) || letters.length !== left || letters.some(l => !known.includes(l))) {
+        return { code: 'correct_invalid', line, type: 'MJ' };
+    }
+    if (new Set(letters).size !== letters.length) return { code: 'correct_duplicate', line, type: 'MJ' };
+    const maxScore = scoreOf(score);
+    if (!(maxScore > 0 && maxScore <= MAX_QUESTION_SCORE)) return { code: 'score_invalid', line };
+    return {
+        line, no, prompt, options: [], correctIndex: -1, maxScore, type: 'MJ', correctIndexes: [],
+        leftItems, rightItems, correctPairIndexes: letters.map(l => known.indexOf(l)),
+    };
+}
+
 /** The operator CLI's wording of a problem (English, operator-facing). */
 export function describeQuestionProblem(problem: QuestionProblem): string {
     const at = problem.line === null ? '' : `line ${problem.line}: `;
@@ -256,7 +347,7 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
         case 'not_text': return 'the questions file is not a text CSV file (a spreadsheet workbook?); save it as "CSV UTF-8"';
         case 'encoding_invalid': return `${at}the file is not UTF-8 text; save it as "CSV UTF-8"`;
         case 'csv_syntax': return `${at}the file is not valid CSV (check the double quotes)`;
-        case 'header_invalid': return `${at}header must be exactly: ${QUESTIONS_HEADER.join(',')} (${QUESTIONS_TEMPLATE}) or ${QUESTIONS_HEADER_V2.join(',')} (${QUESTIONS_TEMPLATE_V2})`;
+        case 'header_invalid': return `${at}header must be exactly: ${QUESTIONS_HEADER.join(',')} (${QUESTIONS_TEMPLATE}) or ${QUESTIONS_HEADER_V2.join(',')} (${QUESTIONS_TEMPLATE_V2}) or ${QUESTIONS_HEADER_V2_EXTENDED.join(',')} (${QUESTIONS_TEMPLATE_V2})`;
         case 'file_empty': return 'the questions file has no questions';
         case 'too_many_questions': return `the file has ${problem.found} questions; at most ${problem.expected} per import`;
         case 'column_count': return `${at}expected ${problem.expected ?? QUESTIONS_HEADER.length} columns, found ${problem.found}`;
@@ -265,10 +356,18 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
         case 'option_empty': return `${at}all five options (A to E) are required; missing ${problem.letters?.join(', ')}`;
         case 'options_duplicate': return `${at}options must be different from each other (${problem.letters?.join(', ')})`;
         case 'correct_multiple': return `${at}"correct" must be exactly one of A, B, C, D, E (single-answer questions)`;
-        case 'correct_invalid': return problem.type === 'BS' ? `${at}"correct" must be B (true) or S (false) for BS` : `${at}"correct" must be one of A, B, C, D, E`;
+        case 'correct_invalid': return problem.type === 'BS' ? `${at}"correct" must be B (true) or S (false) for BS`
+            : problem.type === 'MJ' ? `${at}"correct" for MJ must list one right letter per left item, in order (for example B,C,A)`
+            : `${at}"correct" must be one of A, B, C, D, E`;
         case 'score_invalid': return `${at}"score" must be a positive number with at most two decimals, up to ${MAX_QUESTION_SCORE}`;
-        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false) or PGK (multiple answers)`;
-        case 'correct_duplicate': return `${at}"correct" lists a letter more than once`;
-        case 'options_not_allowed': return `${at}options must be empty for BS`;
+        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching) or PGK (multiple answers)`;
+        case 'correct_duplicate': return problem.type === 'MJ' ? `${at}"correct" for MJ uses a right letter more than once` : `${at}"correct" lists a letter more than once`;
+        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' ? 'MJ' : 'BS'}`;
+        case 'columns_missing': return `${at}MJ needs the v2 header with left_1..left_10 and right_a..right_l`;
+        case 'matching_items_invalid': return problem.side === 'right'
+            ? `${at}MJ needs as many right items as left items, plus at most 2, filled in order from right_a`
+            : `${at}MJ needs 2 to 10 left items, filled in order from left_1`;
+        case 'items_duplicate': return `${at}${problem.side === 'right' ? 'right' : 'left'} items must differ from each other`;
+        case 'items_not_allowed': return `${at}left and right item columns are only for MJ`;
     }
 }
