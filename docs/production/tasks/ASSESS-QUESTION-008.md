@@ -527,3 +527,10 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
   - the client template parses with the server parser without problems.
   - Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 12, VERIFYING 1, BLOCKED 20.
+
+### 11.0 Exact-content CI of the first candidate
+
+- **CI #211** (run 42487879697, 6888adf, attempt 1): FAILURE, preserved without re-run. Runtime and Web failed; E2E and Container were skipped.
+  - **Web typecheck:** an unused `React` import in the new `frontend/web/src/__tests__/essay.test.tsx` (TS6133).
+  - **Integration:** `mark_ready` returned 409 in the new `test/integration/essay.test.ts`. The test placed `students[0]` in a second, overlapping ACTIVE exam before the exam was marked ready, so the participant schedule-conflict readiness check refused it (`exam-instance-participant-proctor-schedule-conflict-readiness-preflight.ts:117`), as designed. The later 400 followed from that.
+- **Correction (tests only, inside rows 38 and 39):** the unused import is removed. The foreign exam is created only after activation, with a participant outside this exam, and the transition assertions now print the response body. No product code changed.

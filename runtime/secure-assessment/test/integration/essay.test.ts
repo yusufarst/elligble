@@ -91,11 +91,7 @@ test('ASSESS-QUESTION-008 C03 essay and human grading end to end through product
     assert.deepEqual(snaps[1].frozen_content, { schemaVersion: 2, questionType: 'ESSAY', prompt: 'Jelaskan proses fotosintesis', rubric: 'Sebutkan bahan dan hasilnya', maxScore: 5 });
     assert.deepEqual(snaps[2].frozen_content.rubric, '');
 
-    // An exam of the same teacher with a v1 question and a submitted attempt: foreign objects for grading.
-    const otherExam = await createExamInstance(pool, tenant, teaching);
-    const [foreignSnapshot] = await addQuestionSnapshots(pool, tenant, otherExam, 1);
-    const foreignAttempt = await createAttemptWithTimer(pool, tenant, await addParticipant(pool, tenant, otherExam, students[0].personId));
-    await pool.query("INSERT INTO secure_assessment_exam_submissions (tenant_id, exam_attempt_id, finalization_source) VALUES ($1, $2, 'STUDENT_SUBMIT')", [tenant, foreignAttempt]);
+    let otherExam = '', foreignSnapshot = '', foreignAttempt = '';
 
     await t.test('the teacher preview shows the rubric; the exam opens; the readiness card counts essays', async () => {
         const r = await teacherClient.request(`/api/v1/assessment/teacher-exams/preview?examInstanceId=${exam}`);
@@ -103,8 +99,17 @@ test('ASSESS-QUESTION-008 C03 essay and human grading end to end through product
         assert.deepEqual(r.body.questions[1], { snapshotId: es1, no: 2, prompt: 'Jelaskan proses fotosintesis', options: [], correctOptionId: null, maxScore: 5, valid: true,
             questionType: 'ESSAY', correctOptionIds: null, rubric: 'Sebutkan bahan dan hasilnya' });
         assert.equal('rubric' in r.body.questions[0], false);
-        assert.equal((await act(exam, 'mark_ready')).status, 200);
-        assert.equal((await act(exam, 'activate')).status, 200);
+        const ready = await act(exam, 'mark_ready');
+        assert.equal(ready.status, 200, JSON.stringify(ready.body));
+        const opened = await act(exam, 'activate');
+        assert.equal(opened.status, 200, JSON.stringify(opened.body));
+        // Once the exam is open: an exam of the same teacher with a v1 question and a submitted attempt of
+        // a person outside this exam, as foreign objects for grading (no schedule conflict with this exam).
+        otherExam = await createExamInstance(pool, tenant, teaching);
+        [foreignSnapshot] = await addQuestionSnapshots(pool, tenant, otherExam, 1);
+        const outsider = await createPersonWithAccount(pool);
+        foreignAttempt = await createAttemptWithTimer(pool, tenant, await addParticipant(pool, tenant, otherExam, outsider.personId));
+        await pool.query("INSERT INTO secure_assessment_exam_submissions (tenant_id, exam_attempt_id, finalization_source) VALUES ($1, $2, 'STUDENT_SUBMIT')", [tenant, foreignAttempt]);
         const cards = await teacherClient.request('/api/v1/assessment/teacher-readiness');
         assert.equal(cards.status, 200, JSON.stringify(cards.body));
         assert.equal(cards.body.exams.find((e: any) => e.examInstanceId === exam).essayCount, 2);
