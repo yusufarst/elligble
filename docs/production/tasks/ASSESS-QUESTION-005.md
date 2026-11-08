@@ -418,3 +418,72 @@ No re-runs.
   - **N3.** The 200 % text captures are at 390 px and 1280 px, as in the ASSESS-QUESTION-004 harness.
   - **N4.** There is no unit vector for an item number of 10.
 
+### 11.2 Rendered review and final review state
+
+- **CI #203** (run 42453422849, f4dc489, attempt 1): eight jobs SUCCESS. CI #202 on cf37148 was cancelled by the push of the record-only correction f4dc489; it did not fail and was not re-run.
+- **Correction 1 review:** PASS. F1 is closed, and §11.1 is accurate.
+- **Rendered review:** PASS across all five projects on the #203 artifacts (1075 pairs at f4dc489, tree 7bb15d77, every hash matching, overflow 0, no target under 44 px; after-manifest SHA-256 e634a4a1e10c54b0131028998265288dfa7125fc291704f64386a01f37cbf30b). Against #199, 145 of 175 pairs per project are identical; the 30 that differ are the 99/99b/99c import previews, and only in the intro, the card instruction and random IDs. The ordering surfaces match FDS §21 and §4A: the frozen copy, the warning-tint notice, focus on the moved item's button in all 25 keyboard captures, the selected cards with the check badge, the narrow layout and 200 % text. Non-material: (R-N1) in Firefox and WebKit, the button itself shows no ring because the harness focuses it by script; the row's focus-within outline shows, and focus is correct; (R-N2) unused right padding on the rows, left for UI-SYSTEM; (R-N3) known effects of the capture method.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** f4dc489a01397f34e8ed87b822d286b48c2f1d7f.
+
+**Commits** on task/assess-question-005-ordering (PR #31):
+- registration d699fd3;
+- implementation 341d615;
+- correction 1, cf37148;
+- record correction f4dc489.
+
+Every commit has the Owner author and committer and a raw message without trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #203, push, attempt 1, eight jobs SUCCESS.
+- Runtime units: identity-access 34, tenant-access 14, academic-core 11, Secure Assessment 950; all pass.
+- Real PostgreSQL 16 integration: 269/269, including the ordering journey, the 409 pair, monitoring and the authored-order notice.
+- Web job: 43 files and 405 tests, plus typecheck and build. Container image build and smoke test.
+- E2E: 32/32 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390, including the ordering journey (C06) and the rendered captures (C07).
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| #200 | SUCCESS (registration d699fd3) |
+| #201 | SUCCESS (implementation 341d615) |
+| #202 | cancelled by the push of f4dc489 (cf37148) |
+| #203 | SUCCESS (f4dc489, final) |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F3) → STOP (R1) → PASS (§9, §9.1).
+2. **Implementation:** STOP (F1) → PASS (§11.1–§11.2).
+3. **Rendered:** PASS (§11.2).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: O1–O6 and the mixed vector 8/10 → 80; the production registry holds five keys |
+| C02 | PASS: UR import vectors, frozen problem shapes and wording; earlier parser results unchanged; the template parses; `keyEqualsAuthoredOrder` |
+| C03 | PASS on real PostgreSQL:<br>• UR and PG import;<br>• key previews;<br>• delivery without the key;<br>• O1/O2/O3 saves and O5 refusals with zero mutation;<br>• the 409 pair;<br>• monitoring {2, 1, 0};<br>• provisional and final results agree |
+| C04 | PASS: regression; only the §4.6 assertions changed |
+| C05 | PASS:<br>• canonical values and local refusals;<br>• focus following the moved item, including at both ends;<br>• focus moving to the replacing button;<br>• "Gunakan urutan ini" and "Kosongkan jawaban";<br>• recovery;<br>• no key in any record;<br>• teacher preview |
+| C06 | PASS: five-browser journey:<br>• import with the notice, and preview;<br>• untouched is unanswered;<br>• keyboard moves into the end;<br>• pointer moves;<br>• the question list and submit-dialog states;<br>• offline with only the final order saved;<br>• reload recovery;<br>• clear and keep;<br>• read-only pause;<br>• V06;<br>• end, finalize and score 2/4 = 50 |
+| C07 | PASS: #199 baseline and #203 after captures across the frozen conditions, including the long item and the notice; no overflow; 44 px targets; visible focus; rendered review PASS |
+| C08 | PASS: every changed path is within rows 1–29; 33 Tasks and 78 edges; attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered review PASSED on the final content SHA. ASSESS-QUESTION-005 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- A second tap at the same spot acts on the neighbouring item, by design (§4A.1).
+- "Touch" was exercised as pointer clicks (§4A.4 item 10).
+- The 200 % text captures are at 390 px and 1280 px.
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 OPEN; G7 before real data; no deployment or release claim.
+
+**Landing:** delegated squash merge of PR #31 under 00.13 §6 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, then post-merge main CI. The landing is recorded by the next Task's first change, with DONE 11/33 (33.33%).
