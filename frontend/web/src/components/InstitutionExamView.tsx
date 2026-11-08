@@ -569,6 +569,16 @@ export const InstitutionExamView: React.FC = () => {
   const trigger = useRef<HTMLButtonElement | null>(null);
   const reloadButton = useRef<HTMLButtonElement | null>(null);
   const noticeRef = useRef<HTMLDivElement | null>(null);
+  // "Buka Periode" replaces itself with the sessions: after a user opens a period, focus goes to
+  // its first session heading, or to "Tambah Sesi" when it has none. An automatic open does not move focus.
+  const focusOpened = useRef(false);
+  const firstSessionHeading = useRef<HTMLHeadingElement | null>(null);
+  const addSessionButton = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!focusOpened.current || !detail) return;
+    focusOpened.current = false;
+    (firstSessionHeading.current ?? addSessionButton.current)?.focus();
+  }, [detail]);
 
   const restoreFocus = () => {
     // Controlled dialogs have no Radix trigger: return to the opener; when a completed action
@@ -693,7 +703,7 @@ export const InstitutionExamView: React.FC = () => {
                   <CardContent>
                     {!isOpen ? (
                       <ActionGroup>
-                        <Button variant="secondary" onClick={() => void openPeriod(period.periodId)}>Buka Periode</Button>
+                        <Button variant="secondary" onClick={() => { focusOpened.current = true; void openPeriod(period.periodId); }}>Buka Periode</Button>
                       </ActionGroup>
                     ) : detail === null ? (
                       detailError === null ? (
@@ -708,10 +718,10 @@ export const InstitutionExamView: React.FC = () => {
                     ) : (
                       <>
                         {detail.sessions.length === 0 && <p className="m-0 text-sm text-muted-foreground">Belum ada sesi di periode ini.</p>}
-                        {detail.sessions.map(session => (
+                        {detail.sessions.map((session, index) => (
                           <section key={session.sessionId} aria-labelledby={`session-${session.sessionId}`} className="flex min-w-0 flex-col gap-3 border-t border-border pt-4">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <h3 id={`session-${session.sessionId}`} className="m-0 text-base font-semibold">
+                              <h3 id={`session-${session.sessionId}`} ref={index === 0 ? firstSessionHeading : undefined} tabIndex={-1} className="m-0 text-base font-semibold outline-none">
                                 Jadwal Sesi: {formatWindow(session.startsAt, session.endsAt)}
                               </h3>
                               <Button variant="secondary" onClick={event => open({ kind: 'placement', session }, event.currentTarget)}>Tempatkan Ujian</Button>
@@ -728,7 +738,7 @@ export const InstitutionExamView: React.FC = () => {
                           </section>
                         ))}
                         <ActionGroup className="border-t border-border pt-4">
-                          <Button onClick={event => open({ kind: 'session', periodId: period.periodId }, event.currentTarget)}>Tambah Sesi</Button>
+                          <Button ref={addSessionButton} onClick={event => open({ kind: 'session', periodId: period.periodId }, event.currentTarget)}>Tambah Sesi</Button>
                         </ActionGroup>
                       </>
                     )}

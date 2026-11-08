@@ -75,7 +75,9 @@ async function openPeriod(exams?: InstitutionExamItem[]) {
   vi.mocked(getInstitutionPeriod).mockResolvedValue(detail(exams));
   render(<InstitutionExamView />);
   fireEvent.click(await screen.findByRole('button', { name: 'Buka Periode' }));
-  await screen.findByRole('heading', { level: 3, name: /^Jadwal Sesi: 11 November 2026, 08\.00 sampai 10\.00 WIB$/ });
+  const heading = await screen.findByRole('heading', { level: 3, name: /^Jadwal Sesi: 11 November 2026, 08\.00 sampai 10\.00 WIB$/ });
+  // "Buka Periode" replaced itself: focus is on the first session heading, never on the page body.
+  await waitFor(() => expect(document.activeElement).toBe(heading));
 }
 
 describe('the workspace and the shared words', () => {
@@ -208,6 +210,15 @@ describe('InstitutionExamView', () => {
     expect(within(cancelled).queryAllByRole('button')).toHaveLength(0);
     expect(screen.queryByText(/mtk\.csv/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Tambah Sesi' })).toBeTruthy();
+  });
+
+  it('"Buka Periode" of a period without sessions moves focus to "Tambah Sesi"', async () => {
+    vi.mocked(getInstitutionExams).mockResolvedValue(OVERVIEW);
+    vi.mocked(getInstitutionPeriod).mockResolvedValue({ ...detail([]), sessions: [] });
+    render(<InstitutionExamView />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Buka Periode' }));
+    expect(await screen.findByText('Belum ada sesi di periode ini.')).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Tambah Sesi' })));
   });
 
   it('"Buat Periode Ujian" sends nothing before "Simpan Periode", keeps its key on a retry, shows the problem copy and returns focus', async () => {
@@ -458,6 +469,10 @@ describe('TeacherExamImportView in preparation mode', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Siapkan Soal Ujian Sekolah' })).toBeTruthy();
     expect(screen.getByText('Unggah berkas soal untuk ujian sekolah ini sebelum tenggat. Jadwal, durasi, dan peserta diatur operator sekolah.')).toBeTruthy();
     const summary = screen.getByLabelText('Ujian sekolah');
+    // One column on a narrow screen, so labels wrap at spaces and never mid-word.
+    expect(summary.className.split(' ')).toEqual(expect.arrayContaining(['grid-cols-1', 'min-[480px]:grid-cols-2', 'sm:grid-cols-4']));
+    expect(summary.className.split(' ')).not.toContain('grid-cols-2');
+    expect(summary.innerHTML).not.toContain('overflow-wrap');
     expect(within(summary).getByText('X-1')).toBeTruthy();
     expect(within(summary).getByText('90 menit')).toBeTruthy();
     expect(within(summary).getByText('Durasi penuh')).toBeTruthy();

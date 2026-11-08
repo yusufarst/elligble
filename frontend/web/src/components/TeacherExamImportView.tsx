@@ -649,19 +649,20 @@ const InstitutionPreparationView: React.FC<{ examInstanceId: string; onBack(): v
           <CardDescription>Ujian sekolah · {institution.periodLabel}</CardDescription>
         </CardHeader>
         <CardContent>
-          <MetricList aria-label="Ujian sekolah">
-            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Rombel" valueClassName="text-sm font-medium" value={exam.groupLabel ?? '-'} />
-            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Peserta" value={exam.participants ?? 0} />
-            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Durasi pengerjaan" valueClassName="text-sm font-medium" value={exam.durationMinutes ? `${exam.durationMinutes} menit` : '-'} />
-            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Aturan mulai terlambat" valueClassName="text-sm font-medium" value={policy ?? '-'} />
+          {/* One column below 480 px: at 200 % text two columns left no room for whole words. */}
+          <MetricList aria-label="Ujian sekolah" className="grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-4">
+            <Metric className="min-w-0" label="Rombel" valueClassName="text-sm font-medium" value={exam.groupLabel ?? '-'} />
+            <Metric className="min-w-0" label="Peserta" value={exam.participants ?? 0} />
+            <Metric className="min-w-0" label="Durasi pengerjaan" valueClassName="text-sm font-medium" value={exam.durationMinutes ? `${exam.durationMinutes} menit` : '-'} />
+            <Metric className="min-w-0" label="Aturan mulai terlambat" valueClassName="text-sm font-medium" value={policy ?? '-'} />
             <Metric
-              className="col-span-2 min-w-0 [overflow-wrap:anywhere]"
+              className="min-w-0 min-[480px]:col-span-2"
               label="Jadwal Sesi"
               valueClassName="text-sm font-medium"
               value={exam.windowStartsAt && exam.windowEndsAt ? formatWindow(exam.windowStartsAt, exam.windowEndsAt) : '-'}
             />
             <Metric
-              className="col-span-2 min-w-0 [overflow-wrap:anywhere]"
+              className="min-w-0 min-[480px]:col-span-2"
               label="Tenggat penyiapan soal"
               valueClassName="text-sm font-medium"
               value={institution.preparationDeadline ? formatDateTime(institution.preparationDeadline) : '-'}
@@ -775,11 +776,11 @@ const PreviewSection: React.FC<{
       )}
 
       <MetricList aria-label="Ringkasan">
-        <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Soal" value={preview.totals.questions} />
-        <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Skor maksimum" value={formatScore(preview.totals.maxScore)} />
-        <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Peserta" value={included} />
+        <Metric label="Soal" value={preview.totals.questions} />
+        <Metric label="Skor maksimum" value={formatScore(preview.totals.maxScore)} />
+        <Metric label="Peserta" value={included} />
         <Metric
-          className="col-span-2 sm:col-span-1 min-w-0 [overflow-wrap:anywhere]"
+          className="col-span-2 sm:col-span-1"
           valueClassName="text-sm font-medium"
           label="Waktu pelaksanaan"
           value={preview.window ? formatWindow(preview.window.startsAt, preview.window.endsAt) : 'Belum valid'}

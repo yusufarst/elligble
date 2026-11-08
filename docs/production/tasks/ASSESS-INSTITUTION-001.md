@@ -648,11 +648,26 @@ No re-runs, and no push while the previous commit's CI runs.
 ### 11.0.4 Rendered review of 6325c1e and its correction
 
 - **CI #225** (run 42521915020, 6325c1e, attempt 1): eight SUCCESS. The rendered review (C07) returned **STOP F1**: focus was lost after a dialog send.
-  - **Failed send:** the focused action stays disabled while saving and nothing restores focus when the error renders. The capture  recorded focus on BODY in 40 of 50 captures, with the dialog still open.
+  - **Failed send:** the focused action stays disabled while saving and nothing restores focus when the error renders. The capture `dialog-place-refused` recorded focus on BODY in 40 of 50 captures, with the dialog still open.
   - **Successful "Tandai Siap" or "Batalkan Ujian":** the trigger is removed by the refresh, so focus fell to BODY.
 - **Correction (rows InstitutionExamView.tsx, TeacherExamImportView.tsx and institutionExams.test.tsx):**
-  - **Failed send:** the six Operator dialogs (through ) and the preparation dialog "Simpan Soal Ujian Sekolah?" move focus to their enabled retry action once the error has rendered. This is the pattern of TeacherExamParticipants.tsx:69–75.
+  - **Failed send:** the six Operator dialogs (through `useRetryFocus`) and the preparation dialog "Simpan Soal Ujian Sekolah?" move focus to their enabled retry action once the error has rendered. This is the pattern of TeacherExamParticipants.tsx:69–75.
   - **Successful mark ready or cancel:** focus moves to the success notice (, as in StudentClaimView.tsx:112), which survives the refresh. Where the trigger survives, focus returns to it as before.
-  - **The reviewer's non-material Metric note:** the summary metrics take .
+  - **The reviewer's non-material Metric note:** the summary metrics take `min-w-0 [overflow-wrap:anywhere]`.
   - **Tests:** C05 asserts the retry focus for period, placement, mark ready, cancel and preparation save, and the notice focus after a successful mark ready and cancel. Run against the earlier components, these assertions fail.
   - **Local checks:** web typecheck clean; institutionExams, teacherExamImport, teacherOperations and designSystemGuard 52/52.
+
+### 11.0.5 Rendered re-review of 02e2e72 and its correction
+
+- **CI #226** (run 42525983642, 02e2e72, attempt 1): eight SUCCESS. The dialog retry focus was confirmed: focus is on the enabled button in 50 of 50 `dialog-place-refused` captures. The notice focus with `outline-none` was accepted.
+- **Rendered re-review: STOP.**
+  - **R-F1:** the 11.0.4 Metric change (`overflow-wrap: anywhere` in a two-column MetricList) broke words mid-word at 390x844 with 200 % text. In the preparation summary that gave "Romb/el" and "Duras/i". In the shared `PreviewSection` of the earlier teacher scheduling screen it gave "maksimu/m", making every `*-import-preview` 390x844 text2 capture 32 px taller.
+    - The 11.0.4 statement that the change did not alter earlier captures was wrong: the comparison checked accessibility text, not pixels.
+  - **R-F2:** "Buka Periode" removes its own trigger, so focus fell to BODY in every capture reached through it (150 of 150).
+- **Correction (rows TeacherExamImportView.tsx, InstitutionExamView.tsx and institutionExams.test.tsx):**
+  - **Shared preview:** the `PreviewSection` "Ringkasan" metrics are restored byte for byte to e031d31.
+  - **Preparation summary:** it uses a responsive layout instead of word breaking. The MetricList is one column below 480 px, two from 480 px and four from 640 px. Its items keep `min-w-0` without `overflow-wrap`, so labels wrap only at spaces, and the wide items span two columns only from 480 px. The shared primitive is unchanged.
+  - **"Buka Periode" focus:** a user activation of "Buka Periode" moves focus, once the detail has loaded, to the first "Jadwal Sesi" heading (`tabIndex=-1`), or to "Tambah Sesi" when the period has no slots. Auto-opening after a save does not move focus.
+  - **Tests:** C05 asserts both focus targets and the summary layout classes.
+  - **Local checks:** web typecheck clean; institutionExams, teacherExamImport, teacherOperations and designSystemGuard 53/53.
+  - **For the next rendered review:** the earlier-capture comparison also checks screenshot dimensions and hashes, not only accessibility text.
