@@ -340,3 +340,81 @@ Short-answer content: maxScore 2, accepted forms `["Jakarta", "DKI Jakarta"]`.
   - the client template parses with the server parser without problems.
   - Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 13, VERIFYING 1, BLOCKED 19.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on 7855486, with no material finding: scope, correctness, security, client and test coverage against §4–§7. Non-material notes:
+  - in `answerValueOf`, the short-answer block sits between the essay comment and the essay block (cosmetic);
+  - the IS import-preview item omits `rubric` on auto rows, as §4.3 allows;
+  - the readiness count reads manual short answers from the raw JSON, as for essays; invalid content is still blocked by `question_content_invalid`.
+- **Rendered review:** PASS on 7855486 (CI #217 artifacts), with no material finding. The reviewer independently checked all 325 `workspace-question-is-*` pairs and classified every one of the 47 distinct changed accessibility lines across the 896 earlier-Task pairs that differ from #215. Each falls under the C07 allowance:
+  - the import intro, the card instruction, the generated IDs and the window time text;
+  - the window date format: the exam window crossed midnight WIB during the run, and the shared date formatter is not in the diff;
+  - in `99f`, the neutral grading-path copy (E7) and the "Esai" type line.
+  - One `workspace-question-after-exam-mr-keyboard-focus` variant differs by capture timing in the unchanged `99` spec: the #215 baseline caught a save in flight ("Menyimpan...", submit disabled), and the new capture shows "Tersimpan".
+  - Non-material notes, unchanged from the baseline:
+    - full-page screenshots draw the sticky staff header and the fixed exam navigation over content;
+    - exam navigation labels break mid-word at 200 % text;
+    - the results table scrolls inside its container at 200 % text.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** 78554861b20dedcba2497ea74322220db16210db. The registration was aafe542. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #217 (run 42498631882), push, attempt 1, eight jobs SUCCESS.
+- **Runtime units:** identity-access 34, tenant-access 14, academic-core 11 and Secure Assessment 976, all passing.
+- **Real PostgreSQL 16 integration:** 290/290, including the short-answer journey: auto and manual items, the refusals with zero mutation, the 409 pair, monitoring, the worklist, `not_gradable` for the auto item, the refused and then accepted finalization, the frozen outcomes, and the results.
+- **Web:** 46 files and 436 tests, plus typecheck and build.
+- **Container:** image build and smoke test.
+- **E2E:** 35/35 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. This includes the short-answer journey (C06) and the rendered captures (C07).
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 42498631882, fetched with the resumable, size- and `unzip -t`-checked transfer.
+- 2050 `workspace-question-*` pairs: 002 450, 003 200, 004 225, 005 200, 007 225, 008 425 and 006 325.
+- All at commit 7855486 with frontend tree 96c7189bac3d2e20f73e76d5acf2247a706c10f6.
+- Every screenshot hash matches its JSON; zero page overflow; zero targets under 44 px.
+- Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 66db13d43544c7df44224351795b4c9e96235bd1c04b8970fa7f512b88939eb0.
+- Against the #215 baseline: 829 of the 1725 earlier pairs are identical; the 896 that differ are classified in §11.1.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #216 (aafe542, registration) | attempt 1, eight SUCCESS |
+| CI #217 (7855486) | attempt 1, eight SUCCESS |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F4), then STOP (R1), then PASS (§9).
+2. **Implementation:** PASS (§11.1).
+3. **Rendered:** PASS (§11.1).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: S-1–S-9, the one-line predicate, the E3 normalization (NFC decomposed and precomposed, collapsed whitespace, simple lowercase), auto and manual scoring, the teacher-graded helpers, the mixed vector 7.5/10 → 75; the registry holds eight keys; earlier types unchanged |
+| C02 | PASS: IS import vectors in 10-, 32- and 34-column files, ten forms, the problem order, shapes and wording; earlier parser results unchanged; the template parses |
+| C03 | PASS on real PostgreSQL (CI #217): import, previews, delivery without forms or rubric, saves exactly as typed, refusals with zero mutation, the 409 pair, monitoring, the worklist with `questionType`, `not_gradable` for the auto item, finalization refused then accepted, frozen outcomes, results |
+| C04 | PASS: regression with only the §4.6 assertions changed |
+| C05 | PASS: values and the predicate, the counter, D2 drafts with "Belum tersimpan", recovery as typed, no forms, rubric or grade in any record, the teacher preview for auto and manual items, the grading type line, the neutral copy, the import wording |
+| C06 | PASS: the five-browser journey: import with auto and manual IS rows, preview, keyboard entry, the over-limit draft, offline, reload, read-only pause, V06, end, manual grading on "Penilaian Esai", finalize, and the final score 4/5 = 80 with "Dinilai guru" |
+| C07 | PASS: the #215 baseline and the after captures across the frozen conditions; no overflow; 44 px targets; visible focus; rendered review PASS |
+| C08 | PASS: every changed path is within rows 1–40; 33 Tasks and 78 edges; exact-SHA attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-QUESTION-006 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- Matching is exact after the approved normalization: no fuzzy, synonym or AI matching (O02-7), and lowercasing is simple, not full case folding (E3).
+- An IS row authored without forms is graded by the teacher (D1); the import preview shows "Dinilai guru".
+- The grading screen and its card button keep the name "Penilaian Esai"/"Nilai Esai" (E7).
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 14/33 (42.42%).
