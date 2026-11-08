@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { EMPTY_SELECTION, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
+import { EMPTY_SELECTION, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, ORDERING_KEY, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -25,6 +25,11 @@ function payloadFor(contentKey: string, value: string): Record<string, unknown> 
   }
   // True/false: only the canonical "true" or "false" is ever sent.
   if (contentKey === TRUE_FALSE_KEY) return value === 'true' ? { value: true } : value === 'false' ? { value: false } : null;
+  // Ordering: only a canonical id list is ever sent; the server checks it is every item once.
+  if (contentKey === ORDERING_KEY) {
+    const ids = orderOf(value);
+    return ids ? { orderedItemIds: ids } : null;
+  }
   // Matching: only a canonical pair list is ever sent.
   if (contentKey === MATCHING_KEY) {
     const pairs = pairsOf(value);

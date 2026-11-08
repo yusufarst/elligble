@@ -1,6 +1,7 @@
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
+import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
 import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
@@ -115,8 +116,29 @@ export function buildMatchingFrozenContent(
     return content;
 }
 
-/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching. */
+/** Frozen ORDERING content (ASSESS-QUESTION-005 §4.1); random item ids, items in authored (display) order. */
+export function buildOrderingFrozenContent(
+    input: { prompt: string; items: string[]; correctSequence: number[]; maxScore: number },
+    newItemId: () => string = () => `opt_${randomBytes(6).toString('hex')}`
+): Record<string, unknown> {
+    const items = input.items.map(content => ({ id: newItemId(), content }));
+    const content = {
+        schemaVersion: 2,
+        questionType: ORDERING_TYPE,
+        prompt: input.prompt,
+        items,
+        correctOrder: input.correctSequence.map(i => items[i]?.id),
+        maxScore: input.maxScore,
+    };
+    if (!ORDERING_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid ordering question');
+    return content;
+}
+
+/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching, UR as ordering. */
 export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    if (q.type === 'UR') {
+        return buildOrderingFrozenContent({ prompt: q.prompt, items: q.leftItems ?? [], correctSequence: q.correctSequence ?? [], maxScore: q.maxScore });
+    }
     if (q.type === 'MJ') {
         return buildMatchingFrozenContent({ prompt: q.prompt, leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [], correctPairIndexes: q.correctPairIndexes ?? [], maxScore: q.maxScore });
     }

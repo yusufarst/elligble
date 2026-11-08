@@ -23,6 +23,7 @@ export const QUESTION_TEMPLATE_CSV = '\uFEFF' + [
   '2;PGK;Bilangan prima di bawah 10 adalah;2;4;5;8;9;A,C;1,5' + NO_ITEMS,
   '3;BS;Matahari terbit dari arah timur;;;;;;B;1' + NO_ITEMS,
   '4;MJ;Pasangkan nama hewan dengan makanannya;;;;;;B,C,A;3;Sapi;Kucing;Kelinci' + ';'.repeat(7) + ';Wortel;Rumput;Ikan;Biji jagung' + ';'.repeat(8),
+  '5;UR;Urutkan langkah menanam biji;;;;;;2,4,1,3;2;Siram tanah setiap hari;Siapkan pot berisi tanah;Tunggu sampai tunas muncul;Tanam biji di tengah pot' + ';'.repeat(6) + ';'.repeat(12),
 ].join('\r\n') + '\r\n';
 
 export const LATEST_START_OPTIONS: Array<{ value: LatestStartPolicy; label: string; description: string }> = [
@@ -66,19 +67,28 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'correct_multiple': return `${at}kunci jawaban harus satu huruf. Setiap soal hanya punya satu jawaban benar.`;
       case 'correct_invalid': return problem.type === 'BS' ? `${at}kunci jawaban BS harus B (Benar) atau S (Salah).`
         : problem.type === 'MJ' ? `${at}kunci jawaban MJ adalah huruf pasangan kanan untuk setiap pernyataan kiri secara berurutan, misalnya B,C,A.`
+        : problem.type === 'UR' ? `${at}kunci jawaban UR adalah nomor item dalam urutan yang benar, setiap nomor tepat sekali, misalnya 3,1,2.`
         : `${at}kunci jawaban harus salah satu huruf A, B, C, D, atau E.`;
       case 'score_invalid': return `${at}skor harus angka lebih dari 0 sampai ${limits.maxQuestionScore}, dengan paling banyak dua angka di belakang koma.`;
-      case 'type_invalid': return `${at}tipe soal harus PG, PGK, BS atau MJ.`;
-      case 'correct_duplicate': return problem.type === 'MJ' ? `${at}setiap pasangan kanan hanya boleh dipakai sekali dalam kunci jawaban MJ.` : `${at}huruf kunci jawaban tidak boleh berulang.`;
+      case 'type_invalid': return `${at}tipe soal harus PG, PGK, BS, MJ atau UR.`;
+      case 'correct_duplicate': return problem.type === 'MJ' ? `${at}setiap pasangan kanan hanya boleh dipakai sekali dalam kunci jawaban MJ.`
+        : problem.type === 'UR' ? `${at}setiap nomor item hanya boleh muncul sekali dalam kunci jawaban UR.` : `${at}huruf kunci jawaban tidak boleh berulang.`;
       case 'options_not_allowed': return problem.type === 'MJ'
         ? `${at}soal Menjodohkan (MJ) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
+        : problem.type === 'UR' ? `${at}soal Mengurutkan (UR) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : `${at}soal Benar/Salah (BS) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`;
-      case 'columns_missing': return `${at}soal Menjodohkan (MJ) memerlukan kolom left_1 sampai left_10 dan right_a sampai right_l. Unduh templat terbaru lalu salin soal Anda ke dalamnya.`;
+      case 'columns_missing': return problem.type === 'UR'
+        ? `${at}soal Mengurutkan (UR) memerlukan kolom left_1 sampai left_10. Unduh templat terbaru lalu salin soal Anda ke dalamnya.`
+        : `${at}soal Menjodohkan (MJ) memerlukan kolom left_1 sampai left_10 dan right_a sampai right_l. Unduh templat terbaru lalu salin soal Anda ke dalamnya.`;
+      case 'ordering_items_invalid': return `${at}soal UR memerlukan 2 sampai 10 item, diisi berurutan mulai left_1.`;
       case 'matching_items_invalid': return problem.side === 'right'
         ? `${at}soal MJ memerlukan pasangan kanan sebanyak pernyataan kiri, ditambah paling banyak 2 pengecoh, diisi berurutan mulai right_a.`
         : `${at}soal MJ memerlukan 2 sampai 10 pernyataan kiri, diisi berurutan mulai left_1.`;
-      case 'items_duplicate': return problem.side === 'right' ? `${at}pasangan kanan tidak boleh sama satu sama lain.` : `${at}pernyataan kiri tidak boleh sama satu sama lain.`;
-      case 'items_not_allowed': return `${at}kolom left_1 sampai right_l hanya untuk soal MJ; kosongkan untuk soal PG, PGK atau BS.`;
+      case 'items_duplicate': return problem.type === 'UR' ? `${at}item soal UR tidak boleh sama satu sama lain.`
+        : problem.side === 'right' ? `${at}pasangan kanan tidak boleh sama satu sama lain.` : `${at}pernyataan kiri tidak boleh sama satu sama lain.`;
+      case 'items_not_allowed': return problem.type === 'UR'
+        ? `${at}soal UR tidak memakai kolom right_a sampai right_l; kosongkan kolom itu.`
+        : `${at}kolom left_1 sampai right_l hanya untuk soal MJ dan UR; kosongkan untuk soal PG, PGK atau BS.`;
     }
   }
   switch (problem.code) {

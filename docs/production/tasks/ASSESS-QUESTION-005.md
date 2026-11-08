@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 all eight formats; HIGH risk; R14, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → STOP → PASS (§9); formal READY PASS and Build started under DEC-048 on 2026-11-08 (§10)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation and rendered review (§11); DEC-048** |
 | Objective | Deliver ordering ("Mengurutkan") end to end on the versioned foundation: author it through the v2 import, preview it as a teacher, answer it as a Student with local recovery, then submit and score it as an exact sequence |
 | Owner decisions | O02-1, O02-2, O02-6 and O02-12, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); A01. Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13). ASSESS-QUESTION-001 is DONE / MERGED. ASSESS-QUESTION-004 is DONE / MERGED (PR #30, main 01d58bb86a7575cbd83880a883ab324333ef4491, post-merge CI #199). Its extended v2 header, shared `NativeSelect`, client value pattern and E2E harness are reused. O09 rests on the approved P5 content |
@@ -373,3 +373,36 @@ No re-runs.
   - Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 bdfa14b149e6e3a2ac4ea6f76ea39fc0d8ecdacc0f8b6359350b1874030963e5.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 10, IN_PROGRESS 1, VERIFYING 0, BLOCKED 22.
+
+## 11. Implementation checkpoint — 2026-11-08
+
+- **Step 1:** registration d699fd3 (CI #200) carries the #199 baseline manifest (§10).
+- **Implementation candidate,** inside rows 5–29 plus the Task-flow rows 1–4:
+  - **Descriptor** `question-types/ordering.ts`, registered.
+  - **Parser:**
+    - `UR` rows in the frozen check order, with the problem shapes of §4A.4 item 4 and the frozen wording;
+    - the number syntax `^[1-9][0-9]?$`;
+    - `correctSequence`.
+  - **Builder:** `buildOrderingFrozenContent`.
+  - **Import preview:** items, the key order and `keyEqualsAuthoredOrder`.
+  - **Teacher preview item:** the §4.3 shape.
+  - **Monitoring:** `orderedItemIds: []` is not answered.
+  - **Client:**
+    - `ORDERING_KEY` and `orderOf` (canonical);
+    - `isEmptyValue`, and `isAnsweredValue` with the item count;
+    - the adapter;
+    - `OrderingAnswer`: option-card rows; shared icon Buttons named "Naikkan/Turunkan item N" with `aria-describedby`; focus restored after a move and moved to the other button at an end; "Gunakan urutan ini" and "Kosongkan jawaban", each focusing its replacement; the polite status; the answered state as `option-item-label selected` with the check badge;
+    - the `.ordering-row` variant beside the option-card focus rule, plus the narrow layout, with tokens only;
+    - the exam screen renders by type, with the save-state key list extended;
+    - the teacher preview has the try-out control and the key list;
+    - the import page has the frozen intro and instruction, the UR preview and the authored-order notice;
+    - the template has a UR row, and the teacher wording is as frozen.
+  - **Document:** the P4 pointer.
+- **Tests:**
+  - `test/ordering.test.ts` (C01/C02);
+  - `test/integration/ordering.test.ts` (C03, including the authored-order notice);
+  - `frontend/web/src/__tests__/ordering.test.tsx` (C05);
+  - `e2e/tests/99d-ordering.spec.ts` (C06/C07, with a long item, the notice capture and the shared navigation helpers);
+  - the §4.6 assertions in rows 25–29.
+- **Local:** typechecks PASS (runtime, web, e2e); the new and affected runtime units 35/35; the new and affected web files 19/19. Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 10, VERIFYING 1, BLOCKED 22.

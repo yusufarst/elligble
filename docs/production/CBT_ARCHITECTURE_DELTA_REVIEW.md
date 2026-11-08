@@ -119,3 +119,15 @@ Matching is registered on the A01 foundation as `2:MATCHING`, rule `MATCHING_EXA
 Monitoring counts a matching answer only when it is complete (one primary-key join to the snapshot). A shared `NativeSelect` primitive replaces the import page's local select class.
 
 No route, lock order, migration or v1/multiple-response/true-false row changes. Authority and evidence: [ASSESS-QUESTION-004](tasks/ASSESS-QUESTION-004.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-005 bounded implementation checkpoint — 2026-11-08
+
+Ordering is registered on the A01 foundation as `2:ORDERING`, rule `ORDERING_EXACT_SEQUENCE_V1`:
+- 2–10 items shown in authored order;
+- `{orderedItemIds}` is empty or a full permutation; exact sequence or 0;
+- authored as `UR` rows reusing `left_1..left_10` of the extended v2 header, with no new column;
+- the client value is the id list in answer order.
+
+Monitoring does not count an empty order.
+
+No route, lock order, migration or earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-005](tasks/ASSESS-QUESTION-005.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
