@@ -95,7 +95,7 @@ test('teacher results (real PostgreSQL, production wiring)', { skip: skipWithout
             windowStartsAt: res.body.exam.windowStartsAt,
             windowEndsAt: res.body.exam.windowEndsAt,
         });
-        assert.deepEqual(res.body.scoring, { rule: 'BASELINE_SINGLE_CHOICE_V1', available: true, questionCount: 3, maxScore: 3 });
+        assert.deepEqual(res.body.scoring, { rule: 'BASELINE_SINGLE_CHOICE_V1', available: true, questionCount: 3, maxScore: 3, autoScoredCount: 3, essayCount: 0 });
         assert.equal(res.body.resultState, 'PROVISIONAL');
         assert.deepEqual(res.body.summary, { participants: 4, notStarted: 1, inProgress: 1, submitted: 2 });
         const rows = res.body.participants;
@@ -104,11 +104,11 @@ test('teacher results (real PostgreSQL, production wiring)', { skip: skipWithout
         assert.equal(rows[0].status, 'SUBMITTED');
         assert.equal(rows[0].finalizationSource, 'STUDENT_SUBMIT');
         assert.ok(!Number.isNaN(Date.parse(rows[0].submittedAt)));
-        assert.deepEqual(rows[0].score, { correct: 1, incorrect: 1, unanswered: 1, rawScore: 1, maxScore: 3, scaledScore: 33.33 });
+        assert.deepEqual(rows[0].score, { correct: 1, incorrect: 1, unanswered: 1, graded: 0, ungraded: 0, rawScore: 1, maxScore: 3, scaledScore: 33.33 });
 
         assert.equal(rows[1].status, 'SUBMITTED');
         assert.equal(rows[1].finalizationSource, 'EXPIRY_SERVER');
-        assert.deepEqual(rows[1].score, { correct: 3, incorrect: 0, unanswered: 0, rawScore: 3, maxScore: 3, scaledScore: 100 });
+        assert.deepEqual(rows[1].score, { correct: 3, incorrect: 0, unanswered: 0, graded: 0, ungraded: 0, rawScore: 3, maxScore: 3, scaledScore: 100 });
 
         assert.deepEqual(rows[2], { elligbleId: 'siswa.c', status: 'IN_PROGRESS', finalizationSource: null, submittedAt: null, score: null });
         assert.deepEqual(rows[3], { elligbleId: 'siswa.d', status: 'NOT_STARTED', finalizationSource: null, submittedAt: null, score: null }, 'absent is not zero');

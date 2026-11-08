@@ -249,7 +249,7 @@ export const TeacherExamImportView: React.FC<{
       {back}
       <PageHeader title={SCREEN_TITLE.examImport}>
         <p className="m-0 text-muted-foreground">
-          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK), benar/salah (BS), menjodohkan (MJ), mengurutkan (UR) atau isian angka (IA) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
+          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK), benar/salah (BS), menjodohkan (MJ), mengurutkan (UR), isian angka (IA) atau esai (ES) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
         </p>
       </PageHeader>
 
@@ -348,7 +348,7 @@ export const TeacherExamImportView: React.FC<{
         <CardHeader>
           <CardTitle>Berkas Soal</CardTitle>
           <CardDescription>
-            Satu baris per soal: nomor, tipe (PG, PGK, BS, MJ, UR atau IA), teks soal, pilihan A sampai E (kosong untuk BS, MJ, UR dan IA), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS; untuk MJ huruf pasangan kanan setiap pernyataan kiri secara berurutan, misalnya B,C,A; untuk UR nomor item dalam urutan yang benar, misalnya 3,1,2; untuk IA angka jawaban yang benar, misalnya 3,5) dan skor, lalu khusus MJ pernyataan kiri (left_1 sampai left_10) dan pasangan kanan (right_a sampai right_l), dan khusus UR item (left_1 sampai left_10). Item UR ditampilkan kepada siswa sesuai urutan penulisan, jadi tulislah dalam urutan acak. Soal IA memakai kolom tolerance untuk selisih yang masih dianggap benar; kosongkan bila jawaban harus tepat.
+            Satu baris per soal: nomor, tipe (PG, PGK, BS, MJ, UR, IA atau ES), teks soal, pilihan A sampai E (kosong untuk BS, MJ, UR, IA dan ES), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS; untuk MJ huruf pasangan kanan setiap pernyataan kiri secara berurutan, misalnya B,C,A; untuk UR nomor item dalam urutan yang benar, misalnya 3,1,2; untuk IA angka jawaban yang benar, misalnya 3,5; untuk ES kosongkan, karena esai dinilai guru) dan skor, lalu khusus MJ pernyataan kiri (left_1 sampai left_10) dan pasangan kanan (right_a sampai right_l), dan khusus UR item (left_1 sampai left_10). Item UR ditampilkan kepada siswa sesuai urutan penulisan, jadi tulislah dalam urutan acak. Soal IA memakai kolom tolerance untuk selisih yang masih dianggap benar; kosongkan bila jawaban harus tepat. Soal ES boleh memakai kolom rubric untuk pedoman penilaian guru; rubrik tidak ditampilkan kepada siswa.
             Simpan sebagai CSV UTF-8; pemisah kolom boleh titik koma atau koma.
           </CardDescription>
         </CardHeader>
@@ -492,7 +492,7 @@ const PreviewSection: React.FC<{
             {preview.questions.map(q => (
               <li key={q.no} className="flex flex-col gap-2 rounded-md border border-border bg-background px-4 py-3">
                 <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">Soal {q.no} · {q.type === 'PGK' ? 'Pilihan ganda kompleks' : q.type === 'BS' ? 'Benar/Salah' : q.type === 'MJ' ? 'Menjodohkan' : q.type === 'UR' ? 'Mengurutkan' : q.type === 'IA' ? 'Isian angka' : 'Pilihan ganda'}</span>
+                  <span className="font-semibold text-foreground">Soal {q.no} · {q.type === 'PGK' ? 'Pilihan ganda kompleks' : q.type === 'BS' ? 'Benar/Salah' : q.type === 'MJ' ? 'Menjodohkan' : q.type === 'UR' ? 'Mengurutkan' : q.type === 'IA' ? 'Isian angka' : q.type === 'ES' ? 'Esai' : 'Pilihan ganda'}</span>
                   <span className="tabular-nums">Skor {formatScore(q.score)}</span>
                 </p>
                 <p className="m-0 whitespace-pre-wrap text-[15px] [overflow-wrap:anywhere]">{q.prompt}</p>
@@ -501,6 +501,13 @@ const PreviewSection: React.FC<{
                     <span className="min-w-0 flex-1">{q.correct}</span>
                     <span className="shrink-0 text-xs font-semibold text-success-ink">Kunci jawaban</span>
                   </p>
+                )}
+                {q.type === 'ES' && (
+                  <>
+                    {/* Graded by the teacher; the rubric is shown only here and to the teacher (ASSESS-QUESTION-008 §4.5). */}
+                    <p className="m-0 px-2 text-sm text-muted-foreground">Dinilai guru</p>
+                    {q.rubric && <p className="m-0 whitespace-pre-wrap px-2 text-sm [overflow-wrap:anywhere]">Rubrik: {q.rubric}</p>}
+                  </>
                 )}
                 {q.type === 'IA' && (
                   <>

@@ -102,14 +102,16 @@ test('SEC-001 permission, audit, replay and export boundaries on the real produc
         const anonymous = new BrowserLikeClient(app.baseUrl);
         assert.equal((await post(anonymous, 'exam-monitoring/participant-lock', lock(f))).status, 401);
         for (const route of ['exam-monitoring/participant-lock', 'exam-monitoring/add-time', 'teacher-exams/transition',
-            'teacher-exams/reschedule', 'teacher-exams/cancel', 'teacher-exams/participants/add', 'teacher-exams/results']) {
-            const body = { ...lock(f), minutes: 3, format: 'csv', enrollmentIds: [randomUUID()],
+            'teacher-exams/reschedule', 'teacher-exams/cancel', 'teacher-exams/participants/add', 'teacher-exams/results', 'teacher-exams/essays/grade']) {
+            const body = route.endsWith('/essays/grade') ? { examInstanceId: f.exam, attemptId: randomUUID(), snapshotId: randomUUID(), score: '1', expectedRevision: null } : { ...lock(f), minutes: 3, format: 'csv', enrollmentIds: [randomUUID()],
                 windowStartsAt: '2027-01-01T08:00', windowEndsAt: '2027-01-01T10:00', durationMinutes: 30,
                 latestStartPolicy: 'REMAINING_WINDOW_ONLY', ...(route.endsWith('/transition') ? { action: 'pause' } : {}) };
             const denied = await post(nonStaff, route, body);
             assert.equal(denied.status, 403, route + JSON.stringify(denied.body));
             assert.deepEqual(denied.body, { error: 'forbidden' });
         }
+        const essays = await nonStaff.request(`${BASE}teacher-exams/essays?examInstanceId=${f.exam}`);
+        assert.deepEqual([essays.status, essays.body], [403, { error: 'forbidden' }], 'the essay worklist');
         assert.equal((await post(staff, 'exam-monitoring/participant-lock', { ...lock(f), examInstanceId: foreign })).status, 403);
         assert.equal((await post(staff, 'exam-monitoring/participant-lock', { ...lock(f), participantId: randomUUID() })).status, 403);
         staff.tenantId = await createTenant(pool);

@@ -17,13 +17,13 @@ function results(overrides: Partial<TeacherExamResultsResponse> = {}): TeacherEx
       windowStartsAt: '2026-09-29T01:00:00.000Z',
       windowEndsAt: '2026-09-29T03:00:00.000Z',
     },
-    scoring: { rule: 'BASELINE_SINGLE_CHOICE_V1', available: true, questionCount: 3, maxScore: 3 },
+    scoring: { rule: 'BASELINE_SINGLE_CHOICE_V1', available: true, questionCount: 3, maxScore: 3, autoScoredCount: 3, essayCount: 0 },
     resultState: 'FINAL',
     finalizedAt: '2026-09-29T04:05:00.000Z',
     summary: { participants: 3, notStarted: 1, inProgress: 0, submitted: 2 },
     participants: [
-      { elligbleId: 'siswa.a', status: 'SUBMITTED', finalizationSource: 'STUDENT_SUBMIT', submittedAt: '2026-09-29T01:41:00.000Z', score: { correct: 2, incorrect: 1, unanswered: 0, rawScore: 2, maxScore: 3, scaledScore: 66.67 } },
-      { elligbleId: 'siswa.b', status: 'SUBMITTED', finalizationSource: 'EXPIRY_SERVER', submittedAt: '2026-09-29T02:30:00.000Z', score: { correct: 1, incorrect: 0, unanswered: 2, rawScore: 1.5, maxScore: 3, scaledScore: 50 } },
+      { elligbleId: 'siswa.a', status: 'SUBMITTED', finalizationSource: 'STUDENT_SUBMIT', submittedAt: '2026-09-29T01:41:00.000Z', score: { correct: 2, incorrect: 1, unanswered: 0, graded: 0, ungraded: 0, rawScore: 2, maxScore: 3, scaledScore: 66.67 } },
+      { elligbleId: 'siswa.b', status: 'SUBMITTED', finalizationSource: 'EXPIRY_SERVER', submittedAt: '2026-09-29T02:30:00.000Z', score: { correct: 1, incorrect: 0, unanswered: 2, graded: 0, ungraded: 0, rawScore: 1.5, maxScore: 3, scaledScore: 50 } },
       { elligbleId: 'siswa.c', status: 'ABSENT', finalizationSource: null, submittedAt: null, score: null },
     ],
     ...overrides,
@@ -44,12 +44,12 @@ describe('result export', () => {
     expect(header).toEqual([
       'Mata pelajaran', 'Kelas', 'Jenis penilaian', 'Status hasil', 'Waktu finalisasi (WIB)',
       'ELLIGBLE ID', 'Status peserta', 'Cara pengumpulan', 'Waktu pengumpulan (WIB)', 'Percobaan',
-      'Benar', 'Salah', 'Tidak dijawab', 'Skor', 'Skor maksimum', 'Nilai (0-100)', 'Aturan penilaian',
+      'Benar', 'Salah', 'Tidak dijawab', 'Skor', 'Skor maksimum', 'Nilai (0-100)', 'Aturan penilaian', 'Dinilai guru', 'Belum dinilai',
     ]);
     expect(a).toEqual([
       'Matematika Wajib', 'X-1', 'Ulangan Harian', 'Final', '2026-09-29 11:05',
       'siswa.a', 'Dikumpulkan', 'Oleh siswa', '2026-09-29 08:41', 'Asli',
-      '2', '1', '0', '2', '3', '66,67', 'BASELINE_SINGLE_CHOICE_V1',
+      '2', '1', '0', '2', '3', '66,67', 'BASELINE_SINGLE_CHOICE_V1', '0', '0',
     ]);
     expect(b.slice(6, 9)).toEqual(['Dikumpulkan otomatis', 'Otomatis oleh server saat waktu habis, perangkat tidak terhubung', '2026-09-29 09:30']);
     expect(b.slice(13, 16)).toEqual(['1,5', '3', '50']);

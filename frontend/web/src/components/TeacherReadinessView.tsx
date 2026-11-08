@@ -67,6 +67,7 @@ function transitionFailureMessage(err: unknown): string {
       case 'invalid_state': return 'Status ujian telah berubah. Data ditampilkan ulang.';
       case 'attempts_running': return 'Masih ada peserta yang mengerjakan. Finalisasi dapat dilakukan setelah semua peserta selesai.';
       case 'scoring_unavailable': return 'Konten soal ujian ini tidak dapat dinilai otomatis, sehingga hasil belum dapat difinalisasi. Hubungi operator sekolah.';
+      case 'grading_incomplete': return `Masih ada ${typeof err.data?.ungraded === 'number' ? err.data.ungraded : 'beberapa'} jawaban esai yang belum dinilai. Nilai semua esai sebelum finalisasi hasil.`;
       case 'forbidden': return 'Anda tidak memiliki hak untuk mengelola ujian ini.';
     }
   }
@@ -107,9 +108,11 @@ export const TeacherReadinessView: React.FC<{
   onCreateExam?(): void;
   /** Opens "Pratinjau Soal" of a scheduled or ready exam (ASSESS-TEACHER-002, D04.3-38). */
   onOpenPreview?(examInstanceId: string): void;
+  /** Opens "Penilaian Esai" of an exam with essays (ASSESS-QUESTION-008 §4.6). */
+  onOpenEssays?(examInstanceId: string): void;
   /** Shown once above the list, for example after an exam was scheduled. */
   notice?: string | null;
-}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, notice }) => {
+}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, onOpenEssays, notice }) => {
   const [reason, setReason] = useState('');
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -346,10 +349,13 @@ export const TeacherReadinessView: React.FC<{
                   <Metric label="Dikumpulkan" value={exam.progress.submitted} />
                   {exam.progress.running !== undefined && <Metric label="Masih mengerjakan" value={exam.progress.running} />}
                 </MetricList>
-                {(onOpenResults || onOpenMonitoring) && (
+                {(onOpenResults || onOpenMonitoring || (onOpenEssays && (exam.essayCount ?? 0) > 0)) && (
                   <ActionGroup>
                     {onOpenMonitoring && (
                       <Button variant="secondary" onClick={() => onOpenMonitoring(exam.examInstanceId)}>Pantau Peserta</Button>
+                    )}
+                    {onOpenEssays && (exam.essayCount ?? 0) > 0 && (
+                      <Button variant="secondary" onClick={() => onOpenEssays(exam.examInstanceId)}>Nilai Esai</Button>
                     )}
                     {onOpenResults && (
                       <Button variant="secondary" onClick={() => onOpenResults(exam.examInstanceId)}>Lihat Hasil</Button>

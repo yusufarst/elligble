@@ -7,7 +7,7 @@ import './styles/teacher-readiness.css';
 import { AttemptLaunch } from './components/AttemptLaunch.tsx';
 import { AssignedExamDiscovery } from './components/AssignedExamDiscovery.tsx';
 import {
-  ExamMonitoringView, ProctorMonitoringView, ScreenLoadBoundary, ScreenLoading, TeacherExamImportView, TeacherExamPreviewView,
+  ExamMonitoringView, ProctorMonitoringView, ScreenLoadBoundary, ScreenLoading, TeacherEssayGradingView, TeacherExamImportView, TeacherExamPreviewView,
   TeacherReadinessView, TeacherResultsView,
 } from './components/ScreenLoadBoundary.tsx';
 import { SessionProvider, useSession } from './session/SessionProvider.tsx';
@@ -36,6 +36,8 @@ interface RouteState {
   newExam: boolean;
   /** Teacher workspace: the exam whose questions are previewed before it opens. */
   previewExam: string | null;
+  /** Teacher workspace: the exam whose essays are graded (ASSESS-QUESTION-008). */
+  gradeExam: string | null;
 }
 
 function readRoute(): RouteState {
@@ -47,6 +49,7 @@ function readRoute(): RouteState {
     monitorExam: params.get('monitorExam'),
     newExam: params.get('newExam') === '1',
     previewExam: params.get('previewExam'),
+    gradeExam: params.get('gradeExam'),
   };
 }
 
@@ -87,7 +90,7 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
   const current: Workspace | null = requested && workspaces.includes(requested) ? requested : workspaces[0] ?? null;
   const requestedUnavailable = requested !== null && !workspaces.includes(requested);
   // A screen that could not be downloaded is left behind by any navigation, the back button included.
-  const screenKey = [current, route.monitorExam, route.previewExam, route.newExam, route.examResults].join('|');
+  const screenKey = [current, route.monitorExam, route.previewExam, route.newExam, route.examResults, route.gradeExam].join('|');
 
   // The heading of a screen downloaded on demand, shown while it downloads or when it cannot be.
   let title = '';
@@ -120,6 +123,11 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
     content = (
       <TeacherExamPreviewView key={route.previewExam} examInstanceId={route.previewExam} onBack={() => navigate('?view=teacher')} />
     );
+  } else if (current === 'teacher' && route.gradeExam) {
+    title = SCREEN_TITLE.essayGrading;
+    content = (
+      <TeacherEssayGradingView key={route.gradeExam} examInstanceId={route.gradeExam} onBack={() => navigate('?view=teacher')} />
+    );
   } else if (current === 'teacher' && route.newExam) {
     title = SCREEN_TITLE.examImport;
     content = (
@@ -135,6 +143,7 @@ const AuthenticatedApp: React.FC<{ me: MeContext; username: string | null; membe
         onOpenMonitoring={id => navigate(`?view=teacher&monitorExam=${encodeURIComponent(id)}`)}
         onCreateExam={() => navigate('?view=teacher&newExam=1')}
         onOpenPreview={id => navigate(`?view=teacher&previewExam=${encodeURIComponent(id)}`)}
+        onOpenEssays={id => navigate(`?view=teacher&gradeExam=${encodeURIComponent(id)}`)}
         notice={teacherNotice}
       />
     );

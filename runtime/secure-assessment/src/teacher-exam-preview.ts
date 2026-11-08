@@ -5,6 +5,7 @@ import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts
 import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
 import { NUMERIC_ANSWER_DESCRIPTOR, NUMERIC_ANSWER_TYPE } from './question-types/numeric-answer.ts';
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
+import { ESSAY_DESCRIPTOR, ESSAY_TYPE } from './question-types/essay.ts';
 
 // Teacher preview of an exam before it opens (ASSESS-TEACHER-002; D04.3-38 LOCKED: the
 // teacher previews the exam before READY, close to what students will see; D04.3-39 LOCKED:
@@ -25,7 +26,9 @@ export interface TeacherExamPreviewQuestion {
     /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
     /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
-    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER';
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER' | 'ESSAY';
+    /** Essay only (ASSESS-QUESTION-008 §4.6): the rubric as authored, possibly empty; absent on every other item. */
+    rubric?: string;
     /** True/false only: the key (ASSESS-QUESTION-003 §4A.5); absent on every other item. */
     correctValue?: boolean;
     /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
@@ -132,6 +135,14 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
         return {
             snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
             questionType: NUMERIC_ANSWER_TYPE, correctOptionIds: null, expected: record.expected, tolerance: record.tolerance,
+        };
+    }
+    if (content && typeof content === 'object' && !Array.isArray(content) && (content as Record<string, unknown>)['schemaVersion'] === 2
+        && ESSAY_DESCRIPTOR.validateContent(content as Record<string, unknown>).ok) {
+        const record = content as { prompt: string; maxScore: number; rubric: string };
+        return {
+            snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
+            questionType: ESSAY_TYPE, correctOptionIds: null, rubric: record.rubric,
         };
     }
     // Show what is there, without trusting its shape.

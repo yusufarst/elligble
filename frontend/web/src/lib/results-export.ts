@@ -48,6 +48,8 @@ export function buildResultsCsv(data: TeacherExamResultsResponse): string {
     'Mata pelajaran', 'Kelas', 'Jenis penilaian', 'Status hasil', `Waktu finalisasi (${zone})`,
     'ELLIGBLE ID', 'Status peserta', 'Cara pengumpulan', `Waktu pengumpulan (${zone})`, 'Percobaan',
     'Benar', 'Salah', 'Tidak dijawab', 'Skor', 'Skor maksimum', 'Nilai (0-100)', 'Aturan penilaian',
+    // ASSESS-QUESTION-008 (Owner D4): appended, so the 17 columns above keep their positions.
+    'Dinilai guru', 'Belum dinilai',
   ];
   const final = data.resultState === 'FINAL';
   const exam = data.exam;
@@ -73,6 +75,8 @@ export function buildResultsCsv(data: TeacherExamResultsResponse): string {
       decimal(score?.maxScore),
       decimal(score?.scaledScore),
       text(score ? data.scoring.rule : ''),
+      integer(score?.graded),
+      integer(score?.ungraded),
     ].join(SEPARATOR));
   }
   return `﻿${lines.join('\r\n')}\r\n`;

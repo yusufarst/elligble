@@ -23,12 +23,12 @@ function response(overrides: Partial<TeacherExamResultsResponse> = {}): TeacherE
       windowStartsAt: '2026-09-29T01:00:00.000Z',
       windowEndsAt: '2026-09-29T03:00:00.000Z',
     },
-    scoring: { rule: 'BASELINE_SINGLE_CHOICE_V1', available: true, questionCount: 3, maxScore: 3 },
+    scoring: { rule: 'BASELINE_SINGLE_CHOICE_V1', available: true, questionCount: 3, maxScore: 3, autoScoredCount: 3, essayCount: 0 },
     resultState: 'PROVISIONAL',
     summary: { participants: 4, notStarted: 1, inProgress: 1, submitted: 2 },
     participants: [
-      { elligbleId: 'siswa.a', status: 'SUBMITTED', finalizationSource: 'STUDENT_SUBMIT', submittedAt: '2026-09-29T01:41:00.000Z', score: { correct: 2, incorrect: 1, unanswered: 0, rawScore: 2, maxScore: 3, scaledScore: 66.67 } },
-      { elligbleId: 'siswa.b', status: 'SUBMITTED', finalizationSource: 'EXPIRY_SERVER', submittedAt: '2026-09-29T02:30:00.000Z', score: { correct: 3, incorrect: 0, unanswered: 0, rawScore: 3, maxScore: 3, scaledScore: 100 } },
+      { elligbleId: 'siswa.a', status: 'SUBMITTED', finalizationSource: 'STUDENT_SUBMIT', submittedAt: '2026-09-29T01:41:00.000Z', score: { correct: 2, incorrect: 1, unanswered: 0, graded: 0, ungraded: 0, rawScore: 2, maxScore: 3, scaledScore: 66.67 } },
+      { elligbleId: 'siswa.b', status: 'SUBMITTED', finalizationSource: 'EXPIRY_SERVER', submittedAt: '2026-09-29T02:30:00.000Z', score: { correct: 3, incorrect: 0, unanswered: 0, graded: 0, ungraded: 0, rawScore: 3, maxScore: 3, scaledScore: 100 } },
       { elligbleId: 'siswa.c', status: 'IN_PROGRESS', finalizationSource: null, submittedAt: null, score: null },
       { elligbleId: 'siswa.d', status: 'NOT_STARTED', finalizationSource: null, submittedAt: null, score: null },
     ],
@@ -188,7 +188,7 @@ describe('TeacherResultsView', () => {
 
   it('cannot show scores when the exam cannot be scored', async () => {
     vi.mocked(getTeacherExamResults).mockResolvedValue(response({
-      scoring: { rule: 'BASELINE_SINGLE_CHOICE_V1', available: false, questionCount: 3, maxScore: null },
+      scoring: { rule: 'BASELINE_SINGLE_CHOICE_V1', available: false, questionCount: 3, maxScore: null, autoScoredCount: 3, essayCount: 0 },
       participants: [{ elligbleId: 'siswa.a', status: 'SUBMITTED', finalizationSource: null, submittedAt: '2026-09-29T01:41:00.000Z', score: null }],
     }));
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);

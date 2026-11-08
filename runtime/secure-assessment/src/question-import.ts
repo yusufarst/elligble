@@ -38,8 +38,13 @@ export const QUESTIONS_HEADER_V2_EXTENDED = [
  * (isian angka) tolerance. The 32-column header stays valid and unchanged.
  */
 export const QUESTIONS_HEADER_V2_TOLERANCE = [...QUESTIONS_HEADER_V2_EXTENDED, 'tolerance'] as readonly string[];
+/**
+ * ASSESS-QUESTION-008 (§4.5): the 33 tolerance columns plus "rubric" (34 columns), for the ES
+ * (esai) rubric. The 33-, 32- and 10-column headers stay valid and unchanged.
+ */
+export const QUESTIONS_HEADER_V2_RUBRIC = [...QUESTIONS_HEADER_V2_TOLERANCE, 'rubric'] as readonly string[];
 export type QuestionTemplate = typeof QUESTIONS_TEMPLATE | typeof QUESTIONS_TEMPLATE_V2;
-export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA';
+export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'ES';
 export const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 /** Implementation limits (plan §7): questions per file and the largest score of one question. */
 export const MAX_IMPORT_QUESTIONS = 200;
@@ -69,7 +74,9 @@ export type QuestionProblemCode =
     | 'items_not_allowed'
     | 'ordering_items_invalid'
     | 'tolerance_invalid'
-    | 'tolerance_not_allowed';
+    | 'tolerance_not_allowed'
+    | 'correct_not_allowed'
+    | 'rubric_not_allowed';
 
 export interface QuestionProblem {
     code: QuestionProblemCode;
@@ -85,7 +92,7 @@ export interface QuestionProblem {
      * correct_invalid on a BS row (ASSESS-QUESTION-003 §4A.2); correct_invalid, correct_duplicate
      * and options_not_allowed on an MJ row (ASSESS-QUESTION-004 §4.2). Absent otherwise.
      */
-    type?: 'BS' | 'MJ' | 'UR' | 'IA';
+    type?: 'BS' | 'MJ' | 'UR' | 'IA' | 'ES';
     /** matching_items_invalid and items_duplicate: the side of the matching items concerned. */
     side?: 'left' | 'right';
 }
@@ -115,6 +122,8 @@ export interface ParsedQuestion {
     /** IA only (ASSESS-QUESTION-007 §4.2): the key as typed (trimmed) and the tolerance as typed, or "0". */
     numericKey?: string;
     numericTolerance?: string;
+    /** ES only (ASSESS-QUESTION-008 §4.5): the rubric as typed (trimmed), possibly empty. */
+    essayRubric?: string;
 }
 
 export interface QuestionFile {
@@ -137,7 +146,7 @@ interface Header { template: QuestionTemplate; columns: number }
 
 function headerOf(row: CsvRow | undefined): Header | null {
     if (!row) return null;
-    const headers: Array<[QuestionTemplate, readonly string[]]> = [[QUESTIONS_TEMPLATE, QUESTIONS_HEADER], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2_EXTENDED], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2_TOLERANCE]];
+    const headers: Array<[QuestionTemplate, readonly string[]]> = [[QUESTIONS_TEMPLATE, QUESTIONS_HEADER], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2_EXTENDED], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2_TOLERANCE], [QUESTIONS_TEMPLATE_V2, QUESTIONS_HEADER_V2_RUBRIC]];
     for (const [template, header] of headers) {
         const cells = trimTrailingEmpty(row.cells.map(c => c.trim().toLowerCase()), header.length);
         if (cells.length === header.length && cells.every((c, i) => c === header[i])) return { template, columns: header.length };
@@ -191,7 +200,8 @@ export function parseQuestionFile(text: string): QuestionFile {
     const v2 = template === QUESTIONS_TEMPLATE_V2;
     const columns = read.header.columns;
     const extended = columns >= QUESTIONS_HEADER_V2_EXTENDED.length;
-    const withTolerance = columns === QUESTIONS_HEADER_V2_TOLERANCE.length;
+    const withTolerance = columns >= QUESTIONS_HEADER_V2_TOLERANCE.length;
+    const withRubric = columns === QUESTIONS_HEADER_V2_RUBRIC.length;
 
     const rows = read.rows.slice(1);
     const problems: QuestionProblem[] = [];
@@ -211,11 +221,13 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         const typeCell = v2 ? cells[1].toUpperCase() : 'PG';
         const [no, prompt, a, b, c, d, e, correct, score] = v2 ? [cells[0], ...cells.slice(2, 10)] : cells;
-        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' || typeCell === 'UR' || typeCell === 'IA' ? typeCell : null;
-        // Left cells 10-19, right cells 20-31; the tolerance is cell 32 of the 33-column file (§4.2).
+        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' || typeCell === 'UR' || typeCell === 'IA' || typeCell === 'ES' ? typeCell : null;
+        // Left cells 10-19, right cells 20-31; the tolerance is cell 32 of the 33- and 34-column
+        // files (ASSESS-QUESTION-007 §4.2) and the rubric cell 33 of the 34-column file (ASSESS-QUESTION-008 §4.5).
         const leftCells = extended ? cells.slice(10, 10 + MATCHING_LEFT_COLUMNS) : [];
         const rightCells = extended ? cells.slice(10 + MATCHING_LEFT_COLUMNS, 10 + MATCHING_LEFT_COLUMNS + MATCHING_RIGHT_LETTERS.length) : [];
         const toleranceCell = withTolerance ? cells[QUESTIONS_HEADER_V2_EXTENDED.length] : '';
+        const rubricCell = withRubric ? cells[QUESTIONS_HEADER_V2_TOLERANCE.length] : '';
         const options = [a, b, c, d, e];
         if (no !== String(index + 1)) {
             problems.push({ code: 'number_out_of_order', line, expected: index + 1 });
@@ -227,6 +239,17 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         if (!prompt) {
             problems.push({ code: 'prompt_empty', line });
+            return;
+        }
+        // The rubric column belongs to ES rows only (ASSESS-QUESTION-008 §4.5: right after the prompt).
+        if (type !== 'ES' && rubricCell.length > 0) {
+            problems.push({ code: 'rubric_not_allowed', line });
+            return;
+        }
+        if (type === 'ES') {
+            const question = parseEssayRow(line, index + 1, prompt, options, correct, score, [...leftCells, ...rightCells], toleranceCell, rubricCell);
+            if ('code' in question) problems.push(question);
+            else questions.push(question);
             return;
         }
         if (type === 'IA') {
@@ -365,6 +388,22 @@ function parseNumericRow(line: number, no: number, prompt: string, options: stri
 }
 
 /**
+ * One ES (esai) row, checked in the frozen order (ASSESS-QUESTION-008 §4.5): options empty, item
+ * cells empty, tolerance empty, key empty (the teacher grades it), score. The rubric is kept as
+ * typed (trimmed), with no limit of its own (Owner D3).
+ */
+function parseEssayRow(line: number, no: number, prompt: string, options: string[], correct: string, score: string,
+    itemCells: string[], toleranceCell: string, rubricCell: string): ParsedQuestion | QuestionProblem {
+    if (options.some(option => option.length > 0)) return { code: 'options_not_allowed', line, type: 'ES' };
+    if (itemCells.some(cell => cell.length > 0)) return { code: 'items_not_allowed', line, type: 'ES' };
+    if (toleranceCell.length > 0) return { code: 'tolerance_not_allowed', line };
+    if (correct.trim().length > 0) return { code: 'correct_not_allowed', line };
+    const maxScore = scoreOf(score);
+    if (!(maxScore > 0 && maxScore <= MAX_QUESTION_SCORE)) return { code: 'score_invalid', line };
+    return { line, no, prompt, options: [], correctIndex: -1, maxScore, type: 'ES', correctIndexes: [], essayRubric: rubricCell.trim() };
+}
+
+/**
  * One UR (mengurutkan) row, checked in the frozen order (ASSESS-QUESTION-005 §4.2/§4A.4): options
  * empty, item columns present, items, right cells empty, duplicates, key, score.
  */
@@ -429,7 +468,7 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
         case 'not_text': return 'the questions file is not a text CSV file (a spreadsheet workbook?); save it as "CSV UTF-8"';
         case 'encoding_invalid': return `${at}the file is not UTF-8 text; save it as "CSV UTF-8"`;
         case 'csv_syntax': return `${at}the file is not valid CSV (check the double quotes)`;
-        case 'header_invalid': return `${at}header must be exactly: ${QUESTIONS_HEADER.join(',')} (${QUESTIONS_TEMPLATE}) or ${QUESTIONS_HEADER_V2.join(',')} (${QUESTIONS_TEMPLATE_V2}) or ${QUESTIONS_HEADER_V2_EXTENDED.join(',')} (${QUESTIONS_TEMPLATE_V2}) or ${QUESTIONS_HEADER_V2_TOLERANCE.join(',')} (${QUESTIONS_TEMPLATE_V2})`;
+        case 'header_invalid': return `${at}header must be exactly: ${QUESTIONS_HEADER.join(',')} (${QUESTIONS_TEMPLATE}) or ${QUESTIONS_HEADER_V2.join(',')} (${QUESTIONS_TEMPLATE_V2}) or ${QUESTIONS_HEADER_V2_EXTENDED.join(',')} (${QUESTIONS_TEMPLATE_V2}) or ${QUESTIONS_HEADER_V2_TOLERANCE.join(',')} (${QUESTIONS_TEMPLATE_V2}) or ${QUESTIONS_HEADER_V2_RUBRIC.join(',')} (${QUESTIONS_TEMPLATE_V2})`;
         case 'file_empty': return 'the questions file has no questions';
         case 'too_many_questions': return `the file has ${problem.found} questions; at most ${problem.expected} per import`;
         case 'column_count': return `${at}expected ${problem.expected ?? QUESTIONS_HEADER.length} columns, found ${problem.found}`;
@@ -444,11 +483,11 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
             : problem.type === 'IA' ? `${at}"correct" for IA must be a number with a comma or dot decimal (for example 3,5)`
             : `${at}"correct" must be one of A, B, C, D, E`;
         case 'score_invalid': return `${at}"score" must be a positive number with at most two decimals, up to ${MAX_QUESTION_SCORE}`;
-        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric) or PGK (multiple answers)`;
+        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), ES (essay) or PGK (multiple answers)`;
         case 'correct_duplicate': return problem.type === 'MJ' ? `${at}"correct" for MJ uses a right letter more than once`
             : problem.type === 'UR' ? `${at}"correct" for UR uses an item number more than once`
             : `${at}"correct" lists a letter more than once`;
-        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' || problem.type === 'UR' || problem.type === 'IA' ? problem.type : 'BS'}`;
+        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' || problem.type === 'UR' || problem.type === 'IA' || problem.type === 'ES' ? problem.type : 'BS'}`;
         case 'columns_missing': return problem.type === 'UR' ? `${at}UR needs the v2 header with left_1..left_10` : `${at}MJ needs the v2 header with left_1..left_10 and right_a..right_l`;
         case 'ordering_items_invalid': return `${at}UR needs 2 to 10 items, filled in order from left_1`;
         case 'matching_items_invalid': return problem.side === 'right'
@@ -457,8 +496,11 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
         case 'items_duplicate': return problem.type === 'UR' ? `${at}items must differ from each other` : `${at}${problem.side === 'right' ? 'right' : 'left'} items must differ from each other`;
         case 'items_not_allowed': return problem.type === 'UR' ? `${at}right item columns are not used for UR`
             : problem.type === 'IA' ? `${at}item columns are not used for IA`
+            : problem.type === 'ES' ? `${at}item columns are not used for ES`
             : `${at}left and right item columns are only for MJ and UR`;
         case 'tolerance_invalid': return `${at}"tolerance" must be empty or a non-negative number`;
         case 'tolerance_not_allowed': return `${at}"tolerance" is only for IA`;
+        case 'correct_not_allowed': return `${at}"correct" must be empty for ES (graded by the teacher)`;
+        case 'rubric_not_allowed': return `${at}"rubric" is only for ES`;
     }
 }

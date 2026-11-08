@@ -15,6 +15,7 @@ import { handleAssignedExamsGet, type AssignedExamDiscoveryContext } from './ass
 import { handleProctorMonitoringGet } from './proctor-monitoring.ts';
 import { handleTeacherReadinessGet, type TeacherReadinessContext } from './teacher-readiness.ts';
 import { AuthenticationError, buildAuthenticatedContext } from './http/authenticated-context.ts';
+import { gradeEssay, parseGradeRequest, readEssayWorklist, type GradeEssayOutcome } from './essay-grading.ts';
 import { handleActivate, handleLogin, handleLogout, handleSessionGet } from './http/auth-routes.ts';
 import { handleMeContextGet } from './http/me-context.ts';
 import { handleAttemptStart } from './attempt-start.ts';
@@ -390,6 +391,98 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'scoring_unavailable':
                         sendError(res, 409, 'scoring_unavailable');
+                        return;
+                    case 'grading_incomplete':
+                        sendJson(res, 409, { error: 'grading_incomplete', ungraded: result.ungraded });
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/essays') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const examInstanceId = url.searchParams.get('examInstanceId');
+                if (!examInstanceId || !ATTEMPT_ID_REGEX.test(examInstanceId)) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readEssayWorklist(deps.pool, getContext()!, examInstanceId);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.worklist);
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/teacher-exams/essays/grade') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try { body = await readJsonObject(req); }
+                catch (err) { sendError(res, err instanceof HttpError ? err.statusCode : 400, 'invalid_request'); return; }
+                const request = parseGradeRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const actor = getContext()!;
+                let result: GradeEssayOutcome;
+                try {
+                    result = await gradeEssay(deps.pool, actor, request, async client => {
+                        const current = await buildAuthenticatedContext(req, deps.pool, { cookie: security.cookie, client, mutation: true });
+                        return !!current && current.personId === actor.personId && current.tenantId === actor.tenantId;
+                    });
+                } catch (err) {
+                    if (err instanceof AuthenticationError) sendError(res, err.statusCode, err.message);
+                    else sendError(res, 503, 'persistence_unavailable');
+                    return;
+                }
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, { revision: result.revision, score: result.score, gradedAt: result.gradedAt });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'not_gradable':
+                        sendError(res, 409, 'not_gradable');
+                        return;
+                    case 'invalid_score':
+                        sendError(res, 400, 'invalid_score');
+                        return;
+                    case 'stale_grade':
+                        sendJson(res, 409, { error: 'stale_grade', current: result.current });
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

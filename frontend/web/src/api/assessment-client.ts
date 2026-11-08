@@ -23,6 +23,9 @@ import type {
   TeacherExamImportPreview,
   TeacherExamImportResult,
   TeacherExamPreview,
+  TeacherEssayWorklist,
+  TeacherEssayGradeRequest,
+  EssayGradeEntry,
   TeacherExamRescheduleInput,
   TeacherExamRescheduleResult,
   TeacherExamCancelInput,
@@ -256,6 +259,19 @@ export async function getTeacherExamPreview(examInstanceId: string): Promise<Tea
   const url = `/api/v1/assessment/teacher-exams/preview?examInstanceId=${encodeURIComponent(examInstanceId)}`;
   const res = await apiFetch(url, { method: 'GET' });
   return handleResponse<TeacherExamPreview>(res);
+}
+
+/** The essay worklist of the managing teacher (ASSESS-QUESTION-008 §4.3); read-only once FINALIZED. */
+export async function getTeacherEssays(examInstanceId: string): Promise<TeacherEssayWorklist> {
+  const url = `/api/v1/assessment/teacher-exams/essays?examInstanceId=${encodeURIComponent(examInstanceId)}`;
+  const res = await apiFetch(url, { method: 'GET' });
+  return handleResponse<TeacherEssayWorklist>(res);
+}
+
+/** Records a new grade revision; 409 stale_grade carries the current revision. */
+export async function postTeacherEssayGrade(request: TeacherEssayGradeRequest): Promise<EssayGradeEntry> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/essays/grade', { method: 'POST', json: request });
+  return handleResponse<EssayGradeEntry>(res);
 }
 
 /** Server authorizes and records intent before any local CSV/download or print request. */

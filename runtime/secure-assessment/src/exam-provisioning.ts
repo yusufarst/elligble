@@ -3,6 +3,7 @@ import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-fa
 import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
 import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
 import { NUMERIC_ANSWER_DESCRIPTOR, NUMERIC_ANSWER_TYPE, canonicalNumber } from './question-types/numeric-answer.ts';
+import { ESSAY_DESCRIPTOR, ESSAY_TYPE } from './question-types/essay.ts';
 import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
@@ -149,8 +150,16 @@ export function buildOrderingFrozenContent(
     return content;
 }
 
-/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching, UR as ordering. */
+/** Frozen ESSAY content (ASSESS-QUESTION-008 §4.1): the rubric as typed, possibly empty. */
+export function buildEssayFrozenContent(input: { prompt: string; rubric: string; maxScore: number }): Record<string, unknown> {
+    const content = { schemaVersion: 2, questionType: ESSAY_TYPE, prompt: input.prompt, rubric: input.rubric, maxScore: input.maxScore };
+    if (!ESSAY_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid essay question');
+    return content;
+}
+
+/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching, UR as ordering, IA as numeric answer, ES as essay. */
 export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    if (q.type === 'ES') return buildEssayFrozenContent({ prompt: q.prompt, rubric: q.essayRubric ?? '', maxScore: q.maxScore });
     if (q.type === 'IA') return buildNumericFrozenContent({ prompt: q.prompt, key: q.numericKey ?? '', tolerance: q.numericTolerance ?? '0', maxScore: q.maxScore });
     if (q.type === 'UR') {
         return buildOrderingFrozenContent({ prompt: q.prompt, items: q.leftItems ?? [], correctSequence: q.correctSequence ?? [], maxScore: q.maxScore });

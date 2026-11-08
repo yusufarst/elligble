@@ -520,7 +520,7 @@ test('the teacher finalizes once every attempt is finished; the results are fina
     expect(lines[0].split(';').slice(0, 6)).toEqual(['Mata pelajaran', 'Kelas', 'Jenis penilaian', 'Status hasil', 'Waktu finalisasi (WIB)', 'ELLIGBLE ID']);
     expect(lines.find(line => line.includes(';siswa.e2e.01;'))).toContain(';Dikumpulkan;Oleh siswa;');
     expect(lines.find(line => line.includes(';siswa.e2e.01;'))).toContain(';66,67;BASELINE_SINGLE_CHOICE_V1');
-    expect(lines.find(line => line.includes(';siswa.e2e.06;'))).toMatch(/;Tidak mengerjakan(;){10}$/);
+    expect(lines.find(line => line.includes(';siswa.e2e.06;'))).toMatch(/;Tidak mengerjakan(;){12}$/);
 
     // Printing keeps the table and drops the controls.
     await page.emulateMedia({ media: 'print' });

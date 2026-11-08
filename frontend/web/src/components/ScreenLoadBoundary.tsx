@@ -45,6 +45,7 @@ export const TeacherResultsView = onDemand(screens => screens.TeacherResultsView
 export const ExamMonitoringView = onDemand(screens => screens.ExamMonitoringView);
 export const TeacherExamImportView = onDemand(screens => screens.TeacherExamImportView);
 export const TeacherExamPreviewView = onDemand(screens => screens.TeacherExamPreviewView);
+export const TeacherEssayGradingView = onDemand(screens => screens.TeacherEssayGradingView);
 
 /** A screen whose file is downloading: its heading (`lib/screen-titles.ts`) and the loading line. */
 export function ScreenLoading({ title }: { title: string }) {

@@ -143,3 +143,14 @@ Numeric answer is registered on the A01 foundation as `2:NUMERIC_ANSWER`, rule `
 Monitoring does not count "". The shared `Input` gains a documented `inputSize="exam"` variant.
 
 No route, lock order, migration or earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-007](tasks/ASSESS-QUESTION-007.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-008 bounded implementation checkpoint — 2026-11-08
+
+Essay is registered on the A01 foundation as `2:ESSAY`, rule `ESSAY_HUMAN_GRADED_V1`:
+- `{essayText}` is stored exactly as written and is either "" or plain text of at most 5,000 code points (D2: other text is an unsaved draft);
+- the managing Teacher grades it through two teacher-exam routes; grades are append-only revisions in `secure_assessment_essay_grade_revisions` (migration 0061), with a composite foreign key to the answer;
+- a grade write takes the exam FOR KEY SHARE, which conflicts with finalization's FOR UPDATE;
+- finalization is refused with `grading_incomplete` while any answered essay is ungraded, so `pending_issues` stays [] (A01-3);
+- results count graded essays separately (D1), and the CSV gains two appended columns (D4).
+
+No existing column, constraint or lock order changes, and no earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-008](tasks/ASSESS-QUESTION-008.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

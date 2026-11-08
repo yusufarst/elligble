@@ -110,7 +110,11 @@ export function scoreBaselineAttempt(questions: readonly ScorableQuestion[], ans
 // rule; totals stay bigint micro-points and are scaled with scaleToHundred.
 export const COMPOSITE_SCORING_RULE = 'COMPOSITE_PER_ITEM_V1';
 
-export interface CompositeScoredItem extends ScoredItem {
+/** A composite item may also be human-graded (ASSESS-QUESTION-008). */
+export type CompositeItemOutcome = ItemOutcome | 'GRADED' | 'UNGRADED';
+
+export interface CompositeScoredItem extends Omit<ScoredItem, 'outcome'> {
+    outcome: CompositeItemOutcome;
     ruleId: string;
     scoreMicro: bigint;
     maxScoreMicro: bigint;
@@ -119,9 +123,13 @@ export interface CompositeScoredItem extends ScoredItem {
 export interface CompositeAttemptScore {
     rule: typeof COMPOSITE_SCORING_RULE;
     items: CompositeScoredItem[];
+    /** D1: CORRECT and INCORRECT count only automatically scored items. */
     correct: number;
     incorrect: number;
     unanswered: number;
+    /** Human-graded items with a grade, and answered ones still waiting for a grade. */
+    gradedCount: number;
+    ungradedCount: number;
     rawScore: number;
     maxScore: number;
     rawScoreMicro: bigint;
@@ -135,7 +143,11 @@ export function isCompositeScore(score: AttemptScore | CompositeAttemptScore): s
     return score.rule === COMPOSITE_SCORING_RULE;
 }
 
-export function scoreAttempt(questions: readonly ScorableQuestion[], answers: ReadonlyMap<string, unknown>, registry: QuestionRegistry = PRODUCTION_QUESTION_REGISTRY): VersionedScoringResult {
+/**
+ * `grades` maps a question snapshot id to its current human grade in micro-points
+ * (ASSESS-QUESTION-008); only human-graded descriptors read it.
+ */
+export function scoreAttempt(questions: readonly ScorableQuestion[], answers: ReadonlyMap<string, unknown>, registry: QuestionRegistry = PRODUCTION_QUESTION_REGISTRY, grades: ReadonlyMap<string, bigint> = new Map()): VersionedScoringResult {
     const kinds = questions.map(q => classifyFrozenContent(q.frozenContent, registry));
     if (!kinds.some(k => k.kind === 'registered')) return scoreBaselineAttempt(questions, answers);
     const items: CompositeScoredItem[] = [];
@@ -155,7 +167,8 @@ export function scoreAttempt(questions: readonly ScorableQuestion[], answers: Re
         } else {
             return { type: 'unscorable', reason: 'invalid_question', questionSnapshotId: question.id };
         }
-        const scored = descriptor.score(content, answers.get(question.id));
+        const grade = grades.get(question.id);
+        const scored = descriptor.score(content, answers.get(question.id), grade === undefined ? undefined : { scoreMicro: grade });
         if (scored.maxMicro <= 0n) return { type: 'unscorable', reason: 'invalid_question', questionSnapshotId: question.id };
         rawMicro += scored.earnedMicro;
         maxMicro += scored.maxMicro;
@@ -164,12 +177,13 @@ export function scoreAttempt(questions: readonly ScorableQuestion[], answers: Re
             score: fromMicro(scored.earnedMicro), maxScore: fromMicro(scored.maxMicro), scoreMicro: scored.earnedMicro, maxScoreMicro: scored.maxMicro,
         });
     }
-    const count = (outcome: ItemOutcome) => items.filter(item => item.outcome === outcome).length;
+    const count = (outcome: CompositeItemOutcome) => items.filter(item => item.outcome === outcome).length;
     return {
         type: 'scored',
         score: {
             rule: COMPOSITE_SCORING_RULE, items,
             correct: count('CORRECT'), incorrect: count('INCORRECT'), unanswered: count('UNANSWERED'),
+            gradedCount: count('GRADED'), ungradedCount: count('UNGRADED'),
             rawScore: fromMicro(rawMicro), maxScore: fromMicro(maxMicro), rawScoreMicro: rawMicro, maxScoreMicro: maxMicro,
             scaledScore: scaleToHundred(rawMicro, maxMicro),
         },

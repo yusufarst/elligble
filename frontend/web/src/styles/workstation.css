@@ -1584,3 +1584,99 @@
   font-size: 0.875rem;
   color: var(--color-danger-text);
 }
+
+/* Essay, "Esai" (ASSESS-QUESTION-008 §4.6): label, instruction, the shared Textarea, a counter
+   that is not a live region and the D2 hint, which is always mounted and only toggles its text.
+   Teacher grading keeps the written text as written (line breaks, long words). Tokens only. */
+.essay-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.essay-field {
+  min-height: 12rem;
+  resize: vertical;
+}
+
+.essay-count {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.essay-count[data-over] {
+  color: var(--color-danger-text);
+}
+
+.essay-hint {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.875rem;
+  color: var(--color-danger-text);
+}
+
+.essay-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.essay-grading-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+}
+
+.essay-grading-answer > legend {
+  padding: 0 var(--space-2);
+  font-weight: 600;
+}
+
+.essay-grading-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.essay-grading-score {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 16rem;
+}
+
+.essay-grading-status {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.875rem;
+}
+
+.essay-grading-status[data-tone='danger'] {
+  color: var(--color-danger-text);
+}
+
+.essay-grading-status[data-tone='success'] {
+  color: var(--color-success-text);
+}
+
+.essay-history > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.essay-history ul {
+  margin: 0;
+  padding-left: var(--space-4);
+}
