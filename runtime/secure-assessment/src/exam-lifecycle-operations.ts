@@ -46,6 +46,7 @@ export type TeacherExamActionResult =
     | { type: 'window_closed' }
     | { type: 'attempts_running'; running: number }
     | { type: 'scoring_unavailable' }
+    | { type: 'grading_incomplete'; ungraded: number }
     | { type: 'unavailable' };
 
 const TRANSITIONS: Record<TeacherExamAction, { from: string; to: string; idempotent: boolean }> = {

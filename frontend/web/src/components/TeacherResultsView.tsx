@@ -116,6 +116,9 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   const { exam, scoring, summary, participants } = data;
   const final = data.resultState === 'FINAL';
   const context = [exam.groupLabel, exam.assessmentTypeLabel].filter(Boolean).join(' · ');
+  // D1 (ASSESS-QUESTION-008): with essays, "Benar" counts the automatically scored questions only and
+  // a "Dinilai guru" column shows the graded essays; exams without essays render as before.
+  const withEssays = (scoring.essayCount ?? 0) > 0;
 
   return (
     <Page>
@@ -196,6 +199,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
               <tr>
                 <th scope="col" className="px-3 py-2">Peserta</th>
                 <th scope="col" className="w-16 px-3 py-2 text-right sm:w-24">Benar</th>
+                {withEssays && <th scope="col" className="w-20 px-3 py-2 text-right sm:w-28">Dinilai guru</th>}
                 <th scope="col" className="w-20 px-3 py-2 text-right sm:w-24">Nilai</th>
               </tr>
             </thead>
@@ -216,14 +220,20 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
                     {row.score ? (
                       <>
                         <td className="px-3 py-3 text-right tabular-nums">
-                          {showScores ? `${row.score.correct}/${scoring.questionCount}` : <Hidden />}
+                          {showScores ? `${row.score.correct}/${withEssays ? scoring.autoScoredCount : scoring.questionCount}` : <Hidden />}
                         </td>
+                        {withEssays && (
+                          <td className="px-3 py-3 text-right tabular-nums">{showScores ? row.score.graded : <Hidden />}</td>
+                        )}
                         <td className="px-3 py-3 text-right font-semibold tabular-nums">
                           {showScores ? formatScore(row.score.scaledScore) : <Hidden />}
+                          {withEssays && (row.score.ungraded ?? 0) > 0 && (
+                            <span className="mt-1 block text-xs font-normal text-warning-ink">Belum dinilai: {row.score.ungraded}</span>
+                          )}
                         </td>
                       </>
                     ) : (
-                      <td colSpan={2} className="px-3 py-3 text-right text-muted-foreground">{row.status === 'ABSENT' ? 'Tidak ada nilai' : 'Belum ada nilai'}</td>
+                      <td colSpan={withEssays ? 3 : 2} className="px-3 py-3 text-right text-muted-foreground">{row.status === 'ABSENT' ? 'Tidak ada nilai' : 'Belum ada nilai'}</td>
                     )}
                   </tr>
                 );
@@ -234,7 +244,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       )}
 
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-        Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.
+        Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.{withEssays ? ' Esai dinilai guru; poinnya masuk ke Nilai.' : ''}
       </p>
     </Page>
   );

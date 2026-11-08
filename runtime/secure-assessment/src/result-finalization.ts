@@ -1,6 +1,7 @@
 import type * as pg from 'pg';
 import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, selectedOptionOf, type ScorableQuestion } from './scoring.ts';
 import { PRODUCTION_QUESTION_REGISTRY, V1_SINGLE_CHOICE_RULE, type QuestionRegistry } from './question-contract.ts';
+import { gradeScores, readCurrentGrades } from './essay-grading.ts';
 
 // Result finalization (D04.8-17/18/19/20/56/57, D04.2-83; Owner decision 2026-09-30, ENDED
 // point 5): an ended exam whose attempts are all finished is finalized explicitly, and its
@@ -17,7 +18,9 @@ const toMicro = (value: number) => Math.round(value * MICRO);
 export type FreezeOutcome =
     | { type: 'frozen'; finalizationId: string }
     | { type: 'attempts_running'; running: number }
-    | { type: 'scoring_unavailable' };
+    | { type: 'scoring_unavailable' }
+    /** A01-3 / O02-9: answered essays still without a grade (ASSESS-QUESTION-008). */
+    | { type: 'grading_incomplete'; ungraded: number };
 
 interface FrozenParticipant {
     exam_participant_id: string;
@@ -109,6 +112,11 @@ export async function freezeExamResults(
         }
     }
 
+    // Current essay grades, read after the exam lock: a grade write holds FOR KEY SHARE on the
+    // exam, so every grade committed before this transaction locked the exam is visible here.
+    const grades = await readCurrentGrades(client, tenantId, submitted);
+    let ungraded = 0;
+
     const frozen: FrozenParticipant[] = [];
     for (const row of participants.rows) {
         if (!row.submitted_at) {
@@ -120,10 +128,12 @@ export async function freezeExamResults(
             continue;
         }
         const answers = answersByAttempt.get(row.attempt_id) ?? new Map<string, unknown>();
-        const scored = scoreAttempt(questions, answers, registry);
+        const attemptGrades = grades.get(row.attempt_id);
+        const scored = scoreAttempt(questions, answers, registry, gradeScores(attemptGrades));
         if (scored.type !== 'scored') return { type: 'scoring_unavailable' };
         const score = scored.score;
         if (isCompositeScore(score)) {
+            ungraded += score.ungradedCount;
             // Micro-points are exact integers far below 2^53, written without a float round trip.
             frozen.push({
                 exam_participant_id: row.participant_id, exam_attempt_id: row.attempt_id, standing: 'SUBMITTED',
@@ -137,6 +147,7 @@ export async function freezeExamResults(
                     outcome: item.outcome,
                     scoreMicro: Number(item.scoreMicro),
                     maxScoreMicro: Number(item.maxScoreMicro),
+                    ...(item.outcome === 'GRADED' ? { gradeRevision: attemptGrades?.get(item.questionSnapshotId)?.revision } : {}),
                 })),
             });
             continue;
@@ -162,6 +173,10 @@ export async function freezeExamResults(
             })),
         });
     }
+
+    // Refused, not recorded as pending: a finalization never carries ungraded items, so
+    // pending_issues stays [] (A01-3).
+    if (ungraded > 0) return { type: 'grading_incomplete', ungraded };
 
     const finalization = await client.query(
         `INSERT INTO secure_assessment_exam_result_finalizations
@@ -201,7 +216,7 @@ export interface FinalizedResultRow {
     maxScore: number | null;
     scaledScore: number | null;
     /** v1-only exams: selectedOptionId on every item. Composite exams: ruleId on every item, selectedOptionId on v1 items. */
-    itemOutcomes: Array<{ questionSnapshotId: string; ruleId?: string; selectedOptionId?: string | null; outcome: string; scoreMicro: number; maxScoreMicro: number }> | null;
+    itemOutcomes: Array<{ questionSnapshotId: string; ruleId?: string; selectedOptionId?: string | null; outcome: string; scoreMicro: number; maxScoreMicro: number; gradeRevision?: number }> | null;
 }
 
 export interface FinalizedResults {

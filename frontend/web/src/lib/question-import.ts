@@ -7,25 +7,27 @@ import type { ImportProblem, LatestStartPolicy } from '../types/assessment.ts';
 export const QUESTION_TEMPLATE_FILE_NAME = 'templat-soal-elligble.csv';
 
 const ITEM_COLUMNS = [...Array.from({ length: 10 }, (_, i) => `left_${i + 1}`), ...'abcdefghijkl'.split('').map(l => `right_${l}`)];
-// ASSESS-QUESTION-007 §4.2: the "tolerance" column follows the item columns (33 columns).
-const NO_ITEMS = ';'.repeat(ITEM_COLUMNS.length + 1);
+// ASSESS-QUESTION-007 §4.2: the "tolerance" column follows the item columns (33 columns);
+// ASSESS-QUESTION-008 §4.5: the "rubric" column follows it (34 columns).
+const NO_ITEMS = ';'.repeat(ITEM_COLUMNS.length + 2);
 
 /**
  * The canonical elligble-questions-v2 columns (ASSESS-QUESTION-002, O02-12) with the matching item
  * columns left_1..left_10 and right_a..right_l appended (ASSESS-QUESTION-004 §4.2), and one example
- * row each of PG (pilihan ganda), PGK (pilihan ganda kompleks), BS (benar/salah) and MJ
- * (menjodohkan), separated by semicolons with a decimal comma, as spreadsheets set to Indonesian
+ * row each of PG (pilihan ganda), PGK (pilihan ganda kompleks), BS (benar/salah), MJ
+ * (menjodohkan), UR (mengurutkan), IA (isian angka) and ES (esai, with a rubric), separated by semicolons with a decimal comma, as spreadsheets set to Indonesian
  * open and save them; files separated by commas, ten-column v2 files and elligble-questions-v1
  * files without the type column are read as well.
  */
 export const QUESTION_TEMPLATE_CSV = '\uFEFF' + [
-  ['no;type;prompt;option_a;option_b;option_c;option_d;option_e;correct;score', ...ITEM_COLUMNS, 'tolerance'].join(';'),
+  ['no;type;prompt;option_a;option_b;option_c;option_d;option_e;correct;score', ...ITEM_COLUMNS, 'tolerance', 'rubric'].join(';'),
   '1;PG;Ibu kota Indonesia adalah;Bandung;Jakarta;Surabaya;Medan;Makassar;B;1' + NO_ITEMS,
   '2;PGK;Bilangan prima di bawah 10 adalah;2;4;5;8;9;A,C;1,5' + NO_ITEMS,
   '3;BS;Matahari terbit dari arah timur;;;;;;B;1' + NO_ITEMS,
-  '4;MJ;Pasangkan nama hewan dengan makanannya;;;;;;B,C,A;3;Sapi;Kucing;Kelinci' + ';'.repeat(7) + ';Wortel;Rumput;Ikan;Biji jagung' + ';'.repeat(9),
-  '5;UR;Urutkan langkah menanam biji;;;;;;2,4,1,3;2;Siram tanah setiap hari;Siapkan pot berisi tanah;Tunggu sampai tunas muncul;Tanam biji di tengah pot' + ';'.repeat(6) + ';'.repeat(13),
-  '6;IA;Hasil dari 5 dibagi 2 adalah;;;;;;2,5;1' + ';'.repeat(ITEM_COLUMNS.length) + ';0,1',
+  '4;MJ;Pasangkan nama hewan dengan makanannya;;;;;;B,C,A;3;Sapi;Kucing;Kelinci' + ';'.repeat(7) + ';Wortel;Rumput;Ikan;Biji jagung' + ';'.repeat(10),
+  '5;UR;Urutkan langkah menanam biji;;;;;;2,4,1,3;2;Siram tanah setiap hari;Siapkan pot berisi tanah;Tunggu sampai tunas muncul;Tanam biji di tengah pot' + ';'.repeat(6) + ';'.repeat(14),
+  '6;IA;Hasil dari 5 dibagi 2 adalah;;;;;;2,5;1' + ';'.repeat(ITEM_COLUMNS.length) + ';0,1;',
+  '7;ES;Jelaskan proses fotosintesis dengan kata-katamu sendiri;;;;;;;5' + ';'.repeat(ITEM_COLUMNS.length + 1) + ';Sebutkan bahan, tempat dan hasil fotosintesis.',
 ].join('\r\n') + '\r\n';
 
 export const LATEST_START_OPTIONS: Array<{ value: LatestStartPolicy; label: string; description: string }> = [
@@ -58,7 +60,7 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'not_text': return 'Berkas ini bukan berkas CSV (mungkin berkas Excel). Simpan sebagai "CSV UTF-8", lalu unggah lagi.';
       case 'encoding_invalid': return `${at}berkas tidak tersimpan sebagai UTF-8. Simpan sebagai "CSV UTF-8", lalu unggah lagi.`;
       case 'csv_syntax': return `${at}tanda kutip ganda tidak berpasangan.`;
-      case 'header_invalid': return `${at}judul kolom harus sama dengan templat ELLIGBLE (no;prompt;option_a sampai option_e;correct;score, atau no;type;prompt;option_a sampai option_e;correct;score, atau no;type;prompt;option_a sampai option_e;correct;score;left_1 sampai left_10;right_a sampai right_l, atau no;type;prompt;option_a sampai option_e;correct;score;left_1 sampai left_10;right_a sampai right_l;tolerance). Unduh templat terbaru lalu salin soal Anda ke dalamnya.`;
+      case 'header_invalid': return `${at}judul kolom harus sama dengan templat ELLIGBLE (no;prompt;option_a sampai option_e;correct;score, atau no;type;prompt;option_a sampai option_e;correct;score, atau no;type;prompt;option_a sampai option_e;correct;score;left_1 sampai left_10;right_a sampai right_l, atau no;type;prompt;option_a sampai option_e;correct;score;left_1 sampai left_10;right_a sampai right_l;tolerance, atau no;type;prompt;option_a sampai option_e;correct;score;left_1 sampai left_10;right_a sampai right_l;tolerance;rubric). Unduh templat terbaru lalu salin soal Anda ke dalamnya.`;
       case 'file_empty': return 'Berkas tidak berisi soal.';
       case 'too_many_questions': return `Berkas berisi ${problem.found} soal; paling banyak ${problem.expected} soal dalam satu berkas.`;
       case 'column_count': return `${at}harus ada ${problem.expected ?? 9} kolom, ditemukan ${problem.found}.`;
@@ -73,13 +75,14 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
         : problem.type === 'IA' ? `${at}kunci jawaban IA harus angka, dengan koma atau titik untuk desimal, misalnya 3,5.`
         : `${at}kunci jawaban harus salah satu huruf A, B, C, D, atau E.`;
       case 'score_invalid': return `${at}skor harus angka lebih dari 0 sampai ${limits.maxQuestionScore}, dengan paling banyak dua angka di belakang koma.`;
-      case 'type_invalid': return `${at}tipe soal harus PG, PGK, BS, MJ, UR atau IA.`;
+      case 'type_invalid': return `${at}tipe soal harus PG, PGK, BS, MJ, UR, IA atau ES.`;
       case 'correct_duplicate': return problem.type === 'MJ' ? `${at}setiap pasangan kanan hanya boleh dipakai sekali dalam kunci jawaban MJ.`
         : problem.type === 'UR' ? `${at}setiap nomor item hanya boleh muncul sekali dalam kunci jawaban UR.` : `${at}huruf kunci jawaban tidak boleh berulang.`;
       case 'options_not_allowed': return problem.type === 'MJ'
         ? `${at}soal Menjodohkan (MJ) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : problem.type === 'UR' ? `${at}soal Mengurutkan (UR) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : problem.type === 'IA' ? `${at}soal Isian angka (IA) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
+        : problem.type === 'ES' ? `${at}soal Esai (ES) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : `${at}soal Benar/Salah (BS) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`;
       case 'columns_missing': return problem.type === 'UR'
         ? `${at}soal Mengurutkan (UR) memerlukan kolom left_1 sampai left_10. Unduh templat terbaru lalu salin soal Anda ke dalamnya.`
@@ -93,9 +96,12 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'items_not_allowed': return problem.type === 'UR'
         ? `${at}soal UR tidak memakai kolom right_a sampai right_l; kosongkan kolom itu.`
         : problem.type === 'IA' ? `${at}soal IA tidak memakai kolom left_1 sampai right_l; kosongkan kolom itu.`
+        : problem.type === 'ES' ? `${at}soal ES tidak memakai kolom left_1 sampai right_l; kosongkan kolom itu.`
         : `${at}kolom left_1 sampai right_l hanya untuk soal MJ dan UR; kosongkan untuk soal PG, PGK atau BS.`;
       case 'tolerance_invalid': return `${at}toleransi harus kosong atau angka tidak negatif, dengan koma atau titik untuk desimal.`;
       case 'tolerance_not_allowed': return `${at}kolom tolerance hanya untuk soal IA; kosongkan untuk tipe lain.`;
+      case 'correct_not_allowed': return `${at}soal ES dinilai guru, jadi kolom correct dikosongkan.`;
+      case 'rubric_not_allowed': return `${at}kolom rubric hanya untuk soal ES; kosongkan untuk tipe lain.`;
     }
   }
   switch (problem.code) {

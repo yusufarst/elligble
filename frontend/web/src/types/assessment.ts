@@ -22,8 +22,10 @@ export const MATCHING_KEY: QuestionContentKey = '2:MATCHING';
 export const ORDERING_KEY: QuestionContentKey = '2:ORDERING';
 /** Numeric answer, "Isian angka" (ASSESS-QUESTION-007). */
 export const NUMERIC_ANSWER_KEY: QuestionContentKey = '2:NUMERIC_ANSWER';
+/** Essay, "Esai" (ASSESS-QUESTION-008). */
+export const ESSAY_KEY: QuestionContentKey = '2:ESSAY';
 /** The content keys this client renders and saves; sent as the X-Question-Types header. */
-export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY]);
+export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY, ESSAY_KEY]);
 export const QUESTION_TYPES_HEADER = 'X-Question-Types';
 
 export function contentKeyOf(question: { schemaVersion: number; questionType: string }): QuestionContentKey {
@@ -53,6 +55,11 @@ export function answerValueOf(payload: unknown): string | null {
   if ('numericText' in payload) {
     const text = (payload as { numericText: unknown }).numericText;
     return typeof text === 'string' && (text === '' || isNumericText(text)) ? text : null;
+  }
+  // Essay: the text exactly as written, or "" (ASSESS-QUESTION-008 §4.6).
+  if ('essayText' in payload) {
+    const text = (payload as { essayText: unknown }).essayText;
+    return typeof text === 'string' && isEssayText(text) ? text : null;
   }
   // Ordering: the ids in answer order (ASSESS-QUESTION-005 §4.4).
   if ('orderedItemIds' in payload) {
@@ -132,9 +139,55 @@ export function isNumericText(value: string): boolean {
   return value.length <= 30 && /^-?[0-9]+([.,][0-9]+)?$/.test(value);
 }
 
-/** Whether a value is the empty answer of a type that allows one: "[]" for multiple response, matching and ordering, "" for numeric answer (O02-2). */
+export const ESSAY_TEXT_MAX = 5000;
+
+/**
+ * Essay text the server accepts (ASSESS-QUESTION-008 §4.1, the same predicate): a well-formed
+ * string (no lone surrogate) of at most 5,000 code points with no control character other than
+ * tab, LF and CR, no DEL and no C1 control. "" is the empty answer.
+ */
+export function isEssayText(value: string): boolean {
+  return essayTextProblem(value) === null;
+}
+
+/** Why essay text cannot be saved: over the limit (checked first, D2) or a character that is not allowed. */
+export function essayTextProblem(value: string): 'too_long' | 'invalid_character' | null {
+  let count = 0;
+  let invalid = false;
+  for (let i = 0; i < value.length; i++) {
+    const unit = value.charCodeAt(i);
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = i + 1 < value.length ? value.charCodeAt(i + 1) : 0;
+      if (next < 0xdc00 || next > 0xdfff) invalid = true;
+      else i++;
+    } else if (unit >= 0xdc00 && unit <= 0xdfff) {
+      invalid = true;
+    } else if ((unit < 0x20 && unit !== 0x09 && unit !== 0x0a && unit !== 0x0d) || (unit >= 0x7f && unit <= 0x9f)) {
+      invalid = true;
+    }
+    count++;
+  }
+  if (count > ESSAY_TEXT_MAX) return 'too_long';
+  return invalid ? 'invalid_character' : null;
+}
+
+/** The number of Unicode code points, as the 5,000 limit counts them. */
+export function codePointCount(value: string): number {
+  let count = 0;
+  for (let i = 0; i < value.length; i++) {
+    const unit = value.charCodeAt(i);
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = i + 1 < value.length ? value.charCodeAt(i + 1) : 0;
+      if (next >= 0xdc00 && next <= 0xdfff) i++;
+    }
+    count++;
+  }
+  return count;
+}
+
+/** Whether a value is the empty answer of a type that allows one: "[]" for multiple response, matching and ordering, "" for numeric answer and essay (O02-2). */
 export function isEmptyValue(contentKey: string, value: string | null | undefined): boolean {
-  if (contentKey === NUMERIC_ANSWER_KEY) return value === '';
+  if (contentKey === NUMERIC_ANSWER_KEY || contentKey === ESSAY_KEY) return value === '';
   return value === EMPTY_SELECTION && (contentKey === MULTIPLE_RESPONSE_KEY || contentKey === MATCHING_KEY || contentKey === ORDERING_KEY);
 }
 
@@ -149,6 +202,7 @@ export function isAnsweredValue(contentKey: string, value: string | null | undef
     return pairs !== null && leftCount !== undefined && leftCount > 0 && pairs.length === leftCount;
   }
   if (contentKey === NUMERIC_ANSWER_KEY) return value !== '' && isNumericText(value);
+  if (contentKey === ESSAY_KEY) return value !== '' && isEssayText(value);
   // Ordering: a full order of every item (ASSESS-QUESTION-005 §4A.4 item 7); the count is the item count.
   if (contentKey === ORDERING_KEY) {
     const ids = orderOf(value);
@@ -429,6 +483,8 @@ export interface TeacherExamReadinessProjection {
   pausedAt?: string | null;
   /** When the results were finalized (FINALIZED only). */
   finalizedAt?: string | null;
+  /** Essay questions of the exam (ASSESS-QUESTION-008); absent means 0. */
+  essayCount?: number;
 }
 
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
@@ -527,9 +583,13 @@ export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED
 export type FinalizationSource = 'STUDENT_SUBMIT' | 'EXPIRY_CLIENT' | 'EXPIRY_SERVER';
 
 export interface ParticipantScore {
+  /** D1 (ASSESS-QUESTION-008): automatically scored questions only. */
   correct: number;
   incorrect: number;
   unanswered: number;
+  /** Essays with a grade, and answered essays still waiting for one (0 once final). */
+  graded: number;
+  ungraded: number;
   rawScore: number;
   maxScore: number;
   /** 0 to 100, two decimals, half up. */
@@ -555,7 +615,8 @@ export interface TeacherExamResultsResponse {
     windowStartsAt: string | null;
     windowEndsAt: string | null;
   };
-  scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null };
+  /** autoScoredCount: questions that are not essays; essayCount: essay questions (ASSESS-QUESTION-008). */
+  scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null; autoScoredCount: number; essayCount: number };
   resultState: 'PROVISIONAL' | 'FINAL';
   /** When the results were finalized (FINAL only). */
   finalizedAt?: string | null;
@@ -707,7 +768,8 @@ export type QuestionProblemCode =
   | 'not_text' | 'encoding_invalid' | 'csv_syntax' | 'header_invalid' | 'file_empty' | 'too_many_questions'
   | 'column_count' | 'number_out_of_order' | 'prompt_empty' | 'option_empty' | 'options_duplicate'
   | 'correct_multiple' | 'correct_invalid' | 'score_invalid' | 'type_invalid' | 'correct_duplicate' | 'options_not_allowed'
-  | 'columns_missing' | 'matching_items_invalid' | 'items_duplicate' | 'items_not_allowed' | 'ordering_items_invalid' | 'tolerance_invalid' | 'tolerance_not_allowed';
+  | 'columns_missing' | 'matching_items_invalid' | 'items_duplicate' | 'items_not_allowed' | 'ordering_items_invalid' | 'tolerance_invalid' | 'tolerance_not_allowed'
+  | 'correct_not_allowed' | 'rubric_not_allowed';
 
 export type SetupProblemCode =
   | 'file_too_large' | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
@@ -715,14 +777,14 @@ export type SetupProblemCode =
   | 'schedule_conflict' | 'not_ready';
 
 export type ImportProblem =
-  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' | 'MJ' | 'UR' | 'IA'; side?: 'left' | 'right' }
+  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' | 'MJ' | 'UR' | 'IA' | 'ES'; side?: 'left' | 'right' }
   | { source: 'setup'; code: SetupProblemCode; count?: number; blocker?: string };
 
 export interface TeacherExamImportPreview {
   sourceSha256: string;
   problems: ImportProblem[];
   /** type and correctLetters: ASSESS-QUESTION-002 (absent from older servers: PG with `correct`). */
-  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA'; correctLetters?: string[]; correctValue?: boolean; leftItems?: string[]; rightItems?: string[]; keyEqualsAuthoredOrder?: boolean; tolerance?: string }>;
+  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'ES'; correctLetters?: string[]; correctValue?: boolean; leftItems?: string[]; rightItems?: string[]; keyEqualsAuthoredOrder?: boolean; tolerance?: string; rubric?: string }>;
   participants: Array<{ enrollmentId: string; elligbleId: string; included: boolean; conflict: boolean }>;
   window: { startsAt: string; endsAt: string } | null;
   totals: { questions: number; maxScore: number; participants: number };
@@ -754,7 +816,9 @@ export interface TeacherExamPreview {
     options: Array<{ id: string; content: string }>;
     correctOptionId: string | null;
   /** ASSESS-QUESTION-002: the valid type (absent from older servers: single choice); null for invalid content. */
-  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER' | null;
+  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER' | 'ESSAY' | null;
+  /** Essay only: the rubric as authored, possibly empty. */
+  rubric?: string;
   /** Multiple response: the key options in authored order. */
   correctOptionIds?: string[] | null;
   /** True/false only: the key. */
@@ -772,4 +836,34 @@ export interface TeacherExamPreview {
     maxScore: number | null;
     valid: boolean;
   }>;
+}
+
+/** One grade revision of an essay answer (ASSESS-QUESTION-008 §4.3); score is a decimal string with ".". */
+export interface EssayGradeEntry {
+  score: string;
+  revision: number;
+  gradedAt: string;
+}
+
+/** The managing teacher's essay worklist: first submitted attempts with non-empty essays, by ELLIGBLE ID. */
+export interface TeacherEssayWorklist {
+  exam: { examInstanceId: string; lifecycleState: string };
+  questions: Array<{
+    snapshotId: string;
+    no: number;
+    prompt: string;
+    rubric: string;
+    maxScore: string;
+    answers: Array<{ attemptId: string; elligbleId: string | null; essayText: string; grade: EssayGradeEntry | null; history: EssayGradeEntry[] }>;
+  }>;
+}
+
+export interface TeacherEssayGradeRequest {
+  examInstanceId: string;
+  attemptId: string;
+  snapshotId: string;
+  /** As typed: up to four digits, optionally a comma or dot and one or two decimals. */
+  score: string;
+  /** The revision the teacher saw, or null when the answer had no grade. */
+  expectedRevision: number | null;
 }

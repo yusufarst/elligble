@@ -79,6 +79,8 @@ export interface PreviewQuestion {
     keyEqualsAuthoredOrder?: boolean;
     /** IA only (ASSESS-QUESTION-007 §4.2): the tolerance as typed, or "0"; `correct` is the key as typed. */
     tolerance?: string;
+    /** ES only (ASSESS-QUESTION-008 §4.5): the rubric as typed, possibly empty; `correct` is "". */
+    rubric?: string;
 }
 
 /** The key of a preview question: letters A-E (PG, PGK), Benar/Salah (BS), right letters A-L per left item (MJ). */
@@ -88,6 +90,7 @@ function previewKey(q: ParsedQuestion): { correct: string; correctLetters: strin
         return { correct: letters.join(', '), correctLetters: letters };
     }
     if (q.type === 'IA') return { correct: q.numericKey ?? '', correctLetters: [] };
+    if (q.type === 'ES') return { correct: '', correctLetters: [] };
     if (q.type === 'UR') {
         const numbers = (q.correctSequence ?? []).map(i => String(i + 1));
         return { correct: numbers.join(', '), correctLetters: numbers };
@@ -306,6 +309,7 @@ export async function runTeacherExamImport(
             ...(q.type === 'MJ' ? { leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [] } : {}),
             ...(q.type === 'UR' ? { leftItems: q.leftItems ?? [], rightItems: [], keyEqualsAuthoredOrder: (q.correctSequence ?? []).every((v, i) => v === i) } : {}),
             ...(q.type === 'IA' ? { tolerance: q.numericTolerance ?? '0' } : {}),
+            ...(q.type === 'ES' ? { rubric: q.essayRubric ?? '' } : {}),
         })),
         participants: [],
         window: null,

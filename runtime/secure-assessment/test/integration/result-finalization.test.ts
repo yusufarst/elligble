@@ -128,9 +128,9 @@ test('result finalization (real PostgreSQL, production wiring)', { skip: skipWit
         assert.equal(view.exam.lifecycleState, 'FINALIZED');
         assert.deepEqual(view.summary, { participants: 4, notStarted: 2, inProgress: 0, submitted: 2 });
         const byId = Object.fromEntries(view.participants.map((p: { elligbleId: string }) => [p.elligbleId, p]));
-        assert.deepEqual(byId['siswa.final.a'].score, { correct: 2, incorrect: 1, unanswered: 0, rawScore: 2, maxScore: 3, scaledScore: 66.67 });
+        assert.deepEqual(byId['siswa.final.a'].score, { correct: 2, incorrect: 1, unanswered: 0, graded: 0, ungraded: 0, rawScore: 2, maxScore: 3, scaledScore: 66.67 });
         assert.equal(byId['siswa.final.a'].finalizationSource, 'STUDENT_SUBMIT');
-        assert.deepEqual(byId['siswa.final.b'].score, { correct: 1, incorrect: 0, unanswered: 2, rawScore: 1, maxScore: 3, scaledScore: 33.33 });
+        assert.deepEqual(byId['siswa.final.b'].score, { correct: 1, incorrect: 0, unanswered: 2, graded: 0, ungraded: 0, rawScore: 1, maxScore: 3, scaledScore: 33.33 });
         assert.equal(byId['siswa.final.b'].finalizationSource, 'EXPIRY_SERVER');
         assert.equal(byId['siswa.final.c'].status, 'ABSENT', 'started the attempt but never the time: absent, not zero');
         assert.equal(byId['siswa.final.c'].score, null);

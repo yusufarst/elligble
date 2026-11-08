@@ -1,7 +1,8 @@
 import type * as pg from 'pg';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import type { FinalizationSource } from './submission.ts';
-import { BASELINE_SCORING_RULE, scoreAttempt, type ScorableQuestion } from './scoring.ts';
+import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, type ScorableQuestion } from './scoring.ts';
+import { gradeScores, isEssayQuestion, readCurrentGrades } from './essay-grading.ts';
 import { readFinalizedResults } from './result-finalization.ts';
 
 // Provisional results of a teacher-managed exam for the teacher who manages it (D04.4-26A/C,
@@ -17,9 +18,13 @@ import { readFinalizedResults } from './result-finalization.ts';
 export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'ABSENT';
 
 export interface ParticipantScore {
+    /** D1 (ASSESS-QUESTION-008): automatically scored items only. */
     correct: number;
     incorrect: number;
     unanswered: number;
+    /** Essays with a grade, and answered essays still waiting for one (0 once FINAL). */
+    graded: number;
+    ungraded: number;
     rawScore: number;
     maxScore: number;
     scaledScore: number;
@@ -44,7 +49,8 @@ export interface TeacherExamResults {
         windowStartsAt: string | null;
         windowEndsAt: string | null;
     };
-    scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null };
+    /** autoScoredCount: questions that are not essays; essayCount: essay questions (ASSESS-QUESTION-008). */
+    scoring: { rule: string; available: boolean; questionCount: number; maxScore: number | null; autoScoredCount: number; essayCount: number };
     resultState: 'PROVISIONAL' | 'FINAL';
     /** When the results were finalized (FINAL only). */
     finalizedAt: string | null;
@@ -123,6 +129,16 @@ export async function readTeacherExamResults(
             windowEndsAt: isoOrNull(examRow.window_ends_at),
         };
 
+        const snapshots = await client.query(
+            `SELECT id, frozen_content FROM secure_assessment_exam_question_snapshots
+             WHERE tenant_id = $1 AND exam_instance_id = $2
+             ORDER BY display_order ASC NULLS LAST, id ASC`,
+            [actor.tenantId, examInstanceId]
+        );
+        const questions: ScorableQuestion[] = snapshots.rows.map(row => ({ id: row.id, frozenContent: row.frozen_content }));
+        const essayCount = questions.filter(q => isEssayQuestion(q.frozenContent)).length;
+        const autoScoredCount = questions.length - essayCount;
+
         const finalized = await readFinalizedResults(client, actor.tenantId, examInstanceId);
         if (finalized) {
             const ids = await listElligbleIds(client, finalized.rows.map(row => row.personId));
@@ -137,6 +153,8 @@ export async function readTeacherExamResults(
                         correct: row.correct ?? 0,
                         incorrect: row.incorrect ?? 0,
                         unanswered: row.unanswered ?? 0,
+                        graded: (row.itemOutcomes ?? []).filter(item => item.outcome === 'GRADED').length,
+                        ungraded: 0,
                         rawScore: row.rawScore ?? 0,
                         maxScore: row.maxScore ?? 0,
                         scaledScore: row.scaledScore ?? 0,
@@ -148,7 +166,7 @@ export async function readTeacherExamResults(
                 type: 'ok',
                 results: {
                     exam: examInfo,
-                    scoring: { rule: finalized.scoringRule, available: true, questionCount: finalized.questionCount, maxScore: finalized.maxScore },
+                    scoring: { rule: finalized.scoringRule, available: true, questionCount: finalized.questionCount, maxScore: finalized.maxScore, autoScoredCount, essayCount },
                     resultState: 'FINAL',
                     finalizedAt: finalized.finalizedAt,
                     summary: {
@@ -161,14 +179,6 @@ export async function readTeacherExamResults(
                 },
             };
         }
-
-        const snapshots = await client.query(
-            `SELECT id, frozen_content FROM secure_assessment_exam_question_snapshots
-             WHERE tenant_id = $1 AND exam_instance_id = $2
-             ORDER BY display_order ASC NULLS LAST, id ASC`,
-            [actor.tenantId, examInstanceId]
-        );
-        const questions: ScorableQuestion[] = snapshots.rows.map(row => ({ id: row.id, frozenContent: row.frozen_content }));
 
         const participants = await client.query(
             `SELECT p.id AS participant_id, p.person_id, a.id AS attempt_id, t.started_at,
@@ -201,6 +211,7 @@ export async function readTeacherExamResults(
             }
         }
 
+        const grades = await readCurrentGrades(client, actor.tenantId, submittedAttempts);
         const elligbleIds = await listElligbleIds(client, participants.rows.map(row => row.person_id as string));
         if (!transaction) await client.query('COMMIT');
 
@@ -212,10 +223,12 @@ export async function readTeacherExamResults(
             const status: ParticipantResultStatus = row.submitted_at ? 'SUBMITTED' : row.started_at ? 'IN_PROGRESS' : 'NOT_STARTED';
             let score: ParticipantScore | null = null;
             if (status === 'SUBMITTED' && scoringAvailable) {
-                const scored = scoreAttempt(questions, answersByAttempt.get(row.attempt_id) ?? new Map());
+                const scored = scoreAttempt(questions, answersByAttempt.get(row.attempt_id) ?? new Map(), undefined, gradeScores(grades.get(row.attempt_id)));
                 if (scored.type === 'scored') {
                     const { correct, incorrect, unanswered, rawScore, maxScore, scaledScore } = scored.score;
-                    score = { correct, incorrect, unanswered, rawScore, maxScore, scaledScore };
+                    const graded = isCompositeScore(scored.score) ? scored.score.gradedCount : 0;
+                    const ungraded = isCompositeScore(scored.score) ? scored.score.ungradedCount : 0;
+                    score = { correct, incorrect, unanswered, graded, ungraded, rawScore, maxScore, scaledScore };
                 }
             }
             return {
@@ -238,6 +251,8 @@ export async function readTeacherExamResults(
                     available: scoringAvailable,
                     questionCount: questions.length,
                     maxScore: probe.type === 'scored' ? probe.score.maxScore : null,
+                    autoScoredCount,
+                    essayCount,
                 },
                 resultState: 'PROVISIONAL',
                 finalizedAt: null,

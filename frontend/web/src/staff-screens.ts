@@ -6,3 +6,4 @@ export { TeacherResultsView } from './components/TeacherResultsView.tsx';
 export { ExamMonitoringView } from './components/ExamMonitoringView.tsx';
 export { TeacherExamImportView } from './components/TeacherExamImportView.tsx';
 export { TeacherExamPreviewView } from './components/TeacherExamPreviewView.tsx';
+export { TeacherEssayGradingView } from './components/TeacherEssayGradingView.tsx';

@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, isNumericText, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
+import { ESSAY_KEY, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, isEssayText, isNumericText, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -27,6 +27,8 @@ function payloadFor(contentKey: string, value: string): Record<string, unknown> 
   if (contentKey === TRUE_FALSE_KEY) return value === 'true' ? { value: true } : value === 'false' ? { value: false } : null;
   // Numeric answer: only "" or a valid number is ever sent, as typed (D1).
   if (contentKey === NUMERIC_ANSWER_KEY) return value === '' || isNumericText(value) ? { numericText: value } : null;
+  // Essay: only "" or valid text is ever sent, exactly as written (ASSESS-QUESTION-008 D2).
+  if (contentKey === ESSAY_KEY) return isEssayText(value) ? { essayText: value } : null;
   // Ordering: only a canonical id list is ever sent; the server checks it is every item once.
   if (contentKey === ORDERING_KEY) {
     const ids = orderOf(value);

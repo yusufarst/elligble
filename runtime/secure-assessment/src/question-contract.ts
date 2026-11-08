@@ -1,5 +1,6 @@
 import { isAnswerForQuestion } from './answer.ts';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
+import { ESSAY_DESCRIPTOR } from './question-types/essay.ts';
 import { MULTIPLE_RESPONSE_DESCRIPTOR } from './question-types/multiple-response.ts';
 import { MATCHING_DESCRIPTOR } from './question-types/matching.ts';
 import { NUMERIC_ANSWER_DESCRIPTOR } from './question-types/numeric-answer.ts';
@@ -25,7 +26,8 @@ export const QUESTION_CONTENT_INVALID = 'question_content_invalid';
 const KEY_PATTERN = /^[1-9][0-9]?:[A-Z_]{1,40}$/;
 const TYPE_PATTERN = /^[A-Z_]{1,40}$/;
 
-export type ItemOutcome = 'CORRECT' | 'INCORRECT' | 'UNANSWERED';
+/** GRADED and UNGRADED are the human-graded outcomes (ASSESS-QUESTION-008). */
+export type ItemOutcome = 'CORRECT' | 'INCORRECT' | 'UNANSWERED' | 'GRADED' | 'UNGRADED';
 
 export interface DescriptorScore {
     outcome: ItemOutcome;
@@ -42,8 +44,11 @@ export interface QuestionDescriptor {
     /** Key-free Student view; always carries schemaVersion and questionType first. */
     studentView(content: Record<string, unknown>): Record<string, unknown>;
     validateAnswer(content: Record<string, unknown>, payload: unknown): { ok: false } | { ok: true; empty: boolean };
-    /** `payload` is undefined when there is no answer. Content is already valid. */
-    score(content: Record<string, unknown>, payload: unknown): DescriptorScore;
+    /**
+     * `payload` is undefined when there is no answer. Content is already valid. `grade` is the
+     * current human grade of a human-graded type; every other descriptor ignores it.
+     */
+    score(content: Record<string, unknown>, payload: unknown, grade?: { scoreMicro: bigint }): DescriptorScore;
 }
 
 export interface QuestionRegistry {
@@ -98,7 +103,7 @@ export const V1_SINGLE_CHOICE_DESCRIPTOR: QuestionDescriptor = Object.freeze({
 });
 
 /** v1 single choice, multiple response (ASSESS-QUESTION-002) and true/false (ASSESS-QUESTION-003). */
-export const PRODUCTION_QUESTION_REGISTRY: QuestionRegistry = createQuestionRegistry([V1_SINGLE_CHOICE_DESCRIPTOR, MULTIPLE_RESPONSE_DESCRIPTOR, TRUE_FALSE_DESCRIPTOR, MATCHING_DESCRIPTOR, ORDERING_DESCRIPTOR, NUMERIC_ANSWER_DESCRIPTOR]);
+export const PRODUCTION_QUESTION_REGISTRY: QuestionRegistry = createQuestionRegistry([V1_SINGLE_CHOICE_DESCRIPTOR, MULTIPLE_RESPONSE_DESCRIPTOR, TRUE_FALSE_DESCRIPTOR, MATCHING_DESCRIPTOR, ORDERING_DESCRIPTOR, NUMERIC_ANSWER_DESCRIPTOR, ESSAY_DESCRIPTOR]);
 
 export type ContentClassification =
     /** schemaVersion 1: decided only by the unchanged v1 functions. */

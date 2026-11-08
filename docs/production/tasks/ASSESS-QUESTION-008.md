@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1, all eight formats; HIGH risk; R17, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → STOP → PASS (§9); Owner decisions D1–D4; formal READY PASS and Build started under DEC-048 on 2026-11-08 (§10)** |
+| Status | **VERIFYING — contract review chain STOP → STOP → PASS (§9); Owner decisions D1–D4; formal READY PASS (§10); implementation candidate published for exact-content CI and the independent implementation and rendered review (§11)** |
 | Objective | Deliver essay end to end on the versioned foundation:<br>• authored through the v2 import;<br>• previewed by the teacher;<br>• written by the Student as plain text, with local recovery, then submitted;<br>• graded by the managing Teacher, with revision history.<br>Finalization is refused while any answered essay is ungraded. Provisional and final results include the human scores, which are counted separately (D1) |
 | Owner decisions | O02-1, O02-2, O02-9, O02-10 and O02-12, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); OD-07 and OD-07b (00.11); **D1–D4 decided by the Owner on 2026-11-08 (§3)**; A01 (A01-3). Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• ASSESS-QUESTION-001 is DONE / MERGED.<br>• ASSESS-QUESTION-007 is DONE / MERGED: PR #32, main 7e5141c3676733db34c9320592486d49d33d12b2, tree equal to evidence head b883f05, PR-head CI #208, post-merge main CI #209 attempt 1 with eight SUCCESS ([record §12](ASSESS-QUESTION-007.md)).<br>• O09 rests on the approved P5 content |
@@ -310,7 +310,7 @@ The type and problem-code unions gain `'ES'`, `correct_not_allowed` and `rubric_
 - **`test/integration/teacher-results.test.ts:98, 107, 111` and `test/integration/result-finalization.test.ts:131, 133`:** the `scoring` fields (`autoScoredCount`, `essayCount`) and the `ParticipantScore` shape (`graded`, `ungraded`).
 - **`frontend/web/src/__tests__/teacherResults.test.tsx:26, 30–31, 191`:** typed fixtures with the new fields.
 - **`frontend/web/src/__tests__/resultsExport.test.ts:20, 25–26, 44–48, 49–53`:** the fixtures, the 19-column header and the full row `a` with the two appended cells. `:54–57` and `:67` are unchanged.
-- **`e2e/tests/5-lifecycle.spec.ts:522`:** the absent participant's row now ends in 12 empty cells: `/;Tidak mengerjakan(;){12}$/`.
+- **`e2e/tests/5-lifecycle.spec.ts:523`** (cited as :522 at READY; the same reviewer confirmed the line correction, §11): the absent participant's row now ends in 12 empty cells: `/;Tidak mengerjakan(;){12}$/`.
 
 The numeric tests (`numeric-answer.test.tsx`) are unchanged.
 
@@ -398,6 +398,8 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
 | 52 | frontend/web/src/__tests__/teacherResults.test.tsx | §4.8 only |
 | 53 | frontend/web/src/__tests__/resultsExport.test.ts | §4.8 only |
 | 54 | e2e/tests/5-lifecycle.spec.ts | §4.8 only |
+| 56 | runtime/secure-assessment/src/metrics.ts | Two `COMPONENT_BY_PATH` entries (`reporting`) for the new routes, required by `test/metrics.test.ts:19-23` (00.13 §5.2 path-only addition, confirmed by the same reviewer before the edit) |
+| 55 | frontend/web/src/components/ScreenLoadBoundary.tsx | One added `onDemand` export for the grading screen (00.13 §5.2 path-only addition, confirmed by the same reviewer before the edit, §10.1) |
 
 **Forbidden:**
 - every other file;
@@ -417,7 +419,7 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
 | C05 | Client:<br>• values and the predicate;<br>• the counter;<br>• over-limit and disallowed text become a draft with "Belum tersimpan";<br>• E-8 recovery exactly as typed;<br>• no rubric or grade in any record;<br>• the grading screen: save, invalid, stale, history, read-only once FINALIZED;<br>• the results D1 columns only with essays;<br>• the finalize refusal copy |
 | C06 | Five-browser E2E (`99f`, `siswa.e2e.06`, own CSV name `esai-e2e.csv`, the schedule window per project as in 99–99e):<br>• import with a rubric; preview;<br>• the Student writes multi-line text, goes offline, reloads, sees pause, and submits through V06;<br>• the teacher ends;<br>• finalize is refused with the copy; grade, then revise, with history;<br>• finalize; the final score with "Dinilai guru";<br>• shared helpers only |
 | C07 | Rendered evidence (`workspace-question-es-*`):<br>• **Baseline:** exact-main CI #209 (1300 pairs, manifest 5f3c3c6b…).<br>• **After:** the import preview, the teacher preview with the rubric, the exam screen (empty, keyboard focus while writing, the over-limit draft), the grading screen (ungraded, stale status, graded with history, read-only FINALIZED), the finalize refusal and the results with "Dinilai guru".<br>• Frozen widths and 200 % text; long essay text at 360 px; no overflow; 44 px targets; visible focus; rendered review PASS.<br>• `99`–`99e` differ only in the import intro, the card instruction, times and IDs |
-| C08 | Scope inside rows 1–54; 33 Tasks and 78 edges; exact-SHA attempt-1 eight-job CI; no re-run |
+| C08 | Scope inside rows 1–56; 33 Tasks and 78 edges; exact-SHA attempt-1 eight-job CI; no re-run |
 | C09 | Reviews PASS; Delegated Acceptance; evidence commit; delegated merge |
 
 **CI-first order:** the same as ASSESS-QUESTION-007 §7. No re-runs, and no push while the previous commit's CI runs.
@@ -450,7 +452,7 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
   - **F15:** the added vectors (E-5 readers, E-6 reconstruction, E-8 fidelity) and the C07 captures.
   - **Non-material notes:** applied. The payload and route deviations are recorded, the tenant is in the lock key, a grade outside the range is treated as UNGRADED, and the score field uses `inputMode` decimal.
 - **Review 2: STOP.** The reviewer confirmed that F1–F15 are closed, apart from the remaining gaps in F11. Each finding and its resolution:
-  - **R1:** D4 broke `e2e/tests/5-lifecycle.spec.ts:522`. Now row 54, listed in §4.8 with `(;){12}$`.
+  - **R1:** D4 broke `e2e/tests/5-lifecycle.spec.ts:523` (first cited as :522). Now row 54, listed in §4.8 with `(;){12}$`.
   - **R2:** the score refusal codes contradicted each other. Now `invalid_request` covers only shape (the score must be a string). Format, exact parsing and the maximum are all `invalid_score` at check 4.
   - **R3:** assertions missing from §4.8. Now they include `teacher-results.test.ts:98`, the grade route's own valid body at `permission-enforcement.test.ts:106–108`, and `resultsExport.test.ts:49–53`.
   - **R4:** the frontend fields' optionality. Now `essayCount?: number` (absent meaning 0) and `rubric?: string`, so the fixtures not in the allowlist stay unchanged.
@@ -477,3 +479,51 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
   - Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 5f3c3c6b42f8c95efc9e83b2bfe352442e53f41d9a45c866cee5075af986418d.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 12, IN_PROGRESS 1, VERIFYING 0, BLOCKED 20.
+
+### 10.1 Path-only addition (00.13 §5.2) — 2026-11-08
+
+- **Path:** row 55, `frontend/web/src/components/ScreenLoadBoundary.tsx`.
+- **Why:**
+  - `App.tsx` (row 35) gets every staff screen from `ScreenLoadBoundary.tsx` (`App.tsx:10-12`).
+  - That file wraps each one with the file-local `onDemand` over WEB-001's single on-demand download (`:12-15`, `:35-47`).
+  - The grading screen (row 31) therefore needs the same one-line export.
+  - Without it, `App.tsx` would need a second `React.lazy` path that bypasses that download and its retry boundary.
+- **Scope:** exactly one added line. No route, table, dependency, permission, data field or acceptance change.
+- **Confirmation:** the same reviewer confirmed the addition (CONFIRM) on record SHA-256 8e8ff572…, before the edit. C08 now reads rows 1–55.
+
+## 11. Implementation checkpoint — 2026-11-08
+
+- **Step 1:** registration b16332b (CI #210, attempt 1, eight SUCCESS) carries the #209 baseline manifest (§10).
+- **Path-only additions (00.13 §5.2),** each confirmed by the same reviewer before the edit:
+  - row 55, `ScreenLoadBoundary.tsx`, one `onDemand` export (§10.1);
+  - row 56, `metrics.ts`, two `reporting` entries required by `test/metrics.test.ts:19-23`.
+- **Citation correction:** the D4 regex in `e2e/tests/5-lifecycle.spec.ts` is at :523, not :522. The same reviewer confirmed it is non-material; only :523 changed.
+- **Implementation candidate,** inside rows 5–56 plus the Task-flow rows 1–4:
+  - **Descriptor** `question-types/essay.ts`: the §4.1 text predicate, the Student view without rubric or score, UNGRADED/GRADED with the optional grade argument; registered as the seventh key.
+  - **Scoring:** `grades` argument, `gradedCount` and `ungradedCount` on the composite result only, D1 counts; the all-v1 hand-off is unchanged.
+  - **Migration 0061:** append-only grade revisions with the composite foreign key to the answer.
+  - **Grading** `essay-grading.ts`: the worklist (REPEATABLE READ READ ONLY, first submitted attempts by ELLIGBLE ID) and the grade write (READ COMMITTED; re-authentication, FOR KEY SHARE, the tenant-scoped advisory lock, the revision read after it, 23505 as stale, the grader from the actor); both routes wired in `server.ts`.
+  - **Finalization:** current grades read after the exam lock; `grading_incomplete` refusal; `gradeRevision` frozen in `item_outcomes`.
+  - **Results:** `graded`/`ungraded` and `autoScoredCount`/`essayCount`; `essayCount` on the readiness card.
+  - **Import:** the 34-column rubric header, `ES` rows in the frozen order, `rubric_not_allowed` and `correct_not_allowed`, the frozen wording; builder `buildEssayFrozenContent`; preview items with the rubric.
+  - **Client:**
+    - `ESSAY_KEY`, `isEssayText` (the same predicate), `isEmptyValue`/`isAnsweredValue`; the adapter sends only "" or valid text;
+    - `EssayAnswer` with the counter (not live) and the always-mounted polite hint; drafts generalized with numeric answers;
+    - the teacher preview with the rubric on request;
+    - the grading screen in the shared `Page`, fieldset per answer, status region, `<details>` history, read-only once FINALIZED;
+    - the "Nilai Esai" button, the finalize refusal copy, the D1 results columns and footnote, the D4 CSV columns;
+    - the import intro, instruction, ES preview and the 34-column template with an ES row;
+    - the `.essay-*` CSS, tokens only.
+- **Tests:**
+  - `test/essay.test.ts` (C01/C02);
+  - `test/integration/essay.test.ts` (C03, migration upgrade, rollback, repeat and append-only);
+  - `frontend/web/src/__tests__/essay.test.tsx` (C05);
+  - `e2e/tests/99f-essay.spec.ts` (C06/C07);
+  - the §4.8 assertions in rows 41–54.
+- **Local:**
+  - typechecks PASS (runtime, web, e2e);
+  - Secure Assessment units pass, including the 11 essay units and `metrics.test.ts`;
+  - web 427 tests: the 13 new essay tests and every affected file pass. In one full run on this 8 GB workstation, `onDemandScreens.test.tsx` timed out at 5 s under load. It passed on two later runs alone (2.7 s and 3.3 s) and is unchanged; CI decides it on the exact SHA.
+  - the client template parses with the server parser without problems.
+  - Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 12, VERIFYING 1, BLOCKED 20.

@@ -12,6 +12,7 @@ import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 import { MATCHING_LETTERS, MatchingAnswer } from './answers/MatchingAnswer.tsx';
 import { OrderingAnswer } from './answers/OrderingAnswer.tsx';
 import { NumericAnswer } from './answers/NumericAnswer.tsx';
+import { EssayAnswer } from './answers/EssayAnswer.tsx';
 
 // The teacher previews a scheduled or ready exam before opening it (ASSESS-TEACHER-002;
 // D04.3-38 LOCKED): one question at a time as the exam screen shows it (the same question
@@ -123,7 +124,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           {/* The exam screen's own question card (workstation.css), so the preview looks the same. */}
           <section className="question-card" aria-label={`Soal nomor ${question.no}`}>
             <p className="m-0 mb-3 flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : question.questionType === 'ORDERING' ? ' · Mengurutkan' : question.questionType === 'NUMERIC_ANSWER' ? ' · Isian angka' : ''}</span>
+              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : question.questionType === 'ORDERING' ? ' · Mengurutkan' : question.questionType === 'NUMERIC_ANSWER' ? ' · Isian angka' : question.questionType === 'ESSAY' ? ' · Esai' : ''}</span>
               {showKey && question.maxScore !== null && <span className="tabular-nums">Skor {formatScore(question.maxScore)}</span>}
             </p>
             {!question.valid && (
@@ -134,7 +135,25 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             )}
             <fieldset className="question-fieldset">
               <legend className="question-prompt whitespace-pre-wrap [overflow-wrap:anywhere]">{question.prompt}</legend>
-              {question.questionType === 'NUMERIC_ANSWER' ? (
+              {question.questionType === 'ESSAY' ? (
+              <>
+                {/* The Student's own control as a local try-out (ASSESS-QUESTION-008 §4.6); nothing is saved. */}
+                <EssayAnswer
+                  key={question.snapshotId}
+                  question={{ snapshotId: question.snapshotId, schemaVersion: 2, questionType: 'ESSAY', prompt: question.prompt, options: [] }}
+                  value={tried[question.snapshotId]}
+                  onChange={value => setTried(prev => ({ ...prev, [question.snapshotId]: value }))}
+                />
+                {showKey && (
+                  <section aria-labelledby={`preview-key-${question.snapshotId}`} className="mt-4 flex flex-col gap-2">
+                    <h3 id={`preview-key-${question.snapshotId}`} className="m-0 text-sm font-semibold text-foreground">Rubrik</h3>
+                    <p className="m-0 rounded-md border border-border bg-muted px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {question.rubric ? question.rubric : 'Tidak ada rubrik. Esai dinilai guru.'}
+                    </p>
+                  </section>
+                )}
+              </>
+              ) : question.questionType === 'NUMERIC_ANSWER' ? (
               <>
                 {/* The Student's own control as a local try-out (ASSESS-QUESTION-007 §4.3); nothing is saved. */}
                 <NumericAnswer
