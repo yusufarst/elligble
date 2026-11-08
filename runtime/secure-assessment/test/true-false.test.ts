@@ -14,7 +14,7 @@ const tf = (extra: Record<string, unknown> = {}) => ({ schemaVersion: 2, questio
 const SUPPORTED = new Set(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', TRUE_FALSE_KEY]);
 
 test('C01 registration, rule and classification', () => {
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', TRUE_FALSE_KEY, '2:MATCHING', '2:ORDERING', '2:NUMERIC_ANSWER', '2:ESSAY']);
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', TRUE_FALSE_KEY, '2:MATCHING', '2:ORDERING', '2:NUMERIC_ANSWER', '2:ESSAY', '2:SHORT_ANSWER']);
     assert.equal(classifyFrozenContent(tf()).kind, 'registered');
     assert.equal(TRUE_FALSE_DESCRIPTOR.scoringRuleId, TRUE_FALSE_RULE);
     assert.equal(TRUE_FALSE_DESCRIPTOR.allowsEmpty, false, 'no clearing (§3, §4A.6)');
@@ -69,7 +69,7 @@ test('C02 BS import vectors and frozen problem shapes; PG/PGK unchanged', () => 
     assert.deepEqual(problems('1;BS;Pernyataan;;;;;;B;0'), [{ code: 'score_invalid', line: 2 }]);
     assert.deepEqual(problems('1;PG;Soal;a;b;c;d;e;F;1'), [{ code: 'correct_invalid', line: 2 }], 'PG problem shape unchanged');
     assert.deepEqual(problems('1;XX;Soal;a;b;c;d;e;A;1'), [{ code: 'type_invalid', line: 2 }]);
-    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), ES (essay) or PGK (multiple answers)');
+    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), IS (short answer), ES (essay) or PGK (multiple answers)');
     assert.equal(describeQuestionProblem({ code: 'correct_invalid', line: 2, type: 'BS' }), 'line 2: "correct" must be B (true) or S (false) for BS');
     assert.equal(describeQuestionProblem({ code: 'correct_invalid', line: 2 }), 'line 2: "correct" must be one of A, B, C, D, E');
     assert.equal(describeQuestionProblem({ code: 'options_not_allowed', line: 2 }), 'line 2: options must be empty for BS');

@@ -1,5 +1,6 @@
 import { CsvError, parseCsv, type CsvRow } from './ops/provisioning/csv.ts';
 import { isNumberText } from './question-types/numeric-answer.ts';
+import { isShortText, normalizeShortText } from './question-types/short-answer.ts';
 
 // Structured question import (D04.3-61/62 LOCKED): the canonical elligble-questions-v1 file,
 // one baseline single-answer multiple-choice question per row with five options A to E
@@ -44,7 +45,7 @@ export const QUESTIONS_HEADER_V2_TOLERANCE = [...QUESTIONS_HEADER_V2_EXTENDED, '
  */
 export const QUESTIONS_HEADER_V2_RUBRIC = [...QUESTIONS_HEADER_V2_TOLERANCE, 'rubric'] as readonly string[];
 export type QuestionTemplate = typeof QUESTIONS_TEMPLATE | typeof QUESTIONS_TEMPLATE_V2;
-export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'ES';
+export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'ES' | 'IS';
 export const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 /** Implementation limits (plan §7): questions per file and the largest score of one question. */
 export const MAX_IMPORT_QUESTIONS = 200;
@@ -76,7 +77,8 @@ export type QuestionProblemCode =
     | 'tolerance_invalid'
     | 'tolerance_not_allowed'
     | 'correct_not_allowed'
-    | 'rubric_not_allowed';
+    | 'rubric_not_allowed'
+    | 'short_answer_forms_invalid';
 
 export interface QuestionProblem {
     code: QuestionProblemCode;
@@ -92,7 +94,7 @@ export interface QuestionProblem {
      * correct_invalid on a BS row (ASSESS-QUESTION-003 §4A.2); correct_invalid, correct_duplicate
      * and options_not_allowed on an MJ row (ASSESS-QUESTION-004 §4.2). Absent otherwise.
      */
-    type?: 'BS' | 'MJ' | 'UR' | 'IA' | 'ES';
+    type?: 'BS' | 'MJ' | 'UR' | 'IA' | 'ES' | 'IS';
     /** matching_items_invalid and items_duplicate: the side of the matching items concerned. */
     side?: 'left' | 'right';
 }
@@ -124,6 +126,8 @@ export interface ParsedQuestion {
     numericTolerance?: string;
     /** ES only (ASSESS-QUESTION-008 §4.5): the rubric as typed (trimmed), possibly empty. */
     essayRubric?: string;
+    /** IS only (ASSESS-QUESTION-006 §4.3): the accepted forms as typed (trimmed), in order; [] means manual mode (D1). */
+    acceptedForms?: string[];
 }
 
 export interface QuestionFile {
@@ -221,7 +225,7 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         const typeCell = v2 ? cells[1].toUpperCase() : 'PG';
         const [no, prompt, a, b, c, d, e, correct, score] = v2 ? [cells[0], ...cells.slice(2, 10)] : cells;
-        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' || typeCell === 'UR' || typeCell === 'IA' || typeCell === 'ES' ? typeCell : null;
+        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' || typeCell === 'UR' || typeCell === 'IA' || typeCell === 'ES' || typeCell === 'IS' ? typeCell : null;
         // Left cells 10-19, right cells 20-31; the tolerance is cell 32 of the 33- and 34-column
         // files (ASSESS-QUESTION-007 §4.2) and the rubric cell 33 of the 34-column file (ASSESS-QUESTION-008 §4.5).
         const leftCells = extended ? cells.slice(10, 10 + MATCHING_LEFT_COLUMNS) : [];
@@ -241,9 +245,16 @@ export function parseQuestionFile(text: string): QuestionFile {
             problems.push({ code: 'prompt_empty', line });
             return;
         }
-        // The rubric column belongs to ES rows only (ASSESS-QUESTION-008 §4.5: right after the prompt).
-        if (type !== 'ES' && rubricCell.length > 0) {
+        // The rubric column belongs to ES rows and teacher-graded IS rows (ASSESS-QUESTION-008 §4.5,
+        // 006 §4.3); IS checks it in its own branch.
+        if (type !== 'ES' && type !== 'IS' && rubricCell.length > 0) {
             problems.push({ code: 'rubric_not_allowed', line });
+            return;
+        }
+        if (type === 'IS') {
+            const question = parseShortAnswerRow(line, index + 1, prompt, options, correct, score, leftCells, rightCells, toleranceCell, rubricCell);
+            if ('code' in question) problems.push(question);
+            else questions.push(question);
             return;
         }
         if (type === 'ES') {
@@ -388,6 +399,28 @@ function parseNumericRow(line: number, no: number, prompt: string, options: stri
 }
 
 /**
+ * One IS (isian singkat) row, checked in the frozen order (ASSESS-QUESTION-006 §4.3): options empty,
+ * right cells empty, accepted forms filled in order from left_1 and valid (E1/E2), distinct after
+ * normalization (E3), tolerance empty, key empty, rubric only without forms (manual mode, D1), score.
+ */
+function parseShortAnswerRow(line: number, no: number, prompt: string, options: string[], correct: string, score: string,
+    leftCells: string[], rightCells: string[], toleranceCell: string, rubricCell: string): ParsedQuestion | QuestionProblem {
+    if (options.some(option => option.length > 0)) return { code: 'options_not_allowed', line, type: 'IS' };
+    if (rightCells.some(cell => cell.length > 0)) return { code: 'items_not_allowed', line, type: 'IS' };
+    const count = filledInOrder(leftCells);
+    if (count < 0) return { code: 'short_answer_forms_invalid', line };
+    const forms = leftCells.slice(0, count);
+    if (forms.some(form => !isShortText(form))) return { code: 'short_answer_forms_invalid', line };
+    if (new Set(forms.map(normalizeShortText)).size !== forms.length) return { code: 'items_duplicate', line, type: 'IS' };
+    if (toleranceCell.length > 0) return { code: 'tolerance_not_allowed', line };
+    if (correct.trim().length > 0) return { code: 'correct_not_allowed', line, type: 'IS' };
+    if (forms.length > 0 && rubricCell.length > 0) return { code: 'rubric_not_allowed', line };
+    const maxScore = scoreOf(score);
+    if (!(maxScore > 0 && maxScore <= MAX_QUESTION_SCORE)) return { code: 'score_invalid', line };
+    return { line, no, prompt, options: [], correctIndex: -1, maxScore, type: 'IS', correctIndexes: [], acceptedForms: forms, essayRubric: rubricCell.trim() };
+}
+
+/**
  * One ES (esai) row, checked in the frozen order (ASSESS-QUESTION-008 §4.5): options empty, item
  * cells empty, tolerance empty, key empty (the teacher grades it), score. The rubric is kept as
  * typed (trimmed), with no limit of its own (Owner D3).
@@ -483,24 +516,28 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
             : problem.type === 'IA' ? `${at}"correct" for IA must be a number with a comma or dot decimal (for example 3,5)`
             : `${at}"correct" must be one of A, B, C, D, E`;
         case 'score_invalid': return `${at}"score" must be a positive number with at most two decimals, up to ${MAX_QUESTION_SCORE}`;
-        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), ES (essay) or PGK (multiple answers)`;
+        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), IS (short answer), ES (essay) or PGK (multiple answers)`;
         case 'correct_duplicate': return problem.type === 'MJ' ? `${at}"correct" for MJ uses a right letter more than once`
             : problem.type === 'UR' ? `${at}"correct" for UR uses an item number more than once`
             : `${at}"correct" lists a letter more than once`;
-        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' || problem.type === 'UR' || problem.type === 'IA' || problem.type === 'ES' ? problem.type : 'BS'}`;
+        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' || problem.type === 'UR' || problem.type === 'IA' || problem.type === 'ES' || problem.type === 'IS' ? problem.type : 'BS'}`;
         case 'columns_missing': return problem.type === 'UR' ? `${at}UR needs the v2 header with left_1..left_10` : `${at}MJ needs the v2 header with left_1..left_10 and right_a..right_l`;
         case 'ordering_items_invalid': return `${at}UR needs 2 to 10 items, filled in order from left_1`;
         case 'matching_items_invalid': return problem.side === 'right'
             ? `${at}MJ needs as many right items as left items, plus at most 2, filled in order from right_a`
             : `${at}MJ needs 2 to 10 left items, filled in order from left_1`;
-        case 'items_duplicate': return problem.type === 'UR' ? `${at}items must differ from each other` : `${at}${problem.side === 'right' ? 'right' : 'left'} items must differ from each other`;
+        case 'items_duplicate': return problem.type === 'IS' ? `${at}IS accepted forms must differ after normalization`
+            : problem.type === 'UR' ? `${at}items must differ from each other` : `${at}${problem.side === 'right' ? 'right' : 'left'} items must differ from each other`;
         case 'items_not_allowed': return problem.type === 'UR' ? `${at}right item columns are not used for UR`
+            : problem.type === 'IS' ? `${at}right item columns are not used for IS`
             : problem.type === 'IA' ? `${at}item columns are not used for IA`
             : problem.type === 'ES' ? `${at}item columns are not used for ES`
             : `${at}left and right item columns are only for MJ and UR`;
         case 'tolerance_invalid': return `${at}"tolerance" must be empty or a non-negative number`;
         case 'tolerance_not_allowed': return `${at}"tolerance" is only for IA`;
-        case 'correct_not_allowed': return `${at}"correct" must be empty for ES (graded by the teacher)`;
-        case 'rubric_not_allowed': return `${at}"rubric" is only for ES`;
+        case 'correct_not_allowed': return problem.type === 'IS' ? `${at}"correct" must be empty for IS (accepted forms go in left_1..left_10)`
+            : `${at}"correct" must be empty for ES (graded by the teacher)`;
+        case 'rubric_not_allowed': return `${at}"rubric" is only for ES and teacher-graded IS`;
+        case 'short_answer_forms_invalid': return `${at}IS accepted forms must be filled in order from left_1, at most 10, each one line of at most 200 characters without unsupported characters`;
     }
 }

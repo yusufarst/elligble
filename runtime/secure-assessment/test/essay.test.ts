@@ -17,7 +17,7 @@ const SUPPORTED = new Set(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2
 const M = 1_000_000n;
 
 test('C01 registration, rule, classification and Student view', () => {
-    assert.equal(PRODUCTION_QUESTION_REGISTRY.keys().length, 7);
+    assert.equal(PRODUCTION_QUESTION_REGISTRY.keys().length, 8);
     assert.equal(PRODUCTION_QUESTION_REGISTRY.get(ESSAY_KEY), ESSAY_DESCRIPTOR);
     assert.equal(ESSAY_DESCRIPTOR.scoringRuleId, ESSAY_RULE);
     assert.equal(ESSAY_RULE, 'ESSAY_HUMAN_GRADED_V1');
@@ -142,8 +142,8 @@ test('C02 frozen operator wording', () => {
     assert.equal(describeQuestionProblem({ code: 'options_not_allowed', line: 2, type: 'ES' }), 'line 2: options must be empty for ES');
     assert.equal(describeQuestionProblem({ code: 'items_not_allowed', line: 2, type: 'ES' }), 'line 2: item columns are not used for ES');
     assert.equal(describeQuestionProblem({ code: 'correct_not_allowed', line: 2 }), 'line 2: "correct" must be empty for ES (graded by the teacher)');
-    assert.equal(describeQuestionProblem({ code: 'rubric_not_allowed', line: 2 }), 'line 2: "rubric" is only for ES');
-    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), ES (essay) or PGK (multiple answers)');
+    assert.equal(describeQuestionProblem({ code: 'rubric_not_allowed', line: 2 }), 'line 2: "rubric" is only for ES and teacher-graded IS');
+    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), IS (short answer), ES (essay) or PGK (multiple answers)');
     assert.ok(describeQuestionProblem({ code: 'header_invalid', line: 1 }).endsWith(` or ${QUESTIONS_HEADER_V2_RUBRIC.join(',')} (elligble-questions-v2)`));
 });
 

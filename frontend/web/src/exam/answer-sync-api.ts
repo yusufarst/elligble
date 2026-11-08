@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { ESSAY_KEY, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, isEssayText, isNumericText, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
+import { ESSAY_KEY, SHORT_ANSWER_KEY, isShortText, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, isEssayText, isNumericText, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -29,6 +29,8 @@ function payloadFor(contentKey: string, value: string): Record<string, unknown> 
   if (contentKey === NUMERIC_ANSWER_KEY) return value === '' || isNumericText(value) ? { numericText: value } : null;
   // Essay: only "" or valid text is ever sent, exactly as written (ASSESS-QUESTION-008 D2).
   if (contentKey === ESSAY_KEY) return isEssayText(value) ? { essayText: value } : null;
+  // Short answer: only "" or valid one-line text is ever sent, exactly as typed (ASSESS-QUESTION-006 D2).
+  if (contentKey === SHORT_ANSWER_KEY) return isShortText(value) ? { shortText: value } : null;
   // Ordering: only a canonical id list is ever sent; the server checks it is every item once.
   if (contentKey === ORDERING_KEY) {
     const ids = orderOf(value);

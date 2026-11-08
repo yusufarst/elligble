@@ -4,6 +4,7 @@ import { AuthenticationError } from './http/authenticated-context.ts';
 import { lockManagedExam, readManagedExam } from './managed-exam.ts';
 import { classifyFrozenContent } from './question-contract.ts';
 import { ESSAY_KEY, essayTextOf } from './question-types/essay.ts';
+import { SHORT_ANSWER_KEY, isManualShortAnswer, shortTextOf } from './question-types/short-answer.ts';
 
 // Essay grading by the managing Teacher (ASSESS-QUESTION-008 §4.2/§4.3; Owner O02-9/O02-10,
 // A01-3, E1-E3). One grader: the person holding the exam's active teaching assignment
@@ -48,14 +49,28 @@ export function parseGradeScore(text: string): bigint | null {
 
 const maxMicroOf = (content: Record<string, unknown>): bigint => BigInt(Math.round(Number(content['maxScore']) * 1_000_000));
 
-function essayContentOf(frozen: unknown): Record<string, unknown> | null {
+export type TeacherGradedType = 'ESSAY' | 'SHORT_ANSWER';
+
+/**
+ * A question graded by the teacher (ASSESS-QUESTION-006 §4.2): a valid essay, or a valid short
+ * answer without accepted forms (manual mode, D1). Null for every other question.
+ */
+export function teacherGradedContentOf(frozen: unknown): { content: Record<string, unknown>; questionType: TeacherGradedType } | null {
     const kind = classifyFrozenContent(frozen);
-    return kind.kind === 'registered' && kind.key === ESSAY_KEY && kind.descriptor.validateContent(kind.content).ok ? kind.content : null;
+    if (kind.kind !== 'registered' || !kind.descriptor.validateContent(kind.content).ok) return null;
+    if (kind.key === ESSAY_KEY) return { content: kind.content, questionType: 'ESSAY' };
+    if (kind.key === SHORT_ANSWER_KEY && isManualShortAnswer(kind.content)) return { content: kind.content, questionType: 'SHORT_ANSWER' };
+    return null;
 }
 
-/** Whether a frozen question is a valid essay (used for the results' essay count). */
-export function isEssayQuestion(frozen: unknown): boolean {
-    return essayContentOf(frozen) !== null;
+/** Whether a frozen question is graded by the teacher (the results' and readiness "essayCount", E5). */
+export function isTeacherGradedQuestion(frozen: unknown): boolean {
+    return teacherGradedContentOf(frozen) !== null;
+}
+
+/** The non-empty valid answer text of a question graded by the teacher, by its type, or null. */
+export function teacherGradedTextOf(questionType: TeacherGradedType, payload: unknown): string | null {
+    return questionType === 'ESSAY' ? essayTextOf(payload) : shortTextOf(payload);
 }
 
 /** The current grade of every graded answer of the given attempts: attempt id -> snapshot id -> grade. */
@@ -93,6 +108,8 @@ export interface EssayWorklist {
     questions: Array<{
         snapshotId: string;
         no: number;
+        /** ASSESS-QUESTION-006: essays and manual short answers share this workflow (E5). */
+        questionType: TeacherGradedType;
         prompt: unknown;
         rubric: string;
         maxScore: string;
@@ -138,8 +155,9 @@ export async function readEssayWorklist(pool: pg.Pool, actor: { tenantId: string
             [actor.tenantId, examInstanceId]
         );
         const essays = snapshots.rows
-            .map((row, index) => ({ id: row.id as string, no: index + 1, content: essayContentOf(row.frozen_content) }))
-            .filter((q): q is { id: string; no: number; content: Record<string, unknown> } => q.content !== null);
+            .map((row, index) => ({ id: row.id as string, no: index + 1, graded: teacherGradedContentOf(row.frozen_content) }))
+            .filter((q): q is { id: string; no: number; graded: NonNullable<ReturnType<typeof teacherGradedContentOf>> } => q.graded !== null)
+            .map(q => ({ id: q.id, no: q.no, content: q.graded.content, questionType: q.graded.questionType }));
         const population = essays.length > 0 ? (await client.query(FIRST_SUBMITTED_ATTEMPTS, [actor.tenantId, examInstanceId])).rows : [];
         const attemptIds = population.map(row => row.attempt_id as string);
         const answers = attemptIds.length > 0 ? (await client.query(
@@ -172,12 +190,13 @@ export async function readEssayWorklist(pool: pg.Pool, actor: { tenantId: string
                 questions: essays.map(q => ({
                     snapshotId: q.id,
                     no: q.no,
+                    questionType: q.questionType,
                     prompt: q.content['prompt'],
                     rubric: q.content['rubric'] as string,
                     maxScore: microToDecimal(maxMicroOf(q.content)),
                     answers: attemptIds
                         .map(attemptId => {
-                            const essayText = essayTextOf(answerOf.get(`${attemptId}:${q.id}`));
+                            const essayText = teacherGradedTextOf(q.questionType, answerOf.get(`${attemptId}:${q.id}`));
                             if (essayText === null) return null;
                             const history = historyOf.get(`${attemptId}:${q.id}`) ?? [];
                             return { attemptId, elligbleId: ids.get(personOf.get(attemptId)!) ?? null, essayText, grade: history.at(-1) ?? null, history };
@@ -265,13 +284,15 @@ export async function gradeEssay(
             'SELECT frozen_content FROM secure_assessment_exam_question_snapshots WHERE tenant_id = $1 AND id = $2 AND exam_instance_id = $3',
             [actor.tenantId, request.snapshotId, request.examInstanceId]
         );
-        const content = snapshot.rows.length === 1 ? essayContentOf(snapshot.rows[0].frozen_content) : null;
-        if (!content) return await refuse({ type: 'not_gradable' });
+        // An essay or a manual short answer; an auto-scored short answer is not gradable (§4.2).
+        const graded = snapshot.rows.length === 1 ? teacherGradedContentOf(snapshot.rows[0].frozen_content) : null;
+        if (!graded) return await refuse({ type: 'not_gradable' });
+        const content = graded.content;
         const answer = await client.query(
             'SELECT answer_payload FROM secure_assessment_exam_answers WHERE tenant_id = $1 AND exam_attempt_id = $2 AND exam_question_snapshot_id = $3',
             [actor.tenantId, request.attemptId, request.snapshotId]
         );
-        if (answer.rows.length !== 1 || essayTextOf(answer.rows[0].answer_payload) === null) return await refuse({ type: 'not_gradable' });
+        if (answer.rows.length !== 1 || teacherGradedTextOf(graded.questionType, answer.rows[0].answer_payload) === null) return await refuse({ type: 'not_gradable' });
 
         const scoreMicro = parseGradeScore(request.score);
         if (scoreMicro === null || scoreMicro > maxMicroOf(content)) return await refuse({ type: 'invalid_score' });

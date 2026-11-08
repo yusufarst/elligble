@@ -39,7 +39,7 @@ const FINAL = [
     'Kata panjang tanpa spasi: fotosintesisfotosintesisfotosintesisfotosintesisfotosintesis.',
 ].join('\n');
 const TOO_LONG = 'Jawaban melebihi 5.000 karakter, sehingga belum tersimpan.';
-const REFUSED = 'Masih ada 1 jawaban esai yang belum dinilai. Nilai semua esai sebelum finalisasi hasil.';
+const REFUSED = 'Masih ada 1 jawaban yang belum dinilai guru. Nilai semua jawaban di Penilaian Esai sebelum finalisasi hasil.';
 
 const FULL = [360, 390, 430, 768, 1024, 1280, 1440].map(width => ({ width, height: 800, text: 1 })).concat([{ width: 640, height: 360, text: 1 }, { width: 390, height: 844, text: 2 }, { width: 1280, height: 800, text: 2 }]);
 const STATES = [{ width: 360, height: 800, text: 1 }, { width: 768, height: 800, text: 1 }, { width: 1280, height: 800, text: 1 }, { width: 640, height: 360, text: 1 }, { width: 390, height: 844, text: 2 }];
@@ -299,7 +299,7 @@ test('ASSESS-QUESTION-008 essay: import, preview, Student journey, grading, fina
     await page.getByRole('dialog').getByRole('button', { name: 'Finalisasi Hasil' }).click();
     await expect(card).toContainText('Hasil Final', { timeout: 30_000 });
     await card.getByRole('button', { name: 'Nilai Esai' }).click();
-    await expect(page.getByText('Hasil ujian sudah difinalisasi. Nilai esai dibekukan dan tidak dapat diubah.')).toBeVisible();
+    await expect(page.getByText('Hasil ujian sudah difinalisasi. Nilai dibekukan dan tidak dapat diubah.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Simpan Nilai' })).toHaveCount(0);
     await expect(page.getByText('Nilai: 4', { exact: true })).toBeVisible();
     await capture(page, 'grading-finalized', () => page.locator('main').first(), STATES);
@@ -312,7 +312,7 @@ test('ASSESS-QUESTION-008 essay: import, preview, Student journey, grading, fina
     await card.getByRole('button', { name: 'Lihat Hasil' }).click();
     await expect(page.getByRole('columnheader', { name: 'Dinilai guru' })).toBeVisible();
     await page.getByRole('button', { name: 'Tampilkan Nilai' }).click();
-    await expect(page.getByText(/Esai dinilai guru; poinnya masuk ke Nilai\./)).toBeVisible();
+    await expect(page.getByText(/Poin soal yang dinilai guru ikut masuk ke Nilai\./)).toBeVisible();
     await capture(page, 'results-graded', () => page.locator('main').first());
     const final = await api(`/api/v1/assessment/teacher-exams/results?examInstanceId=${examId}`);
     const mine = final.body.participants.find((r: { elligbleId: string }) => r.elligbleId === STUDENT[0]);

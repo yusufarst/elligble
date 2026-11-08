@@ -16,7 +16,7 @@ const SUPPORTED = new Set(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2
 const outcome = (payload: unknown) => { const s = ORDERING_DESCRIPTOR.score(ur(), payload); return [s.outcome, s.earnedMicro]; };
 
 test('C01 registration, rule and classification', () => {
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', '2:MATCHING', ORDERING_KEY, '2:NUMERIC_ANSWER', '2:ESSAY']);
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', '2:MATCHING', ORDERING_KEY, '2:NUMERIC_ANSWER', '2:ESSAY', '2:SHORT_ANSWER']);
     assert.equal(classifyFrozenContent(ur()).kind, 'registered');
     assert.equal(ORDERING_DESCRIPTOR.scoringRuleId, ORDERING_RULE);
     assert.equal(ORDERING_RULE, 'ORDERING_EXACT_SEQUENCE_V1');
@@ -121,7 +121,7 @@ test('C02 UR import vectors, frozen problem shapes and wording, the builder and 
     assert.deepEqual(parseQuestionFile([V2, '1;UR;Urutkan;;;;;;3,1,2;2'].join('\n')).problems, [{ code: 'columns_missing', line: 2, type: 'UR' }], 'UR in a ten-column file');
     assert.deepEqual(parseQuestionFile([V2, '1;MJ;Pasangkan;;;;;;B,C,A;3'].join('\n')).problems, [{ code: 'columns_missing', line: 2 }], 'MJ shape unchanged');
 
-    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), ES (essay) or PGK (multiple answers)');
+    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), IS (short answer), ES (essay) or PGK (multiple answers)');
     assert.match(describeQuestionProblem({ code: 'type_invalid', line: 2 }), /PG .* or PGK/);
     assert.equal(describeQuestionProblem({ code: 'options_not_allowed', line: 2, type: 'UR' }), 'line 2: options must be empty for UR');
     assert.equal(describeQuestionProblem({ code: 'columns_missing', line: 2, type: 'UR' }), 'line 2: UR needs the v2 header with left_1..left_10');

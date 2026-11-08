@@ -151,6 +151,7 @@ export async function readExamMonitoring(
                             AND NOT (x.answer_payload ? 'orderedItemIds' AND x.answer_payload->'orderedItemIds' = '[]'::jsonb)
                             AND NOT (x.answer_payload ? 'numericText' AND x.answer_payload->>'numericText' = '')
                             AND NOT (x.answer_payload ? 'essayText' AND x.answer_payload->>'essayText' = '')
+                            AND NOT (x.answer_payload ? 'shortText' AND x.answer_payload->>'shortText' = '')
                             AND NOT (x.answer_payload ? 'pairs' AND
                                 CASE WHEN jsonb_typeof(x.answer_payload->'pairs') = 'array' AND jsonb_typeof(qs.frozen_content->'leftItems') = 'array'
                                      THEN jsonb_array_length(x.answer_payload->'pairs') < jsonb_array_length(qs.frozen_content->'leftItems')

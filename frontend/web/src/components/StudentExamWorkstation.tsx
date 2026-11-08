@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ESSAY_KEY, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
+import { ESSAY_KEY, SHORT_ANSWER_KEY, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -13,6 +13,7 @@ import { MatchingAnswer } from './answers/MatchingAnswer.tsx';
 import { OrderingAnswer } from './answers/OrderingAnswer.tsx';
 import { NumericAnswer } from './answers/NumericAnswer.tsx';
 import { EssayAnswer } from './answers/EssayAnswer.tsx';
+import { ShortAnswer } from './answers/ShortAnswer.tsx';
 import { TrueFalseAnswer } from './answers/TrueFalseAnswer.tsx';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
@@ -916,7 +917,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
       case 'saved':
         // An acknowledged empty selection, or an incomplete matching answer (D1), is saved, but it
         // is not an answer (ASSESS-QUESTION-004 §4A.1).
-        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY, ESSAY_KEY].includes(contentKeyOf(currentQuestion))
+        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY, ESSAY_KEY, SHORT_ANSWER_KEY].includes(contentKeyOf(currentQuestion))
           && !isAnsweredValue(contentKeyOf(currentQuestion), selectedOptions[currentQuestion.snapshotId], currentQuestion.leftItems?.length ?? currentQuestion.items?.length)) {
           return { statusClass: 'unanswered', text: 'Belum dijawab' };
         }
@@ -1108,6 +1109,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   value={selectedOptions[currentQuestion.snapshotId]}
                   draft={answerDrafts[currentQuestion.snapshotId]?.text}
                   onChange={value => selectOption(currentQuestion.snapshotId, value, NUMERIC_ANSWER_KEY)}
+                  onDraft={draft => reportDraft(currentQuestion.snapshotId, draft)}
+                />
+              ) : currentQuestion.questionType === 'SHORT_ANSWER' ? (
+                <ShortAnswer
+                  key={currentQuestion.snapshotId}
+                  question={currentQuestion}
+                  value={selectedOptions[currentQuestion.snapshotId]}
+                  draft={answerDrafts[currentQuestion.snapshotId]?.text}
+                  onChange={value => selectOption(currentQuestion.snapshotId, value, SHORT_ANSWER_KEY)}
                   onDraft={draft => reportDraft(currentQuestion.snapshotId, draft)}
                 />
               ) : currentQuestion.questionType === 'ESSAY' ? (

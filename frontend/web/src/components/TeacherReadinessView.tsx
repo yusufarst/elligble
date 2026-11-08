@@ -67,7 +67,7 @@ function transitionFailureMessage(err: unknown): string {
       case 'invalid_state': return 'Status ujian telah berubah. Data ditampilkan ulang.';
       case 'attempts_running': return 'Masih ada peserta yang mengerjakan. Finalisasi dapat dilakukan setelah semua peserta selesai.';
       case 'scoring_unavailable': return 'Konten soal ujian ini tidak dapat dinilai otomatis, sehingga hasil belum dapat difinalisasi. Hubungi operator sekolah.';
-      case 'grading_incomplete': return `Masih ada ${typeof err.data?.ungraded === 'number' ? err.data.ungraded : 'beberapa'} jawaban esai yang belum dinilai. Nilai semua esai sebelum finalisasi hasil.`;
+      case 'grading_incomplete': return `Masih ada ${typeof err.data?.ungraded === 'number' ? err.data.ungraded : 'beberapa'} jawaban yang belum dinilai guru. Nilai semua jawaban di Penilaian Esai sebelum finalisasi hasil.`;
       case 'forbidden': return 'Anda tidak memiliki hak untuk mengelola ujian ini.';
     }
   }

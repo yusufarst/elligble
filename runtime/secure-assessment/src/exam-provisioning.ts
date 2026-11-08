@@ -4,6 +4,7 @@ import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts
 import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
 import { NUMERIC_ANSWER_DESCRIPTOR, NUMERIC_ANSWER_TYPE, canonicalNumber } from './question-types/numeric-answer.ts';
 import { ESSAY_DESCRIPTOR, ESSAY_TYPE } from './question-types/essay.ts';
+import { SHORT_ANSWER_DESCRIPTOR, SHORT_ANSWER_TYPE } from './question-types/short-answer.ts';
 import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
@@ -150,6 +151,13 @@ export function buildOrderingFrozenContent(
     return content;
 }
 
+/** Frozen SHORT_ANSWER content (ASSESS-QUESTION-006 §4.1): the forms as authored; none means manual mode (D1). */
+export function buildShortAnswerFrozenContent(input: { prompt: string; acceptedForms: string[]; rubric: string; maxScore: number }): Record<string, unknown> {
+    const content = { schemaVersion: 2, questionType: SHORT_ANSWER_TYPE, prompt: input.prompt, acceptedForms: [...input.acceptedForms], rubric: input.rubric, maxScore: input.maxScore };
+    if (!SHORT_ANSWER_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid short-answer question');
+    return content;
+}
+
 /** Frozen ESSAY content (ASSESS-QUESTION-008 §4.1): the rubric as typed, possibly empty. */
 export function buildEssayFrozenContent(input: { prompt: string; rubric: string; maxScore: number }): Record<string, unknown> {
     const content = { schemaVersion: 2, questionType: ESSAY_TYPE, prompt: input.prompt, rubric: input.rubric, maxScore: input.maxScore };
@@ -159,6 +167,7 @@ export function buildEssayFrozenContent(input: { prompt: string; rubric: string;
 
 /** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching, UR as ordering, IA as numeric answer, ES as essay. */
 export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    if (q.type === 'IS') return buildShortAnswerFrozenContent({ prompt: q.prompt, acceptedForms: q.acceptedForms ?? [], rubric: q.essayRubric ?? '', maxScore: q.maxScore });
     if (q.type === 'ES') return buildEssayFrozenContent({ prompt: q.prompt, rubric: q.essayRubric ?? '', maxScore: q.maxScore });
     if (q.type === 'IA') return buildNumericFrozenContent({ prompt: q.prompt, key: q.numericKey ?? '', tolerance: q.numericTolerance ?? '0', maxScore: q.maxScore });
     if (q.type === 'UR') {

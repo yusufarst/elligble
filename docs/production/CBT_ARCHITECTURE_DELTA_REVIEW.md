@@ -154,3 +154,13 @@ Essay is registered on the A01 foundation as `2:ESSAY`, rule `ESSAY_HUMAN_GRADED
 - results count graded essays separately (D1), and the CSV gains two appended columns (D4).
 
 No existing column, constraint or lock order changes, and no earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-008](tasks/ASSESS-QUESTION-008.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-006 bounded implementation checkpoint — 2026-11-08
+
+Short answer is registered on the A01 foundation as `2:SHORT_ANSWER`, rule `SHORT_ANSWER_ACCEPTED_FORMS_V1`:
+- `{shortText}` is stored exactly as typed and is either "" or one line of at most 200 code points (D2: other text is an unsaved draft);
+- with 1–10 accepted forms it is scored all-or-nothing after the approved normalization (NFC, trim, collapsed whitespace, simple lowercase);
+- without accepted forms (D1) it is graded by the managing Teacher through the ASSESS-QUESTION-008 workflow, grade table and refusals, with no migration;
+- it is authored as `IS` rows with the forms in `left_1`–`left_10`; the grading-path copy is neutral.
+
+No column, constraint, route or lock order changes, and no earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-006](tasks/ASSESS-QUESTION-006.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1, all eight formats; HIGH risk; R15, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → STOP → PASS (§9); Owner decisions D1–D2; formal READY PASS and Build started under DEC-048 on 2026-11-08 (§10)** |
+| Status | **VERIFYING — contract review chain STOP → STOP → PASS (§9); Owner decisions D1–D2; formal READY PASS (§10); implementation candidate published for exact-content CI and the independent implementation and rendered review (§11)** |
 | Objective | Deliver short answer ("Isian singkat") end to end on the versioned foundation:<br>• authored through the v2 import;<br>• previewed by the teacher;<br>• answered by the Student as one line of text, kept exactly as typed, with local recovery, then submitted;<br>• scored automatically against the Teacher's accepted forms after the approved normalization, or graded by the Teacher through the essay workflow (manual mode) |
 | Owner decisions | O02-1, O02-2, O02-7, O02-9, O02-10 and O02-12, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); OD-07 and OD-07b (00.11); **D1–D2 decided by the Owner on 2026-11-08 (§3)**; A01 (A01-3). Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• ASSESS-QUESTION-001 is DONE / MERGED.<br>• ASSESS-QUESTION-008 is DONE / MERGED: Delegated Acceptance in [record §12](ASSESS-QUESTION-008.md); landed by PR #33 as main bd39d652236eb055b1b8496dfadec1f0a433cc44, tree equal to evidence head a0cf3fa, with PR-head CI #214 and post-merge main CI #215 attempt 1, eight SUCCESS each (GitHub; recorded in this Task's first change).<br>• O09 rests on the approved P5 content |
@@ -309,3 +309,34 @@ Short-answer content: maxScore 2, accepted forms `["Jakarta", "DKI Jakarta"]`.
   - Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 40571ad954bb122e831c22ace8e61395df7a08c0c62d1738905fe8f48cf553b6.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 13, IN_PROGRESS 1, VERIFYING 0, BLOCKED 19.
+
+## 11. Implementation checkpoint — 2026-11-08
+
+- **Step 1:** registration aafe542 (CI #216, attempt 1, eight SUCCESS) carries the #215 baseline manifest (§10).
+- **Implementation candidate,** inside rows 5–40 plus the Task-flow rows 1–4:
+  - **Descriptor** `question-types/short-answer.ts`: the one-line predicate (E1, E2), the normalization (E3), auto and manual scoring; registered as the eighth key.
+  - **Grading** `essay-grading.ts`: `teacherGradedContentOf`, `isTeacherGradedQuestion` and `teacherGradedTextOf`; the worklist carries `questionType`; the grade write accepts a manual short answer and refuses an auto one.
+  - **Results and readiness:** the teacher-graded count includes manual short answers.
+  - **Import:** `IS` rows in the frozen order, `short_answer_forms_invalid`, the frozen wording; builder `buildShortAnswerFrozenContent`; preview items with the forms or the rubric; the frozen teacher-preview item.
+  - **Monitoring:** `shortText: ""` is not answered.
+  - **Client:**
+    - `SHORT_ANSWER_KEY` and `isShortText` (the same predicate); the adapter sends only "" or valid text;
+    - `ShortAnswer` with the shared Input in its exam size, the counter (not live) and the always-mounted polite hint; drafts through the shared map;
+    - the teacher preview for auto and manual items;
+    - the grading type line;
+    - the neutral grading-path copy (E7);
+    - the import intro, instruction and IS preview; the template with an IS row;
+    - the `.short-answer` CSS, tokens only.
+- **Tests:**
+  - `test/short-answer.test.ts` (C01/C02);
+  - `test/integration/short-answer.test.ts` (C03);
+  - `frontend/web/src/__tests__/short-answer.test.tsx` (C05);
+  - `e2e/tests/99g-short-answer.spec.ts` (C06/C07);
+  - the §4.6 assertions in rows 30–39.
+- **Local:**
+  - typechecks PASS (runtime, web, e2e);
+  - the new and affected Secure Assessment units 61/61;
+  - the new and affected web files 64/64;
+  - the client template parses with the server parser without problems.
+  - Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 13, VERIFYING 1, BLOCKED 19.

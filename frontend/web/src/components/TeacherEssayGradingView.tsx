@@ -63,13 +63,13 @@ export const TeacherEssayGradingView: React.FC<{ examInstanceId: string; onBack(
     return (
       <PageStateFrame title={SCREEN_TITLE.essayGrading} back={back}>
         {error === null ? (
-          <LoadingState>Memuat jawaban esai...</LoadingState>
+          <LoadingState>Memuat jawaban...</LoadingState>
         ) : error === 'failed' ? (
-          <LoadErrorState kind="failed" title="Gagal Memuat Jawaban Esai" onRetry={load}>Periksa koneksi internet Anda, lalu coba lagi.</LoadErrorState>
+          <LoadErrorState kind="failed" title="Gagal Memuat Jawaban" onRetry={load}>Periksa koneksi internet Anda, lalu coba lagi.</LoadErrorState>
         ) : error === 'forbidden' ? (
-          <LoadErrorState kind="refused" title="Akses Ditolak">Esai hanya dapat dinilai oleh guru yang mengelola ujian ini.</LoadErrorState>
+          <LoadErrorState kind="refused" title="Akses Ditolak">Jawaban hanya dapat dinilai oleh guru yang mengelola ujian ini.</LoadErrorState>
         ) : (
-          <LoadErrorState kind="refused" title="Penilaian Belum Tersedia">Esai dapat dinilai setelah ujian dibuka.</LoadErrorState>
+          <LoadErrorState kind="refused" title="Penilaian Belum Tersedia">Jawaban dapat dinilai setelah ujian dibuka.</LoadErrorState>
         )}
       </PageStateFrame>
     );
@@ -116,12 +116,12 @@ export const TeacherEssayGradingView: React.FC<{ examInstanceId: string; onBack(
       {finalized ? (
         <Alert variant="success" role="note">
           <IconInfo aria-hidden="true" />
-          <AlertDescription>Hasil ujian sudah difinalisasi. Nilai esai dibekukan dan tidak dapat diubah.</AlertDescription>
+          <AlertDescription>Hasil ujian sudah difinalisasi. Nilai dibekukan dan tidak dapat diubah.</AlertDescription>
         </Alert>
       ) : (
         <Alert variant="info" role="note">
           <IconInfo aria-hidden="true" />
-          <AlertDescription>Nilai setiap jawaban esai sebelum finalisasi hasil. Nilai dapat diubah sampai hasil difinalisasi; setiap perubahan tercatat di riwayat.</AlertDescription>
+          <AlertDescription>Nilai setiap jawaban sebelum finalisasi hasil. Nilai dapat diubah sampai hasil difinalisasi; setiap perubahan tercatat di riwayat.</AlertDescription>
         </Alert>
       )}
 
@@ -129,12 +129,13 @@ export const TeacherEssayGradingView: React.FC<{ examInstanceId: string; onBack(
         <section key={q.snapshotId} aria-labelledby={`essay-q-${q.snapshotId}`} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <h2 id={`essay-q-${q.snapshotId}`} className="m-0 text-lg font-semibold">Soal {q.no}</h2>
+            <p className="m-0 text-sm text-muted-foreground">{q.questionType === 'SHORT_ANSWER' ? 'Isian singkat' : 'Esai'}</p>
             <p className="essay-text text-[15px]">{q.prompt}</p>
             <h3 className="m-0 text-sm font-semibold">Rubrik</h3>
             <p className="essay-text text-sm text-muted-foreground">{q.rubric || 'Tidak ada rubrik.'}</p>
           </div>
           {q.answers.length === 0 ? (
-            <p className="m-0 text-muted-foreground">Belum ada jawaban esai yang dikumpulkan untuk soal ini.</p>
+            <p className="m-0 text-muted-foreground">Belum ada jawaban yang dikumpulkan untuk soal ini.</p>
           ) : q.answers.map(a => {
             const key = `${q.snapshotId}:${a.attemptId}`;
             const fieldId = `essay-score-${q.snapshotId}-${a.attemptId}`;

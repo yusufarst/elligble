@@ -245,7 +245,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       )}
 
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-        Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.{withEssays ? ' Esai dinilai guru; poinnya masuk ke Nilai.' : ''}
+        Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.{withEssays ? ' Poin soal yang dinilai guru ikut masuk ke Nilai.' : ''}
       </p>
     </Page>
   );

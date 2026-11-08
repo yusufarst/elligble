@@ -164,7 +164,9 @@ export async function handleTeacherReadinessGet(
                  WHERE pa.tenant_id = i.tenant_id AND pa.exam_instance_id = i.id) AS participants_added_at,
                 (SELECT count(*)::int FROM secure_assessment_exam_question_snapshots qs
                  WHERE qs.tenant_id = i.tenant_id AND qs.exam_instance_id = i.id
-                   AND qs.frozen_content->>'schemaVersion' = '2' AND qs.frozen_content->>'questionType' = 'ESSAY') AS essay_count,
+                   AND qs.frozen_content->>'schemaVersion' = '2'
+                   AND (qs.frozen_content->>'questionType' = 'ESSAY'
+                        OR (qs.frozen_content->>'questionType' = 'SHORT_ANSWER' AND qs.frozen_content->'acceptedForms' = '[]'::jsonb))) AS essay_count,
                 ec.cancelled_at, ec.reason AS cancellation_reason, ec.cancelled_by_person_id,
                 s.display_label AS subject_label,
                 g.display_label AS group_label,
