@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
+import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, ORDERING_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -10,6 +10,7 @@ import { clearLocalAnswers } from '../exam/answer-store.ts';
 import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { MultipleResponseAnswer } from './answers/MultipleResponseAnswer.tsx';
 import { MatchingAnswer } from './answers/MatchingAnswer.tsx';
+import { OrderingAnswer } from './answers/OrderingAnswer.tsx';
 import { TrueFalseAnswer } from './answers/TrueFalseAnswer.tsx';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
@@ -859,7 +860,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const answeredOptions: Record<string, string> = {};
   for (const q of questions) {
     const value = selectedOptions[q.snapshotId];
-    if (isAnsweredValue(contentKeyOf(q), value, q.leftItems?.length)) answeredOptions[q.snapshotId] = value;
+    if (isAnsweredValue(contentKeyOf(q), value, q.leftItems?.length ?? q.items?.length)) answeredOptions[q.snapshotId] = value;
   }
   const answeredCount = questions.filter(q => !!answeredOptions[q.snapshotId]).length;
   const unansweredCount = totalQuestions - answeredCount;
@@ -889,8 +890,8 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
       case 'saved':
         // An acknowledged empty selection, or an incomplete matching answer (D1), is saved, but it
         // is not an answer (ASSESS-QUESTION-004 §4A.1).
-        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY].includes(contentKeyOf(currentQuestion))
-          && !isAnsweredValue(contentKeyOf(currentQuestion), selectedOptions[currentQuestion.snapshotId], currentQuestion.leftItems?.length)) {
+        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY, ORDERING_KEY].includes(contentKeyOf(currentQuestion))
+          && !isAnsweredValue(contentKeyOf(currentQuestion), selectedOptions[currentQuestion.snapshotId], currentQuestion.leftItems?.length ?? currentQuestion.items?.length)) {
           return { statusClass: 'unanswered', text: 'Belum dijawab' };
         }
         return {
@@ -1073,6 +1074,12 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   question={currentQuestion}
                   value={selectedOptions[currentQuestion.snapshotId]}
                   onChange={value => selectOption(currentQuestion.snapshotId, value, MULTIPLE_RESPONSE_KEY)}
+                />
+              ) : currentQuestion.questionType === 'ORDERING' ? (
+                <OrderingAnswer
+                  question={currentQuestion}
+                  value={selectedOptions[currentQuestion.snapshotId]}
+                  onChange={value => selectOption(currentQuestion.snapshotId, value, ORDERING_KEY)}
                 />
               ) : currentQuestion.questionType === 'MATCHING' ? (
                 <MatchingAnswer

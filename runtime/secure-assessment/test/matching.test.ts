@@ -22,7 +22,7 @@ const score = (payload: unknown) => MATCHING_DESCRIPTOR.score(mj(), payload);
 const outcome = (payload: unknown) => { const s = score(payload); return [s.outcome, s.earnedMicro]; };
 
 test('C01 registration, rule and classification', () => {
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', MATCHING_KEY]);
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', MATCHING_KEY, '2:ORDERING']);
     assert.equal(classifyFrozenContent(mj()).kind, 'registered');
     assert.equal(MATCHING_DESCRIPTOR.scoringRuleId, MATCHING_RULE);
     assert.equal(MATCHING_RULE, 'MATCHING_EXACT_PAIRS_V1');
@@ -144,7 +144,7 @@ test('C02 MJ import vectors, frozen problem shapes and the builder', () => {
     assert.deepEqual(parseQuestionFile([V2, '1;MJ;Pasangkan;x;;;;;B,C,A;3'].join('\n')).problems, [{ code: 'options_not_allowed', line: 2, type: 'MJ' }], 'options before columns');
     assert.deepEqual(parseQuestionFile([V2, '1;PG;Soal;a;b;c;d;e;C;1'].join('\n')).problems, [], 'ten-column v2 unchanged');
 
-    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching) or PGK (multiple answers)');
+    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering) or PGK (multiple answers)');
     assert.match(describeQuestionProblem({ code: 'type_invalid', line: 2 }), /PG .* or PGK/, 'multiple-response.test.ts:96 still matches');
     assert.equal(describeQuestionProblem({ code: 'options_not_allowed', line: 2, type: 'MJ' }), 'line 2: options must be empty for MJ');
     assert.equal(describeQuestionProblem({ code: 'options_not_allowed', line: 2 }), 'line 2: options must be empty for BS');
@@ -156,7 +156,7 @@ test('C02 MJ import vectors, frozen problem shapes and the builder', () => {
     assert.equal(describeQuestionProblem({ code: 'correct_invalid', line: 2, type: 'MJ' }), 'line 2: "correct" for MJ must list one right letter per left item, in order (for example B,C,A)');
     assert.equal(describeQuestionProblem({ code: 'correct_duplicate', line: 2, type: 'MJ' }), 'line 2: "correct" for MJ uses a right letter more than once');
     assert.equal(describeQuestionProblem({ code: 'correct_duplicate', line: 2 }), 'line 2: "correct" lists a letter more than once');
-    assert.equal(describeQuestionProblem({ code: 'items_not_allowed', line: 2 }), 'line 2: left and right item columns are only for MJ');
+    assert.equal(describeQuestionProblem({ code: 'items_not_allowed', line: 2 }), 'line 2: left and right item columns are only for MJ and UR');
     assert.match(describeQuestionProblem({ code: 'header_invalid', line: 1 }), /or no,type,prompt,.*,score,left_1,.*,right_l \(elligble-questions-v2\)$/);
 
     const built = buildImportedFrozenContent(file.questions[0]);

@@ -2,6 +2,7 @@ import type pg from 'pg';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
 import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
+import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 
 // Teacher preview of an exam before it opens (ASSESS-TEACHER-002; D04.3-38 LOCKED: the
@@ -23,7 +24,7 @@ export interface TeacherExamPreviewQuestion {
     /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
     /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
-    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING';
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING';
     /** True/false only: the key (ASSESS-QUESTION-003 §4A.5); absent on every other item. */
     correctValue?: boolean;
     /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
@@ -32,6 +33,9 @@ export interface TeacherExamPreviewQuestion {
     leftItems?: Array<{ id: string; content: string }>;
     rightItems?: Array<{ id: string; content: string }>;
     correctPairs?: Array<{ leftId: string; rightId: string }>;
+    /** Ordering only (ASSESS-QUESTION-005 §4.3): the items in display order and the correct order; absent on every other item. */
+    items?: Array<{ id: string; content: string }>;
+    correctOrder?: string[];
 }
 
 export interface TeacherExamPreview {
@@ -107,6 +111,15 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
             questionType: MATCHING_TYPE, correctOptionIds: null,
             leftItems: items(record.leftItems), rightItems: items(record.rightItems),
             correctPairs: record.leftItems.map(i => ({ leftId: i.id, rightId: keyOf.get(i.id) as string })),
+        };
+    }
+    if (content && typeof content === 'object' && !Array.isArray(content) && (content as Record<string, unknown>)['schemaVersion'] === 2
+        && ORDERING_DESCRIPTOR.validateContent(content as Record<string, unknown>).ok) {
+        const record = content as { prompt: string; maxScore: number; items: Array<{ id: string; content: string }>; correctOrder: string[] };
+        return {
+            snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
+            questionType: ORDERING_TYPE, correctOptionIds: null,
+            items: record.items.map(i => ({ id: i.id, content: i.content })), correctOrder: [...record.correctOrder],
         };
     }
     // Show what is there, without trusting its shape.

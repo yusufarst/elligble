@@ -75,6 +75,8 @@ export interface PreviewQuestion {
     /** MJ only (ASSESS-QUESTION-004 §4.2): left and right items; correctLetters is one right letter per left item. */
     leftItems?: string[];
     rightItems?: string[];
+    /** UR only (ASSESS-QUESTION-005 §4A.2): the key is the authored order, so Students would see it. */
+    keyEqualsAuthoredOrder?: boolean;
 }
 
 /** The key of a preview question: letters A-E (PG, PGK), Benar/Salah (BS), right letters A-L per left item (MJ). */
@@ -82,6 +84,10 @@ function previewKey(q: ParsedQuestion): { correct: string; correctLetters: strin
     if (q.type === 'MJ') {
         const letters = (q.correctPairIndexes ?? []).map(i => MATCHING_RIGHT_LETTERS[i]);
         return { correct: letters.join(', '), correctLetters: letters };
+    }
+    if (q.type === 'UR') {
+        const numbers = (q.correctSequence ?? []).map(i => String(i + 1));
+        return { correct: numbers.join(', '), correctLetters: numbers };
     }
     const letters = q.correctIndexes.map(i => OPTION_LETTERS[i]);
     return { correct: q.type === 'BS' ? (q.correctValue ? 'Benar' : 'Salah') : letters.join(', '), correctLetters: letters };
@@ -295,6 +301,7 @@ export async function runTeacherExamImport(
             ...previewKey(q),
             ...(q.type === 'BS' ? { correctValue: q.correctValue === true } : {}),
             ...(q.type === 'MJ' ? { leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [] } : {}),
+            ...(q.type === 'UR' ? { leftItems: q.leftItems ?? [], rightItems: [], keyEqualsAuthoredOrder: (q.correctSequence ?? []).every((v, i) => v === i) } : {}),
         })),
         participants: [],
         window: null,

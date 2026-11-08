@@ -1238,6 +1238,27 @@
   outline-offset: 2px;
 }
 
+/* Ordering rows (ASSESS-QUESTION-005 §4A.3/§4A.4): the option card, but the row itself is not
+   clickable, so no pointer cursor and no hover change; the focus-within outline above is the
+   "just moved" cue. The check badge sits in the row line, not over the move buttons. */
+.option-item-label.ordering-row {
+  cursor: default;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.option-item-label.ordering-row:hover:not(.selected) {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.workstation-container .ordering-row .option-check-badge,
+.ordering-row .option-check-badge {
+  position: static;
+  margin-left: auto;
+}
+
 .workstation-container .option-text {
   min-width: 0;
   font-size: 1rem;
@@ -1486,9 +1507,63 @@
   color: var(--color-success-text);
 }
 
-.matching-status {
+.matching-status,
+.ordering-status {
   margin: 0;
   min-height: 1.25em;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+}
+
+/* Ordering, "Mengurutkan" (ASSESS-QUESTION-005 §4A.3): position marker and text on one line;
+   below 640 px the move buttons sit in a right-aligned group under the text, from 640 px beside it.
+   Shared tokens only, no new colour. */
+.ordering-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.ordering-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ordering-row-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.ordering-row-main .option-text {
+  overflow-wrap: anywhere;
+}
+
+.ordering-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.ordering-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (min-width: 640px) {
+  .option-item-label.ordering-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .ordering-row-main {
+    flex: 1;
+  }
 }

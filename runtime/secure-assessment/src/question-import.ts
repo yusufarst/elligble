@@ -33,7 +33,7 @@ export const QUESTIONS_HEADER_V2_EXTENDED = [
     ...MATCHING_RIGHT_LETTERS.map(l => `right_${l.toLowerCase()}`),
 ] as readonly string[];
 export type QuestionTemplate = typeof QUESTIONS_TEMPLATE | typeof QUESTIONS_TEMPLATE_V2;
-export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ';
+export type ImportQuestionType = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR';
 export const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
 /** Implementation limits (plan §7): questions per file and the largest score of one question. */
 export const MAX_IMPORT_QUESTIONS = 200;
@@ -60,7 +60,8 @@ export type QuestionProblemCode =
     | 'columns_missing'
     | 'matching_items_invalid'
     | 'items_duplicate'
-    | 'items_not_allowed';
+    | 'items_not_allowed'
+    | 'ordering_items_invalid';
 
 export interface QuestionProblem {
     code: QuestionProblemCode;
@@ -76,7 +77,7 @@ export interface QuestionProblem {
      * correct_invalid on a BS row (ASSESS-QUESTION-003 §4A.2); correct_invalid, correct_duplicate
      * and options_not_allowed on an MJ row (ASSESS-QUESTION-004 §4.2). Absent otherwise.
      */
-    type?: 'BS' | 'MJ';
+    type?: 'BS' | 'MJ' | 'UR';
     /** matching_items_invalid and items_duplicate: the side of the matching items concerned. */
     side?: 'left' | 'right';
 }
@@ -101,6 +102,8 @@ export interface ParsedQuestion {
     rightItems?: string[];
     /** MJ only: the right item index of each left item, in left order. */
     correctPairIndexes?: number[];
+    /** UR only (ASSESS-QUESTION-005 §4A.4): the item indexes in the correct order; the items are leftItems. */
+    correctSequence?: number[];
 }
 
 export interface QuestionFile {
@@ -196,7 +199,7 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         const typeCell = v2 ? cells[1].toUpperCase() : 'PG';
         const [no, prompt, a, b, c, d, e, correct, score] = v2 ? [cells[0], ...cells.slice(2, 10)] : cells;
-        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' ? typeCell : null;
+        const type: ImportQuestionType | null = typeCell === 'PG' || typeCell === 'PGK' || typeCell === 'BS' || typeCell === 'MJ' || typeCell === 'UR' ? typeCell : null;
         const leftCells = extended ? cells.slice(10, 10 + MATCHING_LEFT_COLUMNS) : [];
         const rightCells = extended ? cells.slice(10 + MATCHING_LEFT_COLUMNS) : [];
         const options = [a, b, c, d, e];
@@ -214,6 +217,12 @@ export function parseQuestionFile(text: string): QuestionFile {
         }
         if (type === 'MJ') {
             const question = parseMatchingRow(line, index + 1, prompt, options, correct, score, extended, leftCells, rightCells);
+            if ('code' in question) problems.push(question);
+            else questions.push(question);
+            return;
+        }
+        if (type === 'UR') {
+            const question = parseOrderingRow(line, index + 1, prompt, options, correct, score, extended, leftCells, rightCells);
             if ('code' in question) problems.push(question);
             else questions.push(question);
             return;
@@ -310,6 +319,33 @@ function hasDuplicate(items: string[]): boolean {
 }
 
 /**
+ * One UR (mengurutkan) row, checked in the frozen order (ASSESS-QUESTION-005 §4.2/§4A.4): options
+ * empty, item columns present, items, right cells empty, duplicates, key, score.
+ */
+function parseOrderingRow(line: number, no: number, prompt: string, options: string[], correct: string, score: string,
+    extended: boolean, leftCells: string[], rightCells: string[]): ParsedQuestion | QuestionProblem {
+    if (options.some(option => option.length > 0)) return { code: 'options_not_allowed', line, type: 'UR' };
+    if (!extended) return { code: 'columns_missing', line, type: 'UR' };
+    const count = filledInOrder(leftCells);
+    if (count < 2) return { code: 'ordering_items_invalid', line };
+    if (rightCells.some(cell => cell.length > 0)) return { code: 'items_not_allowed', line, type: 'UR' };
+    const items = leftCells.slice(0, count);
+    if (hasDuplicate(items)) return { code: 'items_duplicate', line, type: 'UR' };
+    // Every item number 1..N exactly once, in the correct order, separated by commas and/or spaces.
+    const parts = correct.split(/[\s,]+/).filter(part => part.length > 0);
+    if (!/^[0-9\s,]+$/.test(correct) || parts.length !== count || parts.some(part => !/^[1-9][0-9]?$/.test(part) || Number(part) > count)) {
+        return { code: 'correct_invalid', line, type: 'UR' };
+    }
+    if (new Set(parts).size !== parts.length) return { code: 'correct_duplicate', line, type: 'UR' };
+    const maxScore = scoreOf(score);
+    if (!(maxScore > 0 && maxScore <= MAX_QUESTION_SCORE)) return { code: 'score_invalid', line };
+    return {
+        line, no, prompt, options: [], correctIndex: -1, maxScore, type: 'UR', correctIndexes: [],
+        leftItems: items, correctSequence: parts.map(part => Number(part) - 1),
+    };
+}
+
+/**
  * One MJ (menjodohkan) row, checked in the frozen order (ASSESS-QUESTION-004 §4.2): options
  * empty, item columns present, left items, right items, duplicates (left first), key, score.
  */
@@ -358,16 +394,20 @@ export function describeQuestionProblem(problem: QuestionProblem): string {
         case 'correct_multiple': return `${at}"correct" must be exactly one of A, B, C, D, E (single-answer questions)`;
         case 'correct_invalid': return problem.type === 'BS' ? `${at}"correct" must be B (true) or S (false) for BS`
             : problem.type === 'MJ' ? `${at}"correct" for MJ must list one right letter per left item, in order (for example B,C,A)`
+            : problem.type === 'UR' ? `${at}"correct" for UR must list every item number once, in the correct order (for example 3,1,2)`
             : `${at}"correct" must be one of A, B, C, D, E`;
         case 'score_invalid': return `${at}"score" must be a positive number with at most two decimals, up to ${MAX_QUESTION_SCORE}`;
-        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching) or PGK (multiple answers)`;
-        case 'correct_duplicate': return problem.type === 'MJ' ? `${at}"correct" for MJ uses a right letter more than once` : `${at}"correct" lists a letter more than once`;
-        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' ? 'MJ' : 'BS'}`;
-        case 'columns_missing': return `${at}MJ needs the v2 header with left_1..left_10 and right_a..right_l`;
+        case 'type_invalid': return `${at}"type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering) or PGK (multiple answers)`;
+        case 'correct_duplicate': return problem.type === 'MJ' ? `${at}"correct" for MJ uses a right letter more than once`
+            : problem.type === 'UR' ? `${at}"correct" for UR uses an item number more than once`
+            : `${at}"correct" lists a letter more than once`;
+        case 'options_not_allowed': return `${at}options must be empty for ${problem.type === 'MJ' || problem.type === 'UR' ? problem.type : 'BS'}`;
+        case 'columns_missing': return problem.type === 'UR' ? `${at}UR needs the v2 header with left_1..left_10` : `${at}MJ needs the v2 header with left_1..left_10 and right_a..right_l`;
+        case 'ordering_items_invalid': return `${at}UR needs 2 to 10 items, filled in order from left_1`;
         case 'matching_items_invalid': return problem.side === 'right'
             ? `${at}MJ needs as many right items as left items, plus at most 2, filled in order from right_a`
             : `${at}MJ needs 2 to 10 left items, filled in order from left_1`;
-        case 'items_duplicate': return `${at}${problem.side === 'right' ? 'right' : 'left'} items must differ from each other`;
-        case 'items_not_allowed': return `${at}left and right item columns are only for MJ`;
+        case 'items_duplicate': return problem.type === 'UR' ? `${at}items must differ from each other` : `${at}${problem.side === 'right' ? 'right' : 'left'} items must differ from each other`;
+        case 'items_not_allowed': return problem.type === 'UR' ? `${at}right item columns are not used for UR` : `${at}left and right item columns are only for MJ and UR`;
     }
 }
