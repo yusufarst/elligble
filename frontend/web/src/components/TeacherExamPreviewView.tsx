@@ -11,6 +11,7 @@ import { formatScore } from '../lib/question-import.ts';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 import { MATCHING_LETTERS, MatchingAnswer } from './answers/MatchingAnswer.tsx';
 import { OrderingAnswer } from './answers/OrderingAnswer.tsx';
+import { NumericAnswer } from './answers/NumericAnswer.tsx';
 
 // The teacher previews a scheduled or ready exam before opening it (ASSESS-TEACHER-002;
 // D04.3-38 LOCKED): one question at a time as the exam screen shows it (the same question
@@ -122,7 +123,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           {/* The exam screen's own question card (workstation.css), so the preview looks the same. */}
           <section className="question-card" aria-label={`Soal nomor ${question.no}`}>
             <p className="m-0 mb-3 flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : question.questionType === 'ORDERING' ? ' · Mengurutkan' : ''}</span>
+              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : question.questionType === 'ORDERING' ? ' · Mengurutkan' : question.questionType === 'NUMERIC_ANSWER' ? ' · Isian angka' : ''}</span>
               {showKey && question.maxScore !== null && <span className="tabular-nums">Skor {formatScore(question.maxScore)}</span>}
             </p>
             {!question.valid && (
@@ -133,7 +134,27 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             )}
             <fieldset className="question-fieldset">
               <legend className="question-prompt whitespace-pre-wrap [overflow-wrap:anywhere]">{question.prompt}</legend>
-              {question.questionType === 'ORDERING' ? (
+              {question.questionType === 'NUMERIC_ANSWER' ? (
+              <>
+                {/* The Student's own control as a local try-out (ASSESS-QUESTION-007 §4.3); nothing is saved. */}
+                <NumericAnswer
+                  key={question.snapshotId}
+                  question={{ snapshotId: question.snapshotId, schemaVersion: 2, questionType: 'NUMERIC_ANSWER', prompt: question.prompt, options: [] }}
+                  value={tried[question.snapshotId]}
+                  onChange={value => setTried(prev => ({ ...prev, [question.snapshotId]: value }))}
+                />
+                {showKey && (
+                  <div className="mt-4 flex flex-col gap-1">
+                    {/* Numbers are shown from the string with a comma separator, never through Number (§4.3). */}
+                    <p className="m-0 flex gap-2 rounded-md border border-success-line bg-success-surface px-3 py-2 text-sm">
+                      <span className="min-w-0 flex-1 font-semibold [overflow-wrap:anywhere]">{(question.expected ?? '').replace('.', ',')}</span>
+                      <span className="shrink-0 text-xs font-semibold text-success-ink">Kunci jawaban</span>
+                    </p>
+                    <p className="m-0 px-3 text-sm text-muted-foreground">Toleransi {(question.tolerance ?? '0').replace('.', ',')}</p>
+                  </div>
+                )}
+              </>
+              ) : question.questionType === 'ORDERING' ? (
               <>
                 {/* The Student's own control as a local try-out (ASSESS-QUESTION-005 §4.3); nothing is saved. */}
                 <OrderingAnswer

@@ -2,6 +2,7 @@ import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
 import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
+import { NUMERIC_ANSWER_DESCRIPTOR, NUMERIC_ANSWER_TYPE, canonicalNumber } from './question-types/numeric-answer.ts';
 import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
@@ -117,6 +118,20 @@ export function buildMatchingFrozenContent(
 }
 
 /** Frozen ORDERING content (ASSESS-QUESTION-005 §4.1); random item ids, items in authored (display) order. */
+/** Frozen NUMERIC_ANSWER content (ASSESS-QUESTION-007 §4.1/§4.2): the key and tolerance in canonical form. */
+export function buildNumericFrozenContent(input: { prompt: string; key: string; tolerance: string; maxScore: number }): Record<string, unknown> {
+    const content = {
+        schemaVersion: 2,
+        questionType: NUMERIC_ANSWER_TYPE,
+        prompt: input.prompt,
+        expected: canonicalNumber(input.key),
+        tolerance: canonicalNumber(input.tolerance),
+        maxScore: input.maxScore,
+    };
+    if (!NUMERIC_ANSWER_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid numeric-answer question');
+    return content;
+}
+
 export function buildOrderingFrozenContent(
     input: { prompt: string; items: string[]; correctSequence: number[]; maxScore: number },
     newItemId: () => string = () => `opt_${randomBytes(6).toString('hex')}`
@@ -136,6 +151,7 @@ export function buildOrderingFrozenContent(
 
 /** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching, UR as ordering. */
 export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    if (q.type === 'IA') return buildNumericFrozenContent({ prompt: q.prompt, key: q.numericKey ?? '', tolerance: q.numericTolerance ?? '0', maxScore: q.maxScore });
     if (q.type === 'UR') {
         return buildOrderingFrozenContent({ prompt: q.prompt, items: q.leftItems ?? [], correctSequence: q.correctSequence ?? [], maxScore: q.maxScore });
     }

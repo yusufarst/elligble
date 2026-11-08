@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 all eight formats; HIGH risk; R16, R02, R03, R25, R30; P8 V02–V06, V09–V12 |
-| Status | **IN_PROGRESS — contract review chain STOP → STOP → PASS (§9); Owner decision D1; formal READY PASS and Build started under DEC-048 on 2026-11-08 (§10)** |
+| Status | **VERIFYING — implementation candidate published for exact-content CI and the independent implementation and rendered review (§11); DEC-048** |
 | Objective | Deliver numeric answer ("Isian angka") end to end on the versioned foundation: author it through the v2 import, preview it as a teacher, answer it as a Student with local recovery, then submit and score it by exact decimal comparison with an absolute tolerance |
 | Owner decisions | O02-1, O02-2, O02-8 and O02-12, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); **D1 (invalid input), decided by the Owner on 2026-11-08 (§3)**; A01. Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13). ASSESS-QUESTION-001 is DONE / MERGED. ASSESS-QUESTION-005 is DONE / MERGED: PR #31, main 42a281c52c04f5e54af37893fb7a2c56e521545c, tree equal to evidence head cbba01e, PR-head CI #204, post-merge main CI #205 attempt 1 eight SUCCESS ([record §12](ASSESS-QUESTION-005.md)). Its extended v2 header, client value pattern and E2E harness are reused. O09 rests on the approved P5 content |
@@ -369,3 +369,43 @@ No re-runs, and no push while the previous commit's CI runs.
   - Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 3aec13b32832318ad45bf5ed916c581a4003b7b387e6f00eaa4429837b0b93b4.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 11, IN_PROGRESS 1, VERIFYING 0, BLOCKED 21.
+
+## 11. Implementation checkpoint — 2026-11-08
+
+- **Step 1:** registration 817c007 (CI #206) carries the #205 baseline manifest (§10).
+- **Implementation candidate,** inside rows 5–31 plus the Task-flow rows 1–4:
+  - **Descriptor** `question-types/numeric-answer.ts`: E1 syntax, the canonical forms, exact BigInt comparison with an inclusive tolerance, D1 refusals; registered.
+  - **Parser:**
+    - `QUESTIONS_HEADER_V2_TOLERANCE` (33 columns) beside the unchanged 32-column header;
+    - left cells 10–19, right cells 20–31, tolerance cell 32;
+    - `IA` rows in the frozen check order;
+    - `tolerance_not_allowed` immediately after the prompt for every other type;
+    - the problem shapes and frozen wording.
+  - **Builder:** `buildNumericFrozenContent` (canonical normalization).
+  - **Import preview:** the key as typed and the tolerance.
+  - **Teacher preview:** the §4.3 shape.
+  - **Monitoring:** `numericText: ""` is not answered.
+  - **Client:**
+    - `NUMERIC_ANSWER_KEY`, `isNumericText`, `isEmptyValue` and `isAnsweredValue`; the adapter sends only "" or a valid number;
+    - `countUnreceivedLocalAnswers` treats an empty value as received when the server holds the same empty value or nothing;
+    - the shared `Input` `inputSize="exam"` variant;
+    - `NumericAnswer`: visible Label, instruction, text keyboard, the always-mounted polite D1 hint, silent incomplete prefixes until blur, drafts reported to the exam screen;
+    - the exam screen keeps in-memory drafts, dropped when the stored value changes, and shows "Belum tersimpan" while a draft exists;
+    - the teacher preview: try-out, plus a key with a comma separator taken from the string;
+    - the import page: the frozen intro and instruction and the IA preview;
+    - the 33-column template with an IA row and the frozen teacher wording;
+    - the `.numeric-*` CSS, tokens only.
+  - **Document:** the P4 pointer.
+- **Tests:**
+  - `test/numeric-answer.test.ts` (C01/C02);
+  - `test/integration/numeric-answer.test.ts` (C03);
+  - `frontend/web/src/__tests__/numeric-answer.test.tsx` (C05);
+  - `e2e/tests/99e-numeric-answer.spec.ts` (C06/C07);
+  - the §4.6 assertions in rows 26–31.
+- **Local:**
+  - typechecks PASS (runtime, web, e2e);
+  - Secure Assessment units 957/957;
+  - the new and affected web files 16/16;
+  - the client template parses with the server parser without problems.
+  - Integration and E2E run in CI only.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 11, VERIFYING 1, BLOCKED 21.

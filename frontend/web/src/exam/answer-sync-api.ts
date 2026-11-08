@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { EMPTY_SELECTION, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, ORDERING_KEY, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
+import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, isNumericText, orderOf, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -25,6 +25,8 @@ function payloadFor(contentKey: string, value: string): Record<string, unknown> 
   }
   // True/false: only the canonical "true" or "false" is ever sent.
   if (contentKey === TRUE_FALSE_KEY) return value === 'true' ? { value: true } : value === 'false' ? { value: false } : null;
+  // Numeric answer: only "" or a valid number is ever sent, as typed (D1).
+  if (contentKey === NUMERIC_ANSWER_KEY) return value === '' || isNumericText(value) ? { numericText: value } : null;
   // Ordering: only a canonical id list is ever sent; the server checks it is every item once.
   if (contentKey === ORDERING_KEY) {
     const ids = orderOf(value);
@@ -178,7 +180,7 @@ export async function countUnreceivedLocalAnswers(tenantId: string, attemptId: s
     // holds nothing: both are unanswered (ASSESS-QUESTION-002 §4A.4, ASSESS-QUESTION-004 §4A.3).
     return records.filter(record => {
       const server = accepted.get(record.snapshotId);
-      if (isEmptyValue(record.contentKey ?? V1_SINGLE_CHOICE_KEY, record.optionId) && (server === undefined || server === EMPTY_SELECTION)) return false;
+      if (isEmptyValue(record.contentKey ?? V1_SINGLE_CHOICE_KEY, record.optionId) && (server === undefined || server === record.optionId)) return false;
       return server !== record.optionId;
     }).length;
   } catch {

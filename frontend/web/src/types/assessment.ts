@@ -20,8 +20,10 @@ export const TRUE_FALSE_KEY: QuestionContentKey = '2:TRUE_FALSE';
 export const MATCHING_KEY: QuestionContentKey = '2:MATCHING';
 /** Ordering, "Mengurutkan" (ASSESS-QUESTION-005). */
 export const ORDERING_KEY: QuestionContentKey = '2:ORDERING';
+/** Numeric answer, "Isian angka" (ASSESS-QUESTION-007). */
+export const NUMERIC_ANSWER_KEY: QuestionContentKey = '2:NUMERIC_ANSWER';
 /** The content keys this client renders and saves; sent as the X-Question-Types header. */
-export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, MATCHING_KEY, ORDERING_KEY]);
+export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY]);
 export const QUESTION_TYPES_HEADER = 'X-Question-Types';
 
 export function contentKeyOf(question: { schemaVersion: number; questionType: string }): QuestionContentKey {
@@ -46,6 +48,11 @@ export function answerValueOf(payload: unknown): string | null {
     const ids = (payload as { selectedOptionIds: unknown }).selectedOptionIds;
     if (!Array.isArray(ids) || ids.some(id => typeof id !== 'string') || new Set(ids).size !== ids.length) return null;
     return canonicalSelection(ids as string[]);
+  }
+  // Numeric answer: the text as typed, or "" (ASSESS-QUESTION-007 §4.4).
+  if ('numericText' in payload) {
+    const text = (payload as { numericText: unknown }).numericText;
+    return typeof text === 'string' && (text === '' || isNumericText(text)) ? text : null;
   }
   // Ordering: the ids in answer order (ASSESS-QUESTION-005 §4.4).
   if ('orderedItemIds' in payload) {
@@ -120,8 +127,14 @@ export function orderOf(value: string): string[] | null {
   return new Set(ids).size === ids.length && JSON.stringify(ids) === value ? ids : null;
 }
 
-/** Whether a value is the empty answer of a type that allows one: "[]" for multiple response, matching and ordering (O02-2). */
+/** A number as O02-8/D1 accept it (ASSESS-QUESTION-007 E1): optional minus, ASCII digits, one comma or dot decimal, at most 30 characters. */
+export function isNumericText(value: string): boolean {
+  return value.length <= 30 && /^-?[0-9]+([.,][0-9]+)?$/.test(value);
+}
+
+/** Whether a value is the empty answer of a type that allows one: "[]" for multiple response, matching and ordering, "" for numeric answer (O02-2). */
 export function isEmptyValue(contentKey: string, value: string | null | undefined): boolean {
+  if (contentKey === NUMERIC_ANSWER_KEY) return value === '';
   return value === EMPTY_SELECTION && (contentKey === MULTIPLE_RESPONSE_KEY || contentKey === MATCHING_KEY || contentKey === ORDERING_KEY);
 }
 
@@ -135,6 +148,7 @@ export function isAnsweredValue(contentKey: string, value: string | null | undef
     const pairs = pairsOf(value);
     return pairs !== null && leftCount !== undefined && leftCount > 0 && pairs.length === leftCount;
   }
+  if (contentKey === NUMERIC_ANSWER_KEY) return value !== '' && isNumericText(value);
   // Ordering: a full order of every item (ASSESS-QUESTION-005 §4A.4 item 7); the count is the item count.
   if (contentKey === ORDERING_KEY) {
     const ids = orderOf(value);
@@ -693,7 +707,7 @@ export type QuestionProblemCode =
   | 'not_text' | 'encoding_invalid' | 'csv_syntax' | 'header_invalid' | 'file_empty' | 'too_many_questions'
   | 'column_count' | 'number_out_of_order' | 'prompt_empty' | 'option_empty' | 'options_duplicate'
   | 'correct_multiple' | 'correct_invalid' | 'score_invalid' | 'type_invalid' | 'correct_duplicate' | 'options_not_allowed'
-  | 'columns_missing' | 'matching_items_invalid' | 'items_duplicate' | 'items_not_allowed' | 'ordering_items_invalid';
+  | 'columns_missing' | 'matching_items_invalid' | 'items_duplicate' | 'items_not_allowed' | 'ordering_items_invalid' | 'tolerance_invalid' | 'tolerance_not_allowed';
 
 export type SetupProblemCode =
   | 'file_too_large' | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
@@ -701,14 +715,14 @@ export type SetupProblemCode =
   | 'schedule_conflict' | 'not_ready';
 
 export type ImportProblem =
-  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' | 'MJ' | 'UR'; side?: 'left' | 'right' }
+  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' | 'MJ' | 'UR' | 'IA'; side?: 'left' | 'right' }
   | { source: 'setup'; code: SetupProblemCode; count?: number; blocker?: string };
 
 export interface TeacherExamImportPreview {
   sourceSha256: string;
   problems: ImportProblem[];
   /** type and correctLetters: ASSESS-QUESTION-002 (absent from older servers: PG with `correct`). */
-  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR'; correctLetters?: string[]; correctValue?: boolean; leftItems?: string[]; rightItems?: string[]; keyEqualsAuthoredOrder?: boolean }>;
+  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA'; correctLetters?: string[]; correctValue?: boolean; leftItems?: string[]; rightItems?: string[]; keyEqualsAuthoredOrder?: boolean; tolerance?: string }>;
   participants: Array<{ enrollmentId: string; elligbleId: string; included: boolean; conflict: boolean }>;
   window: { startsAt: string; endsAt: string } | null;
   totals: { questions: number; maxScore: number; participants: number };
@@ -740,7 +754,7 @@ export interface TeacherExamPreview {
     options: Array<{ id: string; content: string }>;
     correctOptionId: string | null;
   /** ASSESS-QUESTION-002: the valid type (absent from older servers: single choice); null for invalid content. */
-  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | null;
+  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER' | null;
   /** Multiple response: the key options in authored order. */
   correctOptionIds?: string[] | null;
   /** True/false only: the key. */
@@ -752,6 +766,9 @@ export interface TeacherExamPreview {
   /** Ordering only: the items and the correct order. */
   items?: Array<{ id: string; content: string }>;
   correctOrder?: string[];
+  /** Numeric answer only: the canonical key and tolerance. */
+  expected?: string;
+  tolerance?: string;
     maxScore: number | null;
     valid: boolean;
   }>;

@@ -3,6 +3,7 @@ import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapsh
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
 import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
 import { ORDERING_DESCRIPTOR, ORDERING_TYPE } from './question-types/ordering.ts';
+import { NUMERIC_ANSWER_DESCRIPTOR, NUMERIC_ANSWER_TYPE } from './question-types/numeric-answer.ts';
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
 
 // Teacher preview of an exam before it opens (ASSESS-TEACHER-002; D04.3-38 LOCKED: the
@@ -24,7 +25,7 @@ export interface TeacherExamPreviewQuestion {
     /** False when the stored content is not a valid question of a delivered type (readiness blocks the exam). */
     valid: boolean;
     /** ASSESS-QUESTION-002 §4A.6/§11.3: the valid type; absent for invalid content. */
-    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING';
+    questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER';
     /** True/false only: the key (ASSESS-QUESTION-003 §4A.5); absent on every other item. */
     correctValue?: boolean;
     /** Multiple response: the key options in authored order; null for v1; absent for invalid content. */
@@ -36,6 +37,9 @@ export interface TeacherExamPreviewQuestion {
     /** Ordering only (ASSESS-QUESTION-005 §4.3): the items in display order and the correct order; absent on every other item. */
     items?: Array<{ id: string; content: string }>;
     correctOrder?: string[];
+    /** Numeric answer only (ASSESS-QUESTION-007 §4.3): the canonical key and tolerance; absent on every other item. */
+    expected?: string;
+    tolerance?: string;
 }
 
 export interface TeacherExamPreview {
@@ -120,6 +124,14 @@ function toQuestion(snapshotId: string, no: number, content: unknown): TeacherEx
             snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
             questionType: ORDERING_TYPE, correctOptionIds: null,
             items: record.items.map(i => ({ id: i.id, content: i.content })), correctOrder: [...record.correctOrder],
+        };
+    }
+    if (content && typeof content === 'object' && !Array.isArray(content) && (content as Record<string, unknown>)['schemaVersion'] === 2
+        && NUMERIC_ANSWER_DESCRIPTOR.validateContent(content as Record<string, unknown>).ok) {
+        const record = content as { prompt: string; maxScore: number; expected: string; tolerance: string };
+        return {
+            snapshotId, no, prompt: record.prompt, options: [], correctOptionId: null, maxScore: record.maxScore, valid: true,
+            questionType: NUMERIC_ANSWER_TYPE, correctOptionIds: null, expected: record.expected, tolerance: record.tolerance,
         };
     }
     // Show what is there, without trusting its shape.
