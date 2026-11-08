@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import type pg from 'pg';
+import pg from 'pg';
 import { createDisposableDatabase, skipWithoutDatabase } from '../support/pg-harness.ts';
 import { addMembership, createPersonWithAccount, createTeachingContext, createTenant } from '../support/fixtures.ts';
 import { BrowserLikeClient, startProductionWiredServer } from '../support/test-server.ts';
@@ -435,16 +435,22 @@ test('SEC-OPS-001 C05 real contention in both orders against login, session muta
 test('SEC-OPS-001 C05 a detected deadlock leaves zero partial state; the rerun of the case succeeds', { skip: skipWithoutDatabase, timeout: 120000 }, async t => {
     const db = await disposable(); const app = await startProductionWiredServer(db.pool);
     const watch = await db.pool.connect();
-    t.after(() => teardown(app, db));
+    // PostgreSQL checks for a deadlock once per lock wait, deadlock_timeout after the wait begins,
+    // and aborts the first backend whose check sees the cycle. Pin the victim (ASSESS-QUESTION-004
+    // §13): the revoke checks after 5 s, when the cycle exists; the synthetic writer only after 60 s.
+    // Both settings need the superuser role the CI database uses.
+    const slowCheck = new pg.Pool({ connectionString: db.url, max: 2, options: '-c deadlock_timeout=5s' });
+    t.after(async () => { await slowCheck.end().catch(() => {}); await teardown(app, db); });
     const s = await school(db.pool), x = await student(db.pool, s);
     await signIn(app.baseUrl, s, x);
     const before = await snapshot(db.pool, STATE);
     // A synthetic writer holds the target's session row, then waits on the credential the revoke holds.
     const d = await db.pool.connect();
+    await d.query("SET deadlock_timeout = '60s'");
     await d.query('BEGIN');
     await d.query('SELECT id FROM identity_sessions WHERE user_account_id=$1 FOR UPDATE', [x.accountId]);
     const dpid = (await d.query('SELECT pg_backend_pid() AS pid')).rows[0].pid as number;
-    const revoking = settled(revoke(db.pool, s.tenant, x.username));
+    const revoking = settled(revoke(slowCheck, s.tenant, x.username));
     await blockedBy(watch, dpid, revoking);
     const closing = settled(d.query('SELECT user_account_id FROM identity_account_credentials WHERE user_account_id=$1 FOR UPDATE', [x.accountId]));
     const outcome = await revoking;

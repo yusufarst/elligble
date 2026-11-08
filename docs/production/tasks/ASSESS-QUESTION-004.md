@@ -577,3 +577,36 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
 - PB05 and PB12 are OPEN. G7 is required before real data. There is no deployment or release claim.
 
 **Landing:** a delegated squash merge of PR #30 under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, then post-merge main CI. The next Task's first change records the landing, with DONE 10/33 (30.30%), VERIFYING 0, BLOCKED 23.
+
+## 13. PR-head CI failure and correction 3 (path-only addition, row 31) — 2026-11-08
+
+- **PR-head CI #196** (run 42442477266, evidence commit 7e8539d, attempt 1): Web SUCCESS; Runtime FAILURE; Container and E2E skipped. Preserved; no re-run.
+  - **The failure:** one of 265 integration tests, `runtime/secure-assessment/test/integration/session-intervention.test.ts:435` (SEC-OPS-001 C05). At line 451 the revoke succeeded, where the test expects it to be the deadlock victim.
+  - **Not a regression:** 7e8539d changes only this record relative to 8c51f73, and #195 passed on that content.
+- **Cause: a timing race in the test.**
+  - PostgreSQL runs its deadlock check once per lock wait, `deadlock_timeout` (1 s) after the wait begins, and the first backend whose check sees the cycle is aborted.
+  - The synthetic writer `d` starts its closing wait only after `blockedBy` has seen the revoke waiting.
+  - When more than 1 s passes between the two waits, the revoke's single check finds no cycle yet, and `d` becomes the victim.
+- **Path-only addition (00.13 §5.2), row 31:**
+
+  | # | Path | Purpose |
+  |---|---|---|
+  | 31 | runtime/secure-assessment/test/integration/session-intervention.test.ts | C05 only: deterministic deadlock victim (test-only) |
+
+  - **Reviewer confirmation, before the edit:** the same reviewer confirmed:
+    - the diagnosis;
+    - that every assertion stays and the property is now proven on every run (a strengthening, not a weakening);
+    - that it is necessary under §5.2 for C04/C08 and the §6 merge gate, since a docs-only new SHA would be a forbidden re-run (§5.3);
+    - that it adds no route, table, column, dependency, permission, data field, UI surface, acceptance, gate, workflow or §7 change.
+- **Correction 3.** The reviewer confirmed this change exactly:
+  - a `slowCheck` pool on `db.url` with `deadlock_timeout=5s`, closed in `t.after` before `teardown`;
+  - `SET deadlock_timeout = '60s'` on `d` before `BEGIN`;
+  - the contended revoke runs on `slowCheck`, and the rerun stays on `db.pool`;
+  - a comment.
+
+  It also needs one line outside C05: the file's `import type pg from 'pg'` becomes `import pg from 'pg'`. The test needs the value `pg.Pool`, and every type use stays the same.
+- **Superuser note:** `deadlock_timeout` can be set only by a superuser. CI connects as `postgres` (the workflow's `ELLIGBLE_TEST_DATABASE_URL`). A local test URL whose role is not a superuser fails this test when it connects. The harness already needs a role that can create databases.
+- **Order:**
+  1. Full CI on correction 3's exact SHA, attempt 1.
+  2. The reviewer reviews exactly this diff.
+  3. A new record-only evidence commit, then PR-head CI 8/8 on attempt 1 (00.13 §6).
