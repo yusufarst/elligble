@@ -644,3 +644,15 @@ No re-runs, and no push while the previous commit's CI runs.
   - The overflowing elements were the existing readiness sections of the Teacher card (`.teacher-readiness-details` grid, `teacher-readiness.css`), whose texts all wrap. WebKit sized the `1fr` grid track from the items' automatic minimum width. No earlier spec captured a Teacher card at 360 px in WebKit.
 - **Correction (TeacherReadinessView.tsx, an allowlisted row):** the two readiness grid items take `min-w-0` and `overflow-wrap: anywhere`, so the track cannot grow past the card. This applies to every Teacher card and changes nothing at widths where the content already fits.
   - Local: web typecheck clean; teacherOperations, institutionExams and teacherResults 44/44.
+
+### 11.0.4 Rendered review of 6325c1e and its correction
+
+- **CI #225** (run 42521915020, 6325c1e, attempt 1): eight SUCCESS. The rendered review (C07) returned **STOP F1**: focus was lost after a dialog send.
+  - **Failed send:** the focused action stays disabled while saving and nothing restores focus when the error renders. The capture  recorded focus on BODY in 40 of 50 captures, with the dialog still open.
+  - **Successful "Tandai Siap" or "Batalkan Ujian":** the trigger is removed by the refresh, so focus fell to BODY.
+- **Correction (rows InstitutionExamView.tsx, TeacherExamImportView.tsx and institutionExams.test.tsx):**
+  - **Failed send:** the six Operator dialogs (through ) and the preparation dialog "Simpan Soal Ujian Sekolah?" move focus to their enabled retry action once the error has rendered. This is the pattern of TeacherExamParticipants.tsx:69–75.
+  - **Successful mark ready or cancel:** focus moves to the success notice (, as in StudentClaimView.tsx:112), which survives the refresh. Where the trigger survives, focus returns to it as before.
+  - **The reviewer's non-material Metric note:** the summary metrics take .
+  - **Tests:** C05 asserts the retry focus for period, placement, mark ready, cancel and preparation save, and the notice focus after a successful mark ready and cancel. Run against the earlier components, these assertions fail.
+  - **Local checks:** web typecheck clean; institutionExams, teacherExamImport, teacherOperations and designSystemGuard 52/52.

@@ -491,6 +491,13 @@ const InstitutionPreparationView: React.FC<{ examInstanceId: string; onBack(): v
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const importKey = useRef<string | null>(null);
+  const retryRef = useRef<HTMLButtonElement | null>(null);
+
+  // Saving disables the focused confirmation button. Restore it only after the error and the
+  // enabled retry control have both committed to the dialog (as TeacherExamParticipants).
+  useEffect(() => {
+    if (confirmOpen && saveError && !saving && retryRef.current && !retryRef.current.disabled) retryRef.current.focus();
+  }, [confirmOpen, saveError, saving]);
 
   const load = async () => {
     setLoadError(null);
@@ -643,18 +650,18 @@ const InstitutionPreparationView: React.FC<{ examInstanceId: string; onBack(): v
         </CardHeader>
         <CardContent>
           <MetricList aria-label="Ujian sekolah">
-            <Metric label="Rombel" valueClassName="text-sm font-medium" value={exam.groupLabel ?? '-'} />
-            <Metric label="Peserta" value={exam.participants ?? 0} />
-            <Metric label="Durasi pengerjaan" valueClassName="text-sm font-medium" value={exam.durationMinutes ? `${exam.durationMinutes} menit` : '-'} />
-            <Metric label="Aturan mulai terlambat" valueClassName="text-sm font-medium" value={policy ?? '-'} />
+            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Rombel" valueClassName="text-sm font-medium" value={exam.groupLabel ?? '-'} />
+            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Peserta" value={exam.participants ?? 0} />
+            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Durasi pengerjaan" valueClassName="text-sm font-medium" value={exam.durationMinutes ? `${exam.durationMinutes} menit` : '-'} />
+            <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Aturan mulai terlambat" valueClassName="text-sm font-medium" value={policy ?? '-'} />
             <Metric
-              className="col-span-2"
+              className="col-span-2 min-w-0 [overflow-wrap:anywhere]"
               label="Jadwal Sesi"
               valueClassName="text-sm font-medium"
               value={exam.windowStartsAt && exam.windowEndsAt ? formatWindow(exam.windowStartsAt, exam.windowEndsAt) : '-'}
             />
             <Metric
-              className="col-span-2"
+              className="col-span-2 min-w-0 [overflow-wrap:anywhere]"
               label="Tenggat penyiapan soal"
               valueClassName="text-sm font-medium"
               value={institution.preparationDeadline ? formatDateTime(institution.preparationDeadline) : '-'}
@@ -725,7 +732,7 @@ const InstitutionPreparationView: React.FC<{ examInstanceId: string; onBack(): v
             {saveError && <p role="alert" className="m-0 text-sm text-danger-ink">{saveError}</p>}
             <DialogFooter>
               <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={saving}>Batal</Button>
-              <Button onClick={save} disabled={saving}>{saving ? 'Menyimpan...' : saveError ? 'Coba Lagi' : 'Simpan Soal'}</Button>
+              <Button ref={retryRef} onClick={save} disabled={saving}>{saving ? 'Menyimpan...' : saveError ? 'Coba Lagi' : 'Simpan Soal'}</Button>
             </DialogFooter>
           </DialogContent>
         )}
@@ -768,11 +775,11 @@ const PreviewSection: React.FC<{
       )}
 
       <MetricList aria-label="Ringkasan">
-        <Metric label="Soal" value={preview.totals.questions} />
-        <Metric label="Skor maksimum" value={formatScore(preview.totals.maxScore)} />
-        <Metric label="Peserta" value={included} />
+        <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Soal" value={preview.totals.questions} />
+        <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Skor maksimum" value={formatScore(preview.totals.maxScore)} />
+        <Metric className="min-w-0 [overflow-wrap:anywhere]" label="Peserta" value={included} />
         <Metric
-          className="col-span-2 sm:col-span-1"
+          className="col-span-2 sm:col-span-1 min-w-0 [overflow-wrap:anywhere]"
           valueClassName="text-sm font-medium"
           label="Waktu pelaksanaan"
           value={preview.window ? formatWindow(preview.window.startsAt, preview.window.endsAt) : 'Belum valid'}

@@ -132,12 +132,25 @@ function useActionKey(open: boolean) {
   return key;
 }
 
+/**
+ * Sending disables the focused action. Restore focus to the enabled retry control only after the
+ * error and that control have both committed to the dialog (as TeacherExamParticipants).
+ */
+function useRetryFocus(open: boolean, errors: string[], saving: boolean) {
+  const retry = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (open && errors.length > 0 && !saving && retry.current && !retry.current.disabled) retry.current.focus();
+  }, [open, errors, saving]);
+  return retry;
+}
+
 const PeriodDialog: React.FC<DialogProps & { overview: InstitutionOverview; onSaved(periodId: string): void }> = ({ open, onClose, restoreFocus, overview, onSaved }) => {
   const [label, setLabel] = useState('');
   const [assessmentTypeId, setAssessmentTypeId] = useState('');
   const [academicPeriodId, setAcademicPeriodId] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const retry = useRetryFocus(open, errors, saving);
   const key = useActionKey(open);
   useEffect(() => {
     if (!open) return;
@@ -182,7 +195,7 @@ const PeriodDialog: React.FC<DialogProps & { overview: InstitutionOverview; onSa
           <FailureList messages={errors} />
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button onClick={submit} disabled={saving || !label.trim() || !assessmentTypeId || !academicPeriodId}>
+            <Button ref={retry} onClick={submit} disabled={saving || !label.trim() || !assessmentTypeId || !academicPeriodId}>
               {saving ? 'Menyimpan...' : 'Simpan Periode'}
             </Button>
           </DialogFooter>
@@ -198,6 +211,7 @@ const SessionDialog: React.FC<DialogProps & { periodId: string | null; onSaved()
   const [endTime, setEndTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const retry = useRetryFocus(open, errors, saving);
   const key = useActionKey(open);
   useEffect(() => {
     if (open) { setDate(''); setStartTime(''); setEndTime(''); setErrors([]); }
@@ -239,7 +253,7 @@ const SessionDialog: React.FC<DialogProps & { periodId: string | null; onSaved()
           <FailureList messages={errors} />
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button onClick={submit} disabled={saving || !date || !startTime || !endTime}>{saving ? 'Menyimpan...' : 'Simpan Sesi'}</Button>
+            <Button ref={retry} onClick={submit} disabled={saving || !date || !startTime || !endTime}>{saving ? 'Menyimpan...' : 'Simpan Sesi'}</Button>
           </DialogFooter>
         </DialogContent>
       )}
@@ -256,6 +270,7 @@ const PlacementDialog: React.FC<DialogProps & { overview: InstitutionOverview; s
   const [deadline, setDeadline] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const retry = useRetryFocus(open, errors, saving);
   const key = useActionKey(open);
   useEffect(() => {
     if (open) { setTeachingAssignmentId(''); setDuration(''); setPolicy(''); setDeadline(''); setErrors([]); }
@@ -334,7 +349,7 @@ const PlacementDialog: React.FC<DialogProps & { overview: InstitutionOverview; s
           <FailureList messages={errors} />
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button onClick={submit} disabled={saving || !complete}>{saving ? 'Menyimpan...' : 'Tempatkan Ujian'}</Button>
+            <Button ref={retry} onClick={submit} disabled={saving || !complete}>{saving ? 'Menyimpan...' : 'Tempatkan Ujian'}</Button>
           </DialogFooter>
         </DialogContent>
       )}
@@ -347,6 +362,7 @@ const DeadlineDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null;
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const retry = useRetryFocus(open, errors, saving);
   const key = useActionKey(open);
   useEffect(() => {
     if (open) { setDeadline(''); setReason(''); setErrors([]); }
@@ -384,7 +400,7 @@ const DeadlineDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null;
           <FailureList messages={errors} />
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button onClick={submit} disabled={saving || !deadline || !validActionReason(reason)}>{saving ? 'Menyimpan...' : 'Perpanjang'}</Button>
+            <Button ref={retry} onClick={submit} disabled={saving || !deadline || !validActionReason(reason)}>{saving ? 'Menyimpan...' : 'Perpanjang'}</Button>
           </DialogFooter>
         </DialogContent>
       )}
@@ -396,6 +412,7 @@ const CancelDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null; o
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const retry = useRetryFocus(open, errors, saving);
   const key = useActionKey(open);
   useEffect(() => {
     if (open) { setReason(''); setErrors([]); }
@@ -429,7 +446,7 @@ const CancelDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null; o
           <FailureList messages={errors} />
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button variant="destructive" onClick={submit} disabled={saving || !validActionReason(reason)}>{saving ? 'Membatalkan...' : 'Batalkan Ujian'}</Button>
+            <Button ref={retry} variant="destructive" onClick={submit} disabled={saving || !validActionReason(reason)}>{saving ? 'Membatalkan...' : 'Batalkan Ujian'}</Button>
           </DialogFooter>
         </DialogContent>
       )}
@@ -440,6 +457,7 @@ const CancelDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null; o
 const ReadyDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null; onSaved(notice: string): void }> = ({ open, onClose, restoreFocus, exam, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const retry = useRetryFocus(open, errors, saving);
   useEffect(() => {
     if (open) setErrors([]);
   }, [open]);
@@ -470,7 +488,7 @@ const ReadyDialog: React.FC<DialogProps & { exam: InstitutionExamItem | null; on
           <FailureList messages={errors} />
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button onClick={submit} disabled={saving}>{saving ? 'Memproses...' : 'Tandai Siap'}</Button>
+            <Button ref={retry} onClick={submit} disabled={saving}>{saving ? 'Memproses...' : 'Tandai Siap'}</Button>
           </DialogFooter>
         </DialogContent>
       )}
@@ -550,11 +568,13 @@ export const InstitutionExamView: React.FC = () => {
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const reloadButton = useRef<HTMLButtonElement | null>(null);
+  const noticeRef = useRef<HTMLDivElement | null>(null);
 
   const restoreFocus = () => {
-    // Controlled dialogs have no Radix trigger: return to the opener, or to "Muat Ulang"
-    // when a completed action removed it.
-    const target = [trigger.current, reloadButton.current].find(button => button?.isConnected && !button.disabled);
+    // Controlled dialogs have no Radix trigger: return to the opener; when a completed action
+    // removes it, to the notice of that action, which survives the refresh (as StudentClaimView).
+    const target = [trigger.current, noticeRef.current, reloadButton.current]
+      .find(el => el?.isConnected && !(el instanceof HTMLButtonElement && el.disabled));
     target?.focus();
     return target !== undefined;
   };
@@ -602,7 +622,9 @@ export const InstitutionExamView: React.FC = () => {
     setDialog(next);
   };
   const close = () => setDialog(null);
-  const done = async (text: string, periodId: string | null = openPeriodId) => {
+  const done = async (text: string, periodId: string | null = openPeriodId, removesTrigger = false) => {
+    // "Tandai Siap" and "Batalkan Ujian" leave their card with the refresh: focus goes to the notice.
+    if (removesTrigger) trigger.current = null;
     setDialog(null);
     setNotice(text);
     await refresh(periodId);
@@ -627,7 +649,7 @@ export const InstitutionExamView: React.FC = () => {
   );
 
   const noticeBanner = notice ? (
-    <Alert variant="success" role="status">
+    <Alert ref={noticeRef} tabIndex={-1} variant="success" role="status" className="outline-none">
       <IconInfo aria-hidden="true" />
       <AlertDescription>{notice}</AlertDescription>
     </Alert>
@@ -756,14 +778,14 @@ export const InstitutionExamView: React.FC = () => {
         onClose={close}
         restoreFocus={restoreFocus}
         exam={dialog?.kind === 'cancel' ? dialog.exam : null}
-        onSaved={text => void done(text)}
+        onSaved={text => void done(text, openPeriodId, true)}
       />
       <ReadyDialog
         open={dialog?.kind === 'ready'}
         onClose={close}
         restoreFocus={restoreFocus}
         exam={dialog?.kind === 'ready' ? dialog.exam : null}
-        onSaved={text => void done(text)}
+        onSaved={text => void done(text, openPeriodId, true)}
       />
     </Page>
   );

@@ -229,6 +229,8 @@ describe('InstitutionExamView', () => {
     expect(postInstitutionPeriod).not.toHaveBeenCalled();
     fireEvent.click(save);
     expect(await within(dialog).findByText('Nama periode ini sudah dipakai untuk periode akademik yang sama.')).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(save));
+    expect(save.disabled).toBe(false);
     fireEvent.click(save);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     const [first, second] = vi.mocked(postInstitutionPeriod).mock.calls.map(c => c[0]);
@@ -264,7 +266,10 @@ describe('InstitutionExamView', () => {
     fireEvent.click(within(placement).getByRole('button', { name: 'Tempatkan Ujian' }));
     expect(await within(placement).findByText('3 siswa sudah dijadwalkan di ujian lain pada waktu yang sama.')).toBeTruthy();
     expect(within(placement).getByText('Tenggat harus sebelum sesi dimulai.')).toBeTruthy();
-    fireEvent.click(within(placement).getByRole('button', { name: 'Tempatkan Ujian' }));
+    const place = within(placement).getByRole('button', { name: 'Tempatkan Ujian' }) as HTMLButtonElement;
+    await waitFor(() => expect(document.activeElement).toBe(place));
+    expect(place.disabled).toBe(false);
+    fireEvent.click(place);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     const calls = vi.mocked(postInstitutionPlacement).mock.calls.map(c => c[0]);
     expect(calls[0]).toMatchObject({ sessionId: SESSION, teachingAssignmentId: TA, durationMinutes: 90, latestStartPolicy: 'FULL_DURATION_BEYOND_WINDOW', preparationDeadline: '2026-11-10T15:00' });
@@ -285,13 +290,19 @@ describe('InstitutionExamView', () => {
     expect(within(dialog).queryByRole('textbox')).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Tandai Siap' }));
     expect(await within(dialog).findByText('Ujian belum dapat ditandai siap: Terdapat konflik jadwal peserta.')).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Tandai Siap' })));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Batal' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Tandai Siap' })));
     fireEvent.click(screen.getByRole('button', { name: 'Tandai Siap' }));
+    vi.mocked(getInstitutionPeriod).mockResolvedValue(detail([item({ lifecycleState: 'READY', readiness: PASS })]));
     fireEvent.click(within(await screen.findByRole('dialog', { name: 'Tandai Siap?' })).getByRole('button', { name: 'Tandai Siap' }));
     expect(await screen.findByText('Matematika · X-1 ditandai siap.')).toBeTruthy();
     expect(postInstitutionTransition).toHaveBeenLastCalledWith(EXAM);
+    // The refresh removes "Tandai Siap": focus stays on the notice, never on the page body.
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Tandai Siap' })).toBeNull());
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Muat Ulang' }) as HTMLButtonElement).disabled).toBe(false));
+    expect(document.activeElement).toBe(screen.getByText('Matematika · X-1 ditandai siap.').closest('[role="status"]'));
   });
 
   it('"Perpanjang Tenggat Penyiapan Soal" needs a new deadline and a reason, sends the expected revision and words a stale one', async () => {
@@ -320,12 +331,19 @@ describe('InstitutionExamView', () => {
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Alasan tindakan' }), { target: { value: 'Salah tempat' } });
     fireEvent.click(confirm);
     expect(await within(dialog).findByText('Perubahan belum tersimpan karena koneksi terputus. Coba lagi: mencoba lagi tidak membuat data ganda.')).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(confirm));
+    expect(confirm.disabled).toBe(false);
+    vi.mocked(getInstitutionPeriod).mockResolvedValue(detail([item({ lifecycleState: 'ARCHIVED', cancelledAt: '2026-11-09T02:00:00.000Z' })]));
     fireEvent.click(confirm);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     const [a, b] = vi.mocked(postInstitutionCancel).mock.calls.map(c => c[0]);
     expect(b.actionKey).toBe(a.actionKey);
     expect(a).toMatchObject({ examInstanceId: EXAM, reason: 'Salah tempat' });
     expect(await screen.findByText('Matematika · X-1 dibatalkan dan diarsipkan.')).toBeTruthy();
+    // The refresh removes every action of the card: focus stays on the notice, never on the page body.
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Batalkan Ujian' })).toBeNull());
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Muat Ulang' }) as HTMLButtonElement).disabled).toBe(false));
+    expect(document.activeElement).toBe(screen.getByText('Matematika · X-1 dibatalkan dan diarsipkan.').closest('[role="status"]'));
   });
 });
 
@@ -469,7 +487,10 @@ describe('TeacherExamImportView in preparation mode', () => {
     expect(within(dialog).getByText('Soal yang sudah tersimpan (3 soal) akan diganti seluruhnya oleh berkas ini.')).toBeTruthy();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Simpan Soal' }));
     expect(await within(dialog).findByText(/Soal belum tersimpan karena koneksi terputus\./)).toBeTruthy();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Coba Lagi' }));
+    const retry = within(dialog).getByRole('button', { name: 'Coba Lagi' }) as HTMLButtonElement;
+    await waitFor(() => expect(document.activeElement).toBe(retry));
+    expect(retry.disabled).toBe(false);
+    fireEvent.click(retry);
     await waitFor(() => expect(saved).toHaveBeenCalledWith('Soal ujian sekolah tersimpan: 1 soal.'));
     const [a, b] = vi.mocked(postTeacherExamContent).mock.calls;
     expect(b[1].importKey).toBe(a[1].importKey);
