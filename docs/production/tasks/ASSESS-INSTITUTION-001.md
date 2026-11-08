@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / school-scale exam governance; HIGH risk; R20, R21; P8 V07, V10, V11, V12 |
-| Status | **IN_PROGRESS — Owner decisions taken (§3.1); contract review chain STOP → PASS (§9); formal READY PASS and Build started under DEC-048 on 2026-11-09 (§10)** |
+| Status | **VERIFYING — Owner decisions taken (§3.1); contract review chain STOP → PASS (§9); formal READY PASS (§10); implementation candidate published for exact-content CI and the independent implementation and rendered review (§11)** |
 | Objective | The School Operator composes an institution exam period:<br>• an exam period with sessions (a date and a time slot);<br>• in each session, one ExamInstance per subject × rombel, each bound to one teaching assignment;<br>• a preparation deadline per ExamInstance.<br>The assigned subject Teacher prepares the content through the existing import path before the deadline. After the deadline the content is locked. The Operator can extend a deadline with reason, confirmation and audit, but never edits content or sees answer keys. Teacher-managed exams are unchanged |
 | Owner decisions | O05-1, O05-2 and A04-1, approved 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); OD-07 and OD-07b (00.11 §12); **OP-1–OP-9 (recommended defaults, with OP-2 asked explicitly) and the authority boundary OB-1, decided by the Owner on 2026-11-09 (§3.1)**. Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• Internal dependency SEC-001 is DONE / MERGED (PR #19, 89d725c).<br>• The previous Task, ASSESS-QUESTION-006, is DONE / MERGED by PR #34 as main e031d31949972fd501946dd231f2bd1a45e247b5; its PR-head CI and post-merge main CI #219 are recorded from GitHub in this Task's first change.<br>• O05 (O05-1, O05-2) and A04 (A04-1) are approved; O09 rests on the approved P5 content. The institution composition that P5 left to O05 (CBT_PERMISSION_MATRIX.md:96, :142) is settled for this scope by the Owner's authority boundary OB-1 (§3.1, risk R1).<br>• READY still needs the independent contract review PASS (00.13 §4.3) |
@@ -546,8 +546,6 @@ No re-runs, and no push while the previous commit's CI runs.
 - 2026-11-09: Contract prepared under DEC-048 on main e031d31 after ASSESS-QUESTION-006 landed (PR #34). O05-1, O05-2 and A04-1 are the approved inputs. Open points OP-1–OP-9 raised for the Owner with recommended defaults. Not reviewed; NOT READY.
 - 2026-11-09: Owner decisions in chat, quoted in §3.1: "Setujui semua default (Recommended)" for OP-1 to OP-9; OP-2 asked explicitly, "Boleh, ganti seluruhnya (Recommended)"; the authority boundary OB-1, "Setuju batas ini (Recommended)".
 - 2026-11-09: Contract review 1 returned STOP (F1–F7): F1 status consistency and R1 on OB-1; F2 the mark-ready confirmation dialog; F3 the content-import readiness check; F4 the trigger lock; F5 OP-2 against immutable snapshots; F6 the time-slot term; F7 the P5 negative trace and vectors. Non-material notes a–p. Corrections applied in this revision; status stays NOT READY, under independent review.
-
-## 9. Independent contract review
 - 2026-11-09: Contract review 2 returned PASS. The reviewer's rulings and four minor corrections were applied, then formal READY and Build start (§10).
 
 ## 9. Independent contract review
@@ -575,3 +573,43 @@ No re-runs, and no push while the previous commit's CI runs.
   - Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 56b1a1babe2fb8b6a7077627168b34f2a1a9b66f797ca379d306f9dd59a1698a.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 14, IN_PROGRESS 1, VERIFYING 0, BLOCKED 18.
+
+## 11. Implementation checkpoint — 2026-11-09
+
+- **Step 1:** registration 0895ab4 on main e031d31 carries the ASSESS-QUESTION-006 landing and the #219 baseline manifest (§10).
+- **Implementation candidate,** inside rows 5–32 plus the Task-flow rows 1–4:
+  - **Schema** migration 0062 (idempotent, the 0060/0061 pattern): the period and session tables, `institution_session_id` with its FK, index and the guard trigger (no change in any direction), the deadline revision table with the revision CHECK, append-only triggers on the three new tables, and the content lock trigger (no lock for a teacher-managed exam; FOR SHARE, SCHEDULED and `transaction_timestamp()` before the highest-revision deadline for an institution exam).
+  - **Operator routes** `institution-exams.ts`, in the §4.2 order (exact body, authentication, BEGIN, the action-key lock, re-authentication with the Operator assignment FOR SHARE, replay, object lock, checks, writes, re-authentication, COMMIT) and the 23505 constraint mapping:
+    - the overview and the period view, operational data only, readiness only for a SCHEDULED exam past its deadline (E15);
+    - periods, sessions (school-zone conversion with the tenant zone, as the import), placements (E4 advisory lock, OP-6 participants on the session date, the shared overlap query, the writes of `exam-provisioning.ts:275–330`, deadline revision 1);
+    - the deadline extension (stale revision, OP-4 A), the cancellation (the 0052 helper extracted unchanged from `teacher-exam-cancel.ts`), mark ready.
+  - **Teacher content routes:** preview (always rolled back) and confirm through the IMPORT wrapper, in the §4.4 order; OP-2 replacement; the content check alone, mapped as E6 by the pure `mapContentReadiness`; `prepared` added to `successful()`.
+  - **Refusals** `institution_managed`: transition (every action except finalize), reschedule, cancel, participant candidates and addition; `ManagedExamRow.institution_session_id`.
+  - **Teacher card:** the institution block, read by a separate query without `LIMIT 1` (E14).
+  - **Extracted unchanged** from the teacher import: `previewQuestionsOf`, `overlappingPersonIds`, `SCHEDULING_STATES`, `cleanFileName` (E17).
+  - **server.ts** nine routes and the refusal mappings; **metrics.ts** nine `exam_setup` entries.
+  - **Client:**
+    - the `institution` workspace "Ujian Sekolah" (`IconClipboardCheck`), right after `operator`, loaded on demand in `App.tsx`;
+    - `InstitutionExamView`: the header, the empty, loading, refused and failed states, period cards, "Jadwal Sesi" headings, exam items (lifecycle and preparation badges, the readiness message, the actions), the six dialogs with focus return, one action key per dialog kept on retries, and the frozen problem and refusal copy;
+    - `lib/status.ts`: `preparationStatus` and the readiness blocker texts moved unchanged from `TeacherReadinessView.tsx`;
+    - the Teacher institution card: the four facts, "Siapkan Soal" and "Pratinjau Soal", the organizer actions and the pause, resume and end group absent, `institution_managed` in `transitionFailureMessage`;
+    - `TeacherExamImportView` preparation mode (`?view=teacher&prepareExam=`, `SCREEN_TITLE.examPreparation`): the read-only summary, the file card shared with the scheduling mode, the preview, the replacement notice, "Simpan Soal Ujian Sekolah?", `preparation_closed` and `not_institution_exam`; without the prop the screen is unchanged;
+    - ten client functions and the institution types.
+- **Tests:**
+  - `test/institution-exams.test.ts` (C01/C02: the six content-readiness results, the exact bodies, the school-zone conversion, the problem codes and the deadline revision rule, the reason normalization, the error mapping, `previewQuestionsOf` against the inline mapping of e031d31 for all eight types, and the N10 edge of every new path before any database work);
+  - `test/integration/institution-exams.test.ts` (C03: I-1–I-12 with I-4b, I-15–I-17 and every N-id of the §4.9 map with before/after counts; I-14 migration upgrade on a populated database, synthetic rollback and repeat);
+  - `frontend/web/src/__tests__/institutionExams.test.tsx` (C05);
+  - `e2e/tests/99h-institution-exams.spec.ts` (C06: the timed deadline journey with `test.setTimeout(240_000)`; C07: the `workspace-institution-*` captures with the #219 baseline, in two separate tests outside it);
+  - the §4.8 assertions only (route-parity CALLS; `schoolRosterImport.test.tsx:18`).
+- **Local:**
+  - typechecks PASS (runtime, web, e2e);
+  - the new and affected Secure Assessment units 90/90;
+  - the new and affected web files 148/148.
+  - Integration and E2E run in CI only.
+- **Noted for the implementation review:**
+  - N10 on the GET path: the existing Origin check applies to unsafe methods only (`http/http-utils.ts` `isOriginAllowed`), so the GET overview is not refused for a foreign Origin; the eight POST paths are, and `http-utils.ts` is outside the allowlist.
+  - The Operator and content routes read and check the body before authentication, so 400 and 413 come before any database work.
+  - Copy beyond §4.6, in the frozen voice: success notices, loading lines, the empty-state line under "Belum ada periode ujian.", "Belum ada sesi di periode ini.", "Belum ada ujian di sesi ini.", the deadline help line of the placement dialog, and the preparation-mode labels ("Periksa Soal", "Soal siap disimpan", "Simpan Soal", the summary labels).
+  - The exam item heading is an `h3` under the `h3` session heading: `ExamListCard` offers `h2` and `h3` only, and its file is outside the allowlist.
+  - The placement dialog lists every active teaching assignment of the school: the overview's period entries carry no academic period id; another period is refused with its frozen copy.
+- **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 14, VERIFYING 1, BLOCKED 18.

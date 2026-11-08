@@ -62,6 +62,19 @@ export interface TeacherExamReadinessProjection {
     finalizedAt: string | null;
     /** How many essay questions the exam holds (ASSESS-QUESTION-008 §4.6: "Nilai Esai" only when > 0). */
     essayCount: number;
+    /** The institution block of an exam the School Operator placed (ASSESS-INSTITUTION-001 §4.5); null for a teacher-managed exam. */
+    institution: TeacherExamInstitutionProjection | null;
+}
+
+export interface TeacherExamInstitutionProjection {
+    periodLabel: string;
+    /** The current preparation deadline. */
+    preparationDeadline: string | null;
+    /** The Operator extended the deadline at least once. */
+    deadlineExtended: boolean;
+    /** The deadline has passed or the exam is no longer SCHEDULED: the questions are final. */
+    preparationClosed: boolean;
+    questionCount: number;
 }
 
 const DELIVERY_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED']);
@@ -156,6 +169,7 @@ export async function handleTeacherReadinessGet(
                 i.window_ends_at AS window_ends_at,
                 i.configured_attempt_duration_seconds AS duration_seconds,
                 i.latest_start_policy AS latest_start_policy,
+                i.institution_session_id AS institution_session_id,
                 (SELECT max(sc.changed_at) FROM secure_assessment_exam_schedule_changes sc
                  WHERE sc.tenant_id = i.tenant_id AND sc.exam_instance_id = i.id) AS schedule_changed_at,
                 (SELECT count(*)::int FROM secure_assessment_exam_participants pc
@@ -203,6 +217,35 @@ export async function handleTeacherReadinessGet(
         const queryResult = await client.query(query, [context.tenantId, context.personId]);
         const cancellers = await listElligbleIds(client as unknown as pg.PoolClient,
             [...new Set(queryResult.rows.filter(r => r.cancelled_by_person_id).map(r => r.cancelled_by_person_id as string))]);
+        // The institution block (E14): a separate read, only for exams placed in a session.
+        const institutionIds = queryResult.rows.filter(r => r.institution_session_id).map(r => r.exam_instance_id as string);
+        const institutionBlocks = new Map<string, TeacherExamInstitutionProjection>();
+        if (institutionIds.length > 0) {
+            const blocks = await client.query(
+                `SELECT i.id AS exam_instance_id, p.label AS period_label, d.deadline_at, d.revision,
+                        (i.lifecycle_state <> 'SCHEDULED' OR d.deadline_at IS NULL OR d.deadline_at <= statement_timestamp()) AS closed,
+                        (SELECT count(*)::int FROM secure_assessment_exam_question_snapshots qs
+                         WHERE qs.tenant_id = i.tenant_id AND qs.exam_instance_id = i.id) AS question_count
+                 FROM secure_assessment_exam_instances i
+                 JOIN secure_assessment_institution_exam_sessions s ON s.id = i.institution_session_id AND s.tenant_id = i.tenant_id
+                 JOIN secure_assessment_institution_exam_periods p ON p.id = s.period_id AND p.tenant_id = s.tenant_id
+                 LEFT JOIN secure_assessment_institution_preparation_deadlines d
+                   ON d.tenant_id = i.tenant_id AND d.exam_instance_id = i.id
+                  AND d.revision = (SELECT max(dr.revision) FROM secure_assessment_institution_preparation_deadlines dr
+                                    WHERE dr.tenant_id = i.tenant_id AND dr.exam_instance_id = i.id)
+                 WHERE i.tenant_id = $1 AND i.id = ANY($2::uuid[])`,
+                [context.tenantId, institutionIds]
+            );
+            for (const block of blocks.rows) {
+                institutionBlocks.set(block.exam_instance_id, {
+                    periodLabel: block.period_label,
+                    preparationDeadline: isoOrNull(block.deadline_at),
+                    deadlineExtended: Number(block.revision ?? 1) > 1,
+                    preparationClosed: block.closed === true,
+                    questionCount: Number(block.question_count ?? 0),
+                });
+            }
+        }
 
         const exams: TeacherExamReadinessProjection[] = [];
 
@@ -287,6 +330,7 @@ export async function handleTeacherReadinessGet(
                 pausedAt,
                 finalizedAt,
                 essayCount: Number(row.essay_count ?? 0),
+                institution: institutionBlocks.get(examInstanceId) ?? null,
             });
         }
 

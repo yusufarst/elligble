@@ -148,7 +148,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Wall-clock date and time in the school's zone, as the teacher enters it. */
 export const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 const SHA256_HEX = /^[0-9a-f]{64}$/;
-const SCHEDULING_STATES = ['SCHEDULED', 'READY', 'ACTIVE', 'PAUSED'];
+export const SCHEDULING_STATES = ['SCHEDULED', 'READY', 'ACTIVE', 'PAUSED'];
 
 export function sha256Hex(text: string): string {
     return createHash('sha256').update(text, 'utf8').digest('hex');
@@ -164,7 +164,7 @@ export function isRealLocalDateTime(value: string): boolean {
 }
 
 /** Only the file's own name, without folders or control characters, at most 255 characters. */
-function cleanFileName(value: unknown): string | null | undefined {
+export function cleanFileName(value: unknown): string | null | undefined {
     if (value === undefined || value === null) return null;
     if (typeof value !== 'string') return undefined;
     const name = value.split(/[\\/]/).pop()!.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 255);
@@ -265,6 +265,40 @@ export async function readTeacherExamSetup(
     }
 }
 
+/** The preview items of parsed questions, keys included (the teacher's own file). Shared with the institution content route. */
+export function previewQuestionsOf(questions: ParsedQuestion[]): PreviewQuestion[] {
+    return questions.map(q => ({
+        line: q.line, no: q.no, prompt: q.prompt, options: q.options, score: q.maxScore, type: q.type,
+        ...previewKey(q),
+        ...(q.type === 'BS' ? { correctValue: q.correctValue === true } : {}),
+        ...(q.type === 'MJ' ? { leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [] } : {}),
+        ...(q.type === 'UR' ? { leftItems: q.leftItems ?? [], rightItems: [], keyEqualsAuthoredOrder: (q.correctSequence ?? []).every((v, i) => v === i) } : {}),
+        ...(q.type === 'IA' ? { tolerance: q.numericTolerance ?? '0' } : {}),
+        ...(q.type === 'ES' ? { rubric: q.essayRubric ?? '' } : {}),
+        ...(q.type === 'IS' ? { acceptedForms: q.acceptedForms ?? [], ...((q.acceptedForms ?? []).length === 0 ? { rubric: q.essayRubric ?? '' } : {}) } : {}),
+    }));
+}
+
+/** People already expected in an exam that holds their time (SCHEDULING_STATES) and overlaps the window. */
+export async function overlappingPersonIds(
+    client: pg.PoolClient,
+    tenantId: string,
+    personIds: string[],
+    startsAt: Date,
+    endsAt: Date
+): Promise<string[]> {
+    const overlap = await client.query(
+        `SELECT DISTINCT p.person_id
+         FROM secure_assessment_exam_participants p
+         JOIN secure_assessment_exam_instances i ON i.id = p.exam_instance_id AND i.tenant_id = p.tenant_id
+         WHERE p.tenant_id = $1 AND p.person_id = ANY($2::uuid[])
+           AND i.lifecycle_state = ANY($3::text[])
+           AND i.window_starts_at < $5 AND i.window_ends_at > $4`,
+        [tenantId, personIds, SCHEDULING_STATES, startsAt, endsAt]
+    );
+    return overlap.rows.map(row => row.person_id as string);
+}
+
 function readinessProblem(readiness: Awaited<ReturnType<typeof evaluateExamReadiness>>): ImportProblem | null {
     if (readiness.ready) return null;
     const blocker = readiness.baseline.status === 'not_ready'
@@ -304,16 +338,7 @@ export async function runTeacherExamImport(
     const preview: TeacherExamImportPreview = {
         sourceSha256,
         problems,
-        questions: parsed.questions.map(q => ({
-            line: q.line, no: q.no, prompt: q.prompt, options: q.options, score: q.maxScore, type: q.type,
-            ...previewKey(q),
-            ...(q.type === 'BS' ? { correctValue: q.correctValue === true } : {}),
-            ...(q.type === 'MJ' ? { leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [] } : {}),
-            ...(q.type === 'UR' ? { leftItems: q.leftItems ?? [], rightItems: [], keyEqualsAuthoredOrder: (q.correctSequence ?? []).every((v, i) => v === i) } : {}),
-            ...(q.type === 'IA' ? { tolerance: q.numericTolerance ?? '0' } : {}),
-            ...(q.type === 'ES' ? { rubric: q.essayRubric ?? '' } : {}),
-            ...(q.type === 'IS' ? { acceptedForms: q.acceptedForms ?? [], ...((q.acceptedForms ?? []).length === 0 ? { rubric: q.essayRubric ?? '' } : {}) } : {}),
-        })),
+        questions: previewQuestionsOf(parsed.questions),
         participants: [],
         window: null,
         totals: {
@@ -415,16 +440,7 @@ export async function runTeacherExamImport(
 
         const conflicting = new Set<string>();
         if (startsAt && endsAt && endsAt.getTime() > startsAt.getTime() && included.length > 0) {
-            const overlap = await client.query(
-                `SELECT DISTINCT p.person_id
-                 FROM secure_assessment_exam_participants p
-                 JOIN secure_assessment_exam_instances i ON i.id = p.exam_instance_id AND i.tenant_id = p.tenant_id
-                 WHERE p.tenant_id = $1 AND p.person_id = ANY($2::uuid[])
-                   AND i.lifecycle_state = ANY($3::text[])
-                   AND i.window_starts_at < $5 AND i.window_ends_at > $4`,
-                [actor.tenantId, enrolled.map(s => s.personId), SCHEDULING_STATES, startsAt, endsAt]
-            );
-            for (const row of overlap.rows) conflicting.add(row.person_id);
+            for (const personId of await overlappingPersonIds(client, actor.tenantId, enrolled.map(s => s.personId), startsAt, endsAt)) conflicting.add(personId);
             const blocked = included.filter(s => conflicting.has(s.personId)).length;
             if (blocked > 0) problems.push({ source: 'setup', code: 'schedule_conflict', count: blocked });
         }

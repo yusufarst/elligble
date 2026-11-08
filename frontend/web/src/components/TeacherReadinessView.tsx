@@ -13,7 +13,7 @@ import { Metric, MetricList } from '@/components/ui/metric';
 import { ActionGroup } from '@/components/ui/action-group';
 import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import { IconInfo } from '@/components/icons';
-import { CANCELLED_EXAM_STATUS, examLifecycleStatus } from '../lib/status.ts';
+import { CANCELLED_EXAM_STATUS, baselineBlockerText, examLifecycleStatus, roomProctorBlockerText } from '../lib/status.ts';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { RescheduleDialog } from './TeacherExamReschedule.tsx';
 import { CancelExamDialog } from './TeacherExamCancel.tsx';
@@ -69,37 +69,15 @@ function transitionFailureMessage(err: unknown): string {
       case 'scoring_unavailable': return 'Konten soal ujian ini tidak dapat dinilai otomatis, sehingga hasil belum dapat difinalisasi. Hubungi operator sekolah.';
       case 'grading_incomplete': return `Masih ada ${typeof err.data?.ungraded === 'number' ? err.data.ungraded : 'beberapa'} jawaban yang belum dinilai guru. Nilai semua jawaban di Penilaian Esai sebelum finalisasi hasil.`;
       case 'forbidden': return 'Anda tidak memiliki hak untuk mengelola ujian ini.';
+      case 'institution_managed': return 'Ujian ini diatur operator sekolah, jadi tindakan ini dilakukan oleh operator.';
     }
   }
   return 'Gagal memproses permintaan. Periksa koneksi internet Anda dan coba lagi.';
 }
 
-const mapBaselineBlocker = (blocker?: string): string => {
-  switch (blocker) {
-    case 'question_snapshot_empty': return 'Soal ujian belum ditambahkan';
-    case 'question_snapshot_content_invalid': return 'Konten soal ujian tidak valid';
-    case 'participant_schedule_conflict': return 'Terdapat konflik jadwal peserta';
-    case 'proctor_schedule_conflict': return 'Terdapat konflik jadwal pengawas';
-    case 'duration_window_policy_compatibility': return 'Durasi ujian tidak sesuai dengan rentang waktu';
-    case 'timing_configuration_presence': return 'Konfigurasi waktu belum diatur';
-    case 'participant_presence': return 'Peserta ujian belum ditentukan';
-    case 'question_snapshot_presence': return 'Status soal ujian belum ditetapkan';
-    case 'assessment_type': return 'Tipe asesmen belum dikonfigurasi';
-    default: return 'Persyaratan dasar belum lengkap';
-  }
-};
-
-const mapRoomProctorBlocker = (blocker?: string): string => {
-  switch (blocker) {
-    case 'room_proctor_requirement_policy_unconfigured': return 'Kebijakan ruangan dan pengawas belum diatur';
-    case 'participant_empty': return 'Belum ada peserta yang terdaftar';
-    case 'exam_room_empty': return 'Belum ada ruangan yang ditetapkan';
-    case 'participant_room_assignment_incomplete': return 'Penugasan peserta ke ruangan belum lengkap';
-    case 'active_proctor_assignment_empty': return 'Belum ada pengawas yang ditugaskan';
-    case 'active_proctor_room_coverage_incomplete': return 'Cakupan pengawas untuk ruangan belum lengkap';
-    default: return 'Persyaratan ruangan dan pengawas belum lengkap';
-  }
-};
+// The blocker texts are shared with the School Operator's screen (lib/status.ts).
+const mapBaselineBlocker = baselineBlockerText;
+const mapRoomProctorBlocker = roomProctorBlockerText;
 
 export const TeacherReadinessView: React.FC<{
   onOpenResults?(examInstanceId: string): void;
@@ -110,9 +88,11 @@ export const TeacherReadinessView: React.FC<{
   onOpenPreview?(examInstanceId: string): void;
   /** Opens "Penilaian Esai" of an exam with essays (ASSESS-QUESTION-008 §4.6). */
   onOpenEssays?(examInstanceId: string): void;
+  /** Opens "Siapkan Soal Ujian Sekolah" of an institution exam before its deadline (ASSESS-INSTITUTION-001 §4.6). */
+  onPrepareExam?(examInstanceId: string): void;
   /** Shown once above the list, for example after an exam was scheduled. */
   notice?: string | null;
-}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, onOpenEssays, notice }) => {
+}> = ({ onOpenResults, onOpenMonitoring, onCreateExam, onOpenPreview, onOpenEssays, onPrepareExam, notice }) => {
   const [reason, setReason] = useState('');
   const [data, setData] = useState<TeacherReadinessResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -303,6 +283,9 @@ export const TeacherReadinessView: React.FC<{
           const actionError = actionErrors[exam.examInstanceId];
 
           const beforeOpening = lifecycle === 'SCHEDULED' || lifecycle === 'READY';
+          // An institution exam: the School Operator organizes it; its subject Teacher prepares the
+          // questions before the deadline and finalizes the results (ASSESS-INSTITUTION-001 §4.6).
+          const institution = exam.institution ?? null;
 
           return (
             <li key={exam.examInstanceId}>
@@ -331,6 +314,20 @@ export const TeacherReadinessView: React.FC<{
                 )}
                 {lifecycle === 'FINALIZED' && exam.progress && (
                   <p>{exam.finalizedAt ? `Hasil difinalisasi ${formatDateTime(exam.finalizedAt)}.` : 'Hasil telah difinalisasi.'} Nilai tidak ditampilkan kepada siswa.</p>
+                )}
+                {institution && (
+                  <>
+                    <p>Ujian sekolah · {institution.periodLabel}</p>
+                    {institution.preparationDeadline && (
+                      <p>
+                        {institution.preparationClosed
+                          ? `Penyiapan soal ditutup ${formatDateTime(institution.preparationDeadline)}.`
+                          : `Tenggat penyiapan soal ${formatDateTime(institution.preparationDeadline)}.`}
+                      </p>
+                    )}
+                    <p>{institution.questionCount > 0 ? `${institution.questionCount} soal disiapkan.` : 'Belum ada soal.'}</p>
+                    <p>Jadwal, peserta, dan pelaksanaan ujian ini diatur operator sekolah.</p>
+                  </>
                 )}
               </ExamFacts>
 
@@ -372,7 +369,7 @@ export const TeacherReadinessView: React.FC<{
                     )}
                   </ActionGroup>
                 )}
-                {(lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && (
+                {!institution && (lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && (
                   <ActionGroup className="border-t border-border pt-4" role="group" aria-label="Kendali ujian">
                     {lifecycle === 'ACTIVE' && (
                       <>
@@ -409,7 +406,19 @@ export const TeacherReadinessView: React.FC<{
               </div>
               )}
 
-              {exam.lifecycleState && beforeOpening && (
+              {institution && exam.lifecycleState && beforeOpening && (
+                ((onPrepareExam && lifecycle === 'SCHEDULED' && !institution.preparationClosed) || (onOpenPreview && institution.questionCount > 0)) && (
+                  <ActionGroup>
+                    {onPrepareExam && lifecycle === 'SCHEDULED' && !institution.preparationClosed && (
+                      <Button onClick={() => onPrepareExam(exam.examInstanceId)}>Siapkan Soal</Button>
+                    )}
+                    {onOpenPreview && institution.questionCount > 0 && (
+                      <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>
+                    )}
+                  </ActionGroup>
+                )
+              )}
+              {!institution && exam.lifecycleState && beforeOpening && (
                 <ActionGroup>
                   {onOpenPreview && (
                     <Button variant="secondary" onClick={() => onOpenPreview(exam.examInstanceId)}>Pratinjau Soal</Button>

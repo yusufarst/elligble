@@ -61,6 +61,7 @@ export type RescheduleOutcome =
     | { type: 'invalid'; problems: Array<{ code: RescheduleProblemCode }> }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'forbidden' }
+    | { type: 'institution_managed' }
     | { type: 'action_key_reused' }
     | { type: 'unavailable' };
 
@@ -127,6 +128,11 @@ export async function rescheduleTeacherExam(
         if (!row) {
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
+        }
+        // The schedule of an institution exam is the School Operator's (OD-07b, ASSESS-INSTITUTION-001 §4.5).
+        if (row.institution_session_id !== null) {
+            if (!transaction) await client.query('ROLLBACK');
+            return { type: 'institution_managed' };
         }
         const timeZone: string | null = row.time_zone ?? null;
         if (!timeZone) problems.push({ code: 'time_zone_missing' });

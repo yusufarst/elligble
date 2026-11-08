@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, getTeacherExamSetup, postTeacherExamImport, postTeacherExamImportPreview } from '../api/assessment-client.ts';
+import {
+  ApiError, getTeacherExamSetup, getTeacherReadiness, postTeacherExamContent, postTeacherExamContentPreview, postTeacherExamImport, postTeacherExamImportPreview,
+} from '../api/assessment-client.ts';
 import type {
-  ImportProblem, LatestStartPolicy, TeacherExamImportInput, TeacherExamImportPreview, TeacherExamSetup,
+  ImportProblem, LatestStartPolicy, TeacherExamContentInput, TeacherExamContentPreview, TeacherExamImportInput, TeacherExamImportPreview,
+  TeacherExamReadinessProjection, TeacherExamSetup,
 } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
-import { formatWindow, zoneLabel } from '../lib/format.ts';
+import { formatDateTime, formatWindow, zoneLabel } from '../lib/format.ts';
 import { downloadTextFile } from '../lib/results-export.ts';
 import { newActionKey } from '../lib/action-key.ts';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
@@ -59,7 +62,15 @@ export const TeacherExamImportView: React.FC<{
   onBack(): void;
   /** The exam was scheduled: back to the list with this notice. */
   onScheduled(notice: string): void;
-}> = ({ onBack, onScheduled }) => {
+  /** Preparation mode (ASSESS-INSTITUTION-001 §4.6): the questions of an institution exam the School Operator placed. */
+  preparation?: { examInstanceId: string };
+}> = ({ onBack, onScheduled, preparation }) => (
+  preparation
+    ? <InstitutionPreparationView examInstanceId={preparation.examInstanceId} onBack={onBack} onSaved={onScheduled} />
+    : <ScheduleImportView onBack={onBack} onScheduled={onScheduled} />
+);
+
+const ScheduleImportView: React.FC<{ onBack(): void; onScheduled(notice: string): void }> = ({ onBack, onScheduled }) => {
   const [setup, setSetup] = useState<TeacherExamSetup | null>(null);
   const [setupError, setSetupError] = useState<'forbidden' | 'failed' | null>(null);
   const [teachingAssignmentId, setTeachingAssignmentId] = useState('');
@@ -344,35 +355,7 @@ export const TeacherExamImportView: React.FC<{
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Berkas Soal</CardTitle>
-          <CardDescription>
-            Satu baris per soal: nomor, tipe (PG, PGK, BS, MJ, UR, IA, IS atau ES), teks soal, pilihan A sampai E (kosong untuk BS, MJ, UR, IA, IS dan ES), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS; untuk MJ huruf pasangan kanan setiap pernyataan kiri secara berurutan, misalnya B,C,A; untuk UR nomor item dalam urutan yang benar, misalnya 3,1,2; untuk IA angka jawaban yang benar, misalnya 3,5; untuk IS dan ES kosongkan) dan skor, lalu khusus MJ pernyataan kiri (left_1 sampai left_10) dan pasangan kanan (right_a sampai right_l), dan khusus UR item (left_1 sampai left_10). Item UR ditampilkan kepada siswa sesuai urutan penulisan, jadi tulislah dalam urutan acak. Soal IA memakai kolom tolerance untuk selisih yang masih dianggap benar; kosongkan bila jawaban harus tepat. Soal ES boleh memakai kolom rubric untuk pedoman penilaian guru; rubrik tidak ditampilkan kepada siswa. Soal IS memakai kolom left_1 sampai left_10 untuk bentuk jawaban yang diterima; huruf besar, huruf kecil dan spasi berlebih tidak dibedakan. Soal IS tanpa bentuk jawaban dinilai guru seperti esai dan boleh memakai kolom rubric.
-            Simpan sebagai CSV UTF-8; pemisah kolom boleh titik koma atau koma.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="questions-file" className="text-sm font-medium">Berkas CSV</label>
-            <input
-              id="questions-file"
-              type="file"
-              accept=".csv,text/csv"
-              onChange={e => void chooseFile(e.target.files?.[0])}
-              className="block w-full min-w-0 text-sm file:mr-3 file:h-11 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-background file:px-4 file:text-[15px] file:font-medium file:text-foreground"
-            />
-            {fileNotice && <p role="alert" className="m-0 text-sm text-danger-ink">{fileNotice}</p>}
-          </div>
-          <Button
-            variant="link"
-            className="h-auto min-h-11 max-w-full self-start whitespace-normal px-0 text-left"
-            onClick={() => downloadTextFile(QUESTION_TEMPLATE_CSV, QUESTION_TEMPLATE_FILE_NAME)}
-          >
-            Unduh Templat CSV
-          </Button>
-        </CardContent>
-      </Card>
+      <QuestionFileCard fileNotice={fileNotice} onChoose={chosen => void chooseFile(chosen)} />
 
       {checkError && (
         <Alert variant="destructive">
@@ -436,14 +419,333 @@ export const TeacherExamImportView: React.FC<{
   );
 };
 
+/** The question file field and the template, shared by scheduling and the preparation of an institution exam. */
+const QuestionFileCard: React.FC<{ fileNotice: string | null; onChoose(file: File | undefined): void; disabled?: boolean }> = ({ fileNotice, onChoose, disabled }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Berkas Soal</CardTitle>
+      <CardDescription>
+        Satu baris per soal: nomor, tipe (PG, PGK, BS, MJ, UR, IA, IS atau ES), teks soal, pilihan A sampai E (kosong untuk BS, MJ, UR, IA, IS dan ES), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS; untuk MJ huruf pasangan kanan setiap pernyataan kiri secara berurutan, misalnya B,C,A; untuk UR nomor item dalam urutan yang benar, misalnya 3,1,2; untuk IA angka jawaban yang benar, misalnya 3,5; untuk IS dan ES kosongkan) dan skor, lalu khusus MJ pernyataan kiri (left_1 sampai left_10) dan pasangan kanan (right_a sampai right_l), dan khusus UR item (left_1 sampai left_10). Item UR ditampilkan kepada siswa sesuai urutan penulisan, jadi tulislah dalam urutan acak. Soal IA memakai kolom tolerance untuk selisih yang masih dianggap benar; kosongkan bila jawaban harus tepat. Soal ES boleh memakai kolom rubric untuk pedoman penilaian guru; rubrik tidak ditampilkan kepada siswa. Soal IS memakai kolom left_1 sampai left_10 untuk bentuk jawaban yang diterima; huruf besar, huruf kecil dan spasi berlebih tidak dibedakan. Soal IS tanpa bentuk jawaban dinilai guru seperti esai dan boleh memakai kolom rubric.
+        Simpan sebagai CSV UTF-8; pemisah kolom boleh titik koma atau koma.
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="questions-file" className="text-sm font-medium">Berkas CSV</label>
+        <input
+          id="questions-file"
+          type="file"
+          accept=".csv,text/csv"
+          disabled={disabled}
+          onChange={e => onChoose(e.target.files?.[0])}
+          className="block w-full min-w-0 text-sm file:mr-3 file:h-11 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-background file:px-4 file:text-[15px] file:font-medium file:text-foreground"
+        />
+        {fileNotice && <p role="alert" className="m-0 text-sm text-danger-ink">{fileNotice}</p>}
+      </div>
+      <Button
+        variant="link"
+        className="h-auto min-h-11 max-w-full self-start whitespace-normal px-0 text-left"
+        onClick={() => downloadTextFile(QUESTION_TEMPLATE_CSV, QUESTION_TEMPLATE_FILE_NAME)}
+      >
+        Unduh Templat CSV
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const PREPARATION_CLOSED = 'Tenggat penyiapan soal sudah lewat, jadi soal tidak dapat diubah. Hubungi operator sekolah bila perlu perpanjangan.';
+const NOT_INSTITUTION_EXAM = 'Ujian ini bukan ujian sekolah.';
+
+function preparationFailureMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    switch (err.code) {
+      case 'preparation_closed': return PREPARATION_CLOSED;
+      case 'not_institution_exam': return NOT_INSTITUTION_EXAM;
+      case 'content_changed': return 'Berkas soal berubah sejak diperiksa. Periksa lagi sebelum menyimpan.';
+      case 'invalid_state': return 'Status ujian sudah berubah. Muat ulang halaman.';
+      case 'forbidden': return 'Anda tidak berwenang menyiapkan soal ujian ini.';
+      case 'invalid_request': return 'Isian belum lengkap atau tidak valid. Periksa lagi.';
+      case 'payload_too_large': return 'Berkas soal terlalu besar. Bagi soal ke dalam beberapa ujian.';
+    }
+  }
+  return 'Soal belum tersimpan karena koneksi terputus. Coba lagi: jika soal ternyata sudah tersimpan, mencoba lagi tidak menyimpannya dua kali.';
+}
+
+/**
+ * The subject Teacher prepares the questions of an institution exam (ASSESS-INSTITUTION-001 §4.4/§4.6,
+ * OP-1 A, OP-2 A): the schedule, duration and participants are the School Operator's and shown read-only;
+ * the file is checked exactly as the import checks it and kept only on "Simpan Soal". A file saved before
+ * the deadline replaces every question stored earlier.
+ */
+const InstitutionPreparationView: React.FC<{ examInstanceId: string; onBack(): void; onSaved(notice: string): void }> = ({ examInstanceId, onBack, onSaved }) => {
+  const [exam, setExam] = useState<TeacherExamReadinessProjection | null>(null);
+  const [limits, setLimits] = useState<TeacherExamSetup['limits'] | null>(null);
+  const [loadError, setLoadError] = useState<'forbidden' | 'failed' | 'not_institution' | null>(null);
+  const [file, setFile] = useState<{ name: string; text: string } | null>(null);
+  const [fileNotice, setFileNotice] = useState<string | null>(null);
+  const [stage, setStage] = useState<Stage>('editing');
+  const [preview, setPreview] = useState<TeacherExamContentPreview | null>(null);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const [closed, setClosed] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const importKey = useRef<string | null>(null);
+
+  const load = async () => {
+    setLoadError(null);
+    try {
+      const [cards, setup] = await Promise.all([getTeacherReadiness(), getTeacherExamSetup()]);
+      const found = cards.exams.find(e => e.examInstanceId === examInstanceId);
+      if (!found) {
+        setLoadError('forbidden');
+        return;
+      }
+      if (!found.institution) {
+        setLoadError('not_institution');
+        return;
+      }
+      setExam(found);
+      setLimits(setup.limits);
+    } catch (err) {
+      setLoadError(err instanceof ApiError && err.status === 403 ? 'forbidden' : 'failed');
+    }
+  };
+  useEffect(() => {
+    void load();
+  }, [examInstanceId]);
+
+  const chooseFile = async (chosen: File | undefined) => {
+    setFileNotice(null);
+    setPreview(null);
+    setStage('editing');
+    setSaveError(null);
+    setCheckError(null);
+    if (!chosen) {
+      setFile(null);
+      return;
+    }
+    if (chosen.size > (limits?.maxFileCharacters ?? 512 * 1024) * 4) {
+      setFile(null);
+      setFileNotice('Berkas soal terlalu besar. Bagi soal ke dalam beberapa ujian.');
+      return;
+    }
+    try {
+      setFile({ name: chosen.name, text: await readFileText(chosen) });
+    } catch {
+      setFile(null);
+      setFileNotice('Berkas tidak dapat dibaca. Pilih berkas lagi.');
+    }
+  };
+
+  const input: TeacherExamContentInput | null = file ? { examInstanceId, questionsCsv: file.text, sourceFileName: file.name } : null;
+
+  const showPreview = (result: TeacherExamContentPreview) => {
+    setPreview(result);
+    setStage('checked');
+  };
+
+  const refused = (err: unknown): boolean => {
+    if (err instanceof ApiError && err.code === 'preparation_closed') {
+      setClosed(true);
+      return true;
+    }
+    return false;
+  };
+
+  const check = async () => {
+    if (!input) return;
+    setStage('checking');
+    setCheckError(null);
+    setSaveError(null);
+    try {
+      showPreview(await postTeacherExamContentPreview(input));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 422 && err.data && Array.isArray(err.data.problems)) {
+        showPreview(err.data as TeacherExamContentPreview);
+        return;
+      }
+      setStage('editing');
+      if (refused(err)) return;
+      setCheckError(err instanceof ApiError && ['not_institution_exam', 'forbidden', 'invalid_state', 'invalid_request', 'payload_too_large'].includes(err.code)
+        ? preparationFailureMessage(err)
+        : 'Gagal memeriksa. Periksa koneksi internet Anda, lalu coba lagi.');
+    }
+  };
+
+  const save = async () => {
+    if (!input || !preview || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const result = await postTeacherExamContent(input, { importKey: importKey.current ?? newActionKey(), expectedSha256: preview.sourceSha256 });
+      onSaved(`Soal ujian sekolah tersimpan: ${result.questionCount} soal.`);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 422 && err.data && Array.isArray(err.data.problems)) {
+        showPreview(err.data as TeacherExamContentPreview);
+        setConfirmOpen(false);
+      } else if (refused(err)) {
+        setConfirmOpen(false);
+      } else {
+        setSaveError(preparationFailureMessage(err));
+        if (err instanceof ApiError && err.code === 'content_changed') {
+          setConfirmOpen(false);
+          setStage('editing');
+        }
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const back = (
+    <Button variant="ghost" size="sm" className="-ml-3 h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left" onClick={onBack}>
+      <IconChevronLeft aria-hidden="true" />
+      Kembali ke Pelaksanaan Ujian
+    </Button>
+  );
+
+  if (!exam || !exam.institution || !limits) {
+    return (
+      <PageStateFrame title={SCREEN_TITLE.examPreparation} back={back}>
+        {loadError === null ? (
+          <LoadingState>Memuat data ujian...</LoadingState>
+        ) : loadError === 'forbidden' ? (
+          <LoadErrorState kind="refused" title="Akses Ditolak">Anda tidak berwenang menyiapkan soal ujian ini.</LoadErrorState>
+        ) : loadError === 'not_institution' ? (
+          <LoadErrorState kind="refused" title="Bukan Ujian Sekolah">{NOT_INSTITUTION_EXAM}</LoadErrorState>
+        ) : (
+          <LoadErrorState kind="failed" title="Gagal Memuat Data Ujian" onRetry={load}>Periksa koneksi internet Anda, lalu coba lagi.</LoadErrorState>
+        )}
+      </PageStateFrame>
+    );
+  }
+
+  const institution = exam.institution;
+  const preparationClosed = closed || institution.preparationClosed || exam.lifecycleState !== 'SCHEDULED';
+  const fresh = stage === 'checked' && preview !== null;
+  const ready = fresh && preview!.problems.length === 0;
+  const policy = LATEST_START_OPTIONS.find(option => option.value === exam.latestStartPolicy)?.label;
+
+  return (
+    <Page>
+      {back}
+      <PageHeader title={SCREEN_TITLE.examPreparation}>
+        <p className="m-0 text-muted-foreground">
+          Unggah berkas soal untuk ujian sekolah ini sebelum tenggat. Jadwal, durasi, dan peserta diatur operator sekolah.
+        </p>
+      </PageHeader>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</CardTitle>
+          <CardDescription>Ujian sekolah · {institution.periodLabel}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MetricList aria-label="Ujian sekolah">
+            <Metric label="Rombel" valueClassName="text-sm font-medium" value={exam.groupLabel ?? '-'} />
+            <Metric label="Peserta" value={exam.participants ?? 0} />
+            <Metric label="Durasi pengerjaan" valueClassName="text-sm font-medium" value={exam.durationMinutes ? `${exam.durationMinutes} menit` : '-'} />
+            <Metric label="Aturan mulai terlambat" valueClassName="text-sm font-medium" value={policy ?? '-'} />
+            <Metric
+              className="col-span-2"
+              label="Jadwal Sesi"
+              valueClassName="text-sm font-medium"
+              value={exam.windowStartsAt && exam.windowEndsAt ? formatWindow(exam.windowStartsAt, exam.windowEndsAt) : '-'}
+            />
+            <Metric
+              className="col-span-2"
+              label="Tenggat penyiapan soal"
+              valueClassName="text-sm font-medium"
+              value={institution.preparationDeadline ? formatDateTime(institution.preparationDeadline) : '-'}
+            />
+          </MetricList>
+        </CardContent>
+      </Card>
+
+      {preparationClosed ? (
+        <Alert variant="warning" role="alert">
+          <IconInfo aria-hidden="true" />
+          <AlertDescription>{PREPARATION_CLOSED}</AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <QuestionFileCard fileNotice={fileNotice} onChoose={chosen => void chooseFile(chosen)} disabled={saving} />
+
+          {checkError && (
+            <Alert variant="destructive">
+              <IconInfo aria-hidden="true" />
+              <AlertDescription>{checkError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button variant={preview ? 'secondary' : 'default'} onClick={check} disabled={!input || stage === 'checking' || fresh}>
+              {stage === 'checking' ? 'Memeriksa...' : preview ? 'Periksa Lagi' : 'Periksa Soal'}
+            </Button>
+            {!input && <p className="m-0 text-sm text-muted-foreground">Pilih berkas soal untuk memeriksa.</p>}
+          </div>
+
+          {preview && (
+            <PreviewSection
+              preview={preview}
+              problems={preview.problems}
+              excluded={new Set()}
+              onToggle={() => {}}
+              maxQuestionScore={limits.maxQuestionScore}
+              participantCount={preview.totals.participants}
+              readyTitle="Soal siap disimpan"
+              readyText={'Tidak ada yang disimpan sebelum Anda menekan "Simpan Soal".'}
+            />
+          )}
+
+          {ready && (
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <p className="m-0 text-sm text-muted-foreground">
+                Soal dapat diganti sampai tenggat penyiapan soal. Setelah tenggat, soal tidak dapat diubah.
+              </p>
+              <Button className="self-start" onClick={() => { importKey.current = newActionKey(); setSaveError(null); setConfirmOpen(true); }}>Simpan Soal</Button>
+            </div>
+          )}
+        </>
+      )}
+
+      <Dialog open={confirmOpen && !preparationClosed} onOpenChange={next => { if (!next && !saving) setConfirmOpen(false); }}>
+        {confirmOpen && preview && (
+          <DialogContent aria-describedby="prepare-description">
+            <DialogHeader>
+              <DialogTitle>Simpan Soal Ujian Sekolah?</DialogTitle>
+              <DialogDescription id="prepare-description">
+                {[exam.subjectLabel, exam.groupLabel].filter(Boolean).join(' · ')}. {preview.totals.questions} soal.
+              </DialogDescription>
+            </DialogHeader>
+            {preview.replaces > 0 && (
+              <p className="m-0 text-sm">Soal yang sudah tersimpan ({preview.replaces} soal) akan diganti seluruhnya oleh berkas ini.</p>
+            )}
+            {saveError && <p role="alert" className="m-0 text-sm text-danger-ink">{saveError}</p>}
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={saving}>Batal</Button>
+              <Button onClick={save} disabled={saving}>{saving ? 'Menyimpan...' : saveError ? 'Coba Lagi' : 'Simpan Soal'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
+    </Page>
+  );
+};
+
 const PreviewSection: React.FC<{
   preview: TeacherExamImportPreview;
   problems: ImportProblem[];
   excluded: Set<string>;
   onToggle(enrollmentId: string): void;
   maxQuestionScore: number;
-}> = ({ preview, problems, excluded, onToggle, maxQuestionScore }) => {
-  const included = preview.participants.filter(p => !excluded.has(p.enrollmentId)).length;
+  /** Preparation mode: the exam's participants, which the preview does not list. */
+  participantCount?: number;
+  readyTitle?: string;
+  readyText?: string;
+}> = ({ preview, problems, excluded, onToggle, maxQuestionScore, participantCount, readyTitle, readyText }) => {
+  const included = participantCount ?? preview.participants.filter(p => !excluded.has(p.enrollmentId)).length;
   return (
     <section aria-labelledby="preview-title" className="flex flex-col gap-4">
       <h2 id="preview-title" className="m-0 text-xl font-semibold">Hasil Pemeriksaan</h2>
@@ -460,8 +762,8 @@ const PreviewSection: React.FC<{
       ) : (
         <Alert variant="success" role="status">
           <IconInfo aria-hidden="true" />
-          <AlertTitle>Soal dan jadwal siap dijadwalkan</AlertTitle>
-          <AlertDescription>Tidak ada yang disimpan sebelum Anda menekan "Jadwalkan Ujian".</AlertDescription>
+          <AlertTitle>{readyTitle ?? 'Soal dan jadwal siap dijadwalkan'}</AlertTitle>
+          <AlertDescription>{readyText ?? 'Tidak ada yang disimpan sebelum Anda menekan "Jadwalkan Ujian".'}</AlertDescription>
         </Alert>
       )}
 

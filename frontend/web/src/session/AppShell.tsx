@@ -5,10 +5,11 @@ import { cn } from '@/lib/utils';
 import type { MeContext } from '../api/auth-client.ts';
 import { tenantLabel } from './SessionScreens.tsx';
 
-export type Workspace = 'student' | 'proctor' | 'teacher' | 'operator' | 'verifier' | 'recovery';
+export type Workspace = 'student' | 'proctor' | 'teacher' | 'operator' | 'institution' | 'verifier' | 'recovery';
 
 export const WORKSPACE_LABELS: Record<Workspace, string> = {
   operator: 'Data Siswa',
+  institution: 'Ujian Sekolah',
   verifier: 'Verifikasi Pendaftaran',
   recovery: 'Pemulihan Akun',
   student: 'Jadwal Ujian',
@@ -18,6 +19,8 @@ export const WORKSPACE_LABELS: Record<Workspace, string> = {
 
 const WORKSPACE_ICONS: Record<Workspace, React.FC> = {
   operator: IconBuilding,
+  // The workspace label tells it apart (ASSESS-INSTITUTION-001 E11).
+  institution: IconClipboardCheck,
   verifier: IconClipboardCheck,
   recovery: IconInfo,
   student: IconBook,
@@ -30,7 +33,7 @@ export function availableWorkspaces(me: MeContext): Workspace[] {
   if (me.capabilities.examParticipant) list.push('student');
   if (me.capabilities.proctor) list.push('proctor');
   if (me.capabilities.teacher) list.push('teacher');
-  if (me.capabilities.schoolOperator) list.push('operator');
+  if (me.capabilities.schoolOperator) list.push('operator', 'institution');
   if (me.capabilities.claimVerifier) list.push('verifier', 'recovery');
   return list;
 }

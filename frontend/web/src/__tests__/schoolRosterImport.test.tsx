@@ -15,7 +15,7 @@ async function expectPurged(){await waitFor(()=>{expect(screen.queryByRole('dial
 it('only server-derived Operator capability adds its workspace',()=>{
   const me={tenantId:'school',tenantDisplayLabel:'School',capabilities:{examParticipant:false,teacher:false,proctor:false}};
   expect(availableWorkspaces(me)).toEqual([]);
-  expect(availableWorkspaces({...me,capabilities:{...me.capabilities,schoolOperator:true}})).toEqual(['operator']);
+  expect(availableWorkspaces({...me,capabilities:{...me.capabilities,schoolOperator:true}})).toEqual(['operator', 'institution']);
 });
 it('preview must precede confirmation and cancellation creates no write',async()=>{
   vi.mocked(client.previewRoster).mockResolvedValue({protocolVersion:1,inputDigest:'hash',stateDigest:'state',canConfirm:true,rows:[{line:2,sourceKey:'row',fullName:'Siswa Sintetis',nis:'001',groupLabel:'X-1',status:'INSERT'}]});

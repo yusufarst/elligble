@@ -164,3 +164,13 @@ Short answer is registered on the A01 foundation as `2:SHORT_ANSWER`, rule `SHOR
 - it is authored as `IS` rows with the forms in `left_1`–`left_10`; the grading-path copy is neutral.
 
 No column, constraint, route or lock order changes, and no earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-006](tasks/ASSESS-QUESTION-006.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-INSTITUTION-001 bounded implementation checkpoint — 2026-11-09
+
+Institution exams are composed by the School Operator on the A04-1 schema (migration 0062):
+- `secure_assessment_institution_exam_periods` (one academic period and one assessment type) and `secure_assessment_institution_exam_sessions` (one date and time slot), both Secure Assessment, append-only;
+- the nullable `institution_session_id` on `secure_assessment_exam_instances`; existing rows stay NULL (teacher-managed), and a trigger refuses any change of the reference, so an exam never moves between teacher-managed and institution-managed;
+- the preparation deadline is the O05-2 implementation choice beside A04-1 (E2): the append-only `secure_assessment_institution_preparation_deadlines`, the current deadline being the highest revision (the 0061 pattern), revision 1 at placement and each extension the next revision with its reason;
+- a content lock trigger on question snapshot INSERT and DELETE: it returns at once for a teacher-managed exam; for an institution exam it takes the exam row FOR SHARE and allows a change only while SCHEDULED and before the current deadline. No snapshot row is ever updated (0003 unchanged), and the RESTRICT keys of answers and review flags still block deleting delivered content (§3.3).
+
+The new exam actions take the exam row FOR UPDATE, as every lifecycle change does; the lock order of existing actions is unchanged. The subject Teacher of an institution exam keeps content preparation (before the deadline), preview, essays, results and finalization, and is refused the organizer actions with `institution_managed`. No existing column, constraint or trigger changes. Authority and evidence: [ASSESS-INSTITUTION-001](tasks/ASSESS-INSTITUTION-001.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

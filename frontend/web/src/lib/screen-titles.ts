@@ -9,4 +9,5 @@ export const SCREEN_TITLE = {
   examImport: 'Buat Ujian dari Berkas Soal',
   examPreview: 'Pratinjau Soal',
   essayGrading: 'Penilaian Esai',
+  examPreparation: 'Siapkan Soal Ujian Sekolah',
 } as const;

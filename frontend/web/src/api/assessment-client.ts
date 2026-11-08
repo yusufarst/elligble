@@ -33,6 +33,22 @@ import type {
   TeacherExamParticipantCandidates,
   TeacherExamAddParticipantsInput,
   TeacherExamAddParticipantsResult,
+  InstitutionOverview,
+  InstitutionPeriodDetail,
+  InstitutionPeriodInput,
+  InstitutionPeriodResult,
+  InstitutionSessionInput,
+  InstitutionSessionResult,
+  InstitutionPlacementInput,
+  InstitutionPlacementResult,
+  InstitutionDeadlineInput,
+  InstitutionDeadlineResult,
+  InstitutionCancelInput,
+  InstitutionCancelResult,
+  InstitutionTransitionResult,
+  TeacherExamContentInput,
+  TeacherExamContentPreview,
+  TeacherExamContentResult,
 } from '../types/assessment.ts';
 import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
@@ -272,6 +288,69 @@ export async function getTeacherEssays(examInstanceId: string): Promise<TeacherE
 export async function postTeacherEssayGrade(request: TeacherEssayGradeRequest): Promise<EssayGradeEntry> {
   const res = await apiFetch('/api/v1/assessment/teacher-exams/essays/grade', { method: 'POST', json: request });
   return handleResponse<EssayGradeEntry>(res);
+}
+
+// Institution exams (ASSESS-INSTITUTION-001). Every Operator write carries an action key chosen once
+// per dialog: a retry with the same key returns the earlier result instead of a second record.
+
+/** The School Operator's choices and exam periods (operational data only). */
+export async function getInstitutionExams(): Promise<InstitutionOverview> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams', { method: 'GET' });
+  return handleResponse<InstitutionOverview>(res);
+}
+
+/** One exam period with its sessions and placed exams. */
+export async function getInstitutionPeriod(periodId: string): Promise<InstitutionPeriodDetail> {
+  const res = await apiFetch(`/api/v1/assessment/institution-exams?periodId=${encodeURIComponent(periodId)}`, { method: 'GET' });
+  return handleResponse<InstitutionPeriodDetail>(res);
+}
+
+export async function postInstitutionPeriod(input: InstitutionPeriodInput): Promise<InstitutionPeriodResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/periods', { method: 'POST', json: input });
+  return handleResponse<InstitutionPeriodResult>(res);
+}
+
+export async function postInstitutionSession(input: InstitutionSessionInput): Promise<InstitutionSessionResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/sessions', { method: 'POST', json: input });
+  return handleResponse<InstitutionSessionResult>(res);
+}
+
+export async function postInstitutionPlacement(input: InstitutionPlacementInput): Promise<InstitutionPlacementResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/placements', { method: 'POST', json: input });
+  return handleResponse<InstitutionPlacementResult>(res);
+}
+
+/** Extends a preparation deadline with a reason; 409 stale_deadline carries the current one. */
+export async function postInstitutionDeadline(input: InstitutionDeadlineInput): Promise<InstitutionDeadlineResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/deadline', { method: 'POST', json: { ...input, confirmed: true } });
+  return handleResponse<InstitutionDeadlineResult>(res);
+}
+
+/** Cancels an institution exam that has not opened (archived, never deleted). */
+export async function postInstitutionCancel(input: InstitutionCancelInput): Promise<InstitutionCancelResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/cancel', { method: 'POST', json: { ...input, confirmed: true } });
+  return handleResponse<InstitutionCancelResult>(res);
+}
+
+/** Marks an institution exam ready after its preparation deadline. */
+export async function postInstitutionTransition(examInstanceId: string): Promise<InstitutionTransitionResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/transition', { method: 'POST', json: { examInstanceId, action: 'mark_ready' } });
+  return handleResponse<InstitutionTransitionResult>(res);
+}
+
+/** Checks the question file of an institution exam without keeping anything; a 422 carries the problems (ApiError.data). */
+export async function postTeacherExamContentPreview(input: TeacherExamContentInput): Promise<TeacherExamContentPreview> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/content/preview', { method: 'POST', json: input });
+  return handleResponse<TeacherExamContentPreview>(res);
+}
+
+/** Stores the checked questions of an institution exam, replacing the earlier ones; the same import key replays. */
+export async function postTeacherExamContent(
+  input: TeacherExamContentInput,
+  confirmation: { importKey: string; expectedSha256: string }
+): Promise<TeacherExamContentResult> {
+  const res = await apiFetch('/api/v1/assessment/teacher-exams/content', { method: 'POST', json: { ...input, ...confirmation } });
+  return handleResponse<TeacherExamContentResult>(res);
 }
 
 /** Server authorizes and records intent before any local CSV/download or print request. */

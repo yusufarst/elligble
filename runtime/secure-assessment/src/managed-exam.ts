@@ -14,6 +14,8 @@ export interface ManagedExamRow {
     window_ends_at: Date | null;
     configured_attempt_duration_seconds: number | null;
     latest_start_policy: string | null;
+    /** The session of an institution exam (ASSESS-INSTITUTION-001); null for a teacher-managed exam. */
+    institution_session_id: string | null;
     /** The school's time zone. */
     time_zone: string | null;
     db_now: Date;
@@ -28,7 +30,7 @@ async function selectManagedExam(
 ): Promise<ManagedExamRow | null> {
     const exam = await client.query(
         `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at, i.configured_attempt_duration_seconds,
-                i.latest_start_policy, t.time_zone, statement_timestamp() AS db_now
+                i.latest_start_policy, i.institution_session_id, t.time_zone, statement_timestamp() AS db_now
          FROM secure_assessment_exam_instances i
          JOIN tenant_tenants t ON t.id = i.tenant_id
          WHERE i.id = $1 AND i.tenant_id = $2
