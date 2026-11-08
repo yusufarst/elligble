@@ -106,3 +106,16 @@ True/false is registered on the A01 foundation as `2:TRUE_FALSE`, rule `TRUE_FAL
 - the client value is the canonical `"true"` or `"false"` in the existing local record.
 
 No route, lock order, migration or v1/multiple-response row changes. Authority and evidence: [ASSESS-QUESTION-003](tasks/ASSESS-QUESTION-003.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-004 bounded implementation checkpoint — 2026-11-08
+
+Matching is registered on the A01 foundation as `2:MATCHING`, rule `MATCHING_EXACT_PAIRS_V1`:
+- 2–10 left items; right items equal in number plus at most 2;
+- strictly one-to-one `{pairs}`; all-or-nothing;
+- an incomplete answer is saved but UNANSWERED (Owner D1);
+- authored as `MJ` rows through the extended v2 header (`left_1..left_10`, `right_a..right_l`, append-only);
+- the client value is the canonical sorted pair list.
+
+Monitoring counts a matching answer only when it is complete (one primary-key join to the snapshot). A shared `NativeSelect` primitive replaces the import page's local select class.
+
+No route, lock order, migration or v1/multiple-response/true-false row changes. Authority and evidence: [ASSESS-QUESTION-004](tasks/ASSESS-QUESTION-004.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

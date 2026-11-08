@@ -1,5 +1,6 @@
 import { MULTIPLE_RESPONSE_DESCRIPTOR, MULTIPLE_RESPONSE_TYPE } from './question-types/multiple-response.ts';
 import { TRUE_FALSE_DESCRIPTOR, TRUE_FALSE_TYPE } from './question-types/true-false.ts';
+import { MATCHING_DESCRIPTOR, MATCHING_TYPE } from './question-types/matching.ts';
 import type { ParsedQuestion } from './question-import.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import { randomBytes } from 'node:crypto';
@@ -84,8 +85,41 @@ export function buildTrueFalseFrozenContent(input: { prompt: string; correctValu
     return content;
 }
 
-/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false. */
+export interface MatchingQuestionInput {
+    prompt: string;
+    /** Left item texts (2-10) and right item texts (as many plus at most 2), in authored order. */
+    leftItems: string[];
+    rightItems: string[];
+    /** The right item index of each left item, in left order, each right index at most once. */
+    correctPairIndexes: number[];
+    maxScore: number;
+}
+
+/** Frozen MATCHING content (ASSESS-QUESTION-004 §4.1); random item ids, unique across both lists. */
+export function buildMatchingFrozenContent(
+    input: MatchingQuestionInput,
+    newItemId: () => string = () => `opt_${randomBytes(6).toString('hex')}`
+): Record<string, unknown> {
+    const leftItems = input.leftItems.map(content => ({ id: newItemId(), content }));
+    const rightItems = input.rightItems.map(content => ({ id: newItemId(), content }));
+    const content = {
+        schemaVersion: 2,
+        questionType: MATCHING_TYPE,
+        prompt: input.prompt,
+        leftItems,
+        rightItems,
+        correctPairs: leftItems.map((item, i) => ({ leftId: item.id, rightId: rightItems[input.correctPairIndexes[i]]?.id })),
+        maxScore: input.maxScore,
+    };
+    if (!MATCHING_DESCRIPTOR.validateContent(content).ok) throw new Error('Question content is not a valid matching question');
+    return content;
+}
+
+/** The frozen content of one imported question: PG as v1 single choice, PGK as multiple response, BS as true/false, MJ as matching. */
 export function buildImportedFrozenContent(q: ParsedQuestion): Record<string, unknown> {
+    if (q.type === 'MJ') {
+        return buildMatchingFrozenContent({ prompt: q.prompt, leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [], correctPairIndexes: q.correctPairIndexes ?? [], maxScore: q.maxScore });
+    }
     if (q.type === 'BS') return buildTrueFalseFrozenContent({ prompt: q.prompt, correctValue: q.correctValue === true, maxScore: q.maxScore });
     return q.type === 'PGK'
         ? buildMultipleResponseFrozenContent({ prompt: q.prompt, options: q.options, correctIndexes: q.correctIndexes, maxScore: q.maxScore })

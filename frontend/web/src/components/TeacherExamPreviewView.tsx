@@ -9,6 +9,7 @@ import { IconChevronLeft, IconChevronRight, IconInfo } from '@/components/icons'
 import { formatWindow } from '../lib/format.ts';
 import { formatScore } from '../lib/question-import.ts';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
+import { MATCHING_LETTERS, MatchingAnswer } from './answers/MatchingAnswer.tsx';
 
 // The teacher previews a scheduled or ready exam before opening it (ASSESS-TEACHER-002;
 // D04.3-38 LOCKED): one question at a time as the exam screen shows it (the same question
@@ -120,7 +121,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           {/* The exam screen's own question card (workstation.css), so the preview looks the same. */}
           <section className="question-card" aria-label={`Soal nomor ${question.no}`}>
             <p className="m-0 mb-3 flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : ''}</span>
+              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : ''}</span>
               {showKey && question.maxScore !== null && <span className="tabular-nums">Skor {formatScore(question.maxScore)}</span>}
             </p>
             {!question.valid && (
@@ -131,7 +132,33 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
             )}
             <fieldset className="question-fieldset">
               <legend className="question-prompt whitespace-pre-wrap [overflow-wrap:anywhere]">{question.prompt}</legend>
-              {question.questionType === 'TRUE_FALSE' ? (
+              {question.questionType === 'MATCHING' ? (
+              <>
+                {/* The Student's own control as a local try-out (ASSESS-QUESTION-004 §4.3); nothing is saved. */}
+                <MatchingAnswer
+                  question={{ snapshotId: question.snapshotId, schemaVersion: 2, questionType: 'MATCHING', prompt: question.prompt, options: [], leftItems: question.leftItems ?? [], rightItems: question.rightItems ?? [] }}
+                  value={tried[question.snapshotId]}
+                  onChange={value => setTried(prev => ({ ...prev, [question.snapshotId]: value }))}
+                />
+                {showKey && (
+                  <section aria-labelledby={`preview-key-${question.snapshotId}`} className="mt-4 flex flex-col gap-2">
+                    <h3 id={`preview-key-${question.snapshotId}`} className="m-0 text-sm font-semibold text-foreground">Kunci jawaban</h3>
+                    <ol className="m-0 flex list-none flex-col gap-2 p-0">
+                      {(question.leftItems ?? []).map((item, i) => {
+                        const rightId = (question.correctPairs ?? []).find(pair => pair.leftId === item.id)?.rightId;
+                        const index = (question.rightItems ?? []).findIndex(right => right.id === rightId);
+                        return (
+                          <li key={item.id} className="flex flex-col gap-1 rounded-md border border-success-line bg-success-surface px-3 py-2 text-sm sm:flex-row sm:gap-3">
+                            <span className="min-w-0 flex-1 font-semibold [overflow-wrap:anywhere]">{i + 1}. {item.content}</span>
+                            <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{index >= 0 ? `${MATCHING_LETTERS[index]}. ${(question.rightItems ?? [])[index].content}` : ''}</span>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </section>
+                )}
+              </>
+              ) : question.questionType === 'TRUE_FALSE' ? (
               <div className="options-list" role="radiogroup" aria-label="Pilihan Jawaban">
                 {([['true', 'B', 'Benar'], ['false', 'S', 'Salah']] as const).map(([choice, marker, label]) => {
                   const selected = tried[question.snapshotId] === choice;

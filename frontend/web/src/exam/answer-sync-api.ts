@@ -1,6 +1,6 @@
 import { apiFetch } from '../api/http.ts';
 import { getResume } from '../api/assessment-client.ts';
-import { EMPTY_SELECTION, MULTIPLE_RESPONSE_KEY, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
+import { EMPTY_SELECTION, MATCHING_KEY, MULTIPLE_RESPONSE_KEY, QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES, TRUE_FALSE_KEY, V1_SINGLE_CHOICE_KEY, answerValueOf, isEmptyValue, pairsOf, selectionOf, type ResumeAnswer } from '../types/assessment.ts';
 import type { SaveOutcome, ServerAnswerState, SyncApi } from './answer-sync-engine.ts';
 import { openAnswerStore, type PendingAnswerRecord } from './answer-store.ts';
 import { serverClock } from './server-clock.ts';
@@ -25,6 +25,11 @@ function payloadFor(contentKey: string, value: string): Record<string, unknown> 
   }
   // True/false: only the canonical "true" or "false" is ever sent.
   if (contentKey === TRUE_FALSE_KEY) return value === 'true' ? { value: true } : value === 'false' ? { value: false } : null;
+  // Matching: only a canonical pair list is ever sent.
+  if (contentKey === MATCHING_KEY) {
+    const pairs = pairsOf(value);
+    return pairs ? { pairs: pairs.map(([leftId, rightId]) => ({ leftId, rightId })) } : null;
+  }
   return null;
 }
 
@@ -164,11 +169,11 @@ export async function countUnreceivedLocalAnswers(tenantId: string, attemptId: s
   try {
     const resume = await getResume(attemptId);
     const accepted = new Map(resume.answers.map(answer => [answer.snapshotId, answerValueOf(answer.answerPayload)]));
-    // A cleared multiple-response choice is received when the server holds it or holds nothing:
-    // both are unanswered (ASSESS-QUESTION-002 §4A.4).
+    // A cleared multiple-response or matching answer is received when the server holds it or
+    // holds nothing: both are unanswered (ASSESS-QUESTION-002 §4A.4, ASSESS-QUESTION-004 §4A.3).
     return records.filter(record => {
       const server = accepted.get(record.snapshotId);
-      if (record.optionId === EMPTY_SELECTION && (record.contentKey ?? V1_SINGLE_CHOICE_KEY) === MULTIPLE_RESPONSE_KEY && (server === undefined || server === EMPTY_SELECTION)) return false;
+      if (isEmptyValue(record.contentKey ?? V1_SINGLE_CHOICE_KEY, record.optionId) && (server === undefined || server === EMPTY_SELECTION)) return false;
       return server !== record.optionId;
     }).length;
   } catch {

@@ -1405,3 +1405,90 @@
 .option-marker.option-marker-square {
   border-radius: 3px;
 }
+
+/* Matching, "Menjodohkan" (ASSESS-QUESTION-004 §4A.4): the right items listed once with their
+   letters; one row per left item with a native select. A paired row takes the selected state of
+   the option card (FDS §21) and shows the chosen letter. Shared tokens only, no new colour. */
+.matching-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.matching-heading {
+  margin: 0 0 8px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.matching-right-items,
+.matching-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.matching-right-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  background-color: var(--color-surface-muted);
+}
+
+.matching-right-item .option-text,
+.matching-row .option-text {
+  overflow-wrap: anywhere;
+}
+
+.matching-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background-color: var(--color-surface);
+}
+
+.matching-row.paired {
+  border-color: var(--color-success-base);
+  background-color: var(--color-success-bg);
+}
+
+.matching-row-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.matching-number {
+  flex-shrink: 0;
+  min-width: 1.5em;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.matching-row.paired .matching-chosen {
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
+}
+
+.matching-row.paired .option-text {
+  color: var(--color-success-text);
+}
+
+.matching-status {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}

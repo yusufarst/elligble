@@ -5,7 +5,7 @@ import { evaluateExamReadiness } from './exam-lifecycle-operations.ts';
 import {
     LATEST_START_POLICIES, buildImportedFrozenContent, listEnrolledStudents, provisionScheduledExam, type LatestStartPolicy,
 } from './exam-provisioning.ts';
-import { MAX_IMPORT_QUESTIONS, MAX_QUESTION_SCORE, OPTION_LETTERS, QUESTIONS_TEMPLATE, parseQuestionFile, type ImportQuestionType, type QuestionProblem } from './question-import.ts';
+import { MATCHING_RIGHT_LETTERS, MAX_IMPORT_QUESTIONS, MAX_QUESTION_SCORE, OPTION_LETTERS, QUESTIONS_TEMPLATE, parseQuestionFile, type ImportQuestionType, type ParsedQuestion, type QuestionProblem } from './question-import.ts';
 
 // A teacher schedules a teacher-managed exam for one of their own teaching assignments from
 // a question file (ASSESS-TEACHER-001; D04.4-26A/26C LOCKED: the teacher creates the exam for
@@ -72,6 +72,19 @@ export interface PreviewQuestion {
     correctLetters: string[];
     /** BS only (ASSESS-QUESTION-003 §4A.5). */
     correctValue?: boolean;
+    /** MJ only (ASSESS-QUESTION-004 §4.2): left and right items; correctLetters is one right letter per left item. */
+    leftItems?: string[];
+    rightItems?: string[];
+}
+
+/** The key of a preview question: letters A-E (PG, PGK), Benar/Salah (BS), right letters A-L per left item (MJ). */
+function previewKey(q: ParsedQuestion): { correct: string; correctLetters: string[] } {
+    if (q.type === 'MJ') {
+        const letters = (q.correctPairIndexes ?? []).map(i => MATCHING_RIGHT_LETTERS[i]);
+        return { correct: letters.join(', '), correctLetters: letters };
+    }
+    const letters = q.correctIndexes.map(i => OPTION_LETTERS[i]);
+    return { correct: q.type === 'BS' ? (q.correctValue ? 'Benar' : 'Salah') : letters.join(', '), correctLetters: letters };
 }
 
 export interface PreviewParticipant {
@@ -279,9 +292,9 @@ export async function runTeacherExamImport(
         problems,
         questions: parsed.questions.map(q => ({
             line: q.line, no: q.no, prompt: q.prompt, options: q.options, score: q.maxScore, type: q.type,
-            correct: q.type === 'BS' ? (q.correctValue ? 'Benar' : 'Salah') : q.correctIndexes.map(i => OPTION_LETTERS[i]).join(', '),
-            correctLetters: q.correctIndexes.map(i => OPTION_LETTERS[i]),
+            ...previewKey(q),
             ...(q.type === 'BS' ? { correctValue: q.correctValue === true } : {}),
+            ...(q.type === 'MJ' ? { leftItems: q.leftItems ?? [], rightItems: q.rightItems ?? [] } : {}),
         })),
         participants: [],
         window: null,

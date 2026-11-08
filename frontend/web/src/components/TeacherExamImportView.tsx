@@ -11,6 +11,7 @@ import { Metric, MetricList } from '@/components/ui/metric';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatWindow, zoneLabel } from '../lib/format.ts';
 import { downloadTextFile } from '../lib/results-export.ts';
@@ -30,10 +31,6 @@ import {
 // returns the exam already created instead of a second one (D04.3-65).
 
 type Stage = 'editing' | 'checking' | 'checked';
-
-const selectClass =
-  'flex h-11 w-full min-w-0 rounded-md border border-input bg-background px-3.5 py-2.5 text-base text-foreground shadow-sm ' +
-  'focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 /** The file as UTF-8 text (invalid bytes become U+FFFD, which the server reports). */
 function readFileText(file: File): Promise<string> {
@@ -252,7 +249,7 @@ export const TeacherExamImportView: React.FC<{
       {back}
       <PageHeader title={SCREEN_TITLE.examImport}>
         <p className="m-0 text-muted-foreground">
-          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK) atau benar/salah (BS) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
+          Pilih kelas dan jadwal, unggah soal pilihan ganda (PG), pilihan ganda kompleks (PGK), benar/salah (BS) atau menjodohkan (MJ) dalam templat CSV ELLIGBLE, periksa hasilnya, lalu jadwalkan.
         </p>
       </PageHeader>
 
@@ -285,10 +282,10 @@ export const TeacherExamImportView: React.FC<{
             {setup.assessmentTypes.length === 0 ? (
               <p className="m-0 text-sm text-muted-foreground">Belum ada jenis penilaian di sekolah ini. Hubungi operator sekolah.</p>
             ) : (
-              <select id="assessment-type" className={selectClass} value={assessmentTypeId} onChange={e => change(setAssessmentTypeId)(e.target.value)}>
+              <NativeSelect id="assessment-type" value={assessmentTypeId} onChange={e => change(setAssessmentTypeId)(e.target.value)}>
                 <option value="">Pilih jenis penilaian</option>
                 {setup.assessmentTypes.map(t => <option key={t.assessmentTypeId} value={t.assessmentTypeId}>{t.label}</option>)}
-              </select>
+              </NativeSelect>
             )}
           </div>
         </CardContent>
@@ -351,7 +348,7 @@ export const TeacherExamImportView: React.FC<{
         <CardHeader>
           <CardTitle>Berkas Soal</CardTitle>
           <CardDescription>
-            Satu baris per soal: nomor, tipe (PG, PGK atau BS), teks soal, pilihan A sampai E (kosong untuk BS), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS) dan skor.
+            Satu baris per soal: nomor, tipe (PG, PGK, BS atau MJ), teks soal, pilihan A sampai E (kosong untuk BS dan MJ), kunci jawaban (satu huruf untuk PG; satu sampai lima huruf untuk PGK, misalnya A,C; B atau S untuk BS; untuk MJ huruf pasangan kanan setiap pernyataan kiri secara berurutan, misalnya B,C,A) dan skor, lalu khusus MJ pernyataan kiri (left_1 sampai left_10) dan pasangan kanan (right_a sampai right_l).
             Simpan sebagai CSV UTF-8; pemisah kolom boleh titik koma atau koma.
           </CardDescription>
         </CardHeader>
@@ -495,7 +492,7 @@ const PreviewSection: React.FC<{
             {preview.questions.map(q => (
               <li key={q.no} className="flex flex-col gap-2 rounded-md border border-border bg-background px-4 py-3">
                 <p className="m-0 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">Soal {q.no} · {q.type === 'PGK' ? 'Pilihan ganda kompleks' : q.type === 'BS' ? 'Benar/Salah' : 'Pilihan ganda'}</span>
+                  <span className="font-semibold text-foreground">Soal {q.no} · {q.type === 'PGK' ? 'Pilihan ganda kompleks' : q.type === 'BS' ? 'Benar/Salah' : q.type === 'MJ' ? 'Menjodohkan' : 'Pilihan ganda'}</span>
                   <span className="tabular-nums">Skor {formatScore(q.score)}</span>
                 </p>
                 <p className="m-0 whitespace-pre-wrap text-[15px] [overflow-wrap:anywhere]">{q.prompt}</p>
@@ -504,6 +501,33 @@ const PreviewSection: React.FC<{
                     <span className="min-w-0 flex-1">{q.correct}</span>
                     <span className="shrink-0 text-xs font-semibold text-success-ink">Kunci jawaban</span>
                   </p>
+                )}
+                {q.type === 'MJ' && (
+                  <>
+                    {/* Each left item with its key right item (ASSESS-QUESTION-004 §4.2), then the right list. */}
+                    <ol className="m-0 flex list-none flex-col gap-1 p-0">
+                      {(q.leftItems ?? []).map((item, i) => {
+                        const letter = (q.correctLetters ?? [])[i] ?? '';
+                        const right = (q.rightItems ?? [])['ABCDEFGHIJKL'.indexOf(letter)] ?? '';
+                        return (
+                          <li key={i} className="flex flex-col gap-1 rounded-md border border-success-line bg-success-surface px-2 py-1 text-sm sm:flex-row sm:gap-2">
+                            <span className="min-w-0 flex-1 [overflow-wrap:anywhere]"><span className="font-semibold">{i + 1}.</span> {item}</span>
+                            <span className="min-w-0 flex-1 [overflow-wrap:anywhere]"><span className="font-semibold">{letter}.</span> {right}</span>
+                            <span className="shrink-0 text-xs font-semibold text-success-ink">Kunci jawaban</span>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                    <p className="m-0 text-xs font-semibold text-muted-foreground">Pasangan kanan</p>
+                    <ol className="m-0 flex list-none flex-col gap-1 p-0">
+                      {(q.rightItems ?? []).map((item, i) => (
+                        <li key={i} className="flex gap-2 rounded-md px-2 py-1 text-sm">
+                          <span className="w-4 shrink-0 font-semibold">{'ABCDEFGHIJKL'[i]}.</span>
+                          <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{item}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </>
                 )}
                 {q.options.length > 0 && (
                 <ol className="m-0 flex list-none flex-col gap-1 p-0">
