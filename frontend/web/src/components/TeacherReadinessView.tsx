@@ -390,14 +390,15 @@ export const TeacherReadinessView: React.FC<{
                 </>
               ) : (
               <div className="teacher-readiness-details">
-                <div className="readiness-section">
+                {/* min-w-0 on the grid items: WebKit otherwise sized the 1fr track past the card at 360 px (CI #224). */}
+                <div className="readiness-section min-w-0 [overflow-wrap:anywhere]">
                   <h3 className="readiness-section-title">Kesiapan Dasar</h3>
                   <div className={`readiness-status ${exam.baseline.status === 'baseline_readiness_checks_pass' ? 'readiness-pass' : 'readiness-fail'}`}>
                     <p>{baselineMessage}</p>
                   </div>
                 </div>
 
-                <div className="readiness-section">
+                <div className="readiness-section min-w-0 [overflow-wrap:anywhere]">
                   <h3 className="readiness-section-title">Kesiapan Ruangan &amp; Pengawas</h3>
                   <div className={`readiness-status ${(exam.roomProctor.status === 'room_proctor_readiness_ready' || exam.roomProctor.status === 'room_proctor_readiness_not_applicable') ? 'readiness-pass' : 'readiness-fail'}`}>
                     <p>{roomProctorMessage}</p>

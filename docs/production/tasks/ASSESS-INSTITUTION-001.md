@@ -636,3 +636,11 @@ No re-runs, and no push while the previous commit's CI runs.
   - the capture height pre-check takes the larger of the document and body heights;
   - a screenshot WebKit still refuses as too large is retaken as a viewport screenshot, recorded as `fullPage: false` in its JSON.
   - The overflow and 44 px assertions are unchanged. No product code changed.
+
+### 11.0.3 Exact-content CI of the fourth candidate
+
+- **CI #224** (run 42518901717, d17d12f, attempt 1): FAILURE, preserved without re-run. Web, Runtime, Container and the E2E jobs for mobile-360, tablet-768, desktop-1280 and firefox-1280 passed.
+  - In webkit-390, the 99h capture test failed one C07 gate: `teacher-card-closed` at 360x800 with 100 % text overflowed (scrollWidth 384 against 360). The same capture at 390, 430 and 768 px was clean.
+  - The overflowing elements were the existing readiness sections of the Teacher card (`.teacher-readiness-details` grid, `teacher-readiness.css`), whose texts all wrap. WebKit sized the `1fr` grid track from the items' automatic minimum width. No earlier spec captured a Teacher card at 360 px in WebKit.
+- **Correction (TeacherReadinessView.tsx, an allowlisted row):** the two readiness grid items take `min-w-0` and `overflow-wrap: anywhere`, so the track cannot grow past the card. This applies to every Teacher card and changes nothing at widths where the content already fits.
+  - Local: web typecheck clean; teacherOperations, institutionExams and teacherResults 44/44.
