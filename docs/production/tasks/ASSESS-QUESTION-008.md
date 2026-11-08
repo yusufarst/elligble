@@ -541,3 +541,82 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
   - In every browser, `results-graded` at 390x844 with 200 % text overflowed: scrollWidth 396 against 390. The element was the shared Button "Sembunyikan Nilai" on the results screen (`inline-flex shrink-0`, no wrapping). No earlier spec captured the results screen at 200 % text. The table itself scrolls inside its own container, as designed.
   - Of the 87 mobile-360 captures, only this one failed. No other capture overflowed, and none had a target under 44 px (artifact e2e-report-mobile-360, fetched with the resumable, `unzip -t`-checked transfer).
 - **Correction (row 33):** the toggle takes the wrapping classes the shared back button uses on these screens (`h-auto min-h-11 max-w-full whitespace-normal`). It keeps its 44 px minimum height. No other behaviour changes.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on 6888adf, with no material finding. The reviewer extended it to 9a34e1f (test-only correction) and to 6af196e (the results toggle fix), confirming scope, correctness, security, client and test coverage against §4–§7. Non-material notes:
+  - a deadlock or serialization error on the grade write answers 503 where the shared staff path answers 409 `state_changed`;
+  - there is no integration vector for refusing a non-first attempt;
+  - the readiness card and the results identify essays by different predicates, which cannot differ on an exam that passed readiness;
+  - "the template parses" is proven by a local run, confirmed independently by the reviewer.
+- **Rendered review:** PASS on 6af196e (CI #213 artifacts), with no material finding. The reviewer independently checked all 425 `workspace-question-es-*` pairs and compared the 1300 earlier-Task pairs with exact-main CI #209. Non-material notes:
+  - at 390 px with 200 % text the results table scrolls horizontally inside its container (the existing pattern);
+  - "Dikumpulkan" reaches the edge of the shared Metric at 200 % text (pre-existing);
+  - the 200 % text method widens line spacing, and full-page screenshots draw the sticky header part-way down (capture artefacts, as before);
+  - the fieldset legend wraps at 200 % text and stays readable.
+  - Proposed UI-SYSTEM follow-ups, outside this Task: a stacked mobile results row, the shared Metric at 200 % text, and a shared wrapping Button variant (the wrapping class string is now used twice).
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-08
+
+### 12.1 Content and CI
+
+**Final content:** 6af196e4a2ec18b5dac6c0584b53a43636939931. The registration was b16332b. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #213 (run 42490187804), push, attempt 1, eight jobs SUCCESS.
+- **Runtime units:** identity-access 34, tenant-access 14, academic-core 11 and Secure Assessment 968, all passing.
+- **Real PostgreSQL 16 integration:** 285/285, including the essay journey, the refusals with zero mutation, the unauthorized readers and graders, the two concurrency vectors, the frozen `gradeRevision`, and migration 0061 upgrade, rollback, repeat and append-only.
+- **Web:** 45 files and 427 tests, plus typecheck and build.
+- **Container:** image build and smoke test.
+- **E2E:** 34/34 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. This includes the essay journey (C06) and the rendered captures (C07).
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 42490187804, fetched with the resumable, size- and `unzip -t`-checked transfer.
+- 1725 `workspace-question-*` pairs: 002 450, 003 200, 004 225, 005 200, 007 225 and 008 425.
+- All at commit 6af196e with frontend tree 2893f772a315faad5961d6733b8a9e8090205c51.
+- Every screenshot hash matches its JSON; zero page overflow; zero targets under 44 px.
+- Manifest, built as in ASSESS-QUESTION-004 §10: SHA-256 b57da40699ba406624dfa93570d621181a23f10ff5b178efbeca34638b509ff8.
+- Against the #209 baseline: 1050 of the 1300 earlier pairs are identical. The 250 that differ are exactly the five `*-import-preview` scenarios, changed only in the import intro, the card instruction, times and generated IDs (C07).
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #210 (b16332b, registration) | attempt 1, eight SUCCESS |
+| CI #211 (6888adf) | attempt 1, FAILURE: web typecheck (unused import) and the integration fixture; E2E and Container skipped (§11.0) |
+| CI #212 (9a34e1f) | attempt 1, FAILURE: one C07 overflow at 390x844 with 200 % text in all five browsers; Web, Runtime and Container SUCCESS (§11.0.1) |
+| CI #213 (6af196e) | attempt 1, eight SUCCESS |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F15), then STOP (R1–R4), then PASS (§9).
+2. **Path-only additions (00.13 §5.2):** rows 55 and 56, each CONFIRMED before the edit (§10.1, §11).
+3. **Implementation:** PASS, extended to the final content (§11.1).
+4. **Rendered:** PASS (§11.1).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: E-1–E-4 and E-7, the text predicate (code points, allowed controls, lone surrogates), the grade argument, the D1 counts, the mixed vector 4.5/8 → 56.25; the registry holds seven keys; the all-v1 hand-off is identical |
+| C02 | PASS: ES import in 10-, 32-, 33- and 34-column files; the problem order and shapes; `rubric_not_allowed` on PG and IA; `correct_not_allowed`; the frozen wording; earlier parser results unchanged; the template parses |
+| C03 | PASS on real PostgreSQL (CI #213): import, previews, delivery without the rubric, saves and refusals with zero mutation, the 409 pair, monitoring, the worklist population and order, grade, revise and stale, E-5 refusals, unauthorized readers and graders, finalize refused then accepted, the frozen `gradeRevision`, provisional and final results under D1, both concurrency vectors, migration 0061 upgrade on a populated database, rollback, repeat and append-only |
+| C04 | PASS: regression with only the §4.8 assertions changed (lifecycle spec at :523) |
+| C05 | PASS: values and the predicate, the counter, D2 drafts with "Belum tersimpan", recovery as written, no rubric or grade in any record, the grading screen (save, invalid, stale, history, read-only), the D1 results only with essays, the D4 CSV cells, the finalize refusal copy, the import wording |
+| C06 | PASS: the five-browser journey: import with a rubric, preview, multi-line keyboard entry, the over-limit draft, the question list and submit dialog, offline, reload, read-only pause, V06, end, the refused finalize, grade, a stale form, revision history, finalize, the read-only screen and the final score 4/6 = 66.67 with "Dinilai guru" |
+| C07 | PASS: the #209 baseline and the after captures across the frozen conditions; no overflow; 44 px targets; visible focus; rendered review PASS |
+| C08 | PASS: every changed path is within rows 1–56; 33 Tasks and 78 edges; exact-SHA attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-QUESTION-008 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- EXPIRY_SERVER submissions that finalization writes inside its own transaction count as ungraded, so that finalization is refused; they appear in the worklist on the next read (§4.4).
+- One grader per exam; multiple graders are FUTURE.
+- A browser textarea normalizes line breaks to LF; CRLF fidelity is proved at the API level.
+- Composite item detail in reports is RESULT-004.
+- PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 13/33 (39.39%).
