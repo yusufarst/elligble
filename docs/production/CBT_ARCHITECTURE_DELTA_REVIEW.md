@@ -131,3 +131,15 @@ Ordering is registered on the A01 foundation as `2:ORDERING`, rule `ORDERING_EXA
 Monitoring does not count an empty order.
 
 No route, lock order, migration or earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-005](tasks/ASSESS-QUESTION-005.md) §4/§4A/§11. This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## ASSESS-QUESTION-007 bounded implementation checkpoint — 2026-11-08
+
+Numeric answer is registered on the A01 foundation as `2:NUMERIC_ANSWER`, rule `NUMERIC_EXACT_DECIMAL_TOLERANCE_V1`:
+- `{numericText}` is stored as typed and is either "" or a valid number (D1);
+- scoring is exact BigInt decimal arithmetic with an inclusive absolute tolerance;
+- it is authored as `IA` rows, with the tolerance in an appended 33rd `tolerance` column; the 32-column header stays valid;
+- the client value is the text, and invalid text is never sent ("Belum tersimpan" draft).
+
+Monitoring does not count "". The shared `Input` gains a documented `inputSize="exam"` variant.
+
+No route, lock order, migration or earlier-type row changes. Authority and evidence: [ASSESS-QUESTION-007](tasks/ASSESS-QUESTION-007.md) §4/§11. This is a pointer, not a release PASS. PB05 stays OPEN.

@@ -1567,3 +1567,20 @@
     flex: 1;
   }
 }
+
+/* Numeric answer, "Isian angka" (ASSESS-QUESTION-007 §4.4): label, instruction, the shared Input
+   in its exam size and the D1 hint, which is always mounted and only toggles its text. Tokens only. */
+.numeric-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 24rem;
+}
+
+.numeric-hint {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.875rem;
+  color: var(--color-danger-text);
+}

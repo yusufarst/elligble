@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, ORDERING_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
+import { MATCHING_KEY, MULTIPLE_RESPONSE_KEY, NUMERIC_ANSWER_KEY, ORDERING_KEY, TRUE_FALSE_KEY, contentKeyOf, isAnsweredValue, type StudentSafeQuestion, type ResumeResponse, type TimerResponse } from '../types/assessment.ts';
 import { getResume, getQuestions, getTimer, postSubmit, postExpiryFinalize, ApiError } from '../api/assessment-client.ts';
 import { getActiveTenantId } from '../api/http.ts';
 import { useAuthoritativeTimer } from '../hooks/useAuthoritativeTimer.ts';
@@ -11,6 +11,7 @@ import { countUnreceivedLocalAnswers } from '../exam/answer-sync-api.ts';
 import { MultipleResponseAnswer } from './answers/MultipleResponseAnswer.tsx';
 import { MatchingAnswer } from './answers/MatchingAnswer.tsx';
 import { OrderingAnswer } from './answers/OrderingAnswer.tsx';
+import { NumericAnswer } from './answers/NumericAnswer.tsx';
 import { TrueFalseAnswer } from './answers/TrueFalseAnswer.tsx';
 import { forgetExamSessionId, readExamSessionId } from '../exam/exam-session.ts';
 import { clearAddedTime, takeNewlyAddedSeconds, timeAddedMessage } from '../exam/time-added.ts';
@@ -478,6 +479,15 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
     onDiscarded: handleDiscarded,
   });
   const { selectedOptions, saveStates, selectOption, hasUnresolvedSaves, degraded, storageDurable } = answers;
+  // Numeric drafts (ASSESS-QUESTION-007 §4.4): text shown but not captured, per question, in memory
+  // only while this screen is open; dropped when the stored value changes under it.
+  const [numericDrafts, setNumericDrafts] = useState<Record<string, { text: string; base: string | undefined }>>({});
+  useEffect(() => {
+    setNumericDrafts(previous => {
+      const kept = Object.fromEntries(Object.entries(previous).filter(([snapshotId, draft]) => draft.base === selectedOptions[snapshotId]));
+      return Object.keys(kept).length === Object.keys(previous).length ? previous : kept;
+    });
+  }, [selectedOptions]);
   const review = useReviewFlags({ attemptId: attemptId || '', sessionId, initialFlags, enabled: phase === 'active' });
   // Supervisor messages (D04.6-49..53): fetched when the timer answer counts more of them.
   const inbox = useBroadcastInbox({ attemptId: attemptId || '', enabled: phase === 'active' });
@@ -868,6 +878,8 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
   const currentSaveState = currentQuestion ? saveStates[currentQuestion.snapshotId] : undefined;
 
   const getSaveStatusPresentation = () => {
+    // Text the numeric field shows but did not capture is not saved (§4.4): never "Tersimpan".
+    if (currentQuestion && numericDrafts[currentQuestion.snapshotId]) return { statusClass: 'unanswered', text: 'Belum tersimpan' };
     if (!currentSaveState || currentSaveState.status === 'pristine') {
       const isAnswered = currentQuestion ? !!answeredOptions[currentQuestion.snapshotId] : false;
       if (isAnswered) {
@@ -890,7 +902,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
       case 'saved':
         // An acknowledged empty selection, or an incomplete matching answer (D1), is saved, but it
         // is not an answer (ASSESS-QUESTION-004 §4A.1).
-        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY, ORDERING_KEY].includes(contentKeyOf(currentQuestion))
+        if (currentQuestion && [MULTIPLE_RESPONSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY].includes(contentKeyOf(currentQuestion))
           && !isAnsweredValue(contentKeyOf(currentQuestion), selectedOptions[currentQuestion.snapshotId], currentQuestion.leftItems?.length ?? currentQuestion.items?.length)) {
           return { statusClass: 'unanswered', text: 'Belum dijawab' };
         }
@@ -1074,6 +1086,27 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
                   question={currentQuestion}
                   value={selectedOptions[currentQuestion.snapshotId]}
                   onChange={value => selectOption(currentQuestion.snapshotId, value, MULTIPLE_RESPONSE_KEY)}
+                />
+              ) : currentQuestion.questionType === 'NUMERIC_ANSWER' ? (
+                <NumericAnswer
+                  key={currentQuestion.snapshotId}
+                  question={currentQuestion}
+                  value={selectedOptions[currentQuestion.snapshotId]}
+                  draft={numericDrafts[currentQuestion.snapshotId]?.text}
+                  onChange={value => selectOption(currentQuestion.snapshotId, value, NUMERIC_ANSWER_KEY)}
+                  onDraft={draft => {
+                    const snapshotId = currentQuestion.snapshotId;
+                    setNumericDrafts(previous => {
+                      if (draft === undefined) {
+                        if (!previous[snapshotId]) return previous;
+                        const rest = { ...previous };
+                        delete rest[snapshotId];
+                        return rest;
+                      }
+                      if (previous[snapshotId]?.text === draft) return previous;
+                      return { ...previous, [snapshotId]: { text: draft, base: selectedOptions[snapshotId] } };
+                    });
+                  }}
                 />
               ) : currentQuestion.questionType === 'ORDERING' ? (
                 <OrderingAnswer

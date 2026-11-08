@@ -2,6 +2,7 @@ import { isAnswerForQuestion } from './answer.ts';
 import { validateBaselineQuestionSnapshotFrozenContent } from './question-snapshot-baseline-frozen-content-contract.ts';
 import { MULTIPLE_RESPONSE_DESCRIPTOR } from './question-types/multiple-response.ts';
 import { MATCHING_DESCRIPTOR } from './question-types/matching.ts';
+import { NUMERIC_ANSWER_DESCRIPTOR } from './question-types/numeric-answer.ts';
 import { ORDERING_DESCRIPTOR } from './question-types/ordering.ts';
 import { TRUE_FALSE_DESCRIPTOR } from './question-types/true-false.ts';
 
@@ -97,7 +98,7 @@ export const V1_SINGLE_CHOICE_DESCRIPTOR: QuestionDescriptor = Object.freeze({
 });
 
 /** v1 single choice, multiple response (ASSESS-QUESTION-002) and true/false (ASSESS-QUESTION-003). */
-export const PRODUCTION_QUESTION_REGISTRY: QuestionRegistry = createQuestionRegistry([V1_SINGLE_CHOICE_DESCRIPTOR, MULTIPLE_RESPONSE_DESCRIPTOR, TRUE_FALSE_DESCRIPTOR, MATCHING_DESCRIPTOR, ORDERING_DESCRIPTOR]);
+export const PRODUCTION_QUESTION_REGISTRY: QuestionRegistry = createQuestionRegistry([V1_SINGLE_CHOICE_DESCRIPTOR, MULTIPLE_RESPONSE_DESCRIPTOR, TRUE_FALSE_DESCRIPTOR, MATCHING_DESCRIPTOR, ORDERING_DESCRIPTOR, NUMERIC_ANSWER_DESCRIPTOR]);
 
 export type ContentClassification =
     /** schemaVersion 1: decided only by the unchanged v1 functions. */
