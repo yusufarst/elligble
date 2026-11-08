@@ -24,8 +24,10 @@ export const ORDERING_KEY: QuestionContentKey = '2:ORDERING';
 export const NUMERIC_ANSWER_KEY: QuestionContentKey = '2:NUMERIC_ANSWER';
 /** Essay, "Esai" (ASSESS-QUESTION-008). */
 export const ESSAY_KEY: QuestionContentKey = '2:ESSAY';
+/** Short answer, "Isian singkat" (ASSESS-QUESTION-006). */
+export const SHORT_ANSWER_KEY: QuestionContentKey = '2:SHORT_ANSWER';
 /** The content keys this client renders and saves; sent as the X-Question-Types header. */
-export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY, ESSAY_KEY]);
+export const SUPPORTED_QUESTION_TYPES: readonly QuestionContentKey[] = Object.freeze([V1_SINGLE_CHOICE_KEY, MULTIPLE_RESPONSE_KEY, TRUE_FALSE_KEY, MATCHING_KEY, ORDERING_KEY, NUMERIC_ANSWER_KEY, ESSAY_KEY, SHORT_ANSWER_KEY]);
 export const QUESTION_TYPES_HEADER = 'X-Question-Types';
 
 export function contentKeyOf(question: { schemaVersion: number; questionType: string }): QuestionContentKey {
@@ -57,6 +59,11 @@ export function answerValueOf(payload: unknown): string | null {
     return typeof text === 'string' && (text === '' || isNumericText(text)) ? text : null;
   }
   // Essay: the text exactly as written, or "" (ASSESS-QUESTION-008 §4.6).
+  // Short answer: the text exactly as typed, or "" (ASSESS-QUESTION-006 §4.4).
+  if ('shortText' in payload) {
+    const text = (payload as { shortText: unknown }).shortText;
+    return typeof text === 'string' && isShortText(text) ? text : null;
+  }
   if ('essayText' in payload) {
     const text = (payload as { essayText: unknown }).essayText;
     return typeof text === 'string' && isEssayText(text) ? text : null;
@@ -139,6 +146,24 @@ export function isNumericText(value: string): boolean {
   return value.length <= 30 && /^-?[0-9]+([.,][0-9]+)?$/.test(value);
 }
 
+export const SHORT_TEXT_MAX = 200;
+
+/**
+ * Short-answer text the server accepts (ASSESS-QUESTION-006 §4.1, the same predicate): one line
+ * (no LF or CR) of at most 200 code points, otherwise as for essays. "" is the empty answer.
+ */
+export function isShortText(value: string): boolean {
+  return shortTextProblem(value) === null;
+}
+
+/** Why short-answer text cannot be saved: over the limit (checked first, D2) or a character that is not allowed. */
+export function shortTextProblem(value: string): 'too_long' | 'invalid_character' | null {
+  const problem = essayTextProblem(value);
+  if (codePointCount(value) > SHORT_TEXT_MAX) return 'too_long';
+  if (problem === 'invalid_character' || /[\n\r]/.test(value)) return 'invalid_character';
+  return null;
+}
+
 export const ESSAY_TEXT_MAX = 5000;
 
 /**
@@ -187,7 +212,7 @@ export function codePointCount(value: string): number {
 
 /** Whether a value is the empty answer of a type that allows one: "[]" for multiple response, matching and ordering, "" for numeric answer and essay (O02-2). */
 export function isEmptyValue(contentKey: string, value: string | null | undefined): boolean {
-  if (contentKey === NUMERIC_ANSWER_KEY || contentKey === ESSAY_KEY) return value === '';
+  if (contentKey === NUMERIC_ANSWER_KEY || contentKey === ESSAY_KEY || contentKey === SHORT_ANSWER_KEY) return value === '';
   return value === EMPTY_SELECTION && (contentKey === MULTIPLE_RESPONSE_KEY || contentKey === MATCHING_KEY || contentKey === ORDERING_KEY);
 }
 
@@ -203,6 +228,7 @@ export function isAnsweredValue(contentKey: string, value: string | null | undef
   }
   if (contentKey === NUMERIC_ANSWER_KEY) return value !== '' && isNumericText(value);
   if (contentKey === ESSAY_KEY) return value !== '' && isEssayText(value);
+  if (contentKey === SHORT_ANSWER_KEY) return value !== '' && isShortText(value);
   // Ordering: a full order of every item (ASSESS-QUESTION-005 §4A.4 item 7); the count is the item count.
   if (contentKey === ORDERING_KEY) {
     const ids = orderOf(value);
@@ -769,7 +795,7 @@ export type QuestionProblemCode =
   | 'column_count' | 'number_out_of_order' | 'prompt_empty' | 'option_empty' | 'options_duplicate'
   | 'correct_multiple' | 'correct_invalid' | 'score_invalid' | 'type_invalid' | 'correct_duplicate' | 'options_not_allowed'
   | 'columns_missing' | 'matching_items_invalid' | 'items_duplicate' | 'items_not_allowed' | 'ordering_items_invalid' | 'tolerance_invalid' | 'tolerance_not_allowed'
-  | 'correct_not_allowed' | 'rubric_not_allowed';
+  | 'correct_not_allowed' | 'rubric_not_allowed' | 'short_answer_forms_invalid';
 
 export type SetupProblemCode =
   | 'file_too_large' | 'time_zone_missing' | 'window_invalid' | 'window_order' | 'window_ended' | 'duration_invalid'
@@ -777,14 +803,14 @@ export type SetupProblemCode =
   | 'schedule_conflict' | 'not_ready';
 
 export type ImportProblem =
-  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' | 'MJ' | 'UR' | 'IA' | 'ES'; side?: 'left' | 'right' }
+  | { source: 'file'; code: QuestionProblemCode; line: number | null; expected?: number; found?: number; letters?: string[]; type?: 'BS' | 'MJ' | 'UR' | 'IA' | 'ES' | 'IS'; side?: 'left' | 'right' }
   | { source: 'setup'; code: SetupProblemCode; count?: number; blocker?: string };
 
 export interface TeacherExamImportPreview {
   sourceSha256: string;
   problems: ImportProblem[];
   /** type and correctLetters: ASSESS-QUESTION-002 (absent from older servers: PG with `correct`). */
-  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'ES'; correctLetters?: string[]; correctValue?: boolean; leftItems?: string[]; rightItems?: string[]; keyEqualsAuthoredOrder?: boolean; tolerance?: string; rubric?: string }>;
+  questions: Array<{ line: number; no: number; prompt: string; options: string[]; correct: string; score: number; type?: 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'ES' | 'IS'; correctLetters?: string[]; correctValue?: boolean; leftItems?: string[]; rightItems?: string[]; keyEqualsAuthoredOrder?: boolean; tolerance?: string; rubric?: string; acceptedForms?: string[] }>;
   participants: Array<{ enrollmentId: string; elligbleId: string; included: boolean; conflict: boolean }>;
   window: { startsAt: string; endsAt: string } | null;
   totals: { questions: number; maxScore: number; participants: number };
@@ -816,7 +842,9 @@ export interface TeacherExamPreview {
     options: Array<{ id: string; content: string }>;
     correctOptionId: string | null;
   /** ASSESS-QUESTION-002: the valid type (absent from older servers: single choice); null for invalid content. */
-  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER' | 'ESSAY' | null;
+  questionType?: 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_RESPONSE' | 'TRUE_FALSE' | 'MATCHING' | 'ORDERING' | 'NUMERIC_ANSWER' | 'ESSAY' | 'SHORT_ANSWER' | null;
+  /** Short answer only (ASSESS-QUESTION-006 §4.4): the accepted forms as authored; [] in manual mode. */
+  acceptedForms?: string[];
   /** Essay only: the rubric as authored, possibly empty. */
   rubric?: string;
   /** Multiple response: the key options in authored order. */
@@ -851,6 +879,8 @@ export interface TeacherEssayWorklist {
   questions: Array<{
     snapshotId: string;
     no: number;
+    /** ASSESS-QUESTION-006: essays and manual short answers; absent means 'ESSAY'. */
+    questionType?: 'ESSAY' | 'SHORT_ANSWER';
     prompt: string;
     rubric: string;
     maxScore: string;

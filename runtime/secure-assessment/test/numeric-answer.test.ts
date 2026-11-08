@@ -16,7 +16,7 @@ const SUPPORTED = new Set(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2
 const outcome = (text: string, content = ia()) => NUMERIC_ANSWER_DESCRIPTOR.score(content, { numericText: text }).outcome;
 
 test('C01 registration, rule and classification', () => {
-    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', '2:MATCHING', '2:ORDERING', NUMERIC_ANSWER_KEY, '2:ESSAY']);
+    assert.deepEqual(PRODUCTION_QUESTION_REGISTRY.keys(), ['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', '2:MATCHING', '2:ORDERING', NUMERIC_ANSWER_KEY, '2:ESSAY', '2:SHORT_ANSWER']);
     assert.equal(classifyFrozenContent(ia()).kind, 'registered');
     assert.equal(NUMERIC_ANSWER_DESCRIPTOR.scoringRuleId, NUMERIC_ANSWER_RULE);
     assert.equal(NUMERIC_ANSWER_RULE, 'NUMERIC_EXACT_DECIMAL_TOLERANCE_V1');
@@ -128,7 +128,7 @@ test('C02 IA import vectors, the tolerance column, problem shapes, wording and t
     const mj = parseQuestionFile([H33, row33('1;MJ;Pasangkan;;;;;;B,A;2', '', ['Sapi', 'Kucing', ...Array(8).fill(''), 'Ikan', 'Rumput'])].join('\n'));
     assert.deepEqual([mj.problems, mj.questions[0]?.rightItems], [[], ['Ikan', 'Rumput']], 'MJ right cells are 20-31 in the 33-column file');
 
-    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), ES (essay) or PGK (multiple answers)');
+    assert.equal(describeQuestionProblem({ code: 'type_invalid', line: 2 }), 'line 2: "type" must be PG (single answer), BS (true/false), MJ (matching), UR (ordering), IA (numeric), IS (short answer), ES (essay) or PGK (multiple answers)');
     assert.match(describeQuestionProblem({ code: 'type_invalid', line: 2 }), /PG .* or PGK/);
     assert.equal(describeQuestionProblem({ code: 'options_not_allowed', line: 2, type: 'IA' }), 'line 2: options must be empty for IA');
     assert.equal(describeQuestionProblem({ code: 'items_not_allowed', line: 2, type: 'IA' }), 'line 2: item columns are not used for IA');

@@ -13,6 +13,7 @@ import { MATCHING_LETTERS, MatchingAnswer } from './answers/MatchingAnswer.tsx';
 import { OrderingAnswer } from './answers/OrderingAnswer.tsx';
 import { NumericAnswer } from './answers/NumericAnswer.tsx';
 import { EssayAnswer } from './answers/EssayAnswer.tsx';
+import { ShortAnswer } from './answers/ShortAnswer.tsx';
 
 // The teacher previews a scheduled or ready exam before opening it (ASSESS-TEACHER-002;
 // D04.3-38 LOCKED): one question at a time as the exam screen shows it (the same question
@@ -124,7 +125,7 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
           {/* The exam screen's own question card (workstation.css), so the preview looks the same. */}
           <section className="question-card" aria-label={`Soal nomor ${question.no}`}>
             <p className="m-0 mb-3 flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : question.questionType === 'ORDERING' ? ' · Mengurutkan' : question.questionType === 'NUMERIC_ANSWER' ? ' · Isian angka' : question.questionType === 'ESSAY' ? ' · Esai' : ''}</span>
+              <span className="font-semibold text-foreground">Soal {question.no} dari {questions.length}{question.questionType === 'MULTIPLE_RESPONSE' ? ' · Pilihan ganda kompleks' : question.questionType === 'TRUE_FALSE' ? ' · Benar/Salah' : question.questionType === 'MATCHING' ? ' · Menjodohkan' : question.questionType === 'ORDERING' ? ' · Mengurutkan' : question.questionType === 'NUMERIC_ANSWER' ? ' · Isian angka' : question.questionType === 'ESSAY' ? ' · Esai' : question.questionType === 'SHORT_ANSWER' ? ' · Isian singkat' : ''}</span>
               {showKey && question.maxScore !== null && <span className="tabular-nums">Skor {formatScore(question.maxScore)}</span>}
             </p>
             {!question.valid && (
@@ -148,10 +149,38 @@ export const TeacherExamPreviewView: React.FC<{ examInstanceId: string; onBack()
                   <section aria-labelledby={`preview-key-${question.snapshotId}`} className="mt-4 flex flex-col gap-2">
                     <h3 id={`preview-key-${question.snapshotId}`} className="m-0 text-sm font-semibold text-foreground">Rubrik</h3>
                     <p className="m-0 rounded-md border border-border bg-muted px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
-                      {question.rubric ? question.rubric : 'Tidak ada rubrik. Esai dinilai guru.'}
+                      {question.rubric ? question.rubric : 'Tidak ada rubrik. Soal ini dinilai guru.'}
                     </p>
                   </section>
                 )}
+              </>
+              ) : question.questionType === 'SHORT_ANSWER' ? (
+              <>
+                {/* The Student's own control as a local try-out (ASSESS-QUESTION-006 §4.4); nothing is saved. */}
+                <ShortAnswer
+                  key={question.snapshotId}
+                  question={{ snapshotId: question.snapshotId, schemaVersion: 2, questionType: 'SHORT_ANSWER', prompt: question.prompt, options: [] }}
+                  value={tried[question.snapshotId]}
+                  onChange={value => setTried(prev => ({ ...prev, [question.snapshotId]: value }))}
+                />
+                {showKey && ((question.acceptedForms ?? []).length > 0 ? (
+                  <section aria-labelledby={`preview-key-${question.snapshotId}`} className="mt-4 flex flex-col gap-2">
+                    <h3 id={`preview-key-${question.snapshotId}`} className="m-0 text-sm font-semibold text-foreground">Bentuk jawaban diterima</h3>
+                    <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                      {(question.acceptedForms ?? []).map(form => (
+                        <li key={form} className="rounded-md border border-success-line bg-success-surface px-3 py-2 text-sm [overflow-wrap:anywhere]">{form}</li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : (
+                  <section aria-labelledby={`preview-key-${question.snapshotId}`} className="mt-4 flex flex-col gap-2">
+                    <p className="m-0 text-sm text-muted-foreground">Dinilai guru</p>
+                    <h3 id={`preview-key-${question.snapshotId}`} className="m-0 text-sm font-semibold text-foreground">Rubrik</h3>
+                    <p className="m-0 rounded-md border border-border bg-muted px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {question.rubric ? question.rubric : 'Tidak ada rubrik. Soal ini dinilai guru.'}
+                    </p>
+                  </section>
+                ))}
               </>
               ) : question.questionType === 'NUMERIC_ANSWER' ? (
               <>

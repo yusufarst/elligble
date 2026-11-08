@@ -2,7 +2,7 @@ import type * as pg from 'pg';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import type { FinalizationSource } from './submission.ts';
 import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, type ScorableQuestion } from './scoring.ts';
-import { gradeScores, isEssayQuestion, readCurrentGrades } from './essay-grading.ts';
+import { gradeScores, isTeacherGradedQuestion, readCurrentGrades } from './essay-grading.ts';
 import { readFinalizedResults } from './result-finalization.ts';
 
 // Provisional results of a teacher-managed exam for the teacher who manages it (D04.4-26A/C,
@@ -136,7 +136,7 @@ export async function readTeacherExamResults(
             [actor.tenantId, examInstanceId]
         );
         const questions: ScorableQuestion[] = snapshots.rows.map(row => ({ id: row.id, frozenContent: row.frozen_content }));
-        const essayCount = questions.filter(q => isEssayQuestion(q.frozenContent)).length;
+        const essayCount = questions.filter(q => isTeacherGradedQuestion(q.frozenContent)).length;
         const autoScoredCount = questions.length - essayCount;
 
         const finalized = await readFinalizedResults(client, actor.tenantId, examInstanceId);

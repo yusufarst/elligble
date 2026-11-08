@@ -28,6 +28,7 @@ export const QUESTION_TEMPLATE_CSV = '\uFEFF' + [
   '5;UR;Urutkan langkah menanam biji;;;;;;2,4,1,3;2;Siram tanah setiap hari;Siapkan pot berisi tanah;Tunggu sampai tunas muncul;Tanam biji di tengah pot' + ';'.repeat(6) + ';'.repeat(14),
   '6;IA;Hasil dari 5 dibagi 2 adalah;;;;;;2,5;1' + ';'.repeat(ITEM_COLUMNS.length) + ';0,1;',
   '7;ES;Jelaskan proses fotosintesis dengan kata-katamu sendiri;;;;;;;5' + ';'.repeat(ITEM_COLUMNS.length + 1) + ';Sebutkan bahan, tempat dan hasil fotosintesis.',
+  '8;IS;Ibu kota Indonesia adalah;;;;;;;2;Jakarta;DKI Jakarta' + ';'.repeat(ITEM_COLUMNS.length - 2 + 2),
 ].join('\r\n') + '\r\n';
 
 export const LATEST_START_OPTIONS: Array<{ value: LatestStartPolicy; label: string; description: string }> = [
@@ -75,13 +76,14 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
         : problem.type === 'IA' ? `${at}kunci jawaban IA harus angka, dengan koma atau titik untuk desimal, misalnya 3,5.`
         : `${at}kunci jawaban harus salah satu huruf A, B, C, D, atau E.`;
       case 'score_invalid': return `${at}skor harus angka lebih dari 0 sampai ${limits.maxQuestionScore}, dengan paling banyak dua angka di belakang koma.`;
-      case 'type_invalid': return `${at}tipe soal harus PG, PGK, BS, MJ, UR, IA atau ES.`;
+      case 'type_invalid': return `${at}tipe soal harus PG, PGK, BS, MJ, UR, IA, IS atau ES.`;
       case 'correct_duplicate': return problem.type === 'MJ' ? `${at}setiap pasangan kanan hanya boleh dipakai sekali dalam kunci jawaban MJ.`
         : problem.type === 'UR' ? `${at}setiap nomor item hanya boleh muncul sekali dalam kunci jawaban UR.` : `${at}huruf kunci jawaban tidak boleh berulang.`;
       case 'options_not_allowed': return problem.type === 'MJ'
         ? `${at}soal Menjodohkan (MJ) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : problem.type === 'UR' ? `${at}soal Mengurutkan (UR) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : problem.type === 'IA' ? `${at}soal Isian angka (IA) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
+        : problem.type === 'IS' ? `${at}soal Isian singkat (IS) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : problem.type === 'ES' ? `${at}soal Esai (ES) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`
         : `${at}soal Benar/Salah (BS) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.`;
       case 'columns_missing': return problem.type === 'UR'
@@ -91,17 +93,21 @@ export function describeImportProblem(problem: ImportProblem, limits: { maxQuest
       case 'matching_items_invalid': return problem.side === 'right'
         ? `${at}soal MJ memerlukan pasangan kanan sebanyak pernyataan kiri, ditambah paling banyak 2 pengecoh, diisi berurutan mulai right_a.`
         : `${at}soal MJ memerlukan 2 sampai 10 pernyataan kiri, diisi berurutan mulai left_1.`;
-      case 'items_duplicate': return problem.type === 'UR' ? `${at}item soal UR tidak boleh sama satu sama lain.`
+      case 'items_duplicate': return problem.type === 'IS' ? `${at}bentuk jawaban IS tidak boleh sama satu sama lain (huruf besar, huruf kecil dan spasi tidak dibedakan).`
+        : problem.type === 'UR' ? `${at}item soal UR tidak boleh sama satu sama lain.`
         : problem.side === 'right' ? `${at}pasangan kanan tidak boleh sama satu sama lain.` : `${at}pernyataan kiri tidak boleh sama satu sama lain.`;
       case 'items_not_allowed': return problem.type === 'UR'
         ? `${at}soal UR tidak memakai kolom right_a sampai right_l; kosongkan kolom itu.`
         : problem.type === 'IA' ? `${at}soal IA tidak memakai kolom left_1 sampai right_l; kosongkan kolom itu.`
+        : problem.type === 'IS' ? `${at}soal IS tidak memakai kolom right_a sampai right_l; kosongkan kolom itu.`
         : problem.type === 'ES' ? `${at}soal ES tidak memakai kolom left_1 sampai right_l; kosongkan kolom itu.`
         : `${at}kolom left_1 sampai right_l hanya untuk soal MJ dan UR; kosongkan untuk soal PG, PGK atau BS.`;
       case 'tolerance_invalid': return `${at}toleransi harus kosong atau angka tidak negatif, dengan koma atau titik untuk desimal.`;
       case 'tolerance_not_allowed': return `${at}kolom tolerance hanya untuk soal IA; kosongkan untuk tipe lain.`;
-      case 'correct_not_allowed': return `${at}soal ES dinilai guru, jadi kolom correct dikosongkan.`;
-      case 'rubric_not_allowed': return `${at}kolom rubric hanya untuk soal ES; kosongkan untuk tipe lain.`;
+      case 'correct_not_allowed': return problem.type === 'IS' ? `${at}soal IS memakai kolom left_1 sampai left_10 untuk bentuk jawaban, jadi kolom correct dikosongkan.`
+        : `${at}soal ES dinilai guru, jadi kolom correct dikosongkan.`;
+      case 'rubric_not_allowed': return `${at}kolom rubric hanya untuk soal ES dan soal IS yang dinilai guru; kosongkan untuk tipe lain.`;
+      case 'short_answer_forms_invalid': return `${at}bentuk jawaban IS diisi berurutan mulai left_1, paling banyak 10, masing-masing satu baris, paling banyak 200 karakter dan tanpa karakter yang tidak didukung.`;
     }
   }
   switch (problem.code) {

@@ -234,7 +234,7 @@ describe('the grading screen', () => {
     expect(within(group).queryByRole('textbox')).toBeNull();
     expect(within(group).queryByRole('button', { name: 'Simpan Nilai' })).toBeNull();
     expect(within(group).getByText('Nilai: 2,5')).toBeTruthy();
-    expect(screen.getByText('Hasil ujian sudah difinalisasi. Nilai esai dibekukan dan tidak dapat diubah.')).toBeTruthy();
+    expect(screen.getByText('Hasil ujian sudah difinalisasi. Nilai dibekukan dan tidak dapat diubah.')).toBeTruthy();
   });
 });
 
@@ -262,7 +262,7 @@ describe('results with essays (D1, D4)', () => {
     const row = screen.getAllByRole('row')[1];
     expect(within(row).getByText('1/1')).toBeTruthy();
     expect(within(row).getByText('Belum dinilai: 1')).toBeTruthy();
-    expect(screen.getByText(/Esai dinilai guru; poinnya masuk ke Nilai\./)).toBeTruthy();
+    expect(screen.getByText(/Poin soal yang dinilai guru ikut masuk ke Nilai\./)).toBeTruthy();
     unmount();
     vi.stubGlobal('fetch', vi.fn(async () => json(results(false))));
     render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
@@ -298,7 +298,7 @@ describe('finalize refusal and import wording', () => {
     fireEvent.change(screen.getByLabelText('Alasan tindakan'), { target: { value: 'Pelaksanaan ujian terjadwal' } });
     const buttons = screen.getAllByRole('button', { name: 'Finalisasi Hasil' });
     fireEvent.click(buttons[buttons.length - 1]);
-    expect(await screen.findByText('Masih ada 3 jawaban esai yang belum dinilai. Nilai semua esai sebelum finalisasi hasil.')).toBeTruthy();
+    expect(await screen.findByText('Masih ada 3 jawaban yang belum dinilai guru. Nilai semua jawaban di Penilaian Esai sebelum finalisasi hasil.')).toBeTruthy();
   });
 
   it('words the ES problems', () => {
@@ -306,8 +306,8 @@ describe('finalize refusal and import wording', () => {
     expect(word({ source: 'file', code: 'options_not_allowed', line: 2, type: 'ES' })).toBe('Baris 2: soal Esai (ES) tidak memakai kolom pilihan; kosongkan option_a sampai option_e.');
     expect(word({ source: 'file', code: 'items_not_allowed', line: 2, type: 'ES' })).toBe('Baris 2: soal ES tidak memakai kolom left_1 sampai right_l; kosongkan kolom itu.');
     expect(word({ source: 'file', code: 'correct_not_allowed', line: 2 })).toBe('Baris 2: soal ES dinilai guru, jadi kolom correct dikosongkan.');
-    expect(word({ source: 'file', code: 'rubric_not_allowed', line: 2 })).toBe('Baris 2: kolom rubric hanya untuk soal ES; kosongkan untuk tipe lain.');
-    expect(word({ source: 'file', code: 'type_invalid', line: 2 })).toBe('Baris 2: tipe soal harus PG, PGK, BS, MJ, UR, IA atau ES.');
+    expect(word({ source: 'file', code: 'rubric_not_allowed', line: 2 })).toBe('Baris 2: kolom rubric hanya untuk soal ES dan soal IS yang dinilai guru; kosongkan untuk tipe lain.');
+    expect(word({ source: 'file', code: 'type_invalid', line: 2 })).toBe('Baris 2: tipe soal harus PG, PGK, BS, MJ, UR, IA, IS atau ES.');
     expect(word({ source: 'file', code: 'header_invalid', line: 1 })).toContain('right_a sampai right_l;tolerance;rubric). Unduh templat terbaru');
   });
 });

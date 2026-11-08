@@ -56,7 +56,7 @@ afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('declared question types', () => {
   it('the supported list is exactly v1 and keys are built from the delivered question', () => {
-    expect(SUPPORTED_QUESTION_TYPES).toEqual(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', '2:MATCHING', '2:ORDERING', '2:NUMERIC_ANSWER', '2:ESSAY']);
+    expect(SUPPORTED_QUESTION_TYPES).toEqual(['1:MULTIPLE_CHOICE_SINGLE', '2:MULTIPLE_RESPONSE', '2:TRUE_FALSE', '2:MATCHING', '2:ORDERING', '2:NUMERIC_ANSWER', '2:ESSAY', '2:SHORT_ANSWER']);
     expect(contentKeyOf({ schemaVersion: 1, questionType: 'MULTIPLE_CHOICE_SINGLE' })).toBe(V1_SINGLE_CHOICE_KEY);
   });
 
@@ -73,8 +73,8 @@ describe('declared question types', () => {
     const headersOf = (i: number) => new Headers((fetchMock.mock.calls[i] as unknown as [string, RequestInit])[1].headers);
     const urls = fetchMock.mock.calls.map(c => c[0] as string);
     const q = urls.findIndex(u => u.includes('/assessment/questions')), s = urls.findIndex(u => u.includes('/answer/save'));
-    expect(headersOf(q).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE,2:TRUE_FALSE,2:MATCHING,2:ORDERING,2:NUMERIC_ANSWER,2:ESSAY');
-    expect(headersOf(s).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE,2:TRUE_FALSE,2:MATCHING,2:ORDERING,2:NUMERIC_ANSWER,2:ESSAY');
+    expect(headersOf(q).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE,2:TRUE_FALSE,2:MATCHING,2:ORDERING,2:NUMERIC_ANSWER,2:ESSAY,2:SHORT_ANSWER');
+    expect(headersOf(s).get('X-Question-Types')).toBe('1:MULTIPLE_CHOICE_SINGLE,2:MULTIPLE_RESPONSE,2:TRUE_FALSE,2:MATCHING,2:ORDERING,2:NUMERIC_ANSWER,2:ESSAY,2:SHORT_ANSWER');
     const body = JSON.parse((fetchMock.mock.calls[s] as unknown as [string, RequestInit])[1].body as string);
     expect(body.answerPayload).toEqual({ selectedOptionId: 'B' });
     expect(Object.keys(body).sort()).toEqual(['answerPayload', 'attemptId', 'capturedAt', 'clientWriteIdentity', 'expectedWriteVersion', 'sessionId', 'snapshotId']);
