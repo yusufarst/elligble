@@ -624,4 +624,15 @@ No re-runs, and no push while the previous commit's CI runs.
 
 - **CI #222** (run 42514037710, fd159cc, attempt 1): FAILURE, preserved without re-run. Web, Runtime (all 310 integration tests, including the 0053 upgrade test) and Container passed. All five E2E jobs failed at the same step, with every earlier spec passing (36/36 each); the capture test did not run.
   - `openPeriod` (99h :140, called at :303) used Playwright `isVisible()`, which does not wait. Before the overview had rendered the period card, it returned false and skipped "Buka Periode". The period stayed closed, so "Tambah Sesi" never appeared. The page snapshot shows the period present and closed.
-- **Correction (row 31, test only):** `openPeriod` first waits for the period card to be visible, then opens it when it is closed. No product code changed.
+- **Correction (row 30, test only):** `openPeriod` first waits for the period card to be visible, then opens it when it is closed. No product code changed.
+
+### 11.0.2 Exact-content CI of the third candidate
+
+- **CI #223** (run 42516495197, fe57a24, attempt 1): FAILURE, preserved without re-run. Web, Runtime and Container passed. In all five browsers the deadline journey and every earlier spec passed (37/37 each); only the 99h capture test failed:
+  - **mobile-360, tablet-768, desktop-1280 and firefox-1280 (:379):** `getByRole('button', { name: 'Batal' })` inside the cancellation dialog also matched "Batalkan Ujian". Playwright matches role names by substring unless `exact` is set.
+  - **webkit-390 (:371):** a full-page screenshot with a dialog open exceeded WebKit's 32767-pixel limit. The height pre-check read only the document element, while WebKit sizes the page by the body.
+- **Correction (row 30, test only):**
+  - every "Batal" click uses `exact: true`;
+  - the capture height pre-check takes the larger of the document and body heights;
+  - a screenshot WebKit still refuses as too large is retaken as a viewport screenshot, recorded as `fullPage: false` in its JSON.
+  - The overflow and 44 px assertions are unchanged. No product code changed.

@@ -70,8 +70,17 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                 });
                 const name = ['workspace-institution', scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
                 const screenshot = `${name}.png`;
-                const fullPage = (await page.evaluate(() => document.documentElement.scrollHeight * window.devicePixelRatio)) <= 30000;
-                await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
+                // The larger of the document and body heights: with a dialog open, WebKit sizes the full page by
+                // the body. A screenshot WebKit still refuses as too large falls back to the viewport, recorded
+                // as fullPage false (CI #223).
+                let fullPage = (await page.evaluate(() => Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) * window.devicePixelRatio)) <= 30000;
+                try {
+                    await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
+                } catch (error) {
+                    if (!fullPage || !String(error).includes('larger than')) throw error;
+                    fullPage = false;
+                    await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
+                }
                 writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
                     task: 'ASSESS-INSTITUTION-001', phase: 'after', commit, frontendTree, baseline: BASELINE,
                     fixture: { synthetic: true, globalSetupSha256: fixtureSha256, questionsSha256: createHash('sha256').update(FILE_1).digest('hex') },
@@ -260,7 +269,7 @@ test('ASSESS-INSTITUTION-001 deadline journey: compose, prepare, replace, extend
     const refused = await fillPlacement(page, LABEL_A, `${wibDay(5)}T16:00`);
     await refused.getByRole('button', { name: 'Tempatkan Ujian' }).click();
     await expect(refused.getByText(ALREADY_PLACED)).toBeVisible();
-    await refused.getByRole('button', { name: 'Batal' }).click();
+    await refused.getByRole('button', { name: 'Batal', exact: true }).click();
     await expect(refused).toHaveCount(0);
     // Period C with exam C, whose deadline is about a minute ahead.
     await createPeriod(page, LABEL_C);
@@ -352,12 +361,12 @@ test('ASSESS-INSTITUTION-001 captures: the Operator screen, its dialogs and stat
     await page.getByRole('button', { name: 'Buat Periode' }).click();
     await expect(dialog()).toBeVisible();
     await capture(page, 'dialog-create-period', dialog);
-    await dialog().getByRole('button', { name: 'Batal' }).click();
+    await dialog().getByRole('button', { name: 'Batal', exact: true }).click();
     await createPeriod(page, 'Ujian Tampilan B');
     await periodCard(page, 'Ujian Tampilan B').getByRole('button', { name: 'Tambah Sesi' }).click();
     await expect(dialog()).toBeVisible();
     await capture(page, 'dialog-add-session', dialog);
-    await dialog().getByRole('button', { name: 'Batal' }).click();
+    await dialog().getByRole('button', { name: 'Batal', exact: true }).click();
     await addSession(page, 'Ujian Tampilan B', wibDay(22));
     await fillPlacement(page, 'Ujian Tampilan B', `${wibDay(5)}T15:00`);
     await capture(page, 'dialog-place-exam', dialog);
@@ -369,14 +378,14 @@ test('ASSESS-INSTITUTION-001 captures: the Operator screen, its dialogs and stat
     await again.getByRole('button', { name: 'Tempatkan Ujian' }).click();
     await expect(again.getByText(ALREADY_PLACED)).toBeVisible();
     await capture(page, 'dialog-place-refused', dialog);
-    await again.getByRole('button', { name: 'Batal' }).click();
+    await again.getByRole('button', { name: 'Batal', exact: true }).click();
     await examCard(page, examB).getByRole('button', { name: 'Perpanjang Tenggat' }).click();
     await dialog().getByLabel('Alasan tindakan', { exact: true }).fill(REASON);
     await capture(page, 'dialog-extend-deadline', dialog);
-    await dialog().getByRole('button', { name: 'Batal' }).click();
+    await dialog().getByRole('button', { name: 'Batal', exact: true }).click();
     await examCard(page, examB).getByRole('button', { name: 'Batalkan Ujian' }).click();
     await capture(page, 'dialog-cancel-exam', dialog);
-    await dialog().getByRole('button', { name: 'Batal' }).click();
+    await dialog().getByRole('button', { name: 'Batal', exact: true }).click();
     await expect(dialog()).toHaveCount(0);
 
     // The preparation screen of B: empty, checked preview, the replacement confirmation.
@@ -394,7 +403,7 @@ test('ASSESS-INSTITUTION-001 captures: the Operator screen, its dialogs and stat
     const replace = teacher.getByRole('dialog', { name: 'Simpan Soal Ujian Sekolah?' });
     await expect(replace.getByText('Soal yang sudah tersimpan (2 soal) akan diganti seluruhnya oleh berkas ini.')).toBeVisible();
     await capture(teacher, 'preparation-replace-confirmation', () => replace);
-    await replace.getByRole('button', { name: 'Batal' }).click();
+    await replace.getByRole('button', { name: 'Batal', exact: true }).click();
     await teacher.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }).click();
 
     // After D's and E's deadlines: the readiness blocker, mark ready, READY and cancelled, the Teacher
@@ -407,7 +416,7 @@ test('ASSESS-INSTITUTION-001 captures: the Operator screen, its dialogs and stat
     await openPeriod(page, 'Ujian Tampilan D');
     await examCard(page, examD).getByRole('button', { name: 'Tandai Siap' }).click();
     await capture(page, 'dialog-mark-ready', dialog);
-    await dialog().getByRole('button', { name: 'Batal' }).click();
+    await dialog().getByRole('button', { name: 'Batal', exact: true }).click();
     await openPeriod(page, LABEL_C);
     await expect(examCard(page, examC)).toContainText('Siap Dibuka');
     await capture(page, 'operator-ready', main);
