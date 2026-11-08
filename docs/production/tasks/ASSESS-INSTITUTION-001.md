@@ -613,3 +613,9 @@ No re-runs, and no push while the previous commit's CI runs.
   - The exam item heading is an `h3` under the `h3` session heading: `ExamListCard` offers `h2` and `h3` only, and its file is outside the allowlist.
   - The placement dialog lists every active teaching assignment of the school: the overview's period entries carry no academic period id; another period is refused with its frozen copy.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 14, VERIFYING 1, BLOCKED 18.
+
+### 11.0 Exact-content CI of the first candidate
+
+- **CI #221** (run 42513709043, 5bf5b3e, attempt 1): FAILURE, preserved without re-run. Web passed; Runtime failed; E2E and Container were skipped.
+  - **The one failure, out of 310 integration tests:** the existing SEC-001 test "migration upgrades populated 0053 and is repeat-safe" (`test/integration/permission-enforcement.test.ts`). It migrates only to 0053, then calls the current `cancelTeacherExam`, which received `unavailable` instead of `cancelled`. The new read of `i.institution_session_id` in `managed-exam.ts` cannot run on a schema without the 0062 column. Every new institution integration test passed.
+- **Correction (row: managed-exam.ts, inside the allowlist):** the teacher-managed lookup now reads the column as `to_jsonb(i) ->> 'institution_session_id'`. On a pre-0062 schema that is null, the teacher-managed meaning; on the current schema it is identical. No test changed.
