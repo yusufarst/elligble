@@ -27,7 +27,7 @@ it('collects only claim fields, never a password, and shows a uniform received s
   const status = await screen.findByRole('status');
   expect(status.textContent).toContain('Pengajuan sudah dikirim');
   expect(status.textContent).not.toContain('Siti');
-  expect(document.activeElement).toBe(status);
+  await waitFor(() => expect(document.activeElement).toBe(status));
   const sent = vi.mocked(client.submitClaim).mock.calls[0][0];
   expect(sent).toMatchObject({ tenantId: SCHOOL, fullName: 'Siti Rahmawati', nisn: '0012345678', birthDate: '2010-02-03' });
   expect(Object.keys(sent).sort()).toEqual(['birthDate', 'fullName', 'nisn', 'requestKey', 'tenantId']);

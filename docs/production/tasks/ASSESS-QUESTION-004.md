@@ -463,3 +463,28 @@ Non-material notes, applied at READY:
   - All results are preserved; no re-run.
 - **Cause, test-only:** at `99c-matching.spec.ts:192` the spec looked for the question-number button directly. On narrow viewports the question list is a sheet that exists only once it is opened, so the button was never attached. The steps before it had already passed in every project, including the save state "Belum dijawab" and "Belum lengkap" for the incomplete answer.
 - **Correction 1** (row 23 only): the spec opens the list through the shared `openQuestionList()` helper, which picks the sidebar or the sheet, asserts the button is visible, then closes it with `closeQuestionList()`.
+
+### 11.2 CI #194 and correction 2 (path-only addition, row 30)
+
+- **CI #194** (run 42439347381, a6513d7, attempt 1): Runtime SUCCESS. The Web job FAILED on one of 399 tests; Container and E2E were therefore skipped. Preserved; no re-run.
+  - **The failing test:** `frontend/web/src/__tests__/studentClaim.test.tsx:30`, `expect(document.activeElement).toBe(status)`, from completed AUTH-002.
+  - **Not a regression.** The Web input is identical to CI #193, where the Web job passed: `git diff aeb077e a6513d7` touches only the 99c spec and this record.
+- **Cause: a flaky race in the test.**
+  - `StudentClaimView.tsx` moves focus in a passive effect after `received` is set.
+  - The test checks `activeElement` synchronously right after `findByRole('status')` resolves, so it can run before the effect fires.
+  - No product code is involved.
+- **Path-only addition (00.13 §5.2), row 30:**
+
+  | # | Path | Purpose |
+  |---|---|---|
+  | 30 | frontend/web/src/__tests__/studentClaim.test.tsx | Line 30 only: wait for the focus effect (test-only) |
+
+  - **Reviewer confirmation, before the edit:** the same reviewer confirmed the diagnosis, that the assertion keeps its strength, and that the addition is necessary under §5.2. The reasons:
+    - it is required by C04/C08 of the unchanged frozen contract;
+    - a record-only new SHA would be a forbidden re-run (§5.3);
+    - it adds no route, table, column, dependency, permission, data field, UI surface, acceptance change, gate change or §7 text;
+    - ASSESS-QUESTION-003 §13 is the precedent.
+- **Correction 2:** line 30 becomes `await waitFor(() => expect(document.activeElement).toBe(status));`.
+  - The same element must still receive focus; the test still fails if it never does.
+  - Nothing else changes.
+  - The new SHA runs the full CI on attempt 1. The implementation review verifies that the diff is exactly this line.
