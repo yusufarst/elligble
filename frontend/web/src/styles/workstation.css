@@ -1521,14 +1521,14 @@
 .ordering-answer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 
 .ordering-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1537,7 +1537,7 @@
 .ordering-row-main {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -1548,13 +1548,13 @@
 .ordering-row-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .ordering-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 @media (min-width: 640px) {

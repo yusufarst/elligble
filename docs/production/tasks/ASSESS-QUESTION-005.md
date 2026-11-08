@@ -406,3 +406,15 @@ No re-runs.
   - the §4.6 assertions in rows 25–29.
 - **Local:** typechecks PASS (runtime, web, e2e); the new and affected runtime units 35/35; the new and affected web files 19/19. Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 10, VERIFYING 1, BLOCKED 22.
+
+### 11.1 Implementation review STOP F1 and correction 1
+
+- **CI #201** (run 42452237514, 341d615, attempt 1): eight jobs SUCCESS.
+- **Implementation review by the same reviewer: STOP F1.** The new ordering CSS used five fixed pixel gaps (12px, 8px) where §4A.3 and row 20 require tokens, and §11's  wording was therefore inaccurate. Everything else was confirmed to conform: the descriptor, parser, builder, previews, monitoring, client, focus rules, copy, §4.6, tests and security.
+- **Correction 1** (row 20 only): the five gaps use  (12px) and  (8px). The computed values are identical, so the rendering does not change. The 640px media query stays a literal, because custom properties cannot be used in media queries. With this correction, §11's  statement holds.
+- **Non-material notes:**
+  - **N1.** No web unit test covers the notice; integration and E2E cover it.
+  - **N2.** The exam option card's right padding reserved for the badge is left for the rendered review.
+  - **N3.** The 200 % text captures are at 390 px and 1280 px, as in the ASSESS-QUESTION-004 harness.
+  - **N4.** There is no unit vector for an item number of 10.
+
