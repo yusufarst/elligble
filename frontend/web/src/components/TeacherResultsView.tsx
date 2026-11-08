@@ -163,7 +163,8 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       </MetricList>
 
       <div className="flex flex-wrap gap-2 print:hidden">
-        <Button variant="secondary" aria-pressed={showScores} onClick={() => setShowScores(s => !s)} disabled={!scoring.available}>
+        {/* At 200 % text on a phone the label wraps instead of widening the page (ASSESS-QUESTION-008 C07). */}
+        <Button variant="secondary" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" aria-pressed={showScores} onClick={() => setShowScores(s => !s)} disabled={!scoring.available}>
           {showScores ? <IconEyeOff aria-hidden="true" /> : <IconEye aria-hidden="true" />}
           {showScores ? 'Sembunyikan Nilai' : 'Tampilkan Nilai'}
         </Button>

@@ -534,3 +534,10 @@ Essay content: maxScore 5, rubric "Sebutkan dua alasan".
   - **Web typecheck:** an unused `React` import in the new `frontend/web/src/__tests__/essay.test.tsx` (TS6133).
   - **Integration:** `mark_ready` returned 409 in the new `test/integration/essay.test.ts`. The test placed `students[0]` in a second, overlapping ACTIVE exam before the exam was marked ready, so the participant schedule-conflict readiness check refused it (`exam-instance-participant-proctor-schedule-conflict-readiness-preflight.ts:117`), as designed. The later 400 followed from that.
 - **Correction (tests only, inside rows 38 and 39):** the unused import is removed. The foreign exam is created only after activation, with a participant outside this exam, and the transition assertions now print the response body. No product code changed.
+
+### 11.0.1 Exact-content CI of the second candidate
+
+- **CI #212** (run 42488233718, 9a34e1f, attempt 1): FAILURE, preserved without re-run. Web, Runtime (including the essay integration test) and Container passed; the five E2E jobs failed on one C07 gate.
+  - In every browser, `results-graded` at 390x844 with 200 % text overflowed: scrollWidth 396 against 390. The element was the shared Button "Sembunyikan Nilai" on the results screen (`inline-flex shrink-0`, no wrapping). No earlier spec captured the results screen at 200 % text. The table itself scrolls inside its own container, as designed.
+  - Of the 87 mobile-360 captures, only this one failed. No other capture overflowed, and none had a target under 44 px (artifact e2e-report-mobile-360, fetched with the resumable, `unzip -t`-checked transfer).
+- **Correction (row 33):** the toggle takes the wrapping classes the shared back button uses on these screens (`h-auto min-h-11 max-w-full whitespace-normal`). It keeps its 44 px minimum height. No other behaviour changes.
