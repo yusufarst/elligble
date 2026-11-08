@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, reloadPage, saveStatus, state, wib, withDatabase } from './helpers.ts';
+import { closeQuestionList, login, openQuestionList, reloadPage, saveStatus, state, wib, withDatabase } from './helpers.ts';
 
 // ASSESS-QUESTION-004 five-browser journey and rendered evidence (record §4A/§7 C06/C07).
 // Sorts after 99b-true-false (Playwright orders files with localeCompare), whose exam is
@@ -189,7 +189,10 @@ test('ASSESS-QUESTION-004 matching: import, preview, Student journey and rendere
     // Incomplete (Owner D1): saved, but not answered; the control says how far it is.
     await expect(saveStatus(student)).toHaveText('Belum dijawab');
     await expect(status()).toHaveText('Belum lengkap: 1 dari 3 pernyataan dipasangkan.');
-    await expect(student.getByRole('button', { name: 'Pindah ke soal nomor 2, status belum dijawab' }).first()).toBeAttached();
+    // The question list (a sidebar when wide, a sheet when narrow) shows it unanswered.
+    const list = await openQuestionList(student);
+    await expect(list.getByRole('button', { name: 'Pindah ke soal nomor 2, status belum dijawab' })).toBeVisible();
+    await closeQuestionList(student);
     await student.getByRole('button', { name: 'Selesaikan Ujian' }).click();
     const confirm = student.getByRole('dialog');
     await expect(confirm.locator('[data-slot=metric]').filter({ hasText: 'Belum Dijawab' }).locator('dd')).toHaveText('2');

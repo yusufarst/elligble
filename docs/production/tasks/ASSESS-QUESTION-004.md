@@ -454,3 +454,12 @@ Non-material notes, applied at READY:
   - The full local web run had eight timing-sensitive failures under machine load. Each failing file then passed when run alone, and `onDemandScreens` behaves the same on the main tree.
   - Integration and E2E run in CI only.
 - **Status:** IN_PROGRESS → VERIFYING. Counters: DONE 9, VERIFYING 1, BLOCKED 23.
+
+### 11.1 CI #193 and correction 1
+
+- **CI #193** (run 42438340730, exact SHA aeb077e, attempt 1):
+  - Runtime (including the matching integration oracle), Web, Container, desktop-1280 and firefox-1280 were SUCCESS.
+  - mobile-360, tablet-768 and webkit-390 FAILED.
+  - All results are preserved; no re-run.
+- **Cause, test-only:** at `99c-matching.spec.ts:192` the spec looked for the question-number button directly. On narrow viewports the question list is a sheet that exists only once it is opened, so the button was never attached. The steps before it had already passed in every project, including the save state "Belum dijawab" and "Belum lengkap" for the incomplete answer.
+- **Correction 1** (row 23 only): the spec opens the list through the shared `openQuestionList()` helper, which picks the sidebar or the sheet, asserts the button is visible, then closes it with `closeQuestionList()`.
