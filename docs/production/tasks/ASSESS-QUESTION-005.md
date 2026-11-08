@@ -410,8 +410,8 @@ No re-runs.
 ### 11.1 Implementation review STOP F1 and correction 1
 
 - **CI #201** (run 42452237514, 341d615, attempt 1): eight jobs SUCCESS.
-- **Implementation review by the same reviewer: STOP F1.** The new ordering CSS used five fixed pixel gaps (12px, 8px) where §4A.3 and row 20 require tokens, and §11's  wording was therefore inaccurate. Everything else was confirmed to conform: the descriptor, parser, builder, previews, monitoring, client, focus rules, copy, §4.6, tests and security.
-- **Correction 1** (row 20 only): the five gaps use  (12px) and  (8px). The computed values are identical, so the rendering does not change. The 640px media query stays a literal, because custom properties cannot be used in media queries. With this correction, §11's  statement holds.
+- **Implementation review by the same reviewer: STOP F1.** The new ordering CSS used five fixed pixel gaps (12px, 8px) where §4A.3 and row 20 require tokens, and §11's "tokens only" wording was therefore inaccurate. Everything else was confirmed to conform: the descriptor, parser, builder, previews, monitoring, client, focus rules, copy, §4.6, tests and security.
+- **Correction 1** (row 20 only): the five gaps use `var(--space-3)` (12px) and `var(--space-2)` (8px). The computed values are identical, so the rendering does not change. The 640px media query stays a literal, because custom properties cannot be used in media queries. With this correction, §11's "tokens only" statement holds.
 - **Non-material notes:**
   - **N1.** No web unit test covers the notice; integration and E2E cover it.
   - **N2.** The exam option card's right padding reserved for the badge is left for the rendered review.
