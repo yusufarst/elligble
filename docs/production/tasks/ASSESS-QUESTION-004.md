@@ -610,3 +610,18 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
   1. Full CI on correction 3's exact SHA, attempt 1.
   2. The reviewer reviews exactly this diff.
   3. A new record-only evidence commit, then PR-head CI 8/8 on attempt 1 (00.13 §6).
+
+### 13.1 Final evidence after correction 3
+
+- **CI #197** (run 42442900193, fe90310, attempt 1): eight jobs SUCCESS. SEC-OPS-001 C05 passes with the victim pinned.
+- **Review by the same reviewer: PASS on fe90310.** The diff is exactly the confirmed C05 change plus the disclosed import line. No assertion changed; the pool closes before teardown; the rerun stays on `db.pool`; the §13 wording is accurate.
+- **Non-material note:** the released `d` connection keeps `deadlock_timeout` 60 s until teardown, which is harmless in this test.
+- **Final content** is now fe90310b8928327ec97ba78105ed9f054999dea2. It differs from 8c51f73 (CI #195) only by row 31 and this record. The §12 gates, review chain and Delegated Acceptance stand on this content with CI #197.
+- **Runs added:**
+
+  | Run | Result |
+  |---|---|
+  | #196 | FAILURE: the pre-existing SEC-OPS-001 deadlock timing race (7e8539d, record-only) |
+  | #197 | SUCCESS (fe90310, final) |
+
+- **Landing:** a delegated squash merge of PR #30 after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, then post-merge main CI. The next Task's first change records the landing, with DONE 10/33 (30.30%).
