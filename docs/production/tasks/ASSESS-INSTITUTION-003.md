@@ -760,3 +760,14 @@ No re-runs, and no push while the previous commit's CI runs.
   - **99j fixture dependency** (departure 2): the fixture ends overlapping SCHEDULED or READY exams by SQL. This is test-only and safe because 99j sorts last in a single-project run.
   - **I-14** asserts "never waits" as finishing within 5 s; the same test proves the pause shortcut does wait on the held lock.
   - **N03 actor A** is a signed-in member with no school role, standing in for "Platform Admin": platform CLI authority has no product session.
+
+### 11.0.1 Exact-content CI of the first candidate
+
+- **CI #239** (run 42640119322, b9cf99f, attempt 1): FAILURE in Runtime. Three subtests of the real-PostgreSQL integration file failed; the rest of C03 passed, Web passed, and the browser and container jobs were skipped.
+  - **I-12, a product defect:** the lock replay found its original 0046 row by comparing with the action row time read through a JavaScript `Date`, which drops microseconds. The lock written in the same transaction looked later than the cut-off, so the replay returned an older lock (from I-5) instead of the original receipt E11 requires.
+  - **I-13:** a knock-on of I-12, which stopped before its fourth Operator message; the assertion stays.
+  - **I-8, a test sequencing error:** the 409 was `stale_write_version` from the answer save, not from ending the exam. The test re-saved an answer already saved in I-5 without its write version. Ending behaves as E8 and I-8 require: running attempts continue and nothing is force-submitted.
+- **Correction** (rows school-exam-monitoring.ts and the integration file):
+  - the lock replay compares inside the database, joined to the action row by its id, at full precision;
+  - the test save helper takes an optional expected write version (default null, so other calls are unchanged), and I-8 sends the stored one; the assertion that the save returns 200 after END is unchanged.
+  - Local: runtime typecheck clean; school-exam-monitoring units 10/10.

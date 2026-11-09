@@ -517,10 +517,14 @@ async function lockParticipant(client: pg.PoolClient, actor: InstitutionActor, r
         const [entry] = await storedEntries(client, actor.tenantId, earlier.id);
         let lockedAt: string | null = null;
         if (entry.resultingState === 'LOCKED' && entry.attemptId) {
+            // Compared in the database at full precision: acted_at passed through a JavaScript Date loses its
+            // microseconds and could fall before the lock of the same transaction.
             const lock = await client.query(
-                `SELECT locked_at FROM secure_assessment_attempt_locks
-                 WHERE tenant_id = $1 AND exam_attempt_id = $2 AND locked_at <= $3 ORDER BY locked_at DESC, id DESC LIMIT 1`,
-                [actor.tenantId, entry.attemptId, earlier.actedAt]);
+                `SELECT l.locked_at FROM secure_assessment_attempt_locks l
+                 JOIN secure_assessment_institution_control_actions a ON a.id = $3 AND a.tenant_id = l.tenant_id
+                 WHERE l.tenant_id = $1 AND l.exam_attempt_id = $2 AND l.locked_at <= a.acted_at
+                 ORDER BY l.locked_at DESC, l.id DESC LIMIT 1`,
+                [actor.tenantId, entry.attemptId, earlier.id]);
             lockedAt = lock.rows[0] ? new Date(lock.rows[0].locked_at).toISOString() : null;
         }
         return { status: 200, body: lockReplayBody(request.participantId, entry, lockedAt) };

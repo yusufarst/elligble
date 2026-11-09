@@ -285,9 +285,9 @@ test('ASSESS-INSTITUTION-003 C03 institution supervision and running controls en
         assert.equal((await client.request('/api/v1/assessment/timer/start', { method: 'POST', body: { attemptId } })).status, 200);
         return {
             attemptId,
-            save: (snapshotId: string, option: string) => client.request('/api/v1/assessment/answer/save', {
+            save: (snapshotId: string, option: string, expectedWriteVersion: number | null = null) => client.request('/api/v1/assessment/answer/save', {
                 method: 'POST',
-                body: { attemptId, sessionId, snapshotId, answerPayload: { selectedOptionId: option }, clientWriteIdentity: randomUUID(), expectedWriteVersion: null },
+                body: { attemptId, sessionId, snapshotId, answerPayload: { selectedOptionId: option }, clientWriteIdentity: randomUUID(), expectedWriteVersion },
             }),
             timer: async () => (await client.request(`/api/v1/assessment/timer?attemptId=${attemptId}`)).body as Body,
             submit: () => client.request('/api/v1/assessment/submit', { method: 'POST', body: { attemptId } }),
@@ -973,7 +973,9 @@ test('ASSESS-INSTITUTION-003 C03 institution supervision and running controls en
         assert.deepEqual(ok(await transition(o, { examInstanceId: E1 }, 'end')), { examInstanceId: E1, lifecycleState: 'ENDED', changed: false, replayed: false });
         const late = await s3c.request('/api/v1/assessment/attempts/start', { method: 'POST', body: { examInstanceId: E1 } });
         assert.deepEqual([late.status, late.body.error], [409, 'exam_ended']);
-        assert.equal((await a1.save(e1Snapshots[0], 'B')).status, 200, 'a running attempt keeps its own time');
+        // Snapshot 1 already holds an answer (I-5), so the change carries its current write version.
+        const stored = (await pool.query('SELECT write_version FROM secure_assessment_exam_answers WHERE exam_attempt_id = $1 AND exam_question_snapshot_id = $2', [a1.attemptId, e1Snapshots[0]])).rows[0].write_version as number;
+        assert.equal((await a1.save(e1Snapshots[0], 'B', stored)).status, 200, 'a running attempt keeps its own time');
         const submitted = await a1.submit();
         assert.ok(submitted.status >= 200 && submitted.status < 300, JSON.stringify(submitted.body));
         const card = await readinessOf(E1);
