@@ -248,27 +248,27 @@ function isoOrNull(value: unknown): string | null {
     return value === null || value === undefined ? null : iso(value);
 }
 
-function digestOf(actor: InstitutionActor, kind: string, payload: object): string {
+export function digestOf(actor: InstitutionActor, kind: string, payload: object): string {
     return permissionDigest({ version: 1, tenantId: actor.tenantId, actorPersonId: actor.personId, kind, payload });
 }
 
 // ---------------------------------------------------------------------------------------------
 // Transactions.
 
-class InstitutionRefusal extends Error {
+export class InstitutionRefusal extends Error {
     readonly status: number;
     readonly body: Record<string, unknown>;
     constructor(status: number, body: Record<string, unknown>) { super(String(body.error)); this.status = status; this.body = body; }
 }
 
-function refuse(status: number, error: string, extra: Record<string, unknown> = {}): never {
+export function refuse(status: number, error: string, extra: Record<string, unknown> = {}): never {
     throw new InstitutionRefusal(status, { error, ...extra });
 }
 function invalid(problems: CompositionProblem[]): never {
     return refuse(422, 'composition_invalid', { problems });
 }
 
-interface Outcome { status: number; body: unknown }
+export interface Outcome { status: number; body: unknown }
 
 function errorCode(error: unknown): string {
     return typeof error === 'object' && error !== null && typeof (error as { code?: unknown }).code === 'string' ? (error as { code: string }).code : '';
@@ -301,7 +301,7 @@ async function sameOperator(req: http.IncomingMessage, pool: pg.Pool, cookie: Se
 }
 
 /** One Operator write (§4.2): authentication, the action-key lock, the Operator assignment FOR SHARE, the run, re-authentication, COMMIT. */
-async function operatorWrite(
+export async function operatorWrite(
     req: http.IncomingMessage, pool: pg.Pool, cookie: SessionCookieConfig,
     kind: string, actionKey: string | null,
     run: (client: pg.PoolClient, actor: InstitutionActor) => Promise<Outcome>
@@ -340,7 +340,7 @@ async function operatorWrite(
 }
 
 /** One Operator read (§4.2): authentication through the pool, then a read-only snapshot with the assignment check. */
-async function operatorRead(
+export async function operatorRead(
     req: http.IncomingMessage, pool: pg.Pool, cookie: SessionCookieConfig,
     run: (client: pg.PoolClient, actor: InstitutionActor) => Promise<Outcome>
 ): Promise<Outcome> {
@@ -448,6 +448,8 @@ async function readPeriod(client: pg.PoolClient, actor: InstitutionActor, period
                 s.display_label AS subject_label, g.display_label AS group_label, tm.person_id AS teacher_person_id, c.cancelled_at,
                 (SELECT count(*)::int FROM secure_assessment_exam_participants pc WHERE pc.tenant_id = i.tenant_id AND pc.exam_instance_id = i.id) AS participants,
                 (SELECT count(*)::int FROM secure_assessment_exam_question_snapshots qs WHERE qs.tenant_id = i.tenant_id AND qs.exam_instance_id = i.id) AS question_count,
+                EXISTS (SELECT 1 FROM secure_assessment_exam_lifecycle_events le WHERE le.tenant_id = i.tenant_id AND le.exam_instance_id = i.id
+                        AND le.from_state = 'SCHEDULED' AND le.to_state = 'READY') AS marked_ready_before,
                 d.deadline_at, d.revision, (d.deadline_at IS NULL OR d.deadline_at <= statement_timestamp()) AS deadline_passed,
                 b.imported_at, b.source_file_name
          FROM secure_assessment_exam_instances i
@@ -500,6 +502,9 @@ async function readPeriod(client: pg.PoolClient, actor: InstitutionActor, period
                 sourceFileName: questionCount > 0 ? row.source_file_name ?? null : null,
             },
             readiness,
+            // RP-3 (ASSESS-INSTITUTION-002 note a): present when the exam was ever marked ready, so the
+            // client hides "Perpanjang Tenggat"; absent otherwise, as the client type has it optional.
+            ...(row.marked_ready_before === true ? { markedReadyBefore: true } : {}),
         });
         items.set(row.institution_session_id, list);
     }
@@ -687,7 +692,7 @@ async function placeExam(client: pg.PoolClient, actor: InstitutionActor, request
             tenant_id, teaching_assignment_id, assessment_type_id, lifecycle_state,
             window_starts_at, window_ends_at, configured_attempt_duration_seconds, latest_start_policy,
             room_based_operations_enabled, proctor_per_room_required, institution_session_id
-         ) VALUES ($1, $2, $3, 'DRAFT', $4, $5, $6, $7, FALSE, FALSE, $8) RETURNING id`,
+         ) VALUES ($1, $2, $3, 'DRAFT', $4, $5, $6, $7, TRUE, TRUE, $8) RETURNING id`,
         [actor.tenantId, request.teachingAssignmentId, slot.assessment_type_id, startsAt, endsAt, request.durationMinutes * 60,
             request.latestStartPolicy, request.sessionId]);
     const examInstanceId: string = exam.rows[0].id;
@@ -711,14 +716,14 @@ async function placeExam(client: pg.PoolClient, actor: InstitutionActor, request
     return { status: 201, body: { examInstanceId, participants: enrolled.length, preparationDeadline: iso(deadline), replayed: false } };
 }
 
-interface LockedInstitutionExam {
+export interface LockedInstitutionExam {
     lifecycle_state: string;
     session_starts_at: Date;
     time_zone: string | null;
 }
 
 /** This tenant's institution exam, FOR UPDATE (the lock of every lifecycle change); 403 otherwise, a teacher-managed exam included. */
-async function lockInstitutionExam(client: pg.PoolClient, actor: InstitutionActor, examInstanceId: string): Promise<LockedInstitutionExam> {
+export async function lockInstitutionExam(client: pg.PoolClient, actor: InstitutionActor, examInstanceId: string): Promise<LockedInstitutionExam> {
     const res = await client.query(
         `SELECT i.lifecycle_state, s.starts_at AS session_starts_at, t.time_zone
          FROM secure_assessment_exam_instances i
@@ -739,6 +744,14 @@ async function currentDeadline(client: pg.PoolClient, tenantId: string, examInst
     return row ? { revision: Number(row.revision), deadline: new Date(row.deadline_at), open: row.open === true } : null;
 }
 
+/** The exam has a SCHEDULED to READY lifecycle event (RP-3). */
+async function wasMarkedReady(client: pg.PoolClient, tenantId: string, examInstanceId: string): Promise<boolean> {
+    const res = await client.query(
+        `SELECT 1 FROM secure_assessment_exam_lifecycle_events
+         WHERE tenant_id = $1 AND exam_instance_id = $2 AND from_state = 'SCHEDULED' AND to_state = 'READY' LIMIT 1`, [tenantId, examInstanceId]);
+    return res.rows.length > 0;
+}
+
 async function extendDeadline(client: pg.PoolClient, actor: InstitutionActor, request: DeadlineRequest): Promise<Outcome> {
     const digest = digestOf(actor, 'deadline', {
         examInstanceId: request.examInstanceId, preparationDeadline: request.preparationDeadline, expectedRevision: request.expectedRevision, reason: request.reason,
@@ -753,6 +766,9 @@ async function extendDeadline(client: pg.PoolClient, actor: InstitutionActor, re
     }
     const exam = await lockInstitutionExam(client, actor, request.examInstanceId);
     if (exam.lifecycle_state !== 'SCHEDULED') refuse(409, 'invalid_state', { currentState: exam.lifecycle_state });
+    // RP-3 (ASSESS-INSTITUTION-002 E7): an exam that was ever marked ready keeps its deadline, so going back
+    // to SCHEDULED after a room change never reopens its questions (OP-4 A).
+    if (await wasMarkedReady(client, actor.tenantId, request.examInstanceId)) refuse(409, 'marked_ready_before');
     const current = await currentDeadline(client, actor.tenantId, request.examInstanceId);
     if (!current) throw new Error('An institution exam has no preparation deadline.');
     if (request.expectedRevision !== current.revision) {

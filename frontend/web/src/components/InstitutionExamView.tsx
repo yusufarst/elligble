@@ -21,7 +21,8 @@ import { EmptyState, LoadErrorState, LoadingState, StaleDataNotice } from '@/com
 import { IconInfo } from '@/components/icons';
 import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
-import { newActionKey } from '../lib/action-key.ts';
+import { InstitutionRoomManagementView } from './InstitutionRoomManagementView.tsx';
+import { useActionKey, useRetryFocus } from '../hooks/useDialogAction.ts';
 import { CANCELLED_EXAM_STATUS, examLifecycleStatus, preparationStatus, readinessBlockerMessage, readinessPasses } from '../lib/status.ts';
 import { formatDateTime, formatWindow, zoneLabel } from '../lib/format.ts';
 import { LATEST_START_OPTIONS } from '../lib/question-import.ts';
@@ -32,7 +33,8 @@ import { LATEST_START_OPTIONS } from '../lib/question-import.ts';
 // extends a deadline (reason and confirmation), marks an exam ready after its deadline and cancels an
 // exam that has not opened (archived, never deleted). Only operational data is shown: never a question,
 // an answer key or a score. The form dialogs are the on-screen confirmation of creating a period, a
-// session and a placement (OP-7 A): nothing is sent before their own action.
+// session and a placement (OP-7 A): nothing is sent before their own action. "Ruang dan Pengawas" of a
+// session opens the room screen in place (ASSESS-INSTITUTION-002 E15).
 
 export const INSTITUTION_TITLE = 'Ujian Sekolah';
 
@@ -82,6 +84,7 @@ export function institutionFailureMessages(err: unknown): string[] {
     }
     switch (err.code) {
       case 'stale_deadline': return ['Tenggat baru saja diubah. Muat ulang untuk melihat tenggat terbaru.'];
+      case 'marked_ready_before': return ['Ujian ini pernah ditandai siap, jadi tenggat tidak dapat diperpanjang.'];
       case 'preparation_open': return ['Tenggat penyiapan soal belum lewat. Ujian dapat ditandai siap setelah tenggat.'];
       case 'not_ready': {
         const blocker = err.data?.readiness ? readinessBlockerMessage(err.data.readiness) : null;
@@ -121,27 +124,6 @@ interface DialogProps {
   onClose(): void;
   /** Return focus to the action that opened the dialog; true when it could. */
   restoreFocus(): boolean;
-}
-
-/** A dialog form with one action key per opening, kept on every retry of it. */
-function useActionKey(open: boolean) {
-  const key = useRef<string>('');
-  useEffect(() => {
-    if (open) key.current = newActionKey();
-  }, [open]);
-  return key;
-}
-
-/**
- * Sending disables the focused action. Restore focus to the enabled retry control only after the
- * error and that control have both committed to the dialog (as TeacherExamParticipants).
- */
-function useRetryFocus(open: boolean, errors: string[], saving: boolean) {
-  const retry = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => {
-    if (open && errors.length > 0 && !saving && retry.current && !retry.current.disabled) retry.current.focus();
-  }, [open, errors, saving]);
-  return retry;
 }
 
 const PeriodDialog: React.FC<DialogProps & { overview: InstitutionOverview; onSaved(periodId: string): void }> = ({ open, onClose, restoreFocus, overview, onSaved }) => {
@@ -545,7 +527,10 @@ const ExamItem: React.FC<{ exam: InstitutionExamItem; onAction(kind: 'deadline' 
           <ActionGroup>
             {exam.lifecycleState === 'SCHEDULED' && (
               <>
-                <Button variant="secondary" onClick={event => onAction('deadline', exam, event.currentTarget)}>Perpanjang Tenggat</Button>
+                {/* RP-3: an exam that was ever marked ready keeps its deadline. */}
+                {!exam.markedReadyBefore && (
+                  <Button variant="secondary" onClick={event => onAction('deadline', exam, event.currentTarget)}>Perpanjang Tenggat</Button>
+                )}
                 <Button onClick={event => onAction('ready', exam, event.currentTarget)} disabled={!ready}>Tandai Siap</Button>
               </>
             )}
@@ -566,6 +551,9 @@ export const InstitutionExamView: React.FC = () => {
   const [detailError, setDetailError] = useState<'forbidden' | 'failed' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [dialog, setDialog] = useState<OpenDialog>(null);
+  // "Ruang dan Pengawas" of one session replaces the period view; "Kembali" returns focus to its trigger.
+  const [roomSession, setRoomSession] = useState<InstitutionSession | null>(null);
+  const roomTrigger = useRef<string | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const reloadButton = useRef<HTMLButtonElement | null>(null);
   const noticeRef = useRef<HTMLDivElement | null>(null);
@@ -579,6 +567,14 @@ export const InstitutionExamView: React.FC = () => {
     focusOpened.current = false;
     (firstSessionHeading.current ?? addSessionButton.current)?.focus();
   }, [detail]);
+
+  useEffect(() => {
+    if (roomSession || !roomTrigger.current) return;
+    const button = document.getElementById(`room-trigger-${roomTrigger.current}`);
+    if (!button) return;
+    roomTrigger.current = null;
+    button.focus();
+  }, [roomSession, detail]);
 
   const restoreFocus = () => {
     // Controlled dialogs have no Radix trigger: return to the opener; when a completed action
@@ -665,6 +661,21 @@ export const InstitutionExamView: React.FC = () => {
     </Alert>
   ) : null;
 
+  if (roomSession) {
+    return (
+      <InstitutionRoomManagementView
+        session={roomSession}
+        onBack={() => {
+          roomTrigger.current = roomSession.sessionId;
+          setNotice(null);
+          setRoomSession(null);
+          // Room changes may have sent a ready exam back to scheduled.
+          void refresh();
+        }}
+      />
+    );
+  }
+
   if (!overview) {
     return (
       <Page id="institution-exams" className="min-w-0 [overflow-wrap:anywhere]">
@@ -724,7 +735,10 @@ export const InstitutionExamView: React.FC = () => {
                               <h3 id={`session-${session.sessionId}`} ref={index === 0 ? firstSessionHeading : undefined} tabIndex={-1} className="m-0 text-base font-semibold outline-none">
                                 Jadwal Sesi: {formatWindow(session.startsAt, session.endsAt)}
                               </h3>
-                              <Button variant="secondary" onClick={event => open({ kind: 'placement', session }, event.currentTarget)}>Tempatkan Ujian</Button>
+                              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                                <Button variant="secondary" onClick={event => open({ kind: 'placement', session }, event.currentTarget)}>Tempatkan Ujian</Button>
+                                <Button id={`room-trigger-${session.sessionId}`} variant="secondary" onClick={() => setRoomSession(session)}>Ruang dan Pengawas</Button>
+                              </div>
                             </div>
                             {session.exams.length === 0 ? (
                               <p className="m-0 text-sm text-muted-foreground">Belum ada ujian di sesi ini.</p>

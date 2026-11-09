@@ -46,6 +46,13 @@ import type {
   InstitutionCancelInput,
   InstitutionCancelResult,
   InstitutionTransitionResult,
+  InstitutionRoomView,
+  InstitutionRoomParticipantsInput,
+  InstitutionRoomParticipantsResult,
+  InstitutionRoomProctorsInput,
+  InstitutionRoomProctorsResult,
+  InstitutionParticipantsInput,
+  InstitutionParticipantsResult,
   TeacherExamContentInput,
   TeacherExamContentPreview,
   TeacherExamContentResult,
@@ -336,6 +343,33 @@ export async function postInstitutionCancel(input: InstitutionCancelInput): Prom
 export async function postInstitutionTransition(examInstanceId: string): Promise<InstitutionTransitionResult> {
   const res = await apiFetch('/api/v1/assessment/institution-exams/transition', { method: 'POST', json: { examInstanceId, action: 'mark_ready' } });
   return handleResponse<InstitutionTransitionResult>(res);
+}
+
+// Rooms and Proctors of institution exams (ASSESS-INSTITUTION-002). Every write carries the session revision
+// it read (409 stale_assignment otherwise) and an action key chosen once per dialog.
+
+/** The rooms, participants and Proctors of one session (ELLIGBLE IDs and rombel only). */
+export async function getInstitutionRooms(sessionId: string): Promise<InstitutionRoomView> {
+  const res = await apiFetch(`/api/v1/assessment/institution-exams/rooms?sessionId=${encodeURIComponent(sessionId)}`, { method: 'GET' });
+  return handleResponse<InstitutionRoomView>(res);
+}
+
+/** Puts participants of the session into one room (created when new). */
+export async function postInstitutionRoomParticipants(input: InstitutionRoomParticipantsInput): Promise<InstitutionRoomParticipantsResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/rooms/participants', { method: 'POST', json: input });
+  return handleResponse<InstitutionRoomParticipantsResult>(res);
+}
+
+/** Sets the full Proctor set of one room by ELLIGBLE ID. */
+export async function postInstitutionRoomProctors(input: InstitutionRoomProctorsInput): Promise<InstitutionRoomProctorsResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/rooms/proctors', { method: 'POST', json: input });
+  return handleResponse<InstitutionRoomProctorsResult>(res);
+}
+
+/** Adds students of the exam's rombel enrolled after placement, into one room. */
+export async function postInstitutionParticipants(input: InstitutionParticipantsInput): Promise<InstitutionParticipantsResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/participants', { method: 'POST', json: input });
+  return handleResponse<InstitutionParticipantsResult>(res);
 }
 
 /** Checks the question file of an institution exam without keeping anything; a 422 carries the problems (ApiError.data). */

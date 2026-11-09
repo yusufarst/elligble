@@ -650,7 +650,7 @@ const InstitutionPreparationView: React.FC<{ examInstanceId: string; onBack(): v
         </CardHeader>
         <CardContent>
           {/* One column below 480 px: at 200 % text two columns left no room for whole words. */}
-          <MetricList aria-label="Ujian sekolah" className="grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-4">
+          <MetricList aria-label="Ujian sekolah" layout="narrowFirst">
             <Metric className="min-w-0" label="Rombel" valueClassName="text-sm font-medium" value={exam.groupLabel ?? '-'} />
             <Metric className="min-w-0" label="Peserta" value={exam.participants ?? 0} />
             <Metric className="min-w-0" label="Durasi pengerjaan" valueClassName="text-sm font-medium" value={exam.durationMinutes ? `${exam.durationMinutes} menit` : '-'} />

@@ -355,8 +355,8 @@ test('ASSESS-INSTITUTION-001 C03 institution exams end to end through production
         assert.equal(exam.assessment_type_id, teaching.assessmentTypeId);
         assert.equal(exam.configured_attempt_duration_seconds, 5400);
         assert.equal(exam.latest_start_policy, 'FULL_DURATION_BEYOND_WINDOW');
-        assert.equal(exam.room_based_operations_enabled, false);
-        assert.equal(exam.proctor_per_room_required, false);
+        assert.equal(exam.room_based_operations_enabled, true);
+        assert.equal(exam.proctor_per_room_required, true);
         assert.equal(exam.institution_session_id, sMain.sessionId);
         assert.equal(exam.teaching_assignment_id, teaching.teachingAssignmentId);
         const participants = (await pool.query('SELECT academic_enrollment_id FROM secure_assessment_exam_participants WHERE exam_instance_id = $1', [mainExam])).rows;

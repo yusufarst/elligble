@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / school-scale exam setup; HIGH risk; R20, R21; P8 V07, V10, V11, V12 |
-| Status | **IN_PROGRESS under DEC-048: formal READY PASS (§10). All Owner decisions are decided: OB-2, RP-1 to RP-5 and OB-3, on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
+| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10). All Owner decisions are decided: OB-2, RP-1 to RP-5 and OB-3, on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
 | Objective | Before an institution exam opens, the School Operator, for one session (Jadwal Sesi) at a time:<br>• puts every participant of the session's exams into exactly one physical room;<br>• sets the Proctors of each physical room;<br>• adds students of the exam's rombel who were enrolled after placement.<br>Readiness is re-checked in the same transaction as every change. Coverage gaps, schedule conflicts and room double-booking prevent readiness. Every change is kept as attributable history. No participant is removed (OPEN-05). Teacher-managed exams are unchanged |
 | Owner decisions | **Approved inputs:**<br>• O05-1 to O05-4 and A04-1 to A04-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md));<br>• OP-1 to OP-9 and OB-1, decided 2026-11-09 ([ASSESS-INSTITUTION-001 §3.1](ASSESS-INSTITUTION-001.md));<br>• OB-2, RP-1 to RP-5 and OB-3, decided 2026-11-09 (§3.1).<br>**Open:** none.<br>Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• Internal dependency ASSESS-INSTITUTION-001 is DONE / MERGED: PR #35, main 30a74562b4946a08311de369a96d50eaaa5d6b46. Its PR-head CI #228 (run 42539982836, head 94bd93a) and post-merge main CI #229 (run 42542313684) each passed on attempt 1 with eight jobs SUCCESS. They were read from GitHub on 2026-11-09 and are recorded again in this Task's first change.<br>• O05 is approved (O05-1 to O05-6). O09 rests on the approved P5 content, whose approval excludes "O05 institution … composition" (CBT_PERMISSION_MATRIX.md:96, :142). The Owner closed that gap for rooms, participants and Proctors with OB-2 (§3.1).<br>• The identity fields the Operator sees, which P5 does not settle, are decided by the Owner as OB-3 (§3.1, F9). With every Owner input decided and the independent contract review chain at PASS (§9, 00.13 §4.3), the formal READY transition is pending (§10) |
@@ -782,3 +782,21 @@ No re-runs, and no push while the previous commit's CI runs.
   - Manifest, built as in ASSESS-QUESTION-004 §10 over the `workspace-question-*` and `workspace-institution-*` captures: SHA-256 da598b6e79c9f4a6f1f841d809387a14817e68e12d5922af0af65983bc2fc66e.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 15, IN_PROGRESS 1, VERIFYING 0, BLOCKED 17.
+
+## 11. Implementation checkpoint — 2026-11-09
+
+- **Registration CI:** CI #230 (run 42549222789, f28eeb2, attempt 1): eight SUCCESS.
+- **Candidate:** every changed path is in §6 rows 5–26 (22 paths, the frozen allowlist exactly). Status IN_PROGRESS → VERIFYING.
+- **Local checks** (8 GB executor; typechecks and targeted units only):
+  - secure-assessment and web typecheck clean; the e2e specs typecheck clean;
+  - runtime units 57/57 (institution-rooms, institution-exams, route-parity, metrics, the schedule-conflict preflight);
+  - web units 74/74 (institutionRooms, institutionExams including :473 unchanged, teacherExamImport, teacherExamParticipants, teacherOperations, designSystemGuard).
+  - The real-PostgreSQL integration file (I-1 to I-18, N01 to N10) and the 99i and 99h browser journeys and captures run in CI only.
+- **Implementer departures, for the implementation review:**
+  1. `markedReadyBefore` is sent only when true. The frozen I-1 assertion compares the whole period item with `deepEqual` (§4.8).
+  2. "Tambah Ruang" has the same "Tampilkan" filter as "Tempatkan Peserta" (default "Belum punya ruang"), so C06 can move a student into a new room.
+  3. "Kembali ke Ujian Sekolah" uses the shared back-button pattern above the header (whitespace-normal, at least 44 px), not a header action, so it does not overflow at 200 % text.
+  4. The 99h journey timeout is 300 s instead of 240 s, for the room and Proctor steps of §4.8.
+  5. The participant addition route reads the exam unlocked and then follows the E6 lock order instead of calling `lockInstitutionExam`; taking the exam row first would deadlock against a room write on the same session. Room writes lock every exam row of the session in id order, a superset of E6 step 4 in the same order.
+  6. Extra copy: "Tidak ada peserta untuk ditampilkan." (an empty dialog list), "Semua siswa yang terdaftar di rombel ini pada tanggal sesi sudah menjadi peserta." (no candidates), and an `already_participant` line without a number for the race answer that carries no count.
+  - 99i uses fixture SQL to store exam R's synthetic questions and to set exam A to ACTIVE and back for the non-editable capture.

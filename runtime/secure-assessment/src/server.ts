@@ -31,6 +31,7 @@ import { readExamMonitoring } from './exam-monitoring.ts';
 import {
     INSTITUTION_CONTENT_BODY_LIMIT_BYTES, handleInstitutionExamRoute, parseContentRequest, runInstitutionContent, sendInstitutionContentOutcome,
 } from './institution-exams.ts';
+import { handleInstitutionRoomRoute } from './institution-rooms.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
@@ -662,6 +663,18 @@ export function createServer(deps: ServerDependencies): http.Server {
                 return;
             }
             return handleInstitutionExamRoute(req, res, url, deps.pool, security.cookie);
+        }
+
+        if (pathname === '/api/v1/assessment/institution-exams/rooms'
+            || pathname === '/api/v1/assessment/institution-exams/rooms/participants'
+            || pathname === '/api/v1/assessment/institution-exams/rooms/proctors'
+            || pathname === '/api/v1/assessment/institution-exams/participants') {
+            // The School Operator places participants in rooms and sets their Proctors (ASSESS-INSTITUTION-002 §4.2/§4.3).
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            return handleInstitutionRoomRoute(req, res, url, deps.pool, security.cookie);
         }
 
         if (pathname === '/api/v1/assessment/teacher-exams/reschedule') {
