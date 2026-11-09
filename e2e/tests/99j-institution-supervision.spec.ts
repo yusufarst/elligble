@@ -364,10 +364,12 @@ test('ASSESS-INSTITUTION-003 journey and captures: open, the Student, lock, time
     await expect(reload).toBeEnabled();
 
     // "Pelaksanaan Sesi": the READY exam with its rooms and Proctors.
+    // Six seeded students plus the Student enrolled by the earlier AUTH-002 journey make seven;
+    // moving the named Student to Ruang B leaves six in Ruang A. These are fixture-based oracles.
     await openSupervision(page);
     const card = supervisedCard(page, examId);
     await expect(card).toContainText('Siap dibuka.');
-    await expect(card).toContainText(`Ruang A: 5 peserta, 0 mengerjakan, 0 dikunci. Pengawas: ${OPERATOR[0]}`);
+    await expect(card).toContainText(`Ruang A: 6 peserta, 0 mengerjakan, 0 dikunci. Pengawas: ${OPERATOR[0]}`);
     await expect(card).toContainText(`Ruang B: 1 peserta, 0 mengerjakan, 0 dikunci. Pengawas: ${TEACHER[0]}`);
     await expect(supervisedCard(page, skippedExam)).toContainText('Terjadwal');
     await capture(page, 'session-ready', main(page));
@@ -408,7 +410,7 @@ test('ASSESS-INSTITUTION-003 journey and captures: open, the Student, lock, time
     await login(student, ...STUDENT);
     await startExam(student);
     await refreshSupervision(page);
-    await expect(card).toContainText(`${EXAM_LABEL.split(' · ')[1]} · 6 peserta · 1 mengerjakan · 0 dikumpulkan`);
+    await expect(card).toContainText(`${EXAM_LABEL.split(' · ')[1]} · 7 peserta · 1 mengerjakan · 0 dikumpulkan`);
     await capture(page, 'session-running', main(page));
 
     // The participant level as Operator: the whole exam, with "Mengerjakan".

@@ -1,3 +1,5 @@
+> **ASSESS-INSTITUTION-003 controlled continuation, 2026-11-10:** GOV-EXEC-002 landed through PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9; exact-main CI #243 eight SUCCESS attempt 1 makes 00.13 §11 effective. Existing Task remains VERIFYING; CI #240 failure diagnosed as the seven-Student fixture versus stale six-Student test oracle, corrected within row 35 ([record §11.0.2](tasks/ASSESS-INSTITUTION-003.md)). Original contract/reviews/OC-1–OC-6/31 paths/0064 preserved. DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16; 78 edges unchanged. Final candidate CI and designated independent delta/rendered review pending; PB05/PB12 OPEN, production NOT READY.
+
 > **ASSESS-INSTITUTION-003 implementation checkpoint, 2026-11-09 (DEC-048):** registration CI #238 (run 42634196523, 89515a0) attempt 1 eight SUCCESS; implementation candidate published for exact-content CI and the independent implementation and rendered review ([record §11](tasks/ASSESS-INSTITUTION-003.md)). DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
 
 > **ASSESS-INSTITUTION-003 READY / Build checkpoint, 2026-11-09 (DEC-048):** Owner decisions OC-1 (School Operator opens, pauses, resumes and ends institution exams per exam or per session, and locks, messages and adds time; room Proctors keep lock and message in their room), OC-2 (the Operator opens at the session time with readiness re-checked), OC-3–OC-6 (all recommended defaults); contract review chain STOP → PASS by the Owner-designated reviewer; formal READY PASS, frozen 31-path allowlist, reserved migration 0064; rendered baseline = exact-main CI #237 artifacts (3450 pairs, manifest recorded) ([record §10](tasks/ASSESS-INSTITUTION-003.md)). DONE 16/33 (48.48%), IN_PROGRESS 1, BLOCKED 16, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
@@ -106,7 +108,7 @@
 
 ## 1. Authority and activation boundary
 
-The Owner approved FINAL P11 Gate B on 2026-10-31 for the original candidate. This active finite baseline does not itself authorize implementation. SEC-001 remains DONE under its final record §17 and PR #19 landing. AUTH-001 is DONE under [its final record §13](tasks/AUTH-001.md), accepted content 82a96a55778c338dc9aa658f9b921c4b18a73b01, evidence d37017751e9a73f44aaa28f1f392a579f05f7127, PR #20/main ebcc4ca3270473543cbb465092954457b355fe23 and exact-main CI #124. ADMIN-001 is DONE under its final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and exact-main CI #131. AUTH-002 is VERIFYING under DEC-048 (00.13, effective 2026-11-07 on landing of PR #22, main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5); the remaining 29 Tasks stay BLOCKED. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this is the official tracker; the [living plan](PRODUCTION_COMPLETION_PLAN.md) retains continuity. Execution follows 00.13 §4–§6; every 00.13 §7 decision stays with the Owner. Earlier registration/Build checkpoints in §11 remain history.
+The Owner approved FINAL P11 Gate B on 2026-10-31 for the original candidate. This active finite baseline does not itself authorize implementation. SEC-001 remains DONE under its final record §17 and PR #19 landing. AUTH-001 is DONE under [its final record §13](tasks/AUTH-001.md), accepted content 82a96a55778c338dc9aa658f9b921c4b18a73b01, evidence d37017751e9a73f44aaa28f1f392a579f05f7127, PR #20/main ebcc4ca3270473543cbb465092954457b355fe23 and exact-main CI #124. ADMIN-001 is DONE under its final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and exact-main CI #131. AUTH-002 is DONE; ASSESS-INSTITUTION-003 is VERIFYING under DEC-048, with 16 completed baseline rows and 16 BLOCKED rows (§3). The original delegation landed through PR #22/main 5d0672f3c73ea4754a17d64316a876c5a5a7e3a5; its temporary §11 assignment is effective after PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9 and exact-main CI #243 eight SUCCESS attempt 1. Under [DEC-045 §2/§5](../00-governance/00.12_AICWDF_ADOPTION_AND_TASK_EXECUTION.md), this is the official tracker; the [living plan](PRODUCTION_COMPLETION_PLAN.md) retains continuity. Execution follows 00.13 §4–§6; every 00.13 §7 decision stays with the Owner. Earlier registration/Build checkpoints in §11 remain history.
 
 Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CBT_RELEASE_SCOPE_REALIGNMENT.md), not a single-choice pilot. [P1](CBT_RELEASE_DEFINITION.md) acceptance is established by [GOV-REALIGN-003 §6](tasks/GOV-REALIGN-003.md); [GOV-REALIGN-004 §5](tasks/GOV-REALIGN-004.md) accepts P2–P6 planning and [GOV-REALIGN-005 §5](tasks/GOV-REALIGN-005.md) accepts P7–P10 planning. Historical draft headers do not erase those accepted planning outcomes or approve unresolved policies.
 
@@ -114,7 +116,7 @@ Canonical scope is complete [DEC-044 §3 and G1–G10](../00-governance/00.11_CB
 
 ## 2. Baseline accounting and status semantics
 
-Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-002 are completed baseline work; AUTH-003 is VERIFYING; the remaining 28 Tasks are BLOCKED. Every completed PRE-P11 Task and GOV-P11-001 are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
+Only the unique rows in §3 are counted. The 16 DONE rows in §3 are completed baseline work; ASSESS-INSTITUTION-003 is VERIFYING; the remaining 16 Tasks are BLOCKED. Every completed PRE-P11 Task and GOV-P11-001 are excluded; pre-adoption delivered capabilities are reused history (§9). No effort estimate is asserted.
 
 | Counter | Value |
 |---|---:|
@@ -127,13 +129,13 @@ Only the unique rows in §3 are counted. SEC-001, AUTH-001, ADMIN-001 and AUTH-0
 | BLOCKED | 16 |
 | TODO | 0 |
 | SUPERSEDED | 0 |
-| Progress % | 15.15% |
+| Progress % | 48.48% |
 
-Baseline/Current Total remain 33. Progress = 4 / 33 = 12.12% (rounded). SEC-001, AUTH-001, ADMIN-001 and AUTH-002 are DONE; AUTH-002 final record §15, final content 9f9c5f1/CI #141, evidence d879179/CI #143, PR #23/main 38259da885197ae3d207df3743d98c89d2bed9ac and CI #144. ADMIN-001 final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and CI #131 support this authorized next-Task reconciliation under DEC-045. No completed Task is reopened. AUTH-002 completed under DEC-048 on 2026-11-07 ([record §12–§15](tasks/AUTH-002.md)).
+Baseline/Current Total remain 33. Progress = 16 / 33 = 48.48% (rounded); the complete DONE set is the 16 rows in §3. SEC-001, AUTH-001, ADMIN-001 and AUTH-002 are DONE; AUTH-002 final record §15, final content 9f9c5f1/CI #141, evidence d879179/CI #143, PR #23/main 38259da885197ae3d207df3743d98c89d2bed9ac and CI #144. ADMIN-001 final record §14, accepted content 3df5b322/CI #129, evidence 3baa7de, PR #21/main 056a154d4ae2eb9c5a7c7923c6737496f396990d and CI #131 support this authorized next-Task reconciliation under DEC-045. No completed Task is reopened. AUTH-002 completed under DEC-048 on 2026-11-07 ([record §12–§15](tasks/AUTH-002.md)).
 
-- BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; the 28 presently BLOCKED rows qualify.
+- BLOCKED: a named unresolved external gate and/or unfinished required predecessor prevents READY; the 16 presently BLOCKED rows qualify.
 - TODO: included unstarted work without a currently identified blocker, still needing full contract readiness; none currently classified.
-- READY: dependencies DONE, applicable policies/contracts/scope/impacts/tests/tools/cost known and no blocking ambiguity. ADMIN-001 completed its full lifecycle; AUTH-002 completed its full lifecycle under DEC-048; AUTH-003 passed READY and is VERIFYING.
+- READY: dependencies DONE, applicable policies/contracts/scope/impacts/tests/tools/cost known and no blocking ambiguity. ADMIN-001 completed its full lifecycle; AUTH-002 completed its full lifecycle under DEC-048; ASSESS-INSTITUTION-003 passed READY (§10 of its record) and is VERIFYING.
 - IN_PROGRESS/VERIFYING/DONE/SUPERSEDED retain DEC-045 meanings; only reviewed evidence supports DONE. SEC-001, AUTH-001 and ADMIN-001 are checked as completed.
 - Priorities indicate production ordering, not estimates or a waiver. Independent school/Owner decisions can be obtained without authorizing parallel executor Tasks. PARALLEL SAFE: NO for all rows unless a later explicit contract/Owner approval changes that.
 
@@ -692,6 +694,13 @@ Subsequent completed history remains excluded: GOV-REALIGN-006 Gate-A-only DONE,
 **Current implementation control:** SEC-001 and AUTH-001 DONE/merged. ADMIN-001 READY, frozen contract/four-document publication authorized, automatic exact-SHA registration CI required. STOP for separate Owner Build/CI-first permission; no source/migration/import/merge/deployment/parallel Task or PB05 closure. Earlier checkpoints in §11 are history.
 
 ## 11. Change control and approval history
+
+### ASSESS-INSTITUTION-003 controlled continuation — 2026-11-10
+
+- **Authority/evidence:** GOV-EXEC-002 PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9, CI #243 eight SUCCESS attempt 1; temporary 00.13 §11 assignment effective. Original contract/READY/Build/review ledger unchanged.
+- **Actual correction:** Task record §11.0.2, CI #240 terminal failure, exact fixture-based count oracles in frozen row 35; automatic new-content CI and designated final delta/rendered review pending, no rerun.
+- **Baseline delta:** none. Status VERIFYING, 33 IDs / 78 edges / DONE 16 / BLOCKED 16. Stale current-status prose/percentage reconciled to the existing actual rows only; all §4/§8 rules and dependencies unchanged.
+
 
 ### AUTH-003 decisions, READY and Build start under DEC-048 — 2026-11-07
 
