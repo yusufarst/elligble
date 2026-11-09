@@ -71,3 +71,57 @@ export function resultStatus(row: Pick<ParticipantResult, 'status' | 'finalizati
 
 /** The student's own submitted attempt on their exam list. */
 export const SUBMITTED_ATTEMPT_STATUS: StatusView = { label: 'Sudah dikumpulkan', tone: 'success' };
+
+/** The question preparation of an institution exam (ASSESS-INSTITUTION-001 §4.6). */
+export function preparationStatus(preparation: { closed: boolean; questionCount: number }): StatusView {
+  if (preparation.closed) return { label: 'Penyiapan ditutup', tone: 'neutral' };
+  if (preparation.questionCount === 0) return { label: 'Belum ada soal', tone: 'warning' };
+  return { label: `Soal disiapkan: ${preparation.questionCount} soal`, tone: 'info' };
+}
+
+// The readiness blockers as teachers and the School Operator read them (moved from the teacher list).
+
+export function baselineBlockerText(blocker?: string): string {
+  switch (blocker) {
+    case 'question_snapshot_empty': return 'Soal ujian belum ditambahkan';
+    case 'question_snapshot_content_invalid': return 'Konten soal ujian tidak valid';
+    case 'participant_schedule_conflict': return 'Terdapat konflik jadwal peserta';
+    case 'proctor_schedule_conflict': return 'Terdapat konflik jadwal pengawas';
+    case 'duration_window_policy_compatibility': return 'Durasi ujian tidak sesuai dengan rentang waktu';
+    case 'timing_configuration_presence': return 'Konfigurasi waktu belum diatur';
+    case 'participant_presence': return 'Peserta ujian belum ditentukan';
+    case 'question_snapshot_presence': return 'Status soal ujian belum ditetapkan';
+    case 'assessment_type': return 'Tipe asesmen belum dikonfigurasi';
+    default: return 'Persyaratan dasar belum lengkap';
+  }
+}
+
+export function roomProctorBlockerText(blocker?: string): string {
+  switch (blocker) {
+    case 'room_proctor_requirement_policy_unconfigured': return 'Kebijakan ruangan dan pengawas belum diatur';
+    case 'participant_empty': return 'Belum ada peserta yang terdaftar';
+    case 'exam_room_empty': return 'Belum ada ruangan yang ditetapkan';
+    case 'participant_room_assignment_incomplete': return 'Penugasan peserta ke ruangan belum lengkap';
+    case 'active_proctor_assignment_empty': return 'Belum ada pengawas yang ditugaskan';
+    case 'active_proctor_room_coverage_incomplete': return 'Cakupan pengawas untuk ruangan belum lengkap';
+    default: return 'Persyaratan ruangan dan pengawas belum lengkap';
+  }
+}
+
+export interface ReadinessResult {
+  baseline: { status: string; blocker?: string };
+  roomProctor: { status: string; blocker?: string };
+}
+
+/** All mandatory readiness checks pass. */
+export function readinessPasses(readiness: ReadinessResult): boolean {
+  return readiness.baseline.status === 'baseline_readiness_checks_pass'
+    && (readiness.roomProctor.status === 'room_proctor_readiness_ready' || readiness.roomProctor.status === 'room_proctor_readiness_not_applicable');
+}
+
+/** The first readiness blocker in words, or null when every check passes. */
+export function readinessBlockerMessage(readiness: ReadinessResult): string | null {
+  if (readinessPasses(readiness)) return null;
+  if (readiness.baseline.status !== 'baseline_readiness_checks_pass') return baselineBlockerText(readiness.baseline.blocker);
+  return roomProctorBlockerText(readiness.roomProctor.blocker);
+}

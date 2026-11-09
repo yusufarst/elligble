@@ -67,6 +67,7 @@ export type ParticipantAdditionOutcome =
     | { type: 'invalid'; problems: Array<{ code: ParticipantAdditionProblemCode; count?: number }> }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'forbidden' }
+    | { type: 'institution_managed' }
     | { type: 'action_key_reused' }
     | { type: 'unavailable' };
 
@@ -174,6 +175,7 @@ export async function readParticipantCandidates(
     | { type: 'ok'; candidates: ParticipantCandidates }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'forbidden' }
+    | { type: 'institution_managed' }
     | { type: 'unavailable' }
 > {
     if (!UUID.test(actor.tenantId) || !UUID.test(actor.personId) || !UUID.test(examInstanceId)) return { type: 'forbidden' };
@@ -190,6 +192,11 @@ export async function readParticipantCandidates(
         if (!exam) {
             await client.query('COMMIT');
             return { type: 'forbidden' };
+        }
+        // Participants of an institution exam are the School Operator's (OD-07b, ASSESS-INSTITUTION-001 §4.5).
+        if (exam.institution_session_id !== null) {
+            await client.query('COMMIT');
+            return { type: 'institution_managed' };
         }
         if (!ADDABLE_STATES.has(exam.lifecycle_state)) {
             await client.query('COMMIT');
@@ -249,6 +256,10 @@ export async function addTeacherExamParticipants(
         if (!exam) {
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
+        }
+        if (exam.institution_session_id !== null) {
+            if (!transaction) await client.query('ROLLBACK');
+            return { type: 'institution_managed' };
         }
 
         // A retried request finds what it added; a key never serves another request.

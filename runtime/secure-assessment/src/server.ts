@@ -28,6 +28,9 @@ import { parseRescheduleRequest, rescheduleTeacherExam } from './teacher-exam-sc
 import { cancelTeacherExam, parseCancellationRequest } from './teacher-exam-cancel.ts';
 import { addTeacherExamParticipants, parseParticipantAdditionRequest, readParticipantCandidates } from './teacher-exam-participants.ts';
 import { readExamMonitoring } from './exam-monitoring.ts';
+import {
+    INSTITUTION_CONTENT_BODY_LIMIT_BYTES, handleInstitutionExamRoute, parseContentRequest, runInstitutionContent, sendInstitutionContentOutcome,
+} from './institution-exams.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
@@ -374,6 +377,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');
                         return;
+                    case 'institution_managed':
+                        sendError(res, 409, 'institution_managed');
+                        return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
                         return;
@@ -610,6 +616,54 @@ export function createServer(deps: ServerDependencies): http.Server {
             });
         }
 
+        if (pathname === '/api/v1/assessment/teacher-exams/content/preview' || pathname === '/api/v1/assessment/teacher-exams/content') {
+            // The subject Teacher prepares the questions of an institution exam (ASSESS-INSTITUTION-001 §4.4).
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            const confirm = pathname === '/api/v1/assessment/teacher-exams/content';
+            let body: Record<string, unknown>;
+            try {
+                body = await readJsonObject(req, INSTITUTION_CONTENT_BODY_LIMIT_BYTES);
+            } catch (err) {
+                sendError(res, err instanceof HttpError ? err.statusCode : 400, err instanceof HttpError ? err.message : 'invalid_request');
+                return;
+            }
+            const request = parseContentRequest(body, confirm);
+            if (!request) {
+                sendError(res, 400, 'invalid_request');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                const execution = confirm ? await executePermissionAction(deps.pool, req, res, security.cookie, getContext()!, {
+                    kind: 'IMPORT', action: 'import', key: body.importKey, payload: request, body,
+                }, (client, actor) => runInstitutionContent(deps.pool, actor, request, 'confirm', client))
+                    : { result: await runInstitutionContent(deps.pool, getContext()!, request, 'preview'), audit: undefined };
+                if (!execution) return;
+                sendInstitutionContentOutcome(res, execution.result, execution.audit);
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/institution-exams'
+            || pathname === '/api/v1/assessment/institution-exams/periods'
+            || pathname === '/api/v1/assessment/institution-exams/sessions'
+            || pathname === '/api/v1/assessment/institution-exams/placements'
+            || pathname === '/api/v1/assessment/institution-exams/deadline'
+            || pathname === '/api/v1/assessment/institution-exams/cancel'
+            || pathname === '/api/v1/assessment/institution-exams/transition') {
+            // The School Operator composes institution exams (ASSESS-INSTITUTION-001 §4.2/§4.3).
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            return handleInstitutionExamRoute(req, res, url, deps.pool, security.cookie);
+        }
+
         if (pathname === '/api/v1/assessment/teacher-exams/reschedule') {
             if (!security) {
                 sendError(res, 404, 'not found');
@@ -653,6 +707,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'invalid':
                         sendJson(res, 422, { error: 'reschedule_invalid', problems: outcome.problems });
+                        return;
+                    case 'institution_managed':
+                        sendError(res, 409, 'institution_managed');
                         return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
@@ -710,6 +767,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                             audit: execution.audit,
                         });
                         return;
+                    case 'institution_managed':
+                        sendError(res, 409, 'institution_managed');
+                        return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });
                         return;
@@ -745,6 +805,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                 switch (result.type) {
                     case 'ok':
                         sendJson(res, 200, result.candidates);
+                        return;
+                    case 'institution_managed':
+                        sendError(res, 409, 'institution_managed');
                         return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
@@ -801,6 +864,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'invalid':
                         sendJson(res, 422, { error: 'participants_invalid', problems: outcome.problems });
+                        return;
+                    case 'institution_managed':
+                        sendError(res, 409, 'institution_managed');
                         return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: outcome.currentState });

@@ -511,6 +511,17 @@ export interface TeacherExamReadinessProjection {
   finalizedAt?: string | null;
   /** Essay questions of the exam (ASSESS-QUESTION-008); absent means 0. */
   essayCount?: number;
+  /** An exam the School Operator placed (ASSESS-INSTITUTION-001); absent or null for a teacher-managed exam. */
+  institution?: TeacherExamInstitutionBlock | null;
+}
+
+export interface TeacherExamInstitutionBlock {
+  periodLabel: string;
+  preparationDeadline: string | null;
+  deadlineExtended: boolean;
+  /** The deadline passed or the exam is no longer scheduled: the questions are final. */
+  preparationClosed: boolean;
+  questionCount: number;
 }
 
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
@@ -822,6 +833,89 @@ export interface TeacherExamImportResult {
   questionCount: number;
   participantCount: number;
 }
+
+// Institution exams (ASSESS-INSTITUTION-001): the School Operator composes an exam period; the subject
+// Teacher prepares the questions before the deadline.
+
+export interface InstitutionOverview {
+  timeZone: string | null;
+  limits: { maxDurationMinutes: number };
+  assessmentTypes: Array<{ assessmentTypeId: string; label: string }>;
+  academicPeriods: Array<{ academicPeriodId: string; label: string; startDate: string; endDate: string }>;
+  teachingAssignments: Array<{ teachingAssignmentId: string; subjectLabel: string; groupLabel: string; academicPeriodId: string; teacherElligbleId: string | null }>;
+  periods: Array<{ periodId: string; label: string; assessmentTypeLabel: string; academicPeriodLabel: string; sessionCount: number; examCount: number }>;
+}
+
+export interface InstitutionReadiness {
+  baseline: TeacherExamBaselineProjection;
+  roomProctor: TeacherExamRoomProctorProjection;
+}
+
+/** One placed exam as the Operator sees it: operational data only, never questions, keys or scores. */
+export interface InstitutionExamItem {
+  examInstanceId: string;
+  subjectLabel: string | null;
+  groupLabel: string | null;
+  teacherElligbleId: string | null;
+  lifecycleState: string;
+  cancelledAt: string | null;
+  durationMinutes: number;
+  latestStartPolicy: LatestStartPolicy;
+  participants: number;
+  preparation: { deadline: string | null; revision: number; closed: boolean; questionCount: number; preparedAt: string | null; sourceFileName: string | null };
+  /** Evaluated only for a scheduled exam past its deadline, where "Tandai Siap" applies. */
+  readiness: InstitutionReadiness | null;
+}
+
+export interface InstitutionSession {
+  sessionId: string;
+  startsAt: string;
+  endsAt: string;
+  exams: InstitutionExamItem[];
+}
+
+export interface InstitutionPeriodDetail {
+  period: { periodId: string; label: string; assessmentTypeLabel: string; academicPeriodLabel: string };
+  sessions: InstitutionSession[];
+}
+
+export type InstitutionProblemCode =
+  | 'label_invalid' | 'label_taken' | 'assessment_type_unknown' | 'academic_period_unknown' | 'academic_period_ended'
+  | 'time_zone_missing' | 'date_invalid' | 'time_invalid' | 'window_order' | 'window_ended' | 'date_outside_period' | 'session_taken'
+  | 'teaching_assignment_unknown' | 'teaching_assignment_other_period' | 'already_placed' | 'session_started'
+  | 'duration_invalid' | 'duration_exceeds_window' | 'deadline_invalid' | 'deadline_passed' | 'deadline_not_before_session'
+  | 'deadline_not_later' | 'no_participants' | 'schedule_conflict';
+
+export interface InstitutionProblem { code: InstitutionProblemCode; count?: number }
+
+export interface InstitutionPeriodInput { label: string; assessmentTypeId: string; academicPeriodId: string; actionKey: string }
+/** Wall-clock values in the school's zone: `YYYY-MM-DD`, `HH:MM`. */
+export interface InstitutionSessionInput { periodId: string; date: string; startTime: string; endTime: string; actionKey: string }
+export interface InstitutionPlacementInput {
+  sessionId: string;
+  teachingAssignmentId: string;
+  durationMinutes: number;
+  latestStartPolicy: LatestStartPolicy;
+  /** Wall-clock date and time in the school's zone, `YYYY-MM-DDTHH:MM`. */
+  preparationDeadline: string;
+  actionKey: string;
+}
+export interface InstitutionDeadlineInput { examInstanceId: string; preparationDeadline: string; expectedRevision: number; reason: string; actionKey: string }
+export interface InstitutionCancelInput { examInstanceId: string; reason: string; actionKey: string }
+
+export interface InstitutionPeriodResult { periodId: string; replayed: boolean }
+export interface InstitutionSessionResult { sessionId: string; startsAt: string; endsAt: string; replayed: boolean }
+export interface InstitutionPlacementResult { examInstanceId: string; participants: number; preparationDeadline: string; replayed: boolean }
+export interface InstitutionDeadlineResult { examInstanceId: string; revision: number; preparationDeadline: string; reason: string; replayed: boolean }
+export interface InstitutionCancelResult { examInstanceId: string; cancelledAt: string; changed: boolean; replayed: boolean }
+export interface InstitutionTransitionResult { examInstanceId: string; lifecycleState: string }
+
+export interface TeacherExamContentInput { examInstanceId: string; questionsCsv: string; sourceFileName: string | null }
+export interface TeacherExamContentPreview extends TeacherExamImportPreview {
+  /** The questions stored now, which saving this file replaces; 0 when none. */
+  replaces: number;
+}
+export interface TeacherExamContentResult { examInstanceId: string; questionCount: number; replayed: boolean }
 
 /** The managing teacher's preview of a scheduled or ready exam (ASSESS-TEACHER-002). */
 export interface TeacherExamPreview {

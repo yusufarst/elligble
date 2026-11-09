@@ -36,6 +36,7 @@ export type CancellationOutcome =
     }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'forbidden' }
+    | { type: 'institution_managed' }
     | { type: 'action_key_reused' }
     | { type: 'unavailable' };
 
@@ -64,6 +65,38 @@ function iso(value: unknown): string {
     return (value instanceof Date ? value : new Date(String(value))).toISOString();
 }
 
+/**
+ * Records the cancellation (0052), archives the exam and names the cancellation in its lifecycle
+ * event. The caller holds the exam row FOR UPDATE and has checked the state; shared with the
+ * School Operator's cancellation of an institution exam (ASSESS-INSTITUTION-001 §4.3).
+ */
+export async function recordExamCancellation(
+    client: pg.PoolClient,
+    actor: { tenantId: string; personId: string },
+    request: CancellationRequest,
+    previousState: string
+): Promise<Date> {
+    const recorded = await client.query(
+        `INSERT INTO secure_assessment_exam_cancellations
+             (tenant_id, exam_instance_id, cancelled_by_person_id, cancelled_at, reason, previous_lifecycle_state, action_key)
+         VALUES ($1, $2, $3, statement_timestamp(), $4, $5, $6)
+         RETURNING id, cancelled_at`,
+        [actor.tenantId, request.examInstanceId, actor.personId, request.reason, previousState, request.actionKey]
+    );
+    const { id: cancellationId, cancelled_at: cancelledAt } = recorded.rows[0];
+    await client.query(
+        `UPDATE secure_assessment_exam_instances SET lifecycle_state = 'ARCHIVED' WHERE id = $1 AND tenant_id = $2`,
+        [request.examInstanceId, actor.tenantId]
+    );
+    await client.query(
+        `INSERT INTO secure_assessment_exam_lifecycle_events
+             (tenant_id, exam_instance_id, from_state, to_state, actor_person_id, occurred_at, cancellation_id)
+         VALUES ($1, $2, $3, 'ARCHIVED', $4, $5, $6)`,
+        [actor.tenantId, request.examInstanceId, previousState, actor.personId, cancelledAt, cancellationId]
+    );
+    return cancelledAt as Date;
+}
+
 export async function cancelTeacherExam(
     pool: pg.Pool,
     actor: { tenantId: string; personId: string },
@@ -86,6 +119,11 @@ export async function cancelTeacherExam(
         if (!exam) {
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
+        }
+        // An institution exam is cancelled by the School Operator (OD-07b, ASSESS-INSTITUTION-001 §4.5).
+        if (exam.institution_session_id !== null) {
+            if (!transaction) await client.query('ROLLBACK');
+            return { type: 'institution_managed' };
         }
 
         const byKey = await client.query(
@@ -121,24 +159,7 @@ export async function cancelTeacherExam(
             return { type: 'invalid_state', currentState: exam.lifecycle_state };
         }
 
-        const recorded = await client.query(
-            `INSERT INTO secure_assessment_exam_cancellations
-                 (tenant_id, exam_instance_id, cancelled_by_person_id, cancelled_at, reason, previous_lifecycle_state, action_key)
-             VALUES ($1, $2, $3, statement_timestamp(), $4, $5, $6)
-             RETURNING id, cancelled_at`,
-            [actor.tenantId, request.examInstanceId, actor.personId, request.reason, exam.lifecycle_state, request.actionKey]
-        );
-        const { id: cancellationId, cancelled_at: cancelledAt } = recorded.rows[0];
-        await client.query(
-            `UPDATE secure_assessment_exam_instances SET lifecycle_state = 'ARCHIVED' WHERE id = $1 AND tenant_id = $2`,
-            [request.examInstanceId, actor.tenantId]
-        );
-        await client.query(
-            `INSERT INTO secure_assessment_exam_lifecycle_events
-                 (tenant_id, exam_instance_id, from_state, to_state, actor_person_id, occurred_at, cancellation_id)
-             VALUES ($1, $2, $3, 'ARCHIVED', $4, $5, $6)`,
-            [actor.tenantId, request.examInstanceId, exam.lifecycle_state, actor.personId, cancelledAt, cancellationId]
-        );
+        const cancelledAt = await recordExamCancellation(client, actor, request, exam.lifecycle_state);
         if (!transaction) await client.query('COMMIT');
         return {
             type: 'cancelled', examInstanceId: request.examInstanceId, cancelledAt: iso(cancelledAt), reason: request.reason,

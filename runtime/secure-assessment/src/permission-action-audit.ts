@@ -69,7 +69,7 @@ function conflict(kind: PermissionKind): never {
     throw new PermissionRefusal(409, kind === 'IMPORT' ? 'import_key_reused' : 'action_key_reused');
 }
 function successful(result: { type: string }): boolean {
-    return ['ok', 'transitioned', 'rescheduled', 'cancelled', 'added', 'scheduled'].includes(result.type);
+    return ['ok', 'transitioned', 'rescheduled', 'cancelled', 'added', 'scheduled', 'prepared'].includes(result.type);
 }
 function iso(value: Date | string | null): string | null {
     return value === null ? null : new Date(value).toISOString();

@@ -21,7 +21,8 @@ import { freezeExamResults } from './result-finalization.ts';
 // FINALIZE (ENDED -> FINALIZED, D04.8-17/57, Owner decision point ENDED-5) is refused while
 // any attempt still runs and freezes the results (result-finalization.ts); idempotent too.
 // It publishes nothing to students (D04.8-21).
-// Institution-managed governance (D04.4-26D/E) is intentionally not implemented here.
+// Institution-managed governance (D04.4-26D/E) is not implemented here: the subject Teacher of
+// an institution exam is refused every action except finalize (ASSESS-INSTITUTION-001 §4.5).
 
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
 
@@ -40,6 +41,7 @@ export interface ReadinessSummary {
 export type TeacherExamActionResult =
     | { type: 'transitioned'; examInstanceId: string; lifecycleState: string; changed: boolean }
     | { type: 'forbidden' }
+    | { type: 'institution_managed' }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'not_ready'; readiness: ReadinessSummary }
     | { type: 'window_not_started'; windowStartsAt: string }
@@ -99,7 +101,7 @@ export async function performTeacherExamAction(
     try {
         if (!transaction) await client.query('BEGIN');
         const exam = await client.query(
-            `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at, statement_timestamp() AS db_now
+            `SELECT i.lifecycle_state, i.window_starts_at, i.window_ends_at, i.institution_session_id, statement_timestamp() AS db_now
              FROM secure_assessment_exam_instances i
              WHERE i.id = $1 AND i.tenant_id = $2
                AND EXISTS (
@@ -119,6 +121,12 @@ export async function performTeacherExamAction(
             return { type: 'forbidden' };
         }
         const row = exam.rows[0];
+        // An institution exam is organized by the School Operator (OD-07b, O05-3); its subject
+        // Teacher keeps only the finalization of its results (O05-1, ASSESS-INSTITUTION-001 §4.5).
+        if (row.institution_session_id !== null && action !== 'finalize') {
+            if (!transaction) await client.query('ROLLBACK');
+            return { type: 'institution_managed' };
+        }
         if (transition.idempotent && row.lifecycle_state === transition.to) {
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: false };
