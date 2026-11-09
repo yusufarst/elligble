@@ -800,3 +800,27 @@ No re-runs, and no push while the previous commit's CI runs.
   5. The participant addition route reads the exam unlocked and then follows the E6 lock order instead of calling `lockInstitutionExam`; taking the exam row first would deadlock against a room write on the same session. Room writes lock every exam row of the session in id order, a superset of E6 step 4 in the same order.
   6. Extra copy: "Tidak ada peserta untuk ditampilkan." (an empty dialog list), "Semua siswa yang terdaftar di rombel ini pada tanggal sesi sudah menjadi peserta." (no candidates), and an `already_participant` line without a number for the race answer that carries no count.
   - 99i uses fixture SQL to store exam R's synthetic questions and to set exam A to ACTIVE and back for the non-editable capture.
+
+### 11.0 Implementation review of d896bfd and its correction
+
+- **Implementation review by the same reviewer: STOP** on one finding. The schema, lock order, readiness re-check, error mapper, duplicate Proctor IDs, cancelled-exam exclusion, OB-3 projection, P5 trace, vectors I-1 to I-18 and N-ids, UI and E2E otherwise match the frozen contract.
+  - **F1:** "Pilih semua <rombel>" (InstitutionRoomManagementView.tsx:166) and "Hapus <ELLIGBLE ID>" (:328) used `size="sm"`, a fixed `h-9` (36 px, ui/button.tsx:22), below the 44 px targets that C07 and the 99i capture check require.
+  - **Departures 1 to 6 of §11:** accepted. On departure 5 the reviewer recorded risk R14 below.
+- **Correction:** both buttons take `h-auto min-h-11`, the pattern already used for the back button. Web units institutionRooms 14/14.
+- **R14, room writes lock every exam of the session FOR UPDATE.** No institution exam can open before ASSESS-INSTITUTION-003 (R2), so this costs nothing today. Once a session holds ACTIVE and SCHEDULED exams together, a room write would briefly block answer saves, which take the exam row FOR KEY SHARE. Input to ASSESS-INSTITUTION-003: lock FOR UPDATE only the exams that are SCHEDULED or READY; an exam that has left those states never returns to them and can be refused without a lock.
+
+### 11.0.1 Exact-content CI of the first candidate
+
+- **CI #231** (run 42571511398, d896bfd, attempt 1): FAILURE in the five browser jobs. Web, Runtime (unit and real PostgreSQL 16 integration, I-1 to I-18 and the N-ids, first run) and Container passed.
+  - Every journey passed, including 99h with its rooms and Proctor steps and the 99i journey, and so did every earlier capture test.
+  - Only the 99i capture test failed, on page overflow with 200 % text:
+    - at 390x844 (scrollWidth 438) in rooms-mixed and every capture taken over it. The room list grid had no column template and its items no `min-w-0`, so each room card widened to the min-content of its no-wrap "Tempatkan Peserta" and "Atur Pengawas" buttons;
+    - at 1280x800 (scrollWidth 1295, Chromium and WebKit). In the two-column room list, the no-wrap "Belum ada pengawas" badge ran 15 px past its card.
+  - Diagnosed from the `e2e-report-mobile-360` and `e2e-report-desktop-1280` artifacts (capture JSON and screenshots); not re-run.
+- **Correction** (rows InstitutionRoomManagementView.tsx and 99i):
+  - the room list is `grid-cols-1 md:grid-cols-2`, and its items and cards take `min-w-0`;
+  - the two card actions wrap (`h-auto min-h-11 whitespace-normal py-2`);
+  - the badge wraps within its card (`max-w-full whitespace-normal`); the shared primitive is unchanged;
+  - with the F1 correction of §11.0, both buttons are now at least 44 px;
+  - the 99i capture reports the outermost unclipped overflowing elements with their right edge and text, and adds them to the overflow message.
+  - Local: web typecheck clean; institutionRooms and designSystemGuard 23/23.

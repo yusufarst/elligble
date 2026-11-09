@@ -164,6 +164,7 @@ const ParticipantPicker: React.FC<{ groups: PickerGroup[]; chosen: Set<string>; 
             <Button
               variant="secondary"
               size="sm"
+              className="h-auto min-h-11"
               onClick={() => onChange(new Set([...chosen, ...group.participants.map(p => p.id!)]))}
             >
               Pilih semua {group.groupLabel}
@@ -325,7 +326,7 @@ const ProctorDialog: React.FC<DialogProps & { view: InstitutionRoomView; room: I
               {proctors.map(id => (
                 <li key={id} className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border px-3 py-1">
                   <span className="min-w-0 font-mono text-[13px] [overflow-wrap:anywhere]">{id}</span>
-                  <Button variant="secondary" size="sm" aria-label={`Hapus ${id}`} disabled={saving} onClick={() => remove(id)}>Hapus</Button>
+                  <Button variant="secondary" size="sm" className="h-auto min-h-11" aria-label={`Hapus ${id}`} disabled={saving} onClick={() => remove(id)}>Hapus</Button>
                 </li>
               ))}
             </ul>
@@ -439,11 +440,11 @@ type OpenDialog =
 const RoomCard: React.FC<{ room: InstitutionRoom; editable: boolean; onAction(kind: 'place' | 'proctors', room: InstitutionRoom, trigger: HTMLButtonElement): void }> = ({
   room, editable, onAction,
 }) => (
-  <li>
-    <Card data-testid={`institution-room-${room.label}`} className="gap-4">
+  <li className="min-w-0">
+    <Card data-testid={`institution-room-${room.label}`} className="min-w-0 gap-4">
       <CardHeader className="flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <CardTitle level="h3" className="text-lg break-words">{room.label}</CardTitle>
-        {room.proctors.length === 0 && <StatusBadge tone="warning">Belum ada pengawas</StatusBadge>}
+        {room.proctors.length === 0 && <StatusBadge tone="warning" className="max-w-full whitespace-normal">Belum ada pengawas</StatusBadge>}
       </CardHeader>
       <CardContent>
         <ExamFacts>
@@ -457,8 +458,8 @@ const RoomCard: React.FC<{ room: InstitutionRoom; editable: boolean; onAction(ki
         </ExamFacts>
         {editable && (
           <ActionGroup>
-            <Button variant="secondary" onClick={event => onAction('place', room, event.currentTarget)}>Tempatkan Peserta</Button>
-            <Button variant="secondary" onClick={event => onAction('proctors', room, event.currentTarget)}>Atur Pengawas</Button>
+            <Button variant="secondary" className="h-auto min-h-11 whitespace-normal py-2" onClick={event => onAction('place', room, event.currentTarget)}>Tempatkan Peserta</Button>
+            <Button variant="secondary" className="h-auto min-h-11 whitespace-normal py-2" onClick={event => onAction('proctors', room, event.currentTarget)}>Atur Pengawas</Button>
           </ActionGroup>
         )}
       </CardContent>
@@ -641,7 +642,7 @@ export const InstitutionRoomManagementView: React.FC<{
         {view.rooms.length === 0 ? (
           <EmptyState title="Belum ada ruang.">Belum ada ruang di sesi ini. Tambahkan ruang, lalu tempatkan peserta.</EmptyState>
         ) : (
-          <ul role="list" className="m-0 grid list-none gap-4 p-0 md:grid-cols-2">
+          <ul role="list" className="m-0 grid list-none grid-cols-1 gap-4 p-0 md:grid-cols-2">
             {view.rooms.map(room => (
               <RoomCard key={room.label} room={room} editable={room.groups.some(g => editableExams.has(g.examInstanceId))}
                 onAction={(kind, item, opener) => open({ kind, room: item }, opener)} />

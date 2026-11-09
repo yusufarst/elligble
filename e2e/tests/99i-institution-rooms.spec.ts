@@ -61,7 +61,15 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                         scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, targets, metricWraps,
                         reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
                         focus: active ? { tag: active.tagName, type: (active as HTMLInputElement).type ?? null, label: active.getAttribute('aria-label') } : null,
-                        overflowing: [...document.querySelectorAll<HTMLElement>('body *')].filter(n => n.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).slice(0, 8).map(n => `${n.tagName.toLowerCase()}.${String(n.className).slice(0, 50)}`),
+                        // The outermost elements past the right edge that no scrolling or clipping ancestor contains, with their right edge and text.
+                        overflowing: [...document.querySelectorAll<HTMLElement>('body *')].filter(n => {
+                            if (n.getBoundingClientRect().right <= document.documentElement.clientWidth + 0.5) return false;
+                            for (let up = n.parentElement; up && up !== document.body; up = up.parentElement) {
+                                if (getComputedStyle(up).overflowX !== 'visible') return false;
+                                if (up.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5) return false;
+                            }
+                            return true;
+                        }).slice(0, 8).map(n => `${n.tagName.toLowerCase()}.${String(n.getAttribute('class') ?? '').slice(0, 80)} right=${Math.round(n.getBoundingClientRect().right)} ${(n.textContent ?? '').trim().slice(0, 40)}`),
                     };
                 });
                 const name = ['workspace-institution-rooms', scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
@@ -85,7 +93,7 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                     screenshotSha256: createHash('sha256').update(readFileSync(test.info().outputPath(screenshot))).digest('hex'),
                     accessibilitySnapshot: await root().ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
                 }, null, 2));
-                expect.soft(metrics.scrollWidth, `${scenario} ${v.width}x${v.height} text${v.text}: overflow`).toBeLessThanOrEqual(metrics.clientWidth);
+                expect.soft(metrics.scrollWidth, `${scenario} ${v.width}x${v.height} text${v.text}: overflow ${JSON.stringify(metrics.overflowing)}`).toBeLessThanOrEqual(metrics.clientWidth);
                 expect.soft(metrics.targets.filter(t => t.width < 43.5 || t.height < 43.5), `${scenario} ${v.width}x${v.height} text${v.text}: targets below 44 px`).toEqual([]);
                 expect.soft(metrics.metricWraps, `${scenario} ${v.width}x${v.height} text${v.text}: mid-word metric labels`).toEqual([]);
             } finally {
