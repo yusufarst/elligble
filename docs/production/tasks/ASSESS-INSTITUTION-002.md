@@ -829,6 +829,6 @@ No re-runs, and no push while the previous commit's CI runs.
 
 - **CI #232** (run 42581025113, 19ee35e, attempt 1): FAILURE in firefox-1280 only. Web, Runtime (unit and real PostgreSQL integration), Container and the mobile-360, tablet-768, desktop-1280 and webkit-390 browser jobs passed, including every 99i capture there.
   - In Firefox, the 99i capture test reported page overflow at 390x844 with 200 % text (scrollWidth 412) in rooms-mixed and notice-demotion.
-  - The new diagnostic named the element: the success notice description (, "Peserta ditempatkan di Ruang D: 1 peserta."), a grid item whose  track kept its min-content width.
-- **Correction** (row InstitutionRoomManagementView.tsx): the notice description takes . Its track can shrink, and a word breaks only when it alone is wider than the notice. The shared Alert is unchanged.
+  - The new diagnostic named the element: the success notice description (`div.col-start-2 leading-relaxed`, "Peserta ditempatkan di Ruang D: 1 peserta."), a grid item whose `1fr` track kept its min-content width.
+- **Correction** (row InstitutionRoomManagementView.tsx): the notice description takes `min-w-0 break-words`. Its track can shrink, and a word breaks only when it alone is wider than the notice. The shared Alert is unchanged.
   - Local: web typecheck clean; institutionRooms 14/14.
