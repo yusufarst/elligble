@@ -590,7 +590,7 @@ export const InstitutionRoomManagementView: React.FC<{
   const noticeBanner = notice ? (
     <Alert ref={noticeRef} tabIndex={-1} variant="success" role="status" className="outline-none">
       <IconInfo aria-hidden="true" />
-      <AlertDescription>
+      <AlertDescription className="min-w-0 break-words">
         {notice.map(line => <p key={line} className="m-0">{line}</p>)}
       </AlertDescription>
     </Alert>

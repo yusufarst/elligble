@@ -824,3 +824,11 @@ No re-runs, and no push while the previous commit's CI runs.
   - with the F1 correction of §11.0, both buttons are now at least 44 px;
   - the 99i capture reports the outermost unclipped overflowing elements with their right edge and text, and adds them to the overflow message.
   - Local: web typecheck clean; institutionRooms and designSystemGuard 23/23.
+
+### 11.0.2 Exact-content CI of the second candidate
+
+- **CI #232** (run 42581025113, 19ee35e, attempt 1): FAILURE in firefox-1280 only. Web, Runtime (unit and real PostgreSQL integration), Container and the mobile-360, tablet-768, desktop-1280 and webkit-390 browser jobs passed, including every 99i capture there.
+  - In Firefox, the 99i capture test reported page overflow at 390x844 with 200 % text (scrollWidth 412) in rooms-mixed and notice-demotion.
+  - The new diagnostic named the element: the success notice description (, "Peserta ditempatkan di Ruang D: 1 peserta."), a grid item whose  track kept its min-content width.
+- **Correction** (row InstitutionRoomManagementView.tsx): the notice description takes . Its track can shrink, and a word breaks only when it alone is wider than the notice. The shared Alert is unchanged.
+  - Local: web typecheck clean; institutionRooms 14/14.
