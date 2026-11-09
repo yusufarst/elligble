@@ -671,3 +671,98 @@ No re-runs, and no push while the previous commit's CI runs.
   - **Tests:** C05 asserts both focus targets and the summary layout classes.
   - **Local checks:** web typecheck clean; institutionExams, teacherExamImport, teacherOperations and designSystemGuard 53/53.
   - **For the next rendered review:** the earlier-capture comparison also checks screenshot dimensions and hashes, not only accessibility text.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on fd159cc, extended to fe57a24, d17d12f and 6325c1e. The reviewer accepted every implementer departure:
+  - Origin checks apply to every unsafe request (POST). GET is safe because the session cookie is SameSite=Strict and the server sends no CORS headers, as for every existing GET. §4.3 and §4.9 N10 are read accordingly.
+  - The Operator and content routes check the body before authenticating.
+  - The extra UI copy is Bahasa Indonesia with no em dash.
+  - Exam cards use h3 headings.
+  - Placement lists every active teaching assignment. The server refuses one from another period with the frozen copy. Recorded UX risk: the same subject, rombel and teacher in two academic periods give identical options; to be handled by a later Task.
+  - Unexpected errors give 500 on writes and 503 on reads.
+  - The managed-exam lookup reads `institution_session_id` through `to_jsonb`. Caveat: this fails open on a future column rename, so I-8 must keep covering the four Teacher refusals.
+  - Row 25's purpose also covers the narrow-width fix of the shared Teacher card (6325c1e).
+- **Rendered review by the same reviewer:**
+  - **6325c1e: STOP F1** (focus after dialog sends), corrected in 02e2e72 (§11.0.4).
+  - **02e2e72: STOP R-F1/R-F2** (metric word breaks, including on the earlier scheduling preview; focus after "Buka Periode"), corrected in 20a13ef (§11.0.5).
+  - **20a13ef:** PASS on 20a13ef (CI #227 artifacts), with no material finding; all rendered STOPs closed.
+  - **Non-material notes**, proposed as UI-SYSTEM follow-ups outside this Task:
+    - dialog titles break mid-word at 200 % text (shared `permissionDialogClass`);
+    - `PageHeader` actions stack beside a long description;
+    - the extra School Operator nav item is clipped at 360 px in the scrolling nav;
+    - question counts are shown without Intl formatting;
+    - the 99h capture test needs about 25 minutes of the E2E budget.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-09
+
+### 12.1 Content and CI
+
+**Final content:** 20a13efd88f0c69a2263ca724235062941b2b24c. The registration was 0895ab4. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #227 (run 42529017094), push, attempt 1, eight jobs SUCCESS.
+- **Runtime units:** identity-access 34, tenant-access 14, academic-core 11 and Secure Assessment 986, all passing.
+- **Real PostgreSQL 16 integration:** 310/310. This includes:
+  - I-1 to I-17 and the §4.9 N-id map;
+  - migration 0062 upgrade, rollback and repeat;
+  - the content-lock trigger race (I-4b);
+  - the Teacher refusals;
+  - the Operator and Proctor refusals on content routes;
+  - the existing SEC-001 0053 upgrade test.
+- **Web:** 47 files and 458 tests, plus typecheck and build.
+- **Container:** image build and smoke test.
+- **E2E:** 38/38 in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390. This includes the 99h deadline journey (C06) and the rendered captures (C07).
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 42529017094, fetched with the resumable, size- and `unzip -t`-checked transfer.
+- 950 `workspace-institution-*` pairs, 19 scenarios, all at commit 20a13ef.
+  - Every screenshot hash matches its JSON; zero page overflow; zero targets under 44 px.
+  - Focus is on the enabled retry in every `dialog-place-refused` capture, and on the opened period heading in every capture reached through "Buka Periode".
+  - Manifest SHA-256 3cc49a8b3456e694eeaac318e14829bcbe1387754b7ab6b66efb9624e55b1894.
+- Earlier-Task captures against the #219 baseline differ only in generated IDs and the exam-window date format (a time effect). Every `*-import-preview` capture at 390x844 with 200 % text has the baseline height.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #220 (0895ab4, registration) | attempt 1, eight SUCCESS |
+| CI #221 (5bf5b3e) | attempt 1, FAILURE: the existing 0053 upgrade test (§11.0) |
+| CI #222 (fd159cc) | attempt 1, FAILURE: E2E `openPeriod` race (§11.0.1) |
+| CI #223 (fe57a24) | attempt 1, FAILURE: E2E capture test, a "Batal" substring match and the WebKit screenshot limit (§11.0.2) |
+| CI #224 (d17d12f) | attempt 1, FAILURE: WebKit Teacher card overflow at 360 px (§11.0.3) |
+| CI #225 (6325c1e) | attempt 1, eight SUCCESS; rendered STOP F1 (§11.0.4) |
+| CI #226 (02e2e72) | attempt 1, eight SUCCESS; rendered STOP R-F1/R-F2 (§11.0.5) |
+| CI #227 (20a13ef) | attempt 1, eight SUCCESS |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F7), then PASS (§9).
+2. **Implementation:** PASS (§11.1).
+3. **Rendered:** STOP, then STOP, then PASS (§11.1).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: the body parsers, the school-zone conversion, the problem codes, the deadline revision rule, the reason normalization, `preparationStatus`, and the content-readiness mapping over all six preflight results |
+| C02 | PASS: the content import path reuses the v2 parser and the existing problem checks unchanged |
+| C03 | PASS on real PostgreSQL (CI #227): I-1 to I-17, the §4.9 N-id map, migration 0062 upgrade, rollback and repeat, the trigger lock race, the 422 `…_unknown` conditions, and every Teacher and Operator refusal |
+| C04 | PASS: regression with only the §4.8 assertions changed; teacher-managed exams unchanged |
+| C05 | PASS: the Operator screen, its dialogs and states, retry and success focus, the Teacher card and the preparation screen |
+| C06 | PASS: the five-browser 99h journey: compose, prepare, replace, extend, close at the deadline, mark ready, cancel |
+| C07 | PASS: the #219 baseline and the after captures across the frozen conditions; no overflow; 44 px targets; visible and managed focus; rendered review PASS |
+| C08 | PASS: every changed path is within rows 1–32; 33 Tasks and 78 edges; exact-SHA attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-INSTITUTION-001 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- Institution exams cannot open until ASSESS-INSTITUTION-003 (OP-5). Participants, rooms and Proctors come in 002, and a READY institution exam needs its readiness re-checked there.
+- The `to_jsonb` read in the managed-exam lookup fails open on a future column rename; I-8 covers it.
+- The placement list repeats options when a subject, rombel and teacher appear in two academic periods.
+- PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 15/33 (45.45%).
