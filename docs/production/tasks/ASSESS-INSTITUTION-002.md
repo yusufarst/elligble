@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / school-scale exam setup; HIGH risk; R20, R21; P8 V07, V10, V11, V12 |
-| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10). All Owner decisions are decided: OB-2, RP-1 to RP-5 and OB-3, on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
+| Status | **VERIFYING under DEC-048: final evidence and Delegated Acceptance (§12); implementation and reviews (§11); formal READY PASS (§10). All Owner decisions are decided: OB-2, RP-1 to RP-5 and OB-3, on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
 | Objective | Before an institution exam opens, the School Operator, for one session (Jadwal Sesi) at a time:<br>• puts every participant of the session's exams into exactly one physical room;<br>• sets the Proctors of each physical room;<br>• adds students of the exam's rombel who were enrolled after placement.<br>Readiness is re-checked in the same transaction as every change. Coverage gaps, schedule conflicts and room double-booking prevent readiness. Every change is kept as attributable history. No participant is removed (OPEN-05). Teacher-managed exams are unchanged |
 | Owner decisions | **Approved inputs:**<br>• O05-1 to O05-4 and A04-1 to A04-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md));<br>• OP-1 to OP-9 and OB-1, decided 2026-11-09 ([ASSESS-INSTITUTION-001 §3.1](ASSESS-INSTITUTION-001.md));<br>• OB-2, RP-1 to RP-5 and OB-3, decided 2026-11-09 (§3.1).<br>**Open:** none.<br>Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• Internal dependency ASSESS-INSTITUTION-001 is DONE / MERGED: PR #35, main 30a74562b4946a08311de369a96d50eaaa5d6b46. Its PR-head CI #228 (run 42539982836, head 94bd93a) and post-merge main CI #229 (run 42542313684) each passed on attempt 1 with eight jobs SUCCESS. They were read from GitHub on 2026-11-09 and are recorded again in this Task's first change.<br>• O05 is approved (O05-1 to O05-6). O09 rests on the approved P5 content, whose approval excludes "O05 institution … composition" (CBT_PERMISSION_MATRIX.md:96, :142). The Owner closed that gap for rooms, participants and Proctors with OB-2 (§3.1).<br>• The identity fields the Operator sees, which P5 does not settle, are decided by the Owner as OB-3 (§3.1, F9). With every Owner input decided and the independent contract review chain at PASS (§9, 00.13 §4.3), the formal READY transition is pending (§10) |
@@ -841,3 +841,79 @@ No re-runs, and no push while the previous commit's CI runs.
   - "Kembali" already refreshes the period screen, so that browser reload raced an in-flight refresh. It was not product behaviour under test.
 - **Correction** (row 99i only): after "Kembali", the test uses the screen's own "Muat Ulang" and waits until it is enabled again, instead of a browser reload; the unused `reloadPage` import is removed. No assertion changed.
   - Local: e2e typecheck clean.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:**
+  - **d896bfd: STOP** on F1 (two 36 px buttons), corrected in 19ee35e (§11.0).
+  - **19ee35e: PASS.** F1 is closed, and the CI #231 overflow correction is sound.
+  - The reviewer accepted every implementer departure of §11, with R14 recorded on departure 5. The later changes (ee1c8a7, 3d6c1ba) were checked in the rendered review.
+- **Rendered review by the same reviewer:** PASS on 3d6c1ba (CI #235 artifacts, all five browsers), with no material finding. The Firefox notice fix holds: rooms-mixed and notice-demotion at 390x844 with 200 % text have no overflow; a word wider than the notice column at the doubled text size may break inside the word, without overflow or loss.
+  - **Non-material notes**, outside this Task:
+    - WebKit full-page shots draw the sticky header and the dialog overlay at the scrolled position (a capture artifact).
+    - At 1280 with 200 % text, dialog titles break inside words in the shared dialog, as in 99h; the harness compounds font doubling through nesting.
+    - At 390 with 200 % text, the native "Tampilkan" select clips its selected text (the shared NativeSelect primitive).
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-09
+
+### 12.1 Content and CI
+
+**Final content:** 3d6c1ba001f0b6426fe6a002ceaecd4e8d207ef1. The registration was f28eeb2. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #235 (run 42589194989), push, attempt 1, eight SUCCESS.
+- **Runtime:** typecheck, units, and real PostgreSQL 16 integration including I-1 to I-18 and the N-ids of §4.9, migration 0063 upgrade, rollback and repeat, the room guard, the readiness re-check and demotion, the lock races and replay.
+- **Web:** typecheck, tests and build.
+- **Container:** image build and smoke test.
+- **E2E:** every spec in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390, including the 99i journey (C06), the 99h journey with its rooms and Proctor steps, and the rendered captures (C07).
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 42589194989, fetched with the resumable, size- and `unzip -t`-checked transfer.
+- 450 `workspace-institution-rooms-*` pairs, 9 scenarios × 10 conditions per browser, all at commit 3d6c1ba (frontend tree 4fe5237b74d383e53f6459d037d3cd3f34e2f520).
+  - Every screenshot hash matches its JSON; zero page overflow; zero targets under 44 px; no mid-word metric labels.
+  - Focus is never BODY: H1 on entry, the first field on a dialog open, the retry button after a refusal, the notice after a success.
+  - Manifest SHA-256 221ee8c124d377eee62a328412b052802c793411d73b8ce404b40c5fcc295d0b.
+- Earlier captures against the #229 baseline differ only where §4.8 says: the "Ruang dan Pengawas" session action on the Operator screens and the room line on the Teacher card. The remaining dimension changes are WebKit full-page and viewport fallbacks and run-to-run variance seen between earlier baselines, with identical accessibility snapshots and focus.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #230 (f28eeb2, registration) | attempt 1, eight SUCCESS |
+| CI #231 (d896bfd) | attempt 1, FAILURE: 99i capture overflow at 200 % text (§11.0.1) |
+| CI #232 (19ee35e) | attempt 1, FAILURE: Firefox notice overflow (§11.0.2) |
+| CI #233 (ee1c8a7) | cancelled by the push of 31a9758 (§11.0.3) |
+| CI #234 (31a9758) | attempt 1, FAILURE: Firefox reload in the 99i test (§11.0.3) |
+| CI #235 (3d6c1ba) | attempt 1, eight SUCCESS |
+
+### 12.2 Independent review (Owner-designated read-only fresh-context reviewer)
+
+1. **Contract:** STOP (F1–F9), then PASS (§9).
+2. **Implementation:** STOP (F1), then PASS (§11.1).
+3. **Rendered:** PASS on 3d6c1ba (§11.1).
+
+No reviewer was replaced.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: the body parsers, label normalization, typed Proctor ID normalization and de-duplication, the error mapper and the projection rules (units) |
+| C02 | PASS: reuse of the existing room, Proctor, participant and readiness building blocks without duplication |
+| C03 | PASS on real PostgreSQL (CI #235): I-1 to I-18, the §4.9 N-ids, migration 0063 upgrade, rollback and repeat, the room guard, cancelled-exam exclusion, readiness re-check and demotion, replay and lock races |
+| C04 | PASS: regression with only the §4.8 assertions changed; teacher-managed exams unchanged |
+| C05 | PASS: the room screen, its dialogs and states, focus after sends and after self-removing controls, the shared metric variant with an identical class set at TeacherExamImportView |
+| C06 | PASS: the five-browser 99i journey and the 99h journey with rooms and Proctors |
+| C07 | PASS: the #229 baseline and the after captures across the frozen conditions; no overflow; 44 px targets; visible and managed focus; rendered review PASS |
+| C08 | PASS: every changed path is within §6 rows 1–26; 33 Tasks and 78 edges; exact-SHA attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-INSTITUTION-002 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:**
+- Institution exams still cannot open until ASSESS-INSTITUTION-003 (R2).
+- R14: room writes lock every exam of the session FOR UPDATE; ASSESS-INSTITUTION-003 should narrow this to SCHEDULED and READY exams.
+- R12: READY-state transfers with reason and revision belong to ASSESS-ROOM-001, which must reuse the 0032 current row and these entries.
+- PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 16/33 (48.48%).
