@@ -832,3 +832,12 @@ No re-runs, and no push while the previous commit's CI runs.
   - The new diagnostic named the element: the success notice description (`div.col-start-2 leading-relaxed`, "Peserta ditempatkan di Ruang D: 1 peserta."), a grid item whose `1fr` track kept its min-content width.
 - **Correction** (row InstitutionRoomManagementView.tsx): the notice description takes `min-w-0 break-words`. Its track can shrink, and a word breaks only when it alone is wider than the notice. The shared Alert is unchanged.
   - Local: web typecheck clean; institutionRooms 14/14.
+
+### 11.0.3 Exact-content CI of the third candidate
+
+- **CI #233** (ee1c8a7) was cancelled by the push of 31a9758, which only restored three class names that the shell had dropped from the 11.0.2 note.
+- **CI #234** (run 42585302830, 31a9758, attempt 1): FAILURE in firefox-1280 only. Web, Runtime (unit and real PostgreSQL integration), Container and the four other browser jobs passed, and no capture reported overflow, so the 11.0.2 correction holds.
+  - In Firefox, the 99i capture test stopped at `reloadPage` (99i:378) after "Kembali ke Ujian Sekolah": the reloaded document stayed `pending` for the full 20 s navigation timeout.
+  - "Kembali" already refreshes the period screen, so that browser reload raced an in-flight refresh. It was not product behaviour under test.
+- **Correction** (row 99i only): after "Kembali", the test uses the screen's own "Muat Ulang" and waits until it is enabled again, instead of a browser reload; the unused `reloadPage` import is removed. No assertion changed.
+  - Local: e2e typecheck clean.

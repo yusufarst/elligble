@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, open, reloadPage, state, wib, withDatabase } from './helpers.ts';
+import { login, open, state, wib, withDatabase } from './helpers.ts';
 import { setSchoolOperator } from '../../runtime/tenant-access/src/school-operator.ts';
 
 // ASSESS-INSTITUTION-002 five-browser journey and rendered evidence (record §7 C06/C07). The file sorts after
@@ -375,7 +375,11 @@ test('ASSESS-INSTITUTION-002 captures: the room screen, each dialog, a refusal, 
     // After R's deadline: mark ready, then a change that leaves "Ruang D" without a Proctor sends it back.
     await expect.poll(() => deadlinePassed(examR), { timeout: 150_000, intervals: [2_000] }).toBe(true);
     await backToPeriods(page);
-    await reloadPage(page);
+    // "Kembali" already refreshes; "Muat Ulang" reads the period again after the deadline, without a browser reload
+    // racing that refresh (a Firefox reload stayed pending here, CI #234).
+    const reload = page.getByRole('button', { name: 'Muat Ulang', exact: true });
+    await reload.click();
+    await expect(reload).toBeEnabled();
     await openPeriod(page, LABEL_R);
     await examCard(page, examR).getByRole('button', { name: 'Tandai Siap', exact: true }).click();
     await page.getByRole('dialog', { name: 'Tandai Siap?' }).getByRole('button', { name: 'Tandai Siap', exact: true }).click();
