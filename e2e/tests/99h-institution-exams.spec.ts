@@ -191,6 +191,31 @@ async function placeExam(page: Page, label: string, deadline: string): Promise<s
     return examOf(label);
 }
 
+/**
+ * ASSESS-INSTITUTION-002 RP-1: a placed exam needs a room and its Proctor before "Tandai Siap". The Operator
+ * opens "Ruang dan Pengawas" of the period's session, adds "Ruang E2E" with every participant and sets
+ * pengawas.e2e as its Proctor, then returns to the period.
+ */
+async function roomAndProctor(page: Page, label: string): Promise<void> {
+    await openPeriod(page, label);
+    await periodCard(page, label).getByRole('button', { name: 'Ruang dan Pengawas', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Ruang dan Pengawas' })).toBeVisible();
+    await page.getByRole('button', { name: 'Tambah Ruang', exact: true }).click();
+    const room = page.getByRole('dialog', { name: 'Tambah Ruang' });
+    await room.getByLabel('Nama ruang').fill('Ruang E2E');
+    await room.getByRole('button', { name: /^Pilih semua / }).click();
+    await room.getByRole('button', { name: 'Simpan Ruang', exact: true }).click();
+    await expect(notice(page, /^Peserta ditempatkan di Ruang E2E: \d+ peserta\./)).toBeVisible();
+    await page.getByTestId('institution-room-Ruang E2E').getByRole('button', { name: 'Atur Pengawas', exact: true }).click();
+    const proctors = page.getByRole('dialog', { name: 'Atur Pengawas Ruang E2E' });
+    await proctors.getByLabel('ELLIGBLE ID pengawas').fill(OPERATOR[0]);
+    await proctors.getByRole('button', { name: 'Tambahkan', exact: true }).click();
+    await proctors.getByRole('button', { name: 'Simpan Pengawas', exact: true }).click();
+    await expect(notice(page, 'Pengawas Ruang E2E tersimpan.')).toBeVisible();
+    await page.getByRole('button', { name: 'Kembali ke Ujian Sekolah' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Ujian Sekolah' })).toBeVisible();
+}
+
 async function teacherContext(browser: Browser, page: Page): Promise<Page> {
     const context = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC', reducedMotion: 'reduce' });
     const teacher = await context.newPage();
@@ -256,7 +281,8 @@ test('ASSESS-INSTITUTION-001 captures: the empty Operator screen', async ({ page
 test('ASSESS-INSTITUTION-001 deadline journey: compose, prepare, replace, extend, close at the deadline, mark ready, cancel', async ({ page, browser }) => {
     // The config allows 90 s with no retries; C's deadline is at most 120 s after its placement and
     // the wait below polls for at most 150 s, leaving 90 s for the steps (record §7 C06).
-    test.setTimeout(240_000);
+    // 300 s: the room and Proctor of C before "Tandai Siap" (ASSESS-INSTITUTION-002 RP-1) add steps.
+    test.setTimeout(300_000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const teacher = await teacherContext(browser, page);
     await login(page, ...OPERATOR);
@@ -314,6 +340,7 @@ test('ASSESS-INSTITUTION-001 deadline journey: compose, prepare, replace, extend
     await reloadPage(page);
     await openPeriod(page, LABEL_C);
     await expect(examCard(page, examC)).toContainText('Penyiapan ditutup');
+    await roomAndProctor(page, LABEL_C);
     await examCard(page, examC).getByRole('button', { name: 'Tandai Siap' }).click();
     const ready = page.getByRole('dialog', { name: 'Tandai Siap?' });
     await expect(ready.getByText(/akan ditandai siap\. Soal tidak dapat diubah lagi/)).toBeVisible();
@@ -414,6 +441,7 @@ test('ASSESS-INSTITUTION-001 captures: the Operator screen, its dialogs and stat
     await expect(examCard(page, examE)).toContainText('Soal ujian belum ditambahkan');
     await capture(page, 'operator-readiness-blocker', main);
     await openPeriod(page, 'Ujian Tampilan D');
+    await roomAndProctor(page, 'Ujian Tampilan D');
     await examCard(page, examD).getByRole('button', { name: 'Tandai Siap' }).click();
     await capture(page, 'dialog-mark-ready', dialog);
     await dialog().getByRole('button', { name: 'Batal', exact: true }).click();

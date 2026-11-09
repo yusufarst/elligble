@@ -76,6 +76,10 @@ const COMPONENT_BY_PATH: Record<string, Component> = {
     '/api/v1/assessment/institution-exams/deadline': 'exam_setup',
     '/api/v1/assessment/institution-exams/cancel': 'exam_setup',
     '/api/v1/assessment/institution-exams/transition': 'exam_setup',
+    '/api/v1/assessment/institution-exams/rooms': 'exam_setup',
+    '/api/v1/assessment/institution-exams/rooms/participants': 'exam_setup',
+    '/api/v1/assessment/institution-exams/rooms/proctors': 'exam_setup',
+    '/api/v1/assessment/institution-exams/participants': 'exam_setup',
     '/api/v1/assessment/teacher-exams/participants/candidates': 'exam_setup',
     '/api/v1/assessment/teacher-exams/participants/add': 'exam_setup',
 };

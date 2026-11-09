@@ -133,7 +133,11 @@ export async function checkExamInstanceParticipantProctorScheduleConflictReadine
       };
     }
 
-    // 3. Query proctor conflicts (only active assignments with revoked_at IS NULL on both)
+    // 3. Query proctor conflicts (only active assignments with revoked_at IS NULL on both). RP-2
+    // (ASSESS-INSTITUTION-002 §4.5): a Proctor of one physical room of an institution session, whose
+    // assignments in two exams of that session are mapped to rooms with the same label, is the
+    // explicitly supported case of D04.2-40 and no conflict. Teacher-managed exams (no session) and
+    // exams of different sessions are compared as before.
     const proctorConflictRes = await client.query(
       `
       SELECT
@@ -154,6 +158,30 @@ export async function checkExamInstanceParticipantProctorScheduleConflictReadine
         AND other_instance.lifecycle_state IN ('SCHEDULED', 'READY', 'ACTIVE', 'PAUSED')
         AND other_instance.window_starts_at < $3
         AND other_instance.window_ends_at > $4
+        AND NOT (
+          other_instance.institution_session_id IS NOT NULL
+          AND other_instance.institution_session_id = (
+            SELECT target_instance.institution_session_id
+            FROM secure_assessment_exam_instances target_instance
+            WHERE target_instance.id = $1 AND target_instance.tenant_id = $2
+          )
+          AND EXISTS (
+            SELECT 1
+            FROM secure_assessment_exam_proctor_room_assignments other_map
+            JOIN secure_assessment_exam_rooms other_room
+              ON other_room.id = other_map.exam_room_id
+              AND other_room.tenant_id = other_map.tenant_id
+            JOIN secure_assessment_exam_proctor_room_assignments target_map
+              ON target_map.proctor_assignment_id = target_proc.id
+              AND target_map.tenant_id = target_proc.tenant_id
+            JOIN secure_assessment_exam_rooms target_room
+              ON target_room.id = target_map.exam_room_id
+              AND target_room.tenant_id = target_map.tenant_id
+            WHERE other_map.proctor_assignment_id = other_proc.id
+              AND other_map.tenant_id = other_proc.tenant_id
+              AND lower(other_room.display_label) = lower(target_room.display_label)
+          )
+        )
       GROUP BY other_instance.id
       ORDER BY other_instance.id ASC
       LIMIT 1

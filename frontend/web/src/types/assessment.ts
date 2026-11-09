@@ -865,6 +865,8 @@ export interface InstitutionExamItem {
   preparation: { deadline: string | null; revision: number; closed: boolean; questionCount: number; preparedAt: string | null; sourceFileName: string | null };
   /** Evaluated only for a scheduled exam past its deadline, where "Tandai Siap" applies. */
   readiness: InstitutionReadiness | null;
+  /** The exam was ever marked ready: its deadline is not extended (ASSESS-INSTITUTION-002 RP-3). */
+  markedReadyBefore?: boolean;
 }
 
 export interface InstitutionSession {
@@ -909,6 +911,68 @@ export interface InstitutionPlacementResult { examInstanceId: string; participan
 export interface InstitutionDeadlineResult { examInstanceId: string; revision: number; preparationDeadline: string; reason: string; replayed: boolean }
 export interface InstitutionCancelResult { examInstanceId: string; cancelledAt: string; changed: boolean; replayed: boolean }
 export interface InstitutionTransitionResult { examInstanceId: string; lifecycleState: string }
+
+// Rooms and Proctors of institution exams (ASSESS-INSTITUTION-002): ELLIGBLE IDs and rombel only (OB-3).
+
+/** The room part of readiness of one exam: its status, blocker and counts. */
+export interface InstitutionRoomReadiness {
+  status: string;
+  blocker?: string;
+  participantCount?: number;
+  assignedParticipantCount?: number;
+  unassignedParticipantCount?: number;
+  examRoomCount?: number;
+  coveredExamRoomCount?: number;
+  uncoveredExamRoomCount?: number;
+}
+
+/** One physical room of a session: the same label across the session's exams. */
+export interface InstitutionRoom {
+  label: string;
+  participantCount: number;
+  groups: Array<{ examInstanceId: string; subjectLabel: string | null; groupLabel: string | null; count: number }>;
+  proctors: Array<{ elligbleId: string }>;
+}
+
+export interface InstitutionRoomExam {
+  examInstanceId: string;
+  subjectLabel: string | null;
+  groupLabel: string | null;
+  lifecycleState: string;
+  /** SCHEDULED or READY: rooms and Proctors may change. */
+  editable: boolean;
+  roomBased: boolean;
+  roomReadiness: InstitutionRoomReadiness | null;
+  participants: Array<{ participantId: string; elligbleId: string | null; roomLabel: string | null }>;
+  /** Students of the rombel on the session date who are not participants yet (editable exams only). */
+  candidates: Array<{ enrollmentId: string; elligbleId: string; conflict: boolean }>;
+}
+
+export interface InstitutionRoomView {
+  session: { sessionId: string; periodLabel: string; startsAt: string; endsAt: string };
+  /** The session revision every write carries back (stale writes are refused). */
+  revision: number;
+  rooms: InstitutionRoom[];
+  exams: InstitutionRoomExam[];
+}
+
+export type InstitutionRoomProblemCode =
+  | 'room_label_invalid' | 'participant_unknown' | 'already_in_room' | 'room_conflict' | 'room_unknown'
+  | 'proctor_unknown' | 'proctor_ineligible' | 'proctor_other_room' | 'proctor_schedule_conflict'
+  | 'not_enrolled' | 'already_participant' | 'schedule_conflict';
+
+export interface InstitutionRoomProblem { code: InstitutionRoomProblemCode; count?: number; elligbleIds?: string[] }
+
+export interface InstitutionRoomParticipantsInput { sessionId: string; roomLabel: string; participantIds: string[]; expectedRevision: number; actionKey: string }
+export interface InstitutionRoomParticipantsResult { sessionId: string; revision: number; moved: number; demoted: string[]; replayed: boolean }
+export interface InstitutionRoomProctorsInput { sessionId: string; roomLabel: string; proctorElligbleIds: string[]; expectedRevision: number; actionKey: string }
+export interface InstitutionRoomProctorsResult {
+  sessionId: string; revision: number; changed: boolean; proctors: Array<{ elligbleId: string }>; demoted: string[]; replayed: boolean;
+}
+export interface InstitutionParticipantsInput { examInstanceId: string; enrollmentIds: string[]; roomLabel: string; expectedRevision: number; actionKey: string }
+export interface InstitutionParticipantsResult {
+  examInstanceId: string; revision: number; added: Array<{ enrollmentId: string; elligbleId: string | null }>; demoted: string[]; replayed: boolean;
+}
 
 export interface TeacherExamContentInput { examInstanceId: string; questionsCsv: string; sourceFileName: string | null }
 export interface TeacherExamContentPreview extends TeacherExamImportPreview {
