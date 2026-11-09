@@ -22,6 +22,7 @@ import { IconInfo } from '@/components/icons';
 import { ExamFacts, ExamList, ExamListCard } from './ExamListCard.tsx';
 import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
 import { InstitutionRoomManagementView } from './InstitutionRoomManagementView.tsx';
+import { SchoolExamMonitoringView } from './SchoolExamMonitoringView.tsx';
 import { useActionKey, useRetryFocus } from '../hooks/useDialogAction.ts';
 import { CANCELLED_EXAM_STATUS, examLifecycleStatus, preparationStatus, readinessBlockerMessage, readinessPasses } from '../lib/status.ts';
 import { formatDateTime, formatWindow, zoneLabel } from '../lib/format.ts';
@@ -34,7 +35,8 @@ import { LATEST_START_OPTIONS } from '../lib/question-import.ts';
 // exam that has not opened (archived, never deleted). Only operational data is shown: never a question,
 // an answer key or a score. The form dialogs are the on-screen confirmation of creating a period, a
 // session and a placement (OP-7 A): nothing is sent before their own action. "Ruang dan Pengawas" of a
-// session opens the room screen in place (ASSESS-INSTITUTION-002 E15).
+// session opens the room screen in place (ASSESS-INSTITUTION-002 E15). "Pelaksanaan Sesi" of a session with an
+// exam that is ready, running or ended opens the drill-down and running controls in place (ASSESS-INSTITUTION-003).
 
 export const INSTITUTION_TITLE = 'Ujian Sekolah';
 
@@ -69,6 +71,10 @@ const CONNECTION_COPY = 'Perubahan belum tersimpan karena koneksi terputus. Coba
 const FORBIDDEN_COPY = 'Anda tidak berwenang mengatur ujian sekolah ini.';
 
 const count = (value: number) => new Intl.NumberFormat('id-ID').format(value);
+
+/** "Pelaksanaan Sesi" applies once a non-cancelled exam of the session is ready, running or ended (§4.6). */
+const SUPERVISED_STATES = new Set(['READY', 'ACTIVE', 'PAUSED', 'ENDED']);
+const hasSupervisedExam = (session: InstitutionSession) => session.exams.some(e => e.cancelledAt === null && SUPERVISED_STATES.has(e.lifecycleState));
 
 /** The words of one refusal of a composition check. */
 export function institutionProblemText(problem: InstitutionProblem): string {
@@ -554,6 +560,9 @@ export const InstitutionExamView: React.FC = () => {
   // "Ruang dan Pengawas" of one session replaces the period view; "Kembali" returns focus to its trigger.
   const [roomSession, setRoomSession] = useState<InstitutionSession | null>(null);
   const roomTrigger = useRef<string | null>(null);
+  // "Pelaksanaan Sesi" of one session replaces the period view the same way.
+  const [supervisionSession, setSupervisionSession] = useState<InstitutionSession | null>(null);
+  const supervisionTrigger = useRef<string | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const reloadButton = useRef<HTMLButtonElement | null>(null);
   const noticeRef = useRef<HTMLDivElement | null>(null);
@@ -575,6 +584,14 @@ export const InstitutionExamView: React.FC = () => {
     roomTrigger.current = null;
     button.focus();
   }, [roomSession, detail]);
+
+  useEffect(() => {
+    if (supervisionSession || !supervisionTrigger.current) return;
+    const button = document.getElementById(`supervision-trigger-${supervisionTrigger.current}`);
+    if (!button) return;
+    supervisionTrigger.current = null;
+    button.focus();
+  }, [supervisionSession, detail]);
 
   const restoreFocus = () => {
     // Controlled dialogs have no Radix trigger: return to the opener; when a completed action
@@ -676,6 +693,21 @@ export const InstitutionExamView: React.FC = () => {
     );
   }
 
+  if (supervisionSession) {
+    return (
+      <SchoolExamMonitoringView
+        session={supervisionSession}
+        onBack={() => {
+          supervisionTrigger.current = supervisionSession.sessionId;
+          setNotice(null);
+          setSupervisionSession(null);
+          // Controls change exam states: the period view is read again.
+          void refresh();
+        }}
+      />
+    );
+  }
+
   if (!overview) {
     return (
       <Page id="institution-exams" className="min-w-0 [overflow-wrap:anywhere]">
@@ -738,6 +770,9 @@ export const InstitutionExamView: React.FC = () => {
                               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                                 <Button variant="secondary" onClick={event => open({ kind: 'placement', session }, event.currentTarget)}>Tempatkan Ujian</Button>
                                 <Button id={`room-trigger-${session.sessionId}`} variant="secondary" onClick={() => setRoomSession(session)}>Ruang dan Pengawas</Button>
+                                {hasSupervisedExam(session) && (
+                                  <Button id={`supervision-trigger-${session.sessionId}`} variant="secondary" onClick={() => setSupervisionSession(session)}>Pelaksanaan Sesi</Button>
+                                )}
                               </div>
                             </div>
                             {session.exams.length === 0 ? (

@@ -56,6 +56,14 @@ import type {
   TeacherExamContentInput,
   TeacherExamContentPreview,
   TeacherExamContentResult,
+  InstitutionSupervision,
+  SupervisionTransitionInput,
+  SupervisionExamTransitionResult,
+  SupervisionSessionTransitionResult,
+  SupervisionLockInput,
+  SupervisionLockResult,
+  SupervisionBroadcastInput,
+  SupervisionBroadcastResult,
 } from '../types/assessment.ts';
 import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
@@ -370,6 +378,45 @@ export async function postInstitutionRoomProctors(input: InstitutionRoomProctors
 export async function postInstitutionParticipants(input: InstitutionParticipantsInput): Promise<InstitutionParticipantsResult> {
   const res = await apiFetch('/api/v1/assessment/institution-exams/participants', { method: 'POST', json: input });
   return handleResponse<InstitutionParticipantsResult>(res);
+}
+
+// Supervision and running controls of institution exams (ASSESS-INSTITUTION-003). Every control carries a reason,
+// the confirmation and an action key chosen once per dialog: a retry with the same key returns the earlier result.
+
+/** The exams, rooms and status counts of one session (ELLIGBLE IDs only). */
+export async function getInstitutionSupervision(sessionId: string): Promise<InstitutionSupervision> {
+  const res = await apiFetch(`/api/v1/assessment/institution-exams/supervision?sessionId=${encodeURIComponent(sessionId)}`, { method: 'GET' });
+  return handleResponse<InstitutionSupervision>(res);
+}
+
+/** The participant list of one institution exam, as the shared supervision screen reads it. */
+export async function getInstitutionSupervisionExam(examInstanceId: string): Promise<ExamMonitoringResponse> {
+  const res = await apiFetch(`/api/v1/assessment/institution-exams/supervision/exam?examInstanceId=${encodeURIComponent(examInstanceId)}`, { method: 'GET' });
+  return handleResponse<ExamMonitoringResponse>(res);
+}
+
+/** Opens, pauses, resumes or ends one exam, or every exam of a session that qualifies. */
+export async function postInstitutionSupervisionTransition(
+  input: SupervisionTransitionInput
+): Promise<SupervisionExamTransitionResult | SupervisionSessionTransitionResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/supervision/transition', { method: 'POST', json: input });
+  return handleResponse<SupervisionExamTransitionResult | SupervisionSessionTransitionResult>(res);
+}
+
+export async function postInstitutionSupervisionLock(input: SupervisionLockInput): Promise<SupervisionLockResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/supervision/participant-lock', { method: 'POST', json: input });
+  return handleResponse<SupervisionLockResult>(res);
+}
+
+/** Adds working time for one participant of an institution exam; the same action key adds nothing twice. */
+export async function postInstitutionSupervisionTime(input: TimeAdditionInput): Promise<TimeAdditionResponse> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/supervision/add-time', { method: 'POST', json: { ...input, confirmed: true } });
+  return handleResponse<TimeAdditionResponse>(res);
+}
+
+export async function postInstitutionSupervisionBroadcast(input: SupervisionBroadcastInput): Promise<SupervisionBroadcastResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/supervision/broadcast', { method: 'POST', json: input });
+  return handleResponse<SupervisionBroadcastResult>(res);
 }
 
 /** Checks the question file of an institution exam without keeping anything; a 422 carries the problems (ApiError.data). */

@@ -15,7 +15,8 @@ import { readBroadcastHistory, readScopeRooms, type BroadcastRecord } from './ex
 // scope and the broadcast messages that reached the scope come with it (D04.6-49..54).
 // Time added to a participant shows for everyone in scope; who added it and why only for
 // the managing teacher, the one who adds time (participant-time.ts): the reason can concern
-// the student.
+// the student. The School Operator reads the same projection for an institution exam, over every
+// participant, and sees every addition with its reason only where it made it (ASSESS-INSTITUTION-003 E5).
 
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';
 
@@ -40,22 +41,25 @@ export interface MonitoredParticipant {
     lockedAt: string | null;
     /** Working time added to the participant's attempt, in seconds (D04.6-41). */
     addedSeconds: number;
-    /** Each addition, oldest first; only for the managing teacher. */
+    /** Each addition, oldest first; only for the managing teacher and the School Operator. */
     timeAdditions?: TimeAddition[];
 }
 
 export interface TimeAddition {
     addedAt: string;
     seconds: number;
-    reason: string;
+    /** Present for the managing teacher, and for the School Operator only on its own additions. */
+    reason?: string;
     by: { elligbleId: string | null; you: boolean };
 }
+
+export type MonitoringScope = 'PROCTOR' | 'TEACHER' | 'OPERATOR';
 
 export interface ExamMonitoring {
     /** pausedAt: start of the open pause while the exam is PAUSED (every participant's time is frozen). */
     exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt: string | null };
-    scope: 'PROCTOR' | 'TEACHER';
-    /** The viewer manages the exam and may add time (participant-time.ts). */
+    scope: MonitoringScope;
+    /** The viewer manages the exam, or is the School Operator, and may add time (participant-time.ts). */
     canAddTime: boolean;
     serverTime: string;
     questionCount: number;
@@ -98,156 +102,188 @@ export async function readExamMonitoring(
             await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
-        const { scope, roomFilter } = supervision;
-        const exam = await client.query(
-            `SELECT s.display_label AS subject_label, statement_timestamp() AS db_now,
-                    (SELECT ps.paused_at FROM secure_assessment_exam_pauses ps
-                     WHERE ps.tenant_id = i.tenant_id AND ps.exam_instance_id = i.id AND ps.resumed_at IS NULL) AS paused_at
-             FROM secure_assessment_exam_instances i
-             LEFT JOIN academic_core_teaching_assignments ta ON ta.id = i.teaching_assignment_id AND ta.tenant_id = i.tenant_id
-             LEFT JOIN academic_core_subject_offerings so ON so.id = ta.subject_offering_id AND so.tenant_id = i.tenant_id
-             LEFT JOIN academic_core_subjects s ON s.id = so.subject_id AND s.tenant_id = i.tenant_id
-             WHERE i.id = $1 AND i.tenant_id = $2`,
-            [examInstanceId, actor.tenantId]
-        );
-        const row = exam.rows[0];
-
-        const questions = await client.query(
-            'SELECT count(*)::int AS n FROM secure_assessment_exam_question_snapshots WHERE tenant_id = $1 AND exam_instance_id = $2',
-            [actor.tenantId, examInstanceId]
-        );
-        const participants = await client.query(
-            `SELECT p.id AS participant_id, p.person_id, er.display_label AS room_label, a.id AS attempt_id,
-                    (SELECT l.locked_at FROM secure_assessment_attempt_locks l
-                     WHERE l.tenant_id = p.tenant_id AND l.exam_attempt_id = a.id AND l.unlocked_at IS NULL) AS locked_at,
-                    t.started_at,
-                    GREATEST(0, secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp())) AS remaining_seconds,
-                    sub.submitted_at, sub.finalization_source,
-                    COALESCE(ans.answered, 0) AS answered, ans.last_accepted_at,
-                    COALESCE((SELECT SUM(adj.adjustment_seconds) FROM secure_assessment_timer_adjustments adj
-                              WHERE adj.tenant_id = t.tenant_id AND adj.timer_state_id = t.id), 0)::int AS added_seconds,
-                    EXISTS (SELECT 1 FROM secure_assessment_exam_sessions ss
-                            WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.activated_at IS NOT NULL AND ss.ended_at IS NULL) AS session_active,
-                    (SELECT count(*)::int FROM secure_assessment_exam_sessions ss
-                     WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.superseded_by_session_id IS NOT NULL) AS session_moves
-             FROM secure_assessment_exam_participants p
-             LEFT JOIN secure_assessment_exam_participant_room_assignments pra
-               ON pra.tenant_id = p.tenant_id AND pra.exam_instance_id = p.exam_instance_id AND pra.exam_participant_id = p.id
-             LEFT JOIN secure_assessment_exam_rooms er ON er.id = pra.exam_room_id AND er.tenant_id = p.tenant_id
-             LEFT JOIN LATERAL (
-                 SELECT att.id FROM secure_assessment_exam_attempts att
-                 WHERE att.tenant_id = p.tenant_id AND att.exam_participant_id = p.id
-                 ORDER BY att.created_at ASC, att.id ASC LIMIT 1
-             ) a ON TRUE
-             LEFT JOIN secure_assessment_timer_state t ON t.tenant_id = p.tenant_id AND t.exam_attempt_id = a.id
-             LEFT JOIN secure_assessment_exam_submissions sub ON sub.tenant_id = p.tenant_id AND sub.exam_attempt_id = a.id
-             LEFT JOIN LATERAL (
-                 -- A cleared multiple-response answer (selectedOptionIds []) is not answered (O02-2). A
-                 -- matching answer is answered only when every left item is paired (ASSESS-QUESTION-004
-                 -- D1): stored pairs are validated, so the counts are compared. CASE guards each
-                 -- jsonb_array_length, as PostgreSQL does not promise an evaluation order.
-                 -- A cleared ordering answer (orderedItemIds []) is not answered either (ASSESS-QUESTION-005).
-                 SELECT (count(*) FILTER (WHERE NOT (x.answer_payload ? 'selectedOptionIds' AND x.answer_payload->'selectedOptionIds' = '[]'::jsonb)
-                            AND NOT (x.answer_payload ? 'orderedItemIds' AND x.answer_payload->'orderedItemIds' = '[]'::jsonb)
-                            AND NOT (x.answer_payload ? 'numericText' AND x.answer_payload->>'numericText' = '')
-                            AND NOT (x.answer_payload ? 'essayText' AND x.answer_payload->>'essayText' = '')
-                            AND NOT (x.answer_payload ? 'shortText' AND x.answer_payload->>'shortText' = '')
-                            AND NOT (x.answer_payload ? 'pairs' AND
-                                CASE WHEN jsonb_typeof(x.answer_payload->'pairs') = 'array' AND jsonb_typeof(qs.frozen_content->'leftItems') = 'array'
-                                     THEN jsonb_array_length(x.answer_payload->'pairs') < jsonb_array_length(qs.frozen_content->'leftItems')
-                                     ELSE TRUE END)))::int AS answered,
-                        max(x.updated_at) AS last_accepted_at FROM secure_assessment_exam_answers x
-                 LEFT JOIN secure_assessment_exam_question_snapshots qs ON qs.id = x.exam_question_snapshot_id AND qs.tenant_id = x.tenant_id
-                 WHERE x.tenant_id = p.tenant_id AND x.exam_attempt_id = a.id
-             ) ans ON TRUE
-             WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
-               AND ($3::uuid IS NULL OR pra.exam_room_id IN (
-                   SELECT epra.exam_room_id FROM secure_assessment_exam_proctor_room_assignments epra
-                   WHERE epra.tenant_id = p.tenant_id AND epra.exam_instance_id = p.exam_instance_id AND epra.proctor_assignment_id = $3
-               ))`,
-            [actor.tenantId, examInstanceId, roomFilter]
-        );
-        // Who added time and why, for the managing teacher only.
-        const additions = new Map<string, Array<{ addedAt: string; seconds: number; reason: string; actor: string | null }>>();
-        if (supervision.managingTeacher) {
-            const res = await client.query(
-                `SELECT a.exam_participant_id, adj.created_at, adj.adjustment_seconds, adj.reason, adj.actor_person_id
-                 FROM secure_assessment_timer_adjustments adj
-                 JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id AND t.tenant_id = adj.tenant_id
-                 JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id AND a.tenant_id = t.tenant_id
-                 JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id AND p.tenant_id = a.tenant_id
-                 WHERE adj.tenant_id = $1 AND p.exam_instance_id = $2
-                 ORDER BY adj.created_at ASC, adj.id ASC`,
-                [actor.tenantId, examInstanceId]
-            );
-            for (const r of res.rows) {
-                const list = additions.get(r.exam_participant_id) ?? [];
-                list.push({ addedAt: new Date(r.created_at).toISOString(), seconds: Number(r.adjustment_seconds), reason: r.reason, actor: r.actor_person_id ?? null });
-                additions.set(r.exam_participant_id, list);
-            }
-        }
-        const actorIds = [...new Set([...additions.values()].flat().map(a => a.actor).filter((id): id is string => id !== null))];
-        const elligbleIds = await listElligbleIds(client, [...participants.rows.map(r => r.person_id as string), ...actorIds]);
-        const rooms = supervision.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
-        const broadcasts = await readBroadcastHistory(client, actor, examInstanceId, roomFilter);
+        const monitoring = await readMonitoringProjection(client, actor, examInstanceId, {
+            scope: supervision.scope, roomFilter: supervision.roomFilter, roomBased: supervision.roomBased,
+            lifecycleState: supervision.lifecycleState, canAddTime: supervision.managingTeacher,
+            timeAdditions: supervision.managingTeacher ? 'with_reasons' : 'none',
+        });
         await client.query('COMMIT');
-
-        const list: MonitoredParticipant[] = participants.rows.map(r => {
-            const status: MonitoringStatus = r.submitted_at ? 'SUBMITTED'
-                : !r.started_at ? 'NOT_STARTED'
-                : Number(r.remaining_seconds) <= 0 ? 'TIME_UP'
-                : 'ACTIVE';
-            return {
-                participantId: r.participant_id,
-                elligbleId: elligbleIds.get(r.person_id) ?? null,
-                roomLabel: r.room_label ?? null,
-                status,
-                finalizationSource: status === 'SUBMITTED' ? (r.finalization_source ?? null) : null,
-                submittedAt: status === 'SUBMITTED' ? isoOrNull(r.submitted_at) : null,
-                remainingSeconds: status === 'ACTIVE' ? Number(r.remaining_seconds) : status === 'TIME_UP' ? 0 : null,
-                answeredCount: Number(r.answered),
-                lastAcceptedAt: isoOrNull(r.last_accepted_at),
-                sessionActive: status !== 'SUBMITTED' && Boolean(r.session_active),
-                sessionMoves: Number(r.session_moves ?? 0),
-                lockedAt: status === 'SUBMITTED' ? null : isoOrNull(r.locked_at),
-                addedSeconds: Number(r.added_seconds ?? 0),
-                ...(supervision.managingTeacher ? {
-                    timeAdditions: (additions.get(r.participant_id) ?? []).map(a => ({
-                        addedAt: a.addedAt, seconds: a.seconds, reason: a.reason,
-                        by: { elligbleId: a.actor ? elligbleIds.get(a.actor) ?? null : null, you: a.actor === actor.personId },
-                    })),
-                } : {}),
-            };
-        });
-        list.sort((a, b) => {
-            if (a.elligbleId === null || b.elligbleId === null) return a.elligbleId === b.elligbleId ? 0 : a.elligbleId === null ? 1 : -1;
-            return a.elligbleId < b.elligbleId ? -1 : a.elligbleId > b.elligbleId ? 1 : 0;
-        });
-        const count = (status: MonitoringStatus) => list.filter(p => p.status === status).length;
-        return {
-            type: 'ok',
-            monitoring: {
-                exam: {
-                    examInstanceId,
-                    subjectLabel: row.subject_label ?? null,
-                    lifecycleState: supervision.lifecycleState,
-                    roomBased: supervision.roomBased,
-                    pausedAt: supervision.lifecycleState === 'PAUSED' ? isoOrNull(row.paused_at) : null,
-                },
-                scope,
-                canAddTime: supervision.managingTeacher,
-                serverTime: new Date(row.db_now).toISOString(),
-                questionCount: questions.rows[0].n,
-                summary: { participants: list.length, notStarted: count('NOT_STARTED'), active: count('ACTIVE') + count('TIME_UP'), submitted: count('SUBMITTED') },
-                participants: list,
-                rooms,
-                broadcasts,
-            },
-        };
+        return { type: 'ok', monitoring };
     } catch {
         await client.query('ROLLBACK').catch(() => {});
         return { type: 'unavailable' };
     } finally {
         client.release();
     }
+}
+
+/** Who reads the projection and what they may see (ASSESS-INSTITUTION-003 E5). */
+export interface MonitoringViewer {
+    scope: MonitoringScope;
+    /** The proctor assignment whose rooms bound the list, or null for the whole exam. */
+    roomFilter: string | null;
+    roomBased: boolean;
+    lifecycleState: string;
+    canAddTime: boolean;
+    /**
+     * Each addition per participant: 'with_reasons' (the managing teacher), 'own_reasons' (the School Operator: every
+     * addition, with its reason only where the viewer made it) or 'none' (a proctor).
+     */
+    timeAdditions: 'with_reasons' | 'own_reasons' | 'none';
+}
+
+/**
+ * The participant projection (ASSESS-INSTITUTION-003 E3/E5), read inside the caller's REPEATABLE READ READ ONLY
+ * snapshot after the caller decided the viewer's scope for this request (A04-3). ELLIGBLE IDs only, no score.
+ */
+export async function readMonitoringProjection(
+    client: pg.PoolClient,
+    actor: { tenantId: string; personId: string },
+    examInstanceId: string,
+    viewer: MonitoringViewer
+): Promise<ExamMonitoring> {
+    const { scope, roomFilter } = viewer;
+    const exam = await client.query(
+        `SELECT s.display_label AS subject_label, statement_timestamp() AS db_now,
+                (SELECT ps.paused_at FROM secure_assessment_exam_pauses ps
+                 WHERE ps.tenant_id = i.tenant_id AND ps.exam_instance_id = i.id AND ps.resumed_at IS NULL) AS paused_at
+         FROM secure_assessment_exam_instances i
+         LEFT JOIN academic_core_teaching_assignments ta ON ta.id = i.teaching_assignment_id AND ta.tenant_id = i.tenant_id
+         LEFT JOIN academic_core_subject_offerings so ON so.id = ta.subject_offering_id AND so.tenant_id = i.tenant_id
+         LEFT JOIN academic_core_subjects s ON s.id = so.subject_id AND s.tenant_id = i.tenant_id
+         WHERE i.id = $1 AND i.tenant_id = $2`,
+        [examInstanceId, actor.tenantId]
+    );
+    const row = exam.rows[0];
+
+    const questions = await client.query(
+        'SELECT count(*)::int AS n FROM secure_assessment_exam_question_snapshots WHERE tenant_id = $1 AND exam_instance_id = $2',
+        [actor.tenantId, examInstanceId]
+    );
+    const participants = await client.query(
+        `SELECT p.id AS participant_id, p.person_id, er.display_label AS room_label, a.id AS attempt_id,
+                (SELECT l.locked_at FROM secure_assessment_attempt_locks l
+                 WHERE l.tenant_id = p.tenant_id AND l.exam_attempt_id = a.id AND l.unlocked_at IS NULL) AS locked_at,
+                t.started_at,
+                GREATEST(0, secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp())) AS remaining_seconds,
+                sub.submitted_at, sub.finalization_source,
+                COALESCE(ans.answered, 0) AS answered, ans.last_accepted_at,
+                COALESCE((SELECT SUM(adj.adjustment_seconds) FROM secure_assessment_timer_adjustments adj
+                          WHERE adj.tenant_id = t.tenant_id AND adj.timer_state_id = t.id), 0)::int AS added_seconds,
+                EXISTS (SELECT 1 FROM secure_assessment_exam_sessions ss
+                        WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.activated_at IS NOT NULL AND ss.ended_at IS NULL) AS session_active,
+                (SELECT count(*)::int FROM secure_assessment_exam_sessions ss
+                 WHERE ss.tenant_id = p.tenant_id AND ss.exam_attempt_id = a.id AND ss.superseded_by_session_id IS NOT NULL) AS session_moves
+         FROM secure_assessment_exam_participants p
+         LEFT JOIN secure_assessment_exam_participant_room_assignments pra
+           ON pra.tenant_id = p.tenant_id AND pra.exam_instance_id = p.exam_instance_id AND pra.exam_participant_id = p.id
+         LEFT JOIN secure_assessment_exam_rooms er ON er.id = pra.exam_room_id AND er.tenant_id = p.tenant_id
+         LEFT JOIN LATERAL (
+             SELECT att.id FROM secure_assessment_exam_attempts att
+             WHERE att.tenant_id = p.tenant_id AND att.exam_participant_id = p.id
+             ORDER BY att.created_at ASC, att.id ASC LIMIT 1
+         ) a ON TRUE
+         LEFT JOIN secure_assessment_timer_state t ON t.tenant_id = p.tenant_id AND t.exam_attempt_id = a.id
+         LEFT JOIN secure_assessment_exam_submissions sub ON sub.tenant_id = p.tenant_id AND sub.exam_attempt_id = a.id
+         LEFT JOIN LATERAL (
+             -- A cleared multiple-response answer (selectedOptionIds []) is not answered (O02-2). A
+             -- matching answer is answered only when every left item is paired (ASSESS-QUESTION-004
+             -- D1): stored pairs are validated, so the counts are compared. CASE guards each
+             -- jsonb_array_length, as PostgreSQL does not promise an evaluation order.
+             -- A cleared ordering answer (orderedItemIds []) is not answered either (ASSESS-QUESTION-005).
+             SELECT (count(*) FILTER (WHERE NOT (x.answer_payload ? 'selectedOptionIds' AND x.answer_payload->'selectedOptionIds' = '[]'::jsonb)
+                        AND NOT (x.answer_payload ? 'orderedItemIds' AND x.answer_payload->'orderedItemIds' = '[]'::jsonb)
+                        AND NOT (x.answer_payload ? 'numericText' AND x.answer_payload->>'numericText' = '')
+                        AND NOT (x.answer_payload ? 'essayText' AND x.answer_payload->>'essayText' = '')
+                        AND NOT (x.answer_payload ? 'shortText' AND x.answer_payload->>'shortText' = '')
+                        AND NOT (x.answer_payload ? 'pairs' AND
+                            CASE WHEN jsonb_typeof(x.answer_payload->'pairs') = 'array' AND jsonb_typeof(qs.frozen_content->'leftItems') = 'array'
+                                 THEN jsonb_array_length(x.answer_payload->'pairs') < jsonb_array_length(qs.frozen_content->'leftItems')
+                                 ELSE TRUE END)))::int AS answered,
+                    max(x.updated_at) AS last_accepted_at FROM secure_assessment_exam_answers x
+             LEFT JOIN secure_assessment_exam_question_snapshots qs ON qs.id = x.exam_question_snapshot_id AND qs.tenant_id = x.tenant_id
+             WHERE x.tenant_id = p.tenant_id AND x.exam_attempt_id = a.id
+         ) ans ON TRUE
+         WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
+           AND ($3::uuid IS NULL OR pra.exam_room_id IN (
+               SELECT epra.exam_room_id FROM secure_assessment_exam_proctor_room_assignments epra
+               WHERE epra.tenant_id = p.tenant_id AND epra.exam_instance_id = p.exam_instance_id AND epra.proctor_assignment_id = $3
+           ))`,
+        [actor.tenantId, examInstanceId, roomFilter]
+    );
+    // Who added time: every addition for the managing teacher and the School Operator; why, as timeAdditions says.
+    const additions = new Map<string, Array<{ addedAt: string; seconds: number; reason: string; actor: string | null }>>();
+    if (viewer.timeAdditions !== 'none') {
+        const res = await client.query(
+            `SELECT a.exam_participant_id, adj.created_at, adj.adjustment_seconds, adj.reason, adj.actor_person_id
+             FROM secure_assessment_timer_adjustments adj
+             JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id AND t.tenant_id = adj.tenant_id
+             JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id AND a.tenant_id = t.tenant_id
+             JOIN secure_assessment_exam_participants p ON p.id = a.exam_participant_id AND p.tenant_id = a.tenant_id
+             WHERE adj.tenant_id = $1 AND p.exam_instance_id = $2
+             ORDER BY adj.created_at ASC, adj.id ASC`,
+            [actor.tenantId, examInstanceId]
+        );
+        for (const r of res.rows) {
+            const list = additions.get(r.exam_participant_id) ?? [];
+            list.push({ addedAt: new Date(r.created_at).toISOString(), seconds: Number(r.adjustment_seconds), reason: r.reason, actor: r.actor_person_id ?? null });
+            additions.set(r.exam_participant_id, list);
+        }
+    }
+    const actorIds = [...new Set([...additions.values()].flat().map(a => a.actor).filter((id): id is string => id !== null))];
+    const elligbleIds = await listElligbleIds(client, [...participants.rows.map(r => r.person_id as string), ...actorIds]);
+    const rooms = viewer.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
+    const broadcasts = await readBroadcastHistory(client, actor, examInstanceId, roomFilter);
+
+    const list: MonitoredParticipant[] = participants.rows.map(r => {
+        const status: MonitoringStatus = r.submitted_at ? 'SUBMITTED'
+            : !r.started_at ? 'NOT_STARTED'
+            : Number(r.remaining_seconds) <= 0 ? 'TIME_UP'
+            : 'ACTIVE';
+        return {
+            participantId: r.participant_id,
+            elligbleId: elligbleIds.get(r.person_id) ?? null,
+            roomLabel: r.room_label ?? null,
+            status,
+            finalizationSource: status === 'SUBMITTED' ? (r.finalization_source ?? null) : null,
+            submittedAt: status === 'SUBMITTED' ? isoOrNull(r.submitted_at) : null,
+            remainingSeconds: status === 'ACTIVE' ? Number(r.remaining_seconds) : status === 'TIME_UP' ? 0 : null,
+            answeredCount: Number(r.answered),
+            lastAcceptedAt: isoOrNull(r.last_accepted_at),
+            sessionActive: status !== 'SUBMITTED' && Boolean(r.session_active),
+            sessionMoves: Number(r.session_moves ?? 0),
+            lockedAt: status === 'SUBMITTED' ? null : isoOrNull(r.locked_at),
+            addedSeconds: Number(r.added_seconds ?? 0),
+            ...(viewer.timeAdditions !== 'none' ? {
+                timeAdditions: (additions.get(r.participant_id) ?? []).map(a => ({
+                    addedAt: a.addedAt, seconds: a.seconds,
+                    // The reason can concern the student: the Operator sees only its own (P5 A06).
+                    ...(viewer.timeAdditions === 'with_reasons' || a.actor === actor.personId ? { reason: a.reason } : {}),
+                    by: { elligbleId: a.actor ? elligbleIds.get(a.actor) ?? null : null, you: a.actor === actor.personId },
+                })),
+            } : {}),
+        };
+    });
+    list.sort((a, b) => {
+        if (a.elligbleId === null || b.elligbleId === null) return a.elligbleId === b.elligbleId ? 0 : a.elligbleId === null ? 1 : -1;
+        return a.elligbleId < b.elligbleId ? -1 : a.elligbleId > b.elligbleId ? 1 : 0;
+    });
+    const count = (status: MonitoringStatus) => list.filter(p => p.status === status).length;
+    return {
+        exam: {
+            examInstanceId,
+            subjectLabel: row.subject_label ?? null,
+            lifecycleState: viewer.lifecycleState,
+            roomBased: viewer.roomBased,
+            pausedAt: viewer.lifecycleState === 'PAUSED' ? isoOrNull(row.paused_at) : null,
+        },
+        scope,
+        canAddTime: viewer.canAddTime,
+        serverTime: new Date(row.db_now).toISOString(),
+        questionCount: questions.rows[0].n,
+        summary: { participants: list.length, notStarted: count('NOT_STARTED'), active: count('ACTIVE') + count('TIME_UP'), submitted: count('SUBMITTED') },
+        participants: list,
+        rooms,
+        broadcasts,
+    };
 }

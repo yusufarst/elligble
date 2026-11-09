@@ -150,7 +150,7 @@ describe('adding time on the monitoring screen', () => {
       ['no_active_attempt', 'siswa.b sudah tidak memiliki pengerjaan yang berjalan.'],
       ['invalid_state', 'Status ujian telah berubah. Waktu hanya dapat ditambah saat ujian berlangsung atau dijeda.'],
       ['action_key_reused', 'Permintaan tadi mungkin sudah tercatat. Periksa tambahan waktu peserta ini sebelum mencoba lagi.'],
-      ['forbidden', 'Hanya guru yang mengelola ujian ini yang dapat menambah waktu.'],
+      ['forbidden', 'Anda tidak berwenang menambah waktu untuk ujian ini.'],
     ];
     render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali" onBack={() => {}} />);
     for (const [code, text] of refusals) {

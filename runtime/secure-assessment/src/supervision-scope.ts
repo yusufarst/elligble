@@ -6,6 +6,9 @@ import type * as pg from 'pg';
 // over all its participants. The same scope governs the participant list, the participant
 // lock and broadcast messages. Whether the actor is the managing teacher is reported too:
 // adding time belongs to that authority alone (participant-time.ts).
+// The teaching assignment counts only for a teacher-managed exam (institution_session_id IS
+// NULL): the subject Teacher of an institution exam has no whole-exam supervision (D04.4-26D
+// LOCKED, ASSESS-INSTITUTION-003 E2) and supervises it only through a Proctor assignment.
 
 export interface SupervisionScope {
     lifecycleState: string;
@@ -41,6 +44,7 @@ export async function resolveSupervisionScope(
                     JOIN tenant_memberships tm
                       ON tm.id = tta.membership_id AND tm.tenant_id = tta.tenant_id AND tm.person_id = $3
                     WHERE ata.id = i.teaching_assignment_id AND ata.tenant_id = i.tenant_id AND ata.revoked_at IS NULL
+                      AND i.institution_session_id IS NULL
                 ) AS is_teacher
          FROM secure_assessment_exam_instances i
          WHERE i.id = $1 AND i.tenant_id = $2${options.lockExam ? '\n         FOR KEY SHARE OF i' : ''}`,

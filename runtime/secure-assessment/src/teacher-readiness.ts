@@ -260,7 +260,10 @@ export async function handleTeacherReadinessGet(
             if (row.cancelled_at) {
                 // Nothing to evaluate for a cancelled exam: it keeps its record only.
             } else if (DELIVERY_STATES.has(row.lifecycle_state)) {
-                const progressResult = await client.query(`
+                // A running institution exam is supervised by the School Operator and its room Proctors: its subject
+                // Teacher gets no live progress until it ends (D04.4-26D LOCKED, ASSESS-INSTITUTION-003 E2, F3).
+                const running = row.institution_session_id && (row.lifecycle_state === 'ACTIVE' || row.lifecycle_state === 'PAUSED');
+                const progressResult = running ? null : await client.query(`
                     SELECT
                         COUNT(DISTINCT p.id)::int AS participants,
                         COUNT(DISTINCT a.id) FILTER (WHERE t.started_at IS NOT NULL)::int AS started,
@@ -278,13 +281,15 @@ export async function handleTeacherReadinessGet(
                     ) rem ON TRUE
                     WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
                 `, [context.tenantId, examInstanceId]);
-                const counts = progressResult.rows[0] ?? {};
-                progress = {
-                    participants: Number(counts.participants ?? 0),
-                    started: Number(counts.started ?? 0),
-                    submitted: Number(counts.submitted ?? 0),
-                    running: Number(counts.running ?? 0),
-                };
+                if (progressResult) {
+                    const counts = progressResult.rows[0] ?? {};
+                    progress = {
+                        participants: Number(counts.participants ?? 0),
+                        started: Number(counts.started ?? 0),
+                        submitted: Number(counts.submitted ?? 0),
+                        running: Number(counts.running ?? 0),
+                    };
+                }
                 if (row.lifecycle_state === 'PAUSED') {
                     const open = await client.query(
                         `SELECT paused_at FROM secure_assessment_exam_pauses

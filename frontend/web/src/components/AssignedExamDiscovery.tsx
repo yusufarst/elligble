@@ -213,8 +213,8 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
                     }
                     const text =
                       state.kind === 'not_open' ? `Ujian dibuka ${state.opensAt ? formatDateTime(state.opensAt) : 'sesuai waktu pelaksanaan'}.` :
-                      state.kind === 'waiting_activation' ? (state.opensAt ? `Ujian dibuka ${formatDateTime(state.opensAt)} setelah guru atau pengawas membukanya.` : 'Menunggu guru atau pengawas membuka ujian.') :
-                      state.kind === 'paused' ? 'Ujian sedang dijeda oleh guru atau pengawas.' :
+                      state.kind === 'waiting_activation' ? (state.opensAt ? `Ujian dibuka ${formatDateTime(state.opensAt)} setelah petugas ujian membukanya.` : 'Menunggu petugas ujian membuka ujian.') :
+                      state.kind === 'paused' ? 'Ujian sedang dijeda oleh petugas ujian.' :
                       state.kind === 'closed' ? 'Waktu pelaksanaan ujian telah berakhir.' :
                       'Belum ada sesi pengerjaan yang tersedia.';
                     return <p className="m-0 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">{text}</p>;

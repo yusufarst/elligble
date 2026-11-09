@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / operational supervision; HIGH risk; R21, R23, R28; P8 V07, V11, V12 |
-| Status | **IN_PROGRESS under DEC-048: formal READY PASS (§10). All Owner decisions are decided: OC-1 to OC-6 on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
+| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10). All Owner decisions are decided: OC-1 to OC-6 on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
 | Objective | For the institution exams of the School Operator's own school, the Operator:<br>• follows each session as exam → room → participant status, refreshed by itself and marked stale when a refresh fails;<br>• opens, pauses, resumes and ends exams, one by one or for a whole session;<br>• locks and unlocks a participant, sends messages and adds time.<br>Every control carries a reason, an on-screen confirmation and an append-only, attributable record. Subject Teachers and Proctors gain nothing. Teacher-managed exams are unchanged. No score, grade edit or cheating verdict is shown or possible |
 | Owner decisions | **Approved inputs:**<br>• O05-1 to O05-4 and A04-1 to A04-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md));<br>• OP-1 to OP-9 and OB-1, decided 2026-11-09 ([ASSESS-INSTITUTION-001 §3.1](ASSESS-INSTITUTION-001.md));<br>• OB-2, RP-1 to RP-5 and OB-3, decided 2026-11-09 ([ASSESS-INSTITUTION-002 §3.1](ASSESS-INSTITUTION-002.md));<br>• OC-1 to OC-6, decided 2026-11-09 (§3.1).<br>**Open:** none.<br>Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• Internal dependency ASSESS-INSTITUTION-002 is complete at c11ab1f with Delegated Acceptance (its §12.4); its landing (PR #36) is in progress. Its PR-head CI and post-merge main CI are recorded in this Task's first change.<br>• O05 is approved (O05-1 to O05-6). O09 rests on the approved P5 content, whose approval excludes "O05 institution … composition" (CBT_PERMISSION_MATRIX.md:96, :142), and whose A06 row leaves "O05 institution control composition" unresolved (:105). The Owner closed that gap for this Task with OC-1 to OC-6 (§3.1), as OB-2 and OB-3 did for ASSESS-INSTITUTION-002 |
@@ -733,3 +733,30 @@ No re-runs, and no push while the previous commit's CI runs.
   - Manifest, built as in ASSESS-QUESTION-004 §10 over the `workspace-question-*` and `workspace-institution-*` captures: SHA-256 f9aa59d5435d795e648ee0e334d2614e81fae070f880d82f9143fb2c1d16445e.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 16, IN_PROGRESS 1, VERIFYING 0, BLOCKED 16.
+
+## 11. Implementation checkpoint — 2026-11-09
+
+- **Registration CI:** CI #238 (run 42634196523, 89515a0) attempt 1 eight SUCCESS.
+- **Candidate:** every changed path is in §6 rows 5–35 (31 paths, the frozen allowlist exactly). Status IN_PROGRESS → VERIFYING. 99j records the §10 baseline (run 237, commit, frontend tree, manifest).
+- **Local checks** (8 GB executor; typechecks and targeted units only):
+  - secure-assessment, web and e2e typecheck clean;
+  - runtime units: school-exam-monitoring 10/10, route-parity, metrics, teacher-readiness, institution-rooms and institution-exams, all passing;
+  - web units: schoolExamMonitoring 19/19, plus participantTime, startAttempt, examMonitoring, examMessages, examPause, TeacherReadinessView, institutionExams, institutionRooms, assignedExamDiscovery, teacherOperations and designSystemGuard, all passing.
+  - The real-PostgreSQL integration file (I-1 to I-19, the §4.9 N-ids, migration 0064) and the 99j journey and captures run in CI only.
+- **Implementer departures, for the implementation review:**
+  1. The 0064 entry guard lets a state outside the allowed set reach its named CHECK (`…entry_previous` / `…_resulting`), so I-18 sees those constraint names.
+  2. E16 fixture: only the exam windows move to now; the session rows stay append-only, so the session times shown remain the placed later day. 99j's fixture SQL also ends any earlier-spec exam overlapping now that shares the students or Proctors (otherwise opening is refused for a schedule conflict), and inserts a second SCHEDULED exam so the session dialog has an unaffected exam.
+  3. The 44 px targets, the narrowFirst summary and wrapping rows in ExamMonitoringView, AddTimeDialog and BroadcastComposer apply with the Operator source only, so the earlier supervisor captures stay pixel-identical. Retry focus after a failed message send is also Operator-only.
+  4. The broadcast target object must carry exactly its scope's keys.
+  5. I-14 asserts "never waits" as finishing within 5 s, not with a 1 s `lock_timeout`.
+  6. The session dialog's "Akan terkena / Tidak terkena" lists are predicted on the client; the server decides, and the success notice lists the actual skips.
+
+### 11.0 Implementation review of the working tree (before the first push)
+
+- **Implementation review by the same reviewer: PASS**, with no material finding, on the uncommitted tree over 89515a0 that this commit publishes unchanged apart from §11. Departures 1 to 6 accepted. The reviewer re-ran the runtime units (16) and seven web unit files (84) and the three typechecks, all green; the integration suite and 99j rest on the exact-SHA CI.
+- **Notes recorded:**
+  - **R15, role-dependent supervision styling** (departure 3): the 44 px targets, narrowFirst summary and wrapping rows are a documented Operator-source prop of the shared supervision screen, forced by the C07 pixel identity of earlier captures. The Teacher and Proctor rendering keeps its existing targets under 44 px; this existing gap is proposed as a UI-SYSTEM follow-up outside this Task.
+  - **R16, a contrived same-key deadlock:** a subject Teacher's SEC-001 TIME_ADD on a teacher-managed exam takes the attempt row before `sa-add-time:K`, while the Operator's added time takes `sa-add-time:K` first. With the same random key on the same participant, PostgreSQL detects the deadlock and the loser gets 409 `state_changed` with nothing written. No change.
+  - **99j fixture dependency** (departure 2): the fixture ends overlapping SCHEDULED or READY exams by SQL. This is test-only and safe because 99j sorts last in a single-project run.
+  - **I-14** asserts "never waits" as finishing within 5 s; the same test proves the pause shortcut does wait on the held lock.
+  - **N03 actor A** is a signed-in member with no school role, standing in for "Platform Admin": platform CLI authority has no product session.

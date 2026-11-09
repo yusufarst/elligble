@@ -811,7 +811,7 @@ export const StudentExamWorkstation: React.FC<StudentExamWorkstationProps> = ({ 
           </Alert>
         )}
         <ExamMessageList messages={inbox.messages} limit={1} title="Pesan pengawas terbaru" />
-        <p>Tetap di halaman ini. Soal tampil kembali setelah guru melanjutkan ujian.</p>
+        <p>Tetap di halaman ini. Soal tampil kembali setelah ujian dilanjutkan.</p>
       </StatusPage>
     );
   }

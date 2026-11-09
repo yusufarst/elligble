@@ -680,14 +680,15 @@ export interface MonitoredParticipant {
   lockedAt: string | null;
   /** Working time added to the participant's attempt, in seconds (D04.6-41). */
   addedSeconds?: number;
-  /** Each addition, oldest first; only for the managing teacher. */
+  /** Each addition, oldest first; only for the managing teacher and the School Operator. */
   timeAdditions?: TimeAddition[];
 }
 
 export interface TimeAddition {
   addedAt: string;
   seconds: number;
-  reason: string;
+  /** Always present for the managing teacher; for the School Operator only on its own additions (P5 A06). */
+  reason?: string;
   by: { elligbleId: string | null; you: boolean };
 }
 
@@ -762,8 +763,9 @@ export interface BroadcastInboxResponse {
 /** Exam-day participant list for the assigned proctor or the managing teacher (D04.6). */
 export interface ExamMonitoringResponse {
   exam: { examInstanceId: string; subjectLabel: string | null; lifecycleState: string; roomBased: boolean; pausedAt?: string | null };
-  scope: 'PROCTOR' | 'TEACHER';
-  /** The viewer manages the exam and may add time (ASSESS-PROCTOR-004). */
+  /** OPERATOR: the School Operator of an institution exam, over every participant (ASSESS-INSTITUTION-003). */
+  scope: 'PROCTOR' | 'TEACHER' | 'OPERATOR';
+  /** The viewer manages the exam, or is the School Operator, and may add time (ASSESS-PROCTOR-004). */
   canAddTime?: boolean;
   serverTime: string;
   questionCount: number;
@@ -973,6 +975,58 @@ export interface InstitutionParticipantsInput { examInstanceId: string; enrollme
 export interface InstitutionParticipantsResult {
   examInstanceId: string; revision: number; added: Array<{ enrollmentId: string; elligbleId: string | null }>; demoted: string[]; replayed: boolean;
 }
+
+// Supervision and running controls of institution exams (ASSESS-INSTITUTION-003): ELLIGBLE IDs only, no names or
+// scores (OB-3, OC-5); every control carries a reason, a confirmation and an action key (OC-4).
+
+export type SupervisionAction = 'activate' | 'pause' | 'resume' | 'end';
+export type SupervisionSkipCode = 'invalid_state' | 'room_setup_required' | 'window_not_started' | 'window_closed' | 'not_ready';
+
+/** Participants by status: not started, working (time up included), submitted, and locked while open. */
+export interface SupervisionCounts { participants: number; notStarted: number; active: number; submitted: number; locked: number }
+
+export interface SupervisedRoom { label: string; counts: SupervisionCounts; proctors: Array<{ elligbleId: string }> }
+
+/** One non-cancelled exam of the session as the Operator follows it. */
+export interface SupervisedExam {
+  examInstanceId: string;
+  subjectLabel: string | null;
+  groupLabel: string | null;
+  lifecycleState: string;
+  pausedAt: string | null;
+  counts: SupervisionCounts;
+  rooms: SupervisedRoom[];
+  /** Evaluated only for a READY exam, where "Buka Ujian" applies. */
+  readiness: InstitutionReadiness | null;
+  /** Rooms are required with a Proctor per room (needed before opening). */
+  roomPolicy: boolean;
+}
+
+export interface InstitutionSupervision {
+  session: { sessionId: string; periodLabel: string; startsAt: string; endsAt: string };
+  serverTime: string;
+  exams: SupervisedExam[];
+}
+
+export type SupervisionTransitionInput = ({ examInstanceId: string } | { sessionId: string }) & PermissionIntent & { action: SupervisionAction };
+
+export interface SupervisionExamTransitionResult { examInstanceId: string; lifecycleState: string; changed: boolean; replayed: boolean }
+
+export interface SupervisionSessionExamResult {
+  examInstanceId: string;
+  outcome: 'APPLIED' | 'NO_OP' | 'SKIPPED';
+  previousState: string;
+  resultingState: string;
+  skip?: { code: SupervisionSkipCode; currentState?: string; windowStartsAt?: string; readiness?: InstitutionReadiness };
+}
+
+export interface SupervisionSessionTransitionResult { sessionId: string; action: SupervisionAction; results: SupervisionSessionExamResult[]; replayed: boolean }
+
+export interface SupervisionLockInput extends PermissionIntent { examInstanceId: string; participantId: string; action: ParticipantLockAction }
+export interface SupervisionLockResult extends ParticipantLockResponse { replayed: boolean }
+
+export interface SupervisionBroadcastInput extends PermissionIntent { examInstanceId: string; target: BroadcastTarget; message: string }
+export interface SupervisionBroadcastResult extends BroadcastSendResponse { replayed: boolean }
 
 export interface TeacherExamContentInput { examInstanceId: string; questionsCsv: string; sourceFileName: string | null }
 export interface TeacherExamContentPreview extends TeacherExamImportPreview {

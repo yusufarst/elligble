@@ -1,18 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ApiError, postParticipantTime } from '../api/assessment-client.ts';
-import type { MonitoredParticipant, TimeAdditionResponse } from '../types/assessment.ts';
+import type { MonitoredParticipant, TimeAdditionInput, TimeAdditionResponse } from '../types/assessment.ts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatTime } from '../lib/format.ts';
 import { newActionKey } from '../lib/action-key.ts';
+import { permissionDialogClass } from './ActionReasonField.tsx';
 
 // Add time for one participant (ASSESS-PROCTOR-004; D04.6-41, D04.2-78/79, D04.6-64): the
 // teacher who manages the exam enters the minutes and a reason and confirms; the addition
 // applies to this participant only, is recorded with the teacher, the reason and the time,
 // and cannot be undone. The dialog keeps one action key while it is open, so trying again
-// after a lost connection never adds the time twice.
+// after a lost connection never adds the time twice. The School Operator of an institution exam adds
+// time through the same dialog with its own source (ASSESS-INSTITUTION-003 E15); it sees another
+// actor's addition without its reason.
 
 export const ADD_TIME_MAX_MINUTES = 120;
 export const TIME_REASON_MAX_LENGTH = 200;
@@ -48,7 +51,7 @@ function finalRefusal(err: unknown, id: string): string | null {
     case 'no_active_attempt': return `${id} sudah tidak memiliki pengerjaan yang berjalan.`;
     case 'not_started': return `${id} belum mulai mengerjakan. Waktu dapat ditambah setelah peserta mulai.`;
     case 'invalid_state': return 'Status ujian telah berubah. Waktu hanya dapat ditambah saat ujian berlangsung atau dijeda.';
-    case 'forbidden': return 'Hanya guru yang mengelola ujian ini yang dapat menambah waktu.';
+    case 'forbidden': return 'Anda tidak berwenang menambah waktu untuk ujian ini.';
     case 'action_key_reused': return 'Permintaan tadi mungkin sudah tercatat. Periksa tambahan waktu peserta ini sebelum mencoba lagi.';
   }
   return null;
@@ -61,7 +64,11 @@ export const AddTimeDialog: React.FC<{
   onClose(): void;
   /** The attempt ended with an outcome to show on the list; the list is read again. */
   onDone(notice: { failed: boolean; text: string }): void;
-}> = ({ participant, examInstanceId, examState, onClose, onDone }) => {
+  /** Where the addition is sent; the supervisor route by default. */
+  source?: { addTime(input: TimeAdditionInput): Promise<TimeAdditionResponse> };
+  /** 44 px targets (the School Operator's level, ASSESS-INSTITUTION-003 C07). */
+  comfortable?: boolean;
+}> = ({ participant, examInstanceId, examState, onClose, onDone, source, comfortable = false }) => {
   const [minutes, setMinutes] = useState('');
   const [reason, setReason] = useState('');
   const [sending, setSending] = useState(false);
@@ -93,7 +100,7 @@ export const AddTimeDialog: React.FC<{
     setSending(true);
     setError(null);
     try {
-      const result = await postParticipantTime({
+      const result = await (source ? source.addTime : postParticipantTime)({
         examInstanceId, participantId: participant.participantId, minutes: amount, reason: text, actionKey: actionKey.current ?? newActionKey(),
       });
       onDone({ failed: false, text: successNotice(id, result, paused) });
@@ -114,7 +121,7 @@ export const AddTimeDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !sending) onClose(); }}>
-      <DialogContent aria-describedby="add-time-description" className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent aria-describedby="add-time-description" className={comfortable ? `max-h-[90dvh] overflow-y-auto ${permissionDialogClass}` : 'max-h-[90dvh] overflow-y-auto'}>
         <DialogHeader>
           <DialogTitle>Tambah Waktu Peserta</DialogTitle>
           <DialogDescription id="add-time-description">
@@ -137,7 +144,7 @@ export const AddTimeDialog: React.FC<{
             <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
               {earlier.map((a, i) => (
                 <li key={`${a.addedAt}-${i}`} className="[overflow-wrap:anywhere]">
-                  <span className="tabular-nums">{formatTime(a.addedAt)}</span> · {minutesOf(a.seconds)} menit · {a.by.you ? 'Anda' : (a.by.elligbleId ?? 'Guru lain')}: {a.reason}
+                  <span className="tabular-nums">{formatTime(a.addedAt)}</span> · {minutesOf(a.seconds)} menit · {a.by.you ? 'Anda' : (a.by.elligbleId ?? 'Guru lain')}{a.reason !== undefined ? `: ${a.reason}` : null}
                 </li>
               ))}
             </ul>

@@ -28,8 +28,9 @@ import {
 // ELLIGBLE IDs and rombel only (OB-3): no name, NIS, NISN, birth date, question, key, rubric, score or answer.
 //
 // Lock order (E6), after the action-key lock and re-authentication of operatorWrite: the session, then each
-// affected room label, then each added Proctor and student person, all sorted; then every exam row of the
-// session FOR UPDATE by id (the lock of every lifecycle change); then the Proctor memberships FOR SHARE.
+// affected room label, then each added Proctor and student person, all sorted; then the exam rows of the
+// session that are SCHEDULED or READY FOR UPDATE by id (the lock of every lifecycle change; ASSESS-INSTITUTION-003
+// E13 narrowed it so a running exam is never locked); then the Proctor memberships FOR SHARE.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERATED_ELLIGBLE_ID = /^elg-[abcdefghjkmnpqrstuvwxyz23456789]{4}-[abcdefghjkmnpqrstuvwxyz23456789]{4}-[abcdefghjkmnpqrstuvwxyz23456789]{4}$/;
@@ -289,7 +290,7 @@ function iso(value: unknown): string {
 
 const roomInvalid = (problems: RoomProblem[]): never => refuse(422, 'room_invalid', { problems });
 
-interface LockedSession {
+export interface LockedSession {
     sessionId: string;
     startsAt: Date;
     endsAt: Date;
@@ -313,8 +314,11 @@ function sessionOf(row: Record<string, unknown>): LockedSession {
     };
 }
 
-/** E6 step 1: the session lock, then the session must be this tenant's (403 otherwise). */
-async function lockSession(client: pg.PoolClient, actor: InstitutionActor, sessionId: string): Promise<LockedSession> {
+/**
+ * E6 step 1: the session lock, then the session must be this tenant's (403 otherwise). Shared with the session-wide
+ * transitions of ASSESS-INSTITUTION-003, so room writes and session shortcuts serialize on one key.
+ */
+export async function lockSession(client: pg.PoolClient, actor: InstitutionActor, sessionId: string): Promise<LockedSession> {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('sa-institution-rooms:' || $1::text || ':' || $2::text))", [actor.tenantId, sessionId]);
     const res = await client.query(SESSION_SELECT, [sessionId, actor.tenantId]);
     if (res.rows.length !== 1) refuse(403, 'forbidden');
@@ -358,11 +362,22 @@ interface SessionExam {
     roomPolicy: boolean;
 }
 
-/** E6 step 4: every exam row of the session FOR UPDATE by id, then their state read after the lock. */
+/**
+ * E6 step 4, narrowed by ASSESS-INSTITUTION-003 E13 (R14): the session's exams are read without a lock, then only those
+ * that were SCHEDULED or READY are taken FOR UPDATE by id, then every state is read again. An exam that has left those
+ * states never returns to them, so it is refused without a lock when the write affects it (requireEditable), and the
+ * answer saves of a running exam never wait for a room write.
+ */
 async function lockSessionExams(client: pg.PoolClient, tenantId: string, sessionId: string): Promise<SessionExam[]> {
-    await client.query(
-        `SELECT i.id FROM secure_assessment_exam_instances i
-         WHERE i.tenant_id = $1 AND i.institution_session_id = $2 ORDER BY i.id FOR UPDATE OF i`, [tenantId, sessionId]);
+    const unlocked = await client.query(
+        `SELECT i.id, i.lifecycle_state FROM secure_assessment_exam_instances i
+         WHERE i.tenant_id = $1 AND i.institution_session_id = $2 ORDER BY i.id`, [tenantId, sessionId]);
+    const editable = unlocked.rows.filter(r => EDITABLE_STATES.has(r.lifecycle_state)).map(r => r.id as string);
+    if (editable.length > 0) {
+        await client.query(
+            `SELECT i.id FROM secure_assessment_exam_instances i
+             WHERE i.tenant_id = $1 AND i.id = ANY($2::uuid[]) ORDER BY i.id FOR UPDATE OF i`, [tenantId, editable]);
+    }
     const res = await client.query(
         `SELECT i.id, i.lifecycle_state,
                 (coalesce(i.room_based_operations_enabled, FALSE) AND coalesce(i.proctor_per_room_required, FALSE)) AS room_policy,

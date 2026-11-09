@@ -46,7 +46,7 @@ test('a teacher cancels an exam before it opens; students no longer see it and i
     const studentContext = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC' });
     const student = await studentContext.newPage();
     await login(student, 'siswa.e2e.02', PASSWORD);
-    const tomorrowCards = student.locator('.discovery-card').filter({ hasText: /Ujian dibuka .+ setelah guru atau pengawas membukanya\./ });
+    const tomorrowCards = student.locator('.discovery-card').filter({ hasText: /Ujian dibuka .+ setelah petugas ujian membukanya\./ });
     await expect(tomorrowCards).toHaveCount(1);
 
     // The teacher cancels it with a reason; nothing can be opened afterwards.

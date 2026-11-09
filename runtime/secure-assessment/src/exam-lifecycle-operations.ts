@@ -23,6 +23,8 @@ import { freezeExamResults } from './result-finalization.ts';
 // It publishes nothing to students (D04.8-21).
 // Institution-managed governance (D04.4-26D/E) is not implemented here: the subject Teacher of
 // an institution exam is refused every action except finalize (ASSESS-INSTITUTION-001 §4.5).
+// The School Operator opens, pauses, resumes and ends institution exams through the same core,
+// runExamTransition, under its own authority and locks (school-exam-monitoring.ts, ASSESS-INSTITUTION-003 E3).
 
 export type TeacherExamAction = 'mark_ready' | 'activate' | 'pause' | 'resume' | 'end' | 'finalize';
 
@@ -88,7 +90,6 @@ export async function performTeacherExamAction(
     if (!UUID_REGEX.test(examInstanceId) || !Object.hasOwn(TRANSITIONS, action)) {
         return { type: 'forbidden' };
     }
-    const transition = TRANSITIONS[action];
 
     let client: pg.PoolClient;
     try {
@@ -127,96 +128,9 @@ export async function performTeacherExamAction(
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'institution_managed' };
         }
-        if (transition.idempotent && row.lifecycle_state === transition.to) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: false };
-        }
-        if (row.lifecycle_state !== transition.from) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'invalid_state', currentState: row.lifecycle_state };
-        }
-
-        if (action === 'finalize') {
-            const frozen = await freezeExamResults(client, actor.tenantId, examInstanceId, actor.personId);
-            if (frozen.type !== 'frozen') {
-                if (!transaction) await client.query('ROLLBACK');
-                return frozen;
-            }
-        }
-
-        if (action === 'pause' || action === 'resume' || action === 'end' || action === 'finalize') {
-            const moved = await client.query(
-                `UPDATE secure_assessment_exam_instances SET lifecycle_state = $3
-                 WHERE id = $1 AND tenant_id = $2 AND lifecycle_state = $4`,
-                [examInstanceId, actor.tenantId, transition.to, transition.from]
-            );
-            if (moved.rowCount !== 1) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'invalid_state', currentState: row.lifecycle_state };
-            }
-            // The boundary is taken here, after the exam row lock: every answer save,
-            // submission or timer start that saw the exam running has already committed.
-            if (action === 'pause') {
-                await client.query(
-                    `INSERT INTO secure_assessment_exam_pauses (tenant_id, exam_instance_id, paused_at, paused_by_person_id)
-                     VALUES ($1, $2, statement_timestamp(), $3)`,
-                    [actor.tenantId, examInstanceId, actor.personId]
-                );
-            } else if (action === 'resume') {
-                const closed = await client.query(
-                    `UPDATE secure_assessment_exam_pauses SET resumed_at = statement_timestamp(), resumed_by_person_id = $3
-                     WHERE tenant_id = $1 AND exam_instance_id = $2 AND resumed_at IS NULL`,
-                    [actor.tenantId, examInstanceId, actor.personId]
-                );
-                if (closed.rowCount !== 1) {
-                    // A PAUSED exam without its open pause would lose the boundary; refuse.
-                    if (!transaction) await client.query('ROLLBACK');
-                    return { type: 'unavailable' };
-                }
-            }
-            await client.query(
-                `INSERT INTO secure_assessment_exam_lifecycle_events (tenant_id, exam_instance_id, from_state, to_state, actor_person_id)
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [actor.tenantId, examInstanceId, transition.from, transition.to, actor.personId]
-            );
-            if (!transaction) await client.query('COMMIT');
-            return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
-        }
-
-        if (action === 'activate') {
-            const now = new Date(row.db_now).getTime();
-            if (row.window_starts_at && now < new Date(row.window_starts_at).getTime()) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'window_not_started', windowStartsAt: new Date(row.window_starts_at).toISOString() };
-            }
-            if (row.window_ends_at && now >= new Date(row.window_ends_at).getTime()) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'window_closed' };
-            }
-        }
-
-        const readiness = await evaluateExamReadiness(client, actor.tenantId, examInstanceId);
-        if (!readiness.ready) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'not_ready', readiness: { baseline: readiness.baseline, roomProctor: readiness.roomProctor } };
-        }
-
-        const updated = await client.query(
-            `UPDATE secure_assessment_exam_instances SET lifecycle_state = $3
-             WHERE id = $1 AND tenant_id = $2 AND lifecycle_state = $4`,
-            [examInstanceId, actor.tenantId, transition.to, transition.from]
-        );
-        if (updated.rowCount !== 1) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'invalid_state', currentState: row.lifecycle_state };
-        }
-        await client.query(
-            `INSERT INTO secure_assessment_exam_lifecycle_events (tenant_id, exam_instance_id, from_state, to_state, actor_person_id)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [actor.tenantId, examInstanceId, transition.from, transition.to, actor.personId]
-        );
-        if (!transaction) await client.query('COMMIT');
-        return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
+        const result = await runExamTransition(client, actor.tenantId, examInstanceId, actor.personId, action, row);
+        if (!transaction) await client.query(result.type === 'transitioned' && result.changed ? 'COMMIT' : 'ROLLBACK');
+        return result;
     } catch (transactionError) {
         if (!transaction) await client.query('ROLLBACK').catch(() => {});
         if (transaction) throw transactionError;
@@ -224,4 +138,108 @@ export async function performTeacherExamAction(
     } finally {
         if (!transaction) client.release();
     }
+}
+
+/** The exam row as the transition core reads it, taken FOR UPDATE by the caller (the lock of every lifecycle change). */
+export interface ExamTransitionRow {
+    lifecycle_state: string;
+    window_starts_at: Date | string | null;
+    window_ends_at: Date | string | null;
+    db_now: Date | string;
+}
+
+/**
+ * The transition core after authority (ASSESS-INSTITUTION-003 E3): the transition table, the idempotent repeats,
+ * the window checks of activation (D04.2-70), the final readiness re-check (D04.2-68), the pause boundary (0044) and
+ * the lifecycle event with its actor. The caller holds the exam row FOR UPDATE and owns the transaction: it commits
+ * a changed transition and rolls back every other result. Shared by the Teacher route and the School Operator.
+ */
+export async function runExamTransition(
+    client: pg.PoolClient,
+    tenantId: string,
+    examInstanceId: string,
+    actorPersonId: string,
+    action: TeacherExamAction,
+    row: ExamTransitionRow
+): Promise<TeacherExamActionResult> {
+    const transition = TRANSITIONS[action];
+    if (transition.idempotent && row.lifecycle_state === transition.to) {
+        return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: false };
+    }
+    if (row.lifecycle_state !== transition.from) {
+        return { type: 'invalid_state', currentState: row.lifecycle_state };
+    }
+
+    if (action === 'finalize') {
+        const frozen = await freezeExamResults(client, tenantId, examInstanceId, actorPersonId);
+        if (frozen.type !== 'frozen') {
+            return frozen;
+        }
+    }
+
+    if (action === 'pause' || action === 'resume' || action === 'end' || action === 'finalize') {
+        const moved = await client.query(
+            `UPDATE secure_assessment_exam_instances SET lifecycle_state = $3
+             WHERE id = $1 AND tenant_id = $2 AND lifecycle_state = $4`,
+            [examInstanceId, tenantId, transition.to, transition.from]
+        );
+        if (moved.rowCount !== 1) {
+            return { type: 'invalid_state', currentState: row.lifecycle_state };
+        }
+        // The boundary is taken here, after the exam row lock: every answer save,
+        // submission or timer start that saw the exam running has already committed.
+        if (action === 'pause') {
+            await client.query(
+                `INSERT INTO secure_assessment_exam_pauses (tenant_id, exam_instance_id, paused_at, paused_by_person_id)
+                 VALUES ($1, $2, statement_timestamp(), $3)`,
+                [tenantId, examInstanceId, actorPersonId]
+            );
+        } else if (action === 'resume') {
+            const closed = await client.query(
+                `UPDATE secure_assessment_exam_pauses SET resumed_at = statement_timestamp(), resumed_by_person_id = $3
+                 WHERE tenant_id = $1 AND exam_instance_id = $2 AND resumed_at IS NULL`,
+                [tenantId, examInstanceId, actorPersonId]
+            );
+            if (closed.rowCount !== 1) {
+                // A PAUSED exam without its open pause would lose the boundary; refuse.
+                return { type: 'unavailable' };
+            }
+        }
+        await client.query(
+            `INSERT INTO secure_assessment_exam_lifecycle_events (tenant_id, exam_instance_id, from_state, to_state, actor_person_id)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [tenantId, examInstanceId, transition.from, transition.to, actorPersonId]
+        );
+        return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
+    }
+
+    if (action === 'activate') {
+        const now = new Date(row.db_now).getTime();
+        if (row.window_starts_at && now < new Date(row.window_starts_at).getTime()) {
+            return { type: 'window_not_started', windowStartsAt: new Date(row.window_starts_at).toISOString() };
+        }
+        if (row.window_ends_at && now >= new Date(row.window_ends_at).getTime()) {
+            return { type: 'window_closed' };
+        }
+    }
+
+    const readiness = await evaluateExamReadiness(client, tenantId, examInstanceId);
+    if (!readiness.ready) {
+        return { type: 'not_ready', readiness: { baseline: readiness.baseline, roomProctor: readiness.roomProctor } };
+    }
+
+    const updated = await client.query(
+        `UPDATE secure_assessment_exam_instances SET lifecycle_state = $3
+         WHERE id = $1 AND tenant_id = $2 AND lifecycle_state = $4`,
+        [examInstanceId, tenantId, transition.to, transition.from]
+    );
+    if (updated.rowCount !== 1) {
+        return { type: 'invalid_state', currentState: row.lifecycle_state };
+    }
+    await client.query(
+        `INSERT INTO secure_assessment_exam_lifecycle_events (tenant_id, exam_instance_id, from_state, to_state, actor_person_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [tenantId, examInstanceId, transition.from, transition.to, actorPersonId]
+    );
+    return { type: 'transitioned', examInstanceId, lifecycleState: transition.to, changed: true };
 }

@@ -110,106 +110,9 @@ export async function sendExamBroadcast(
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
-        const roomFilter = supervision.roomFilter;
-        // A proctor limited to rooms cannot address the entire exam (D04.1-77B).
-        if (target.scope === 'EXAM' && roomFilter !== null) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'forbidden' };
-        }
-        if (target.scope === 'ROOM') {
-            const room = await client.query(
-                `SELECT 1 FROM secure_assessment_exam_rooms r
-                 WHERE r.tenant_id = $1 AND r.exam_instance_id = $2 AND r.id = $3
-                   AND ($4::uuid IS NULL OR EXISTS (
-                       SELECT 1 FROM secure_assessment_exam_proctor_room_assignments epra
-                       WHERE epra.tenant_id = r.tenant_id AND epra.exam_instance_id = r.exam_instance_id
-                         AND epra.exam_room_id = r.id AND epra.proctor_assignment_id = $4
-                   ))`,
-                [actor.tenantId, examInstanceId, target.roomId, roomFilter]
-            );
-            if (room.rows.length !== 1 || !supervision.roomBased) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'forbidden' };
-            }
-        }
-        if (target.scope === 'PARTICIPANTS') {
-            const inScope = await client.query(
-                `SELECT count(*)::int AS n FROM secure_assessment_exam_participants p
-                 WHERE p.tenant_id = $1 AND p.exam_instance_id = $2 AND p.id = ANY($3::uuid[])
-                   AND ${participantInScope('p', '$4')}`,
-                [actor.tenantId, examInstanceId, target.participantIds, roomFilter]
-            );
-            // Every selected participant must be in the sender's scope: nothing is sent partially.
-            if (inScope.rows[0].n !== target.participantIds.length) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'forbidden' };
-            }
-        }
-        if (!SUPERVISED_STATES.has(supervision.lifecycleState)) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'invalid_state', currentState: supervision.lifecycleState };
-        }
-
-        // One sender's messages to one exam are decided one at a time (a double click
-        // cannot pass the limit twice); nothing else waits for this lock.
-        await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [`sa-broadcast:${examInstanceId}:${actor.personId}`]);
-        const recent = await client.query(
-            `SELECT EXTRACT(EPOCH FROM statement_timestamp() - max(b.sent_at)) AS since_last,
-                    count(*) FILTER (WHERE b.sent_at > statement_timestamp() - interval '1 hour')::int AS last_hour,
-                    EXTRACT(EPOCH FROM min(b.sent_at) FILTER (WHERE b.sent_at > statement_timestamp() - interval '1 hour')
-                        + interval '1 hour' - statement_timestamp()) AS hour_frees_in
-             FROM secure_assessment_exam_broadcasts b
-             WHERE b.tenant_id = $1 AND b.exam_instance_id = $2 AND b.sender_person_id = $3`,
-            [actor.tenantId, examInstanceId, actor.personId]
-        );
-        const limits = recent.rows[0];
-        if (limits.since_last !== null && Number(limits.since_last) < BROADCAST_MIN_INTERVAL_SECONDS) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'rate_limited', retryAfterSeconds: Math.max(1, Math.ceil(BROADCAST_MIN_INTERVAL_SECONDS - Number(limits.since_last))) };
-        }
-        if (Number(limits.last_hour) >= BROADCAST_MAX_PER_HOUR) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'rate_limited', retryAfterSeconds: Math.max(1, Math.ceil(Number(limits.hour_frees_in ?? 1))) };
-        }
-
-        const created = await client.query(
-            `INSERT INTO secure_assessment_exam_broadcasts (tenant_id, exam_instance_id, sender_person_id, target_scope, exam_room_id, message, sent_at)
-             VALUES ($1, $2, $3, $4, $5, $6, statement_timestamp())
-             RETURNING id, sent_at`,
-            [actor.tenantId, examInstanceId, actor.personId, target.scope, target.scope === 'ROOM' ? target.roomId : null, message]
-        );
-        const broadcastId: string = created.rows[0].id;
-        // Recipients: participants in the target and in the sender's scope who have not submitted.
-        const recipients = await client.query(
-            `INSERT INTO secure_assessment_exam_broadcast_recipients (broadcast_id, tenant_id, exam_instance_id, exam_participant_id)
-             SELECT $7::uuid, p.tenant_id, p.exam_instance_id, p.id
-             FROM secure_assessment_exam_participants p
-             WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
-               AND ${participantInScope('p', '$3')}
-               AND (
-                   $4::text = 'EXAM'
-                   OR ($4::text = 'ROOM' AND EXISTS (
-                       SELECT 1 FROM secure_assessment_exam_participant_room_assignments pra
-                       WHERE pra.tenant_id = p.tenant_id AND pra.exam_instance_id = p.exam_instance_id
-                         AND pra.exam_participant_id = p.id AND pra.exam_room_id = $5::uuid))
-                   OR ($4::text = 'PARTICIPANTS' AND p.id = ANY($6::uuid[]))
-               )
-               AND NOT EXISTS (
-                   SELECT 1 FROM secure_assessment_exam_attempts a
-                   JOIN secure_assessment_exam_submissions s ON s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id
-                   WHERE a.tenant_id = p.tenant_id AND a.exam_participant_id = p.id
-               )`,
-            [actor.tenantId, examInstanceId, roomFilter, target.scope,
-                target.scope === 'ROOM' ? target.roomId : null,
-                target.scope === 'PARTICIPANTS' ? target.participantIds : null,
-                broadcastId]
-        );
-        if ((recipients.rowCount ?? 0) === 0) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'no_recipients' };
-        }
-        if (!transaction) await client.query('COMMIT');
-        return { type: 'ok', broadcastId, sentAt: new Date(created.rows[0].sent_at).toISOString(), recipients: recipients.rowCount ?? 0 };
+        const result = await sendBroadcastInScope(client, actor.tenantId, examInstanceId, actor.personId, supervision, target, message);
+        if (!transaction) await client.query(result.type === 'ok' ? 'COMMIT' : 'ROLLBACK');
+        return result;
     } catch (transactionError) {
         if (!transaction) await client.query('ROLLBACK').catch(() => {});
         if (transaction) throw transactionError;
@@ -217,6 +120,117 @@ export async function sendExamBroadcast(
     } finally {
         if (!transaction) client.release();
     }
+}
+
+/** The sender's scope as the send core needs it: the room filter (null for the whole exam), rooms, state. */
+export interface BroadcastScope { roomFilter: string | null; roomBased: boolean; lifecycleState: string }
+
+/**
+ * The send core after authority (ASSESS-INSTITUTION-003 E3): the target within the sender's scope, the state rule,
+ * the rate limit per sender and exam, the 0047 row and its recipients fixed at send. The caller owns the transaction:
+ * it commits a sent message and rolls back every other result. Shared by the supervisor route and the School Operator.
+ */
+export async function sendBroadcastInScope(
+    client: pg.PoolClient,
+    tenantId: string,
+    examInstanceId: string,
+    actorPersonId: string,
+    scope: BroadcastScope,
+    target: BroadcastTarget,
+    message: string
+): Promise<SendBroadcastResult> {
+    const roomFilter = scope.roomFilter;
+    // A proctor limited to rooms cannot address the entire exam (D04.1-77B).
+    if (target.scope === 'EXAM' && roomFilter !== null) {
+        return { type: 'forbidden' };
+    }
+    if (target.scope === 'ROOM') {
+        const room = await client.query(
+            `SELECT 1 FROM secure_assessment_exam_rooms r
+             WHERE r.tenant_id = $1 AND r.exam_instance_id = $2 AND r.id = $3
+               AND ($4::uuid IS NULL OR EXISTS (
+                   SELECT 1 FROM secure_assessment_exam_proctor_room_assignments epra
+                   WHERE epra.tenant_id = r.tenant_id AND epra.exam_instance_id = r.exam_instance_id
+                     AND epra.exam_room_id = r.id AND epra.proctor_assignment_id = $4
+               ))`,
+            [tenantId, examInstanceId, target.roomId, roomFilter]
+        );
+        if (room.rows.length !== 1 || !scope.roomBased) {
+            return { type: 'forbidden' };
+        }
+    }
+    if (target.scope === 'PARTICIPANTS') {
+        const inScope = await client.query(
+            `SELECT count(*)::int AS n FROM secure_assessment_exam_participants p
+             WHERE p.tenant_id = $1 AND p.exam_instance_id = $2 AND p.id = ANY($3::uuid[])
+               AND ${participantInScope('p', '$4')}`,
+            [tenantId, examInstanceId, target.participantIds, roomFilter]
+        );
+        // Every selected participant must be in the sender's scope: nothing is sent partially.
+        if (inScope.rows[0].n !== target.participantIds.length) {
+            return { type: 'forbidden' };
+        }
+    }
+    if (!SUPERVISED_STATES.has(scope.lifecycleState)) {
+        return { type: 'invalid_state', currentState: scope.lifecycleState };
+    }
+
+    // One sender's messages to one exam are decided one at a time (a double click
+    // cannot pass the limit twice); nothing else waits for this lock.
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [`sa-broadcast:${examInstanceId}:${actorPersonId}`]);
+    const recent = await client.query(
+        `SELECT EXTRACT(EPOCH FROM statement_timestamp() - max(b.sent_at)) AS since_last,
+                count(*) FILTER (WHERE b.sent_at > statement_timestamp() - interval '1 hour')::int AS last_hour,
+                EXTRACT(EPOCH FROM min(b.sent_at) FILTER (WHERE b.sent_at > statement_timestamp() - interval '1 hour')
+                    + interval '1 hour' - statement_timestamp()) AS hour_frees_in
+         FROM secure_assessment_exam_broadcasts b
+         WHERE b.tenant_id = $1 AND b.exam_instance_id = $2 AND b.sender_person_id = $3`,
+        [tenantId, examInstanceId, actorPersonId]
+    );
+    const limits = recent.rows[0];
+    if (limits.since_last !== null && Number(limits.since_last) < BROADCAST_MIN_INTERVAL_SECONDS) {
+        return { type: 'rate_limited', retryAfterSeconds: Math.max(1, Math.ceil(BROADCAST_MIN_INTERVAL_SECONDS - Number(limits.since_last))) };
+    }
+    if (Number(limits.last_hour) >= BROADCAST_MAX_PER_HOUR) {
+        return { type: 'rate_limited', retryAfterSeconds: Math.max(1, Math.ceil(Number(limits.hour_frees_in ?? 1))) };
+    }
+
+    const created = await client.query(
+        `INSERT INTO secure_assessment_exam_broadcasts (tenant_id, exam_instance_id, sender_person_id, target_scope, exam_room_id, message, sent_at)
+         VALUES ($1, $2, $3, $4, $5, $6, statement_timestamp())
+         RETURNING id, sent_at`,
+        [tenantId, examInstanceId, actorPersonId, target.scope, target.scope === 'ROOM' ? target.roomId : null, message]
+    );
+    const broadcastId: string = created.rows[0].id;
+    // Recipients: participants in the target and in the sender's scope who have not submitted.
+    const recipients = await client.query(
+        `INSERT INTO secure_assessment_exam_broadcast_recipients (broadcast_id, tenant_id, exam_instance_id, exam_participant_id)
+         SELECT $7::uuid, p.tenant_id, p.exam_instance_id, p.id
+         FROM secure_assessment_exam_participants p
+         WHERE p.tenant_id = $1 AND p.exam_instance_id = $2
+           AND ${participantInScope('p', '$3')}
+           AND (
+               $4::text = 'EXAM'
+               OR ($4::text = 'ROOM' AND EXISTS (
+                   SELECT 1 FROM secure_assessment_exam_participant_room_assignments pra
+                   WHERE pra.tenant_id = p.tenant_id AND pra.exam_instance_id = p.exam_instance_id
+                     AND pra.exam_participant_id = p.id AND pra.exam_room_id = $5::uuid))
+               OR ($4::text = 'PARTICIPANTS' AND p.id = ANY($6::uuid[]))
+           )
+           AND NOT EXISTS (
+               SELECT 1 FROM secure_assessment_exam_attempts a
+               JOIN secure_assessment_exam_submissions s ON s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id
+               WHERE a.tenant_id = p.tenant_id AND a.exam_participant_id = p.id
+           )`,
+        [tenantId, examInstanceId, roomFilter, target.scope,
+            target.scope === 'ROOM' ? target.roomId : null,
+            target.scope === 'PARTICIPANTS' ? target.participantIds : null,
+            broadcastId]
+    );
+    if ((recipients.rowCount ?? 0) === 0) {
+        return { type: 'no_recipients' };
+    }
+    return { type: 'ok', broadcastId, sentAt: new Date(created.rows[0].sent_at).toISOString(), recipients: recipients.rowCount ?? 0 };
 }
 
 /** Rooms of a room-based exam that the viewer supervises (all rooms for a whole-exam scope). */
