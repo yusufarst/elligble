@@ -141,3 +141,24 @@ The same governance reviewer /root/governance_reviewer confirmed this final snap
 READY verification on 2026-11-09: existing isolated branch/base and exact five paths verified; required independent governance review and exact-text Owner approval PASS; all effects/tests/CI order/cost known and bounded; no baseline Task/counter/dependency changes; local main changes preserved; active Task003 CLEAN at 5409e847d2debbb40a2aa76153e2d82fa3f6dc34. Owner configured author/committer identity Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>; GitHub CLI authenticated active account yusufarst. No identity setting changed. A sandbox-only GitHub user lookup returned 401; direct read-only verification outside sandbox returned yusufarst and state success, so no missing credential is inferred.
 
 Next: content commit limited to these five paths, normal push, automatic exact-content attempt-1 CI. No Task003 changes or successor execution under standing delegation before governance activation. Publication evidence will follow only after observed results; no self-SHA in this commit.
+
+## 11. Completion evidence and controlled publication
+
+**GOV-EXEC-002 content DONE under DEC-045; exact-PR-head CI, bootstrap merge and exact-main CI remain mandatory activation gates. Temporary Codex standing delegation is NOT EFFECTIVE yet.** No baseline Task/counter changes.
+
+- Content commit: f85a5dcd3a04717fb477e3818790533609747c66, parent e1f2ec46826930862bc69ce76a55c2b251a9cd25, branch task/gov-exec-002-temporary-executor-transfer. Exactly the five declared documentation paths, 163 insertions, no deletions; original 00.13 §§1–10 prefix unchanged. Approved blobs of 00.13, DECISION_LOG, manifest and living plan exactly match the §10 hashes. This record retains the approved 903ecd50... snapshot as its exact prefix and adds only the §10 approval/review record; its content-commit LF SHA-256 is ff51c51a3f0ee273e5099ea2cbcef8bd5db672f496ace1824581ae4b349652a6.
+- Owner approval and specific reviewer designation: §10. Independent governance review PASS and final snapshot confirmation by the same fresh-context/read-only governance reviewer: §§9.1/10. No material finding outstanding, no authority or expected outcome inferred from tests. This governance review is separate from the outstanding ASSESS-INSTITUTION-003 rendered/final-content delta review.
+- Local deterministic verification: exact approved hashes/record prefix, five-path cumulative diff, append-only governing/log text, unchanged baseline33/78, zero staged/unexpected source edits before commit, git diff --check. The four main-checkout raw hashes in §9.3 remain identical; Task003 remains on its prior content SHA with its work preserved. No heavy local tests, services, Docker or production action.
+- Commit attribution: git log -1 --format=fuller verified author and committer Yusuf Arif Setiawan <134618411+yusufarst@users.noreply.github.com>; raw message is "docs(governance): authorize a temporary alternative executor with unchanged gates", no trailers or AI/model/tool attribution. Authenticated GitHub CLI account yusufarst verified. No identity setting changed.
+- Normal push and one PR: https://github.com/yusufarst/elligble/pull/37, base main e1f2ec46826930862bc69ce76a55c2b251a9cd25. PR title/body contain no attribution.
+- Automatic exact-content CI #241, run 42657154363, event push, head f85a5dcd3a04717fb477e3818790533609747c66, attempt 1, COMPLETED / SUCCESS, directly verified through gh run view before this evidence addition. Exactly eight jobs COMPLETED / SUCCESS:
+  - Web client (typecheck, tests, build).
+  - Runtime (typecheck, unit, PostgreSQL integration).
+  - Browser end-to-end (desktop-1280).
+  - Browser end-to-end (tablet-768).
+  - Browser end-to-end (webkit-390).
+  - Browser end-to-end (firefox-1280).
+  - Container image (build and smoke test).
+  - Browser end-to-end (mobile-360).
+- No run cancelled or rerun, no workflow_dispatch, empty/uncorrected SHA or test-gate change. This sole evidence addition changes only this Task record relative to the CI-verified content. Its own SHA is not recorded here. Its automatic exact-head CI must also pass eight jobs attempt 1 before the Owner-authorized bootstrap squash merge.
+- Merge gate: verify current remote main, exact PR head/tree, mergeability, cumulative five-path scope and approved hashes; explicit squash subject/body without attribution; verify the Owner author, raw message and main tree equal PR head. Only after automatic exact-main CI eight SUCCESS attempt 1 may §11 become effective. Landing and activation results are recorded in the next authorized ASSESS-INSTITUTION-003 continuity change, not a recursive governance evidence commit.
