@@ -764,19 +764,19 @@ Review 1 was given by the standing Owner-designated read-only subagent reviewer,
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs, and no push while the previous commit's CI runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 17, IN_PROGRESS 1, VERIFYING 0, BLOCKED 15.
 
-## 11. Implementation checkpoint — 2026-11-09
+## 11. Implementation checkpoint — 2026-11-11
 
-- **Registration CI:** pending.
-- **Candidate:** every changed path is in §6 rows 5–22 (18 paths, the frozen allowlist exactly). Status IN_PROGRESS → VERIFYING. 99k records the §10 baseline.
-- **Local checks** (8 GB executor; typechecks and targeted units only):
-  - secure-assessment, web and e2e typecheck clean;
-  - runtime units: school-exam-monitoring 10/10, route-parity, metrics, teacher-readiness, institution-rooms and institution-exams, all passing;
-  - web units: schoolExamMonitoring 19/19, plus participantTime, startAttempt, examMonitoring, examMessages, examPause, TeacherReadinessView, institutionExams, institutionRooms, assignedExamDiscovery, teacherOperations and designSystemGuard, all passing.
-  - The real-PostgreSQL integration file (I-1 to I-19, the §4.9 N-ids, migration 0064) and the 99j journey and captures run in CI only.
+- **Correction of the first publication:** commit 0368185 published the correct implementation, but by a tooling slip its §11 text and the three tracker checkpoint lines were copied from the ASSESS-INSTITUTION-003 template. This text replaces them; no code or contract changed.
+- **Registration CI:** CI #253 (run 42875105885, 91e9010) attempt 1 eight SUCCESS.
+- **Candidate:** 0368185; every changed path is in §6 rows 5–22 (18 paths, the frozen allowlist exactly). Status IN_PROGRESS → VERIFYING.
+- **Local checks** (8 GB executor; typechecks and targeted units only): secure-assessment, web and e2e typecheck clean; runtime units 86/86 (participant-room-transfer 9, route-parity, school-exam-monitoring, institution-rooms, metrics, server, proctor-monitoring, institution-exams, teacher-readiness); web units 58/58 (participantRoomTransfer 12, schoolExamMonitoring, examMonitoring, participantTime). The real-PostgreSQL integration file (I-1 to I-23 with the approved races I-6 to I-15, and the 0065 migration test) and the 99k journey and captures run in CI only. 99k's capture step equals the final 99j step except for the capture prefix and task value.
 - **Implementer departures, for the implementation review:**
-  1. The 0064 entry guard lets a state outside the allowed set reach its named CHECK (`…entry_previous` / `…_resulting`), so I-18 sees those constraint names.
-  2. E16 fixture: only the exam windows move to now; the session rows stay append-only, so the session times shown remain the placed later day. 99j's fixture SQL also ends any earlier-spec exam overlapping now that shares the students or Proctors (otherwise opening is refused for a schedule conflict), and inserts a second SCHEDULED exam so the session dialog has an unaffected exam.
-  3. The 44 px targets, the narrowFirst summary and wrapping rows in ExamMonitoringView, AddTimeDialog and BroadcastComposer apply with the Operator source only, so the earlier supervisor captures stay pixel-identical. Retry focus after a failed message send is also Operator-only.
-  4. The broadcast target object must carry exactly its scope's keys.
-  5. I-14 asserts "never waits" as finishing within 5 s, not with a 1 s `lock_timeout`.
-  6. The session dialog's "Akan terkena / Tidak terkena" lists are predicted on the client; the server decides, and the success notice lists the actual skips.
+  1. The 0065 transfer CHECK branches add `reason IS NOT NULL` and `assignment_version IS NOT NULL`, since a NULL would otherwise pass a CHECK.
+  2. `invalid_state` also returns `examInstanceId`, as ASSESS-INSTITUTION-003's `coreRefusal`.
+  3. `MonitoringSource.transfer` is `{move, failureMessages}`: the dialog owns the transfer refusal copy and other codes reuse `controlFailureMessages`, avoiding a circular import and duplicated copy.
+  4. `readMonitoringProjection` adds the E10 fields only for the OPERATOR viewer with `roomTransfer: true`, passed by `readSupervisionExam`.
+  5. Refusals stay in the dialog with retry focus; the target select starts on "Pilih ruang".
+  6. 99k names its rooms "Ruang Timur" and "Ruang Barat" instead of "Ruang A" / "Ruang B", to tell its exam card apart from the 99i/99j cards of the same Proctors.
+  7. Race ordering uses held locks (mainly the target room row FOR UPDATE, which pauses a transfer that already holds the Attempt); "submit first" runs the submit statements in a held transaction, and "finalizer first" runs the real `finalizeExpiredAttempts` in a held transaction (it also finalizes s4 after I-4 checked it).
+  8. The I-4 ENDED, FALSE/FALSE and no-row cases use exams built by fixture SQL; E1 ENDED is checked at the end in I-23.
+  9. The I-20 forbidden-key check covers the transfer receipts and the Operator participant projection; the session drill-down carries `session.sessionId` by design.
