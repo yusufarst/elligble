@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / operational supervision; HIGH risk; R21, R23, R28; P8 V07, V11, V12 |
-| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10). All Owner decisions are decided: OC-1 to OC-6 on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
+| Status | **VERIFYING under DEC-048: final evidence and Delegated Acceptance (§12); implementation and reviews (§11); formal READY PASS (§10). All Owner decisions are decided: OC-1 to OC-6 on 2026-11-09 (§3.1). Contract review chain STOP → PASS (§9)** |
 | Objective | For the institution exams of the School Operator's own school, the Operator:<br>• follows each session as exam → room → participant status, refreshed by itself and marked stale when a refresh fails;<br>• opens, pauses, resumes and ends exams, one by one or for a whole session;<br>• locks and unlocks a participant, sends messages and adds time.<br>Every control carries a reason, an on-screen confirmation and an append-only, attributable record. Subject Teachers and Proctors gain nothing. Teacher-managed exams are unchanged. No score, grade edit or cheating verdict is shown or possible |
 | Owner decisions | **Approved inputs:**<br>• O05-1 to O05-4 and A04-1 to A04-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md));<br>• OP-1 to OP-9 and OB-1, decided 2026-11-09 ([ASSESS-INSTITUTION-001 §3.1](ASSESS-INSTITUTION-001.md));<br>• OB-2, RP-1 to RP-5 and OB-3, decided 2026-11-09 ([ASSESS-INSTITUTION-002 §3.1](ASSESS-INSTITUTION-002.md));<br>• OC-1 to OC-6, decided 2026-11-09 (§3.1).<br>**Open:** none.<br>Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task |
 | Execution authority | DEC-048 (00.13).<br>• Internal dependency ASSESS-INSTITUTION-002 is complete at c11ab1f with Delegated Acceptance (its §12.4); its landing (PR #36) is in progress. Its PR-head CI and post-merge main CI are recorded in this Task's first change.<br>• O05 is approved (O05-1 to O05-6). O09 rests on the approved P5 content, whose approval excludes "O05 institution … composition" (CBT_PERMISSION_MATRIX.md:96, :142), and whose A06 row leaves "O05 institution control composition" unresolved (:105). The Owner closed that gap for this Task with OC-1 to OC-6 (§3.1), as OB-2 and OB-3 did for ASSESS-INSTITUTION-002 |
@@ -814,3 +814,67 @@ No re-runs, and no push while the previous commit's CI runs.
 - **Correction** (rows 21, 22, 31 and 35): a manual refresh that started from "Perbarui" gives focus back to it once it is enabled again, when focus is on BODY; on the participant level for the Operator source only, so supervisor behaviour and captures are unchanged. Two unit tests cover both screens; 99j's `refreshSupervision` now asserts that "Perbarui" is focused after the refresh. Local: web typecheck clean; schoolExamMonitoring, examMonitoring and participantTime 46/46; e2e typecheck clean.
 - **Residual R18:** the same disabled-while-refreshing pattern exists on "Muat Ulang" in InstitutionExamView, on InstitutionRoomManagementView and on the supervisor refresh (ASSESS-INSTITUTION-001/002 and earlier); outside this Task, proposed as a UI-SYSTEM follow-up.
 - **Note:** the `session-running` full-page capture is taken while scrolled, so the sticky header is drawn over the page (a capture artifact).
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on the working tree over 89515a0, published unchanged as b9cf99f (§11.0); PASS on the 5409e84 correction (§11.0.1); after the Owner's re-designation (§11.0.3), PASS on the final-content delta 5409e84 → eb7a490 (§11.0.4). The ced45b3 change is test-only (row 35); the 0da10b3 F1 correction PASS (§11.0.5); both checked in the rendered review.
+- **Rendered review by the same reviewer:** STOP (F1, focus after Perbarui) on ced45b3 (§11.0.5), then PASS on 0da10b3 (CI #247 artifacts, all five browsers), with no material finding: exact 200 % calibration and restoration in every text2 capture, zero overflow, zero targets under 44 px, focus on Perbarui in all 50 session-running captures, five WebKit teacher-card-running captures on the documented viewport fallback, and only allowed earlier-capture changes. Residuals R15, R17 and R18 recorded.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-10
+
+### 12.1 Content and CI
+
+**Final content:** 0da10b3d59d242ec6de5f397ae3061b7f418425b. The registration was 89515a0. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #247 (run 42776097884), push, attempt 1, eight SUCCESS.
+- **Runtime:** typecheck, units, and real PostgreSQL 16 integration I-1 to I-19 with the §4.9 N-ids, migration 0064 upgrade, rollback and repeat, the ledger guards, the narrowed locks, replay and the opening preconditions.
+- **Web:** typecheck, tests and build. **Container:** image build and smoke test.
+- **E2E:** every spec in each of mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390, including the 99j journey (C06) and its captures (C07), and the 7-teacher-cancel copy change.
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 42776097884, fetched in parallel with the resumable, size- and `unzip -t`-checked transfer.
+- 500 `workspace-institution-supervision-*` pairs, all at commit 0da10b3 (frontend tree 5775c18fd7de4f64796937466a92a5c38251631b). Every screenshot hash matches its JSON; zero page overflow; zero targets under 44 px; every text2 capture calibrated to exactly 200 % and restored. Manifest SHA-256 2c24034590e580dd1a148855d409647c27fdc5cbc2b99cba6684b2dbe29a6141.
+- Earlier captures against the #237 baseline differ only where §4.8 and E20 allow (the "Pelaksanaan Sesi" action, the role-neutral copy and the Teacher card running line), plus times, generated IDs and WebKit full-page/viewport fallbacks.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #238 (89515a0, registration) | attempt 1, eight SUCCESS |
+| CI #239 (b9cf99f) | attempt 1, FAILURE: three PostgreSQL subtests (§11.0.1) |
+| CI #240 (5409e84) | attempt 1, FAILURE: 99j count oracle (§11.0.2) |
+| CI #244 (1af11ad, Codex) | attempt 1, FAILURE: 99j focus after adding time and the compounding 200 % step (§11.0.3) |
+| CI #245 (eb7a490) | attempt 1, FAILURE: 99j Teacher workspace (§11.0.4) |
+| CI #246 (ced45b3) | attempt 1, eight SUCCESS; rendered STOP F1, focus after "Perbarui" (§11.0.5) |
+| CI #247 (0da10b3) | attempt 1, eight SUCCESS |
+
+CI #241 to #243 belong to GOV-EXEC-002 (§11.0.2).
+
+### 12.2 Independent review
+
+1. **Contract:** STOP (F1–F7), then PASS (§9).
+2. **Implementation:** PASS (§11.0), correction PASS (§11.0.1), final-content delta PASS (§11.0.4).
+3. **Rendered:** STOP (F1) on ced45b3, then PASS on 0da10b3 (§11.0.5, §11.1).
+
+The same original reviewer, re-designated by the Owner after the temporary executor transfer (§11.0.3); RENDERED-ASSESS-INSTITUTION-003-CODEX-01 gave no candidate verdict. No STOP was bypassed.
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: parsers, the opening order and skip codes, replay bodies, reasons and the projection rules (units) |
+| C02 | PASS: shared action functions; teacher-managed behaviour unchanged apart from §4.8 |
+| C03 | PASS on real PostgreSQL (CI #247): I-1 to I-19, the §4.9 N-ids, migration 0064, the guards, locks, replay and audit evidence |
+| C04 | PASS: regression with only the §4.8 assertions changed |
+| C05 | PASS: the Operator screens, dialogs and states, focus never on BODY, the Teacher card per D04.4-26D, E20 copy |
+| C06 | PASS: the five-browser 99j journey: open, Student, lock, time, message, session pause and resume, Teacher card, Proctor scope, stale tab, end |
+| C07 | PASS: the #237 baseline and the after captures across the frozen conditions; exact 200 % text; no overflow; 44 px targets; rendered review PASS |
+| C08 | PASS: every changed path is within §6 rows 1–35; 33 Tasks and 78 edges; exact-SHA attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence. The independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-INSTITUTION-003 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:** R15 (role-dependent supervision styling; the Teacher and Proctor rendering keeps existing targets under 44 px), R16 (the contrived same-key deadlock), R17 (99h and 99i still use the compounding 200 % step), R18 (the disabled-while-refreshing focus pattern in earlier screens), END of a PAUSED exam needs a resume first, and the reason-retention item of A06. Room transfer during running exams belongs to ASSESS-ROOM-001. PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 17/33 (51.52%).
