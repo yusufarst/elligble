@@ -68,7 +68,9 @@ export const AddTimeDialog: React.FC<{
   source?: { addTime(input: TimeAdditionInput): Promise<TimeAdditionResponse> };
   /** 44 px targets (the School Operator's level, ASSESS-INSTITUTION-003 C07). */
   comfortable?: boolean;
-}> = ({ participant, examInstanceId, examState, onClose, onDone, source, comfortable = false }) => {
+  /** Return focus to the Operator action, or its surviving list control. */
+  restoreFocus?(): boolean;
+}> = ({ participant, examInstanceId, examState, onClose, onDone, source, comfortable = false, restoreFocus }) => {
   const [minutes, setMinutes] = useState('');
   const [reason, setReason] = useState('');
   const [sending, setSending] = useState(false);
@@ -121,7 +123,7 @@ export const AddTimeDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !sending) onClose(); }}>
-      <DialogContent aria-describedby="add-time-description" className={comfortable ? `max-h-[90dvh] overflow-y-auto ${permissionDialogClass}` : 'max-h-[90dvh] overflow-y-auto'}>
+      <DialogContent aria-describedby="add-time-description" onCloseAutoFocus={event => { if (restoreFocus?.()) event.preventDefault(); }} className={comfortable ? `max-h-[90dvh] overflow-y-auto ${permissionDialogClass}` : 'max-h-[90dvh] overflow-y-auto'}>
         <DialogHeader>
           <DialogTitle>Tambah Waktu Peserta</DialogTitle>
           <DialogDescription id="add-time-description">

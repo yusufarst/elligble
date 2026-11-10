@@ -1,6 +1,6 @@
 import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
 import { newActionKey } from '../lib/action-key.ts';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, getExamMonitoring, postBroadcast, postParticipantLock, postParticipantTime } from '../api/assessment-client.ts';
 import type {
   BroadcastSendResponse, BroadcastTarget, ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus, ParticipantLockAction, ParticipantLockResponse,
@@ -139,6 +139,25 @@ export const ExamMonitoringView: React.FC<{
   const loadingRef = useRef(false);
   const lockTrigger = useRef<HTMLButtonElement | null>(null);
   const refreshButton = useRef<HTMLButtonElement | null>(null);
+  const backButton = useRef<HTMLButtonElement | null>(null);
+  const timeTrigger = useRef<HTMLButtonElement | null>(null);
+  const messageTrigger = useRef<HTMLButtonElement | null>(null);
+  const pendingFocus = useRef<HTMLButtonElement | null>(null);
+  const restoreFocus = useCallback((opener: HTMLButtonElement | null): boolean => {
+    const target = [opener, refreshButton.current, backButton.current].find(button => button?.isConnected && !button.disabled);
+    if (!target) return false;
+    target.focus();
+    return document.activeElement === target;
+  }, []);
+
+  // A completed Operator action can refresh away its opener. Keep a logical keyboard
+  // destination after that DOM update, without moving focus the user has already placed.
+  useLayoutEffect(() => {
+    const opener = pendingFocus.current;
+    if (!opener || source === SUPERVISOR_SOURCE) return;
+    pendingFocus.current = null;
+    if (!document.activeElement || document.activeElement === document.body) restoreFocus(opener);
+  }, [data, error, source, restoreFocus]);
 
   const load = useCallback(async () => {
     if (loadingRef.current) return;
@@ -199,7 +218,7 @@ export const ExamMonitoringView: React.FC<{
   }, [data, filter, query]);
 
   const back = (
-    <Button variant="ghost" size="sm" className={comfortable ? '-ml-3 h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left' : '-ml-3 self-start'} onClick={onBack}>
+    <Button ref={backButton} variant="ghost" size="sm" className={comfortable ? '-ml-3 h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left' : '-ml-3 self-start'} onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       {backLabel}
     </Button>
@@ -233,7 +252,7 @@ export const ExamMonitoringView: React.FC<{
       {back}
       <PageHeader
         title={SCREEN_TITLE.examMonitoring}
-        actions={supervised && <Button onClick={() => setComposerOpen(true)}>Kirim Pesan</Button>}
+        actions={supervised && <Button onClick={event => { pendingFocus.current = null; messageTrigger.current = event.currentTarget; setComposerOpen(true); }}>Kirim Pesan</Button>}
       >
         <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
         <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
@@ -350,7 +369,7 @@ export const ExamMonitoringView: React.FC<{
                             </Button>
                           )}
                           {canAddTime && (
-                            <Button variant="secondary" size="sm" className={small} aria-label={`Tambah waktu ${shownId}`} onClick={() => setAddTimeFor(p)}>
+                            <Button variant="secondary" size="sm" className={small} aria-label={`Tambah waktu ${shownId}`} onClick={event => { pendingFocus.current = null; timeTrigger.current = event.currentTarget; setAddTimeFor(p); }}>
                               Tambah Waktu
                             </Button>
                           )}
@@ -393,7 +412,9 @@ export const ExamMonitoringView: React.FC<{
         participants={data.participants}
         source={source}
         comfortable={comfortable}
+        restoreFocus={comfortable ? () => restoreFocus(messageTrigger.current) : undefined}
         onSent={result => {
+          if (comfortable) pendingFocus.current = messageTrigger.current;
           setComposerOpen(false);
           setNotice({ failed: false, text: `Pesan terkirim ke ${result.recipients} peserta.` });
           void load();
@@ -408,7 +429,9 @@ export const ExamMonitoringView: React.FC<{
         source={source}
         comfortable={comfortable}
         onClose={() => setAddTimeFor(null)}
+        restoreFocus={comfortable ? () => restoreFocus(timeTrigger.current) : undefined}
         onDone={outcome => {
+          if (comfortable) pendingFocus.current = timeTrigger.current;
           setAddTimeFor(null);
           setNotice(outcome);
           void load();

@@ -63,7 +63,9 @@ export const BroadcastComposer: React.FC<{
   };
   /** 44 px targets (the School Operator's level, ASSESS-INSTITUTION-003 C07). */
   comfortable?: boolean;
-}> = ({ open, onClose, examInstanceId, wholeExam, rooms, participants, onSent, onStale, source, comfortable = false }) => {
+  /** Return focus to the Operator action, or its surviving list control. */
+  restoreFocus?(): boolean;
+}> = ({ open, onClose, examInstanceId, wholeExam, rooms, participants, onSent, onStale, source, comfortable = false, restoreFocus }) => {
   const reachable = useMemo(() => participants.filter(p => p.status !== 'SUBMITTED'), [participants]);
   const defaultTarget = wholeExam ? 'EXAM' : rooms.length > 0 ? `ROOM:${rooms[0].roomId}` : 'PARTICIPANTS';
   const [target, setTarget] = useState<string>(defaultTarget);
@@ -134,7 +136,7 @@ export const BroadcastComposer: React.FC<{
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !sending) onClose(); }}>
       {open && (
-        <DialogContent aria-describedby="broadcast-description" className={comfortable ? `max-h-[90dvh] overflow-y-auto ${permissionDialogClass}` : 'max-h-[90dvh] overflow-y-auto'}>
+        <DialogContent aria-describedby="broadcast-description" onCloseAutoFocus={event => { if (restoreFocus?.()) event.preventDefault(); }} className={comfortable ? `max-h-[90dvh] overflow-y-auto ${permissionDialogClass}` : 'max-h-[90dvh] overflow-y-auto'}>
           <DialogHeader>
             <DialogTitle>Kirim Pesan ke Peserta</DialogTitle>
             <DialogDescription id="broadcast-description">

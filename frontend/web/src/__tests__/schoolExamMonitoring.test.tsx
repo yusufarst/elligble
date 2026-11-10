@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { InstitutionExamView } from '../components/InstitutionExamView';
 import { OPERATOR_SOURCE, SchoolExamMonitoringView } from '../components/SchoolExamMonitoringView';
 import { ExamMonitoringView } from '../components/ExamMonitoringView';
@@ -444,5 +444,56 @@ describe('the subject Teacher card of an institution exam (E2)', () => {
     const managed = screen.getByTestId(`teacher-exam-${EXAM_2}`);
     expect(within(managed).getByRole('button', { name: 'Pantau Peserta' })).toBeTruthy();
     expect(within(managed).getByRole('button', { name: 'Jeda Ujian' })).toBeTruthy();
+  });
+});
+
+
+describe('controlled Operator dialog focus', () => {
+  it('returns add-time focus to its opener, then to refresh if the refreshed row loses that action', async () => {
+    let resolveRead: (value: ExamMonitoringResponse) => void = () => { throw new Error('Refresh not requested'); };
+    const refreshed = new Promise<ExamMonitoringResponse>(resolve => { resolveRead = resolve; });
+    vi.mocked(getInstitutionSupervisionExam).mockResolvedValueOnce(monitoring()).mockReturnValueOnce(refreshed);
+    vi.mocked(postInstitutionSupervisionTime).mockResolvedValue({ participantId: P1, addedSeconds: 600, totalAddedSeconds: 600, remainingSeconds: 2400, addedAt: '2026-11-11T01:10:00.000Z', replayed: false });
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali ke Pelaksanaan Sesi" onBack={() => {}} source={OPERATOR_SOURCE} />);
+    const opener = await screen.findByRole('button', { name: 'Tambah waktu siswa.satu' });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = await screen.findByRole('dialog', { name: 'Tambah Waktu Peserta' });
+    fireEvent.change(within(dialog).getByLabelText('Tambahan waktu (menit)'), { target: { value: '10' } });
+    fireEvent.change(within(dialog).getByLabelText('Alasan'), { target: { value: 'Gangguan jaringan' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tambah 10 Menit' }));
+    await screen.findByText(/^Waktu siswa.satu ditambah 10 menit\./);
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+    await act(async () => { resolveRead(monitoring({ participants: [participant({ status: 'SUBMITTED', remainingSeconds: 0 })], summary: { participants: 1, notStarted: 0, active: 0, submitted: 1 } })); });
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Tambah waktu siswa.satu' })).toBeNull());
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Perbarui' }));
+  });
+
+  it('returns focus after an Operator message is sent', async () => {
+    vi.mocked(getInstitutionSupervisionExam).mockResolvedValue(monitoring());
+    vi.mocked(postInstitutionSupervisionBroadcast).mockResolvedValue({ broadcastId: 'sent', sentAt: '2026-11-11T01:10:00.000Z', recipients: 1, replayed: false });
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali ke Pelaksanaan Sesi" onBack={() => {}} source={OPERATOR_SOURCE} />);
+    const opener = await screen.findByRole('button', { name: 'Kirim Pesan' });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = await screen.findByRole('dialog', { name: 'Kirim Pesan ke Peserta' });
+    fireEvent.change(within(dialog).getByLabelText('Pesan'), { target: { value: 'Tetap tenang.' } });
+    fireEvent.change(within(dialog).getByLabelText('Alasan tindakan'), { target: { value: 'Pengumuman ruang' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kirim Pesan' }));
+    await screen.findByText('Pesan terkirim ke 1 peserta.');
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+  });
+
+  it('returns add-time cancellation focus to its opener', async () => {
+    vi.mocked(getInstitutionSupervisionExam).mockResolvedValue(monitoring());
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali ke Pelaksanaan Sesi" onBack={() => {}} source={OPERATOR_SOURCE} />);
+    const opener = await screen.findByRole('button', { name: 'Tambah waktu siswa.satu' });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = await screen.findByRole('dialog', { name: 'Tambah Waktu Peserta' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Batal' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+    expect(postInstitutionSupervisionTime).not.toHaveBeenCalled();
   });
 });

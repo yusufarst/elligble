@@ -45,19 +45,57 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
     try {
         for (const v of variants) {
             await page.setViewportSize({ width: v.width, height: v.height });
-            // 200 % text: computed font size and line height doubled per element (spec 6 method).
-            if (v.text === 2) await page.evaluate(() => {
-                for (const node of [document.documentElement, ...document.querySelectorAll<HTMLElement>('body *')]) {
-                    if (!(node instanceof HTMLElement)) continue;
-                    const style = getComputedStyle(node), font = parseFloat(style.fontSize), line = parseFloat(style.lineHeight);
-                    node.dataset.ai3OriginalStyle = JSON.stringify(node.getAttribute('style'));
-                    node.style.fontSize = String(font * 2) + 'px';
-                    if (Number.isFinite(line)) node.style.lineHeight = String(line * 2) + 'px';
-                }
-            });
+            const name = ['workspace-institution-supervision', scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
+            const metadataPath = test.info().outputPath(`${name}.json`);
+            let captureWritten = false;
+            await expect(root()).toBeVisible();
+            await page.evaluate(async () => { await document.fonts.ready; });
+            // Snapshot every baseline BEFORE any mutation. Leave the root font unchanged so
+            // rem-based geometry is not zoomed along with the text, and inheritance cannot compound.
+            const calibration = v.text === 2 ? await page.evaluateHandle(() => ({
+                rootStyle: document.documentElement.getAttribute('style'),
+                rootFont: getComputedStyle(document.documentElement).fontSize,
+                nodes: [document.body, ...document.body.querySelectorAll<HTMLElement>('*')]
+                    .filter((node): node is HTMLElement => node instanceof HTMLElement)
+                    .map(node => {
+                        const style = getComputedStyle(node);
+                        return { node, originalStyle: node.getAttribute('style'), font: parseFloat(style.fontSize), line: parseFloat(style.lineHeight) };
+                    }),
+            })) : null;
             try {
-                await expect(root()).toBeVisible();
-                await page.evaluate(async () => { await document.fonts.ready; await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r()))); });
+                if (calibration) await calibration.evaluate(snapshot => {
+                    for (const { node, font, line } of snapshot.nodes) {
+                        node.style.fontSize = String(font * 2) + 'px';
+                        if (Number.isFinite(line)) node.style.lineHeight = String(line * 2) + 'px';
+                    }
+                });
+                await page.evaluate(async () => { await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r()))); });
+                const textCalibration = calibration ? await calibration.evaluate(snapshot => {
+                    const calibrated = new Set(snapshot.nodes.map(({ node }) => node));
+                    const current = [document.body, ...document.body.querySelectorAll<HTMLElement>('*')].filter((node): node is HTMLElement => node instanceof HTMLElement);
+                    const measured = snapshot.nodes.map(({ node, font, line }) => {
+                        const style = getComputedStyle(node);
+                        return { font, line, actualFont: parseFloat(style.fontSize), actualLine: parseFloat(style.lineHeight) };
+                    });
+                    const ratios = measured.filter(n => Number.isFinite(n.font) && Number.isFinite(n.actualFont) && n.font > 0).map(n => n.actualFont / n.font);
+                    return {
+                        method: 'two-pass-computed-text-only', elements: measured.length,
+                        detachedElements: snapshot.nodes.filter(({ node }) => !node.isConnected).length,
+                        unscaledElements: current.filter(node => !calibrated.has(node)).length,
+                        minFontRatio: Math.min(...ratios), maxFontRatio: Math.max(...ratios),
+                        fontMismatches: measured.filter(n => !Number.isFinite(n.font) || !Number.isFinite(n.actualFont) || Math.abs(n.actualFont - n.font * 2) > 0.02).length,
+                        lineMismatches: measured.filter(n => Number.isFinite(n.line) && (!Number.isFinite(n.actualLine) || Math.abs(n.actualLine - n.line * 2) > 0.02)).length,
+                        rootUnchanged: document.documentElement.getAttribute('style') === snapshot.rootStyle && getComputedStyle(document.documentElement).fontSize === snapshot.rootFont,
+                    };
+                }) : undefined;
+                if (textCalibration) {
+                    expect(textCalibration.elements).toBeGreaterThan(0);
+                    expect(textCalibration.detachedElements, 'No calibrated element was replaced before capture').toBe(0);
+                    expect(textCalibration.unscaledElements, 'Every current HTML element belongs to the calibrated snapshot').toBe(0);
+                    expect(textCalibration.fontMismatches, 'Every captured element has 200% of its original computed text size').toBe(0);
+                    expect(textCalibration.lineMismatches, 'Every numeric line height is doubled once').toBe(0);
+                    expect(textCalibration.rootUnchanged, 'Text resize must not zoom rem geometry').toBe(true);
+                }
                 const metrics = await root().evaluate(element => {
                     const targets = [...element.querySelectorAll<HTMLElement>('button, input, textarea, select, summary')].filter(n => { const b = n.getBoundingClientRect(); return b.width > 0 && b.height > 0; })
                         .map(n => { const t = n instanceof HTMLInputElement && ['checkbox', 'radio'].includes(n.type) ? n.closest('label') ?? n : n; const b = t.getBoundingClientRect(); return { name: n.getAttribute('aria-label') ?? t.textContent?.trim().slice(0, 60) ?? n.tagName, width: b.width, height: b.height }; });
@@ -79,7 +117,6 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                         }).slice(0, 8).map(n => `${n.tagName.toLowerCase()}.${String(n.getAttribute('class') ?? '').slice(0, 80)} right=${Math.round(n.getBoundingClientRect().right)} ${(n.textContent ?? '').trim().slice(0, 40)}`),
                     };
                 });
-                const name = ['workspace-institution-supervision', scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
                 const screenshot = `${name}.png`;
                 // The larger of the document and body heights: with a dialog open, WebKit sizes the full page by
                 // the body. A screenshot WebKit still refuses as too large falls back to the viewport, recorded
@@ -92,25 +129,39 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                     fullPage = false;
                     await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
                 }
-                writeFileSync(test.info().outputPath(`${name}.json`), JSON.stringify({
+                writeFileSync(metadataPath, JSON.stringify({
                     task: 'ASSESS-INSTITUTION-003', phase: 'after', commit, frontendTree, baseline: BASELINE,
                     fixture: { synthetic: true, globalSetupSha256: fixtureSha256 },
                     browser: { project: test.info().project.name, engine: browser.browserType().name(), version: browser.version() },
-                    viewport: page.viewportSize(), fullPage, textScale: v.text, scenario, screenshot,
+                    viewport: page.viewportSize(), fullPage, textScale: v.text, textCalibration, scenario, screenshot,
                     screenshotSha256: createHash('sha256').update(readFileSync(test.info().outputPath(screenshot))).digest('hex'),
                     accessibilitySnapshot: await root().ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
                 }, null, 2));
+                captureWritten = true;
                 expect.soft(metrics.scrollWidth, `${scenario} ${v.width}x${v.height} text${v.text}: overflow ${JSON.stringify(metrics.overflowing)}`).toBeLessThanOrEqual(metrics.clientWidth);
                 expect.soft(metrics.targets.filter(t => t.width < 43.5 || t.height < 43.5), `${scenario} ${v.width}x${v.height} text${v.text}: targets below 44 px`).toEqual([]);
                 expect.soft(metrics.metricWraps, `${scenario} ${v.width}x${v.height} text${v.text}: mid-word metric labels`).toEqual([]);
             } finally {
-                if (v.text === 2) await page.evaluate(() => {
-                    for (const node of document.querySelectorAll<HTMLElement>('[data-ai3-original-style]')) {
-                        const original: string | null = JSON.parse(node.dataset.ai3OriginalStyle ?? 'null');
-                        if (original === null) node.removeAttribute('style'); else node.setAttribute('style', original);
-                        delete node.dataset.ai3OriginalStyle;
-                    }
-                });
+                if (calibration) {
+                    try {
+                        const restoration = await calibration.evaluate(snapshot => {
+                            for (const { node, originalStyle } of snapshot.nodes) {
+                                if (originalStyle === null) node.removeAttribute('style'); else node.setAttribute('style', originalStyle);
+                            }
+                            return {
+                                elements: snapshot.nodes.length,
+                                inlineStyleMismatches: snapshot.nodes.filter(({ node, originalStyle }) => node.getAttribute('style') !== originalStyle).length,
+                                rootUnchanged: document.documentElement.getAttribute('style') === snapshot.rootStyle && getComputedStyle(document.documentElement).fontSize === snapshot.rootFont,
+                            };
+                        });
+                        if (captureWritten) {
+                            const metadata: Record<string, unknown> = JSON.parse(readFileSync(metadataPath, 'utf8'));
+                            writeFileSync(metadataPath, JSON.stringify({ ...metadata, textRestoration: restoration }, null, 2));
+                        }
+                        expect(restoration.inlineStyleMismatches, 'Restore every exact original inline style before the next capture').toBe(0);
+                        expect(restoration.rootUnchanged, 'Root font and inline style remain at their original values').toBe(true);
+                    } finally { await calibration.dispose(); }
+                }
             }
         }
     } finally { await page.setViewportSize(original); }

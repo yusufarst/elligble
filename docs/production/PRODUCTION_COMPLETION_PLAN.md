@@ -1,3 +1,5 @@
+> **ASSESS-INSTITUTION-003 return of execution control, 2026-11-10 (00.13 §11.5):** the Owner ended the temporary Codex assignment and returned exclusive execution control to Claude Code. Branch head 1af11ad and its CI #244 (run 42686933488, attempt 1: Web, Runtime/PostgreSQL and Container SUCCESS; five browser jobs FAILURE in 99j only) preserved; the uncommitted Codex corrections (Operator dialog focus restoration and a single-pass 200 % text calibration in 99j) preserved, completed and published within the frozen allowlist ([record §11.0.3](tasks/ASSESS-INSTITUTION-003.md)). The Owner designated the original Claude reviewer for the final-content and rendered review. DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
 > **ASSESS-INSTITUTION-003 controlled continuation, 2026-11-10:** GOV-EXEC-002 landed through PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9; exact-main CI #243 eight SUCCESS attempt 1 makes 00.13 §11 effective. Existing Task remains VERIFYING; CI #240 failure diagnosed as the seven-Student fixture versus stale six-Student test oracle, corrected within row 35 ([record §11.0.2](tasks/ASSESS-INSTITUTION-003.md)). Original contract/reviews/OC-1–OC-6/31 paths/0064 preserved. DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16; 78 edges unchanged. Final candidate CI and designated independent delta/rendered review pending; PB05/PB12 OPEN, production NOT READY.
 
 > **ASSESS-INSTITUTION-003 implementation checkpoint, 2026-11-09 (DEC-048):** registration CI #238 (run 42634196523, 89515a0) attempt 1 eight SUCCESS; implementation candidate published for exact-content CI and the independent implementation and rendered review ([record §11](tasks/ASSESS-INSTITUTION-003.md)). DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
@@ -1181,7 +1183,20 @@ UI-SYSTEM-004 Part 3 targeted correction: content `d1ac5da16b9c2e44c1efe14416cc5
 
 ## 14. Continuity checkpoint
 
-Current checkpoint, 2026-11-10: temporary governance transfer EFFECTIVE after PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9 and [exact-main CI #243](https://github.com/yusufarst/elligble/actions/runs/42681365739), eight SUCCESS attempt 1.
+Current checkpoint, 2026-11-10 (00.13 §11.5 return): the Owner returned exclusive execution control from Codex to Claude Code; the temporary §11 assignment has ended. No Codex process writes to the repository.
+
+| Item | Current state |
+|---|---|
+| Active Task | ASSESS-INSTITUTION-003 VERIFYING; contract, READY, Build and completed review history preserved |
+| Physical worktree | C:\Projects\ELLIGBLE-institution-003; task/assess-institution-003; last pushed head 1af11ad286dfc64e9d5dd1cc0412766246370536 (after main merge 72b9632); the uncommitted Codex corrections in five allowlisted paths preserved and published by the next correction commit |
+| Last verified main | 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9; CI #243 eight SUCCESS attempt 1 |
+| Current gate | CI #244 (run 42686933488, 1af11ad) FAILURE preserved: 99j focus after adding time and 200 % text capture overflow; corrected within rows 22, 23, 26, 31 and 35 (record §11.0.3); new exact-content CI, then final-content and rendered review |
+| Delegation / reviewer | 00.13 §§1–10 with Claude Code as executor; RENDERED-ASSESS-INSTITUTION-003-CODEX-01 lost its context with no verdict on a candidate; the Owner designated the original Claude reviewer (contract, implementation and 5409e84 correction reviews) for the remaining reviews; no open STOP |
+| Frozen scope | 31 paths (§6 rows 5–35) plus four Task-flow paths; OC-1–OC-6 and migration 0064 unchanged |
+| Counters | Baseline/Current 33, DONE 16 (48.48%), VERIFYING 1, BLOCKED 16, other statuses 0; 78 edges unchanged |
+| Next safe action | exact-content CI of the correction commit; same-reviewer final-content delta and rendered review; evidence commit, PR, PR-head CI, delegated squash merge, exact-main CI; then the next eligible Task |
+
+Previous checkpoint, 2026-11-10: temporary governance transfer EFFECTIVE after PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9 and [exact-main CI #243](https://github.com/yusufarst/elligble/actions/runs/42681365739), eight SUCCESS attempt 1.
 
 | Item | Current state |
 |---|---|
