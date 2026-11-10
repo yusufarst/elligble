@@ -374,6 +374,9 @@ async function teacherContext(browser: Browser, page: Page): Promise<Page> {
     const context = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC', reducedMotion: 'reduce' });
     const teacher = await context.newPage();
     await login(teacher, ...TEACHER);
+    // guru.e2e is also the Proctor of "Ruang B" in a running exam here, so it may land on its first workspace,
+    // "Ruang Ujian" (AppShell order: proctor before teacher; CI #245). Open "Pelaksanaan Ujian" from the navigation.
+    await teacher.getByRole('navigation', { name: 'Ruang kerja' }).getByRole('button', { name: 'Pelaksanaan Ujian', exact: true }).click();
     await expect(teacher.getByRole('heading', { level: 1, name: 'Pelaksanaan Ujian' })).toBeVisible();
     return teacher;
 }
