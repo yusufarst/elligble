@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 / transfer integrity; HIGH risk; R03, R04, R06, R22, R23; P8 V03, V05, V06, V07, V11, V15 |
-| Status | **IN_PROGRESS under DEC-048: formal READY PASS (§10). Owner decisions OR-1 to OR-5 decided 2026-11-10 (§3.1); contract review chain STOP → STOP → PASS (§9); A04 Owner and reviewer halves recorded** |
+| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10). Owner decisions OR-1 to OR-5 decided 2026-11-10 (§3.1); contract review chain STOP → STOP → PASS (§9); A04 Owner and reviewer halves recorded** |
 | Objective | During a running institution exam (ACTIVE or PAUSED), the School Operator moves one participant from their current exam room to another room of the same exam that has an active Proctor. The move:<br>• needs a reason and an on-screen confirmation;<br>• compares the participant's `assignment_version` and is safe to replay;<br>• changes only the current room row and appends one attributable history entry.<br>Person, Participant, Attempt, question snapshot and randomization, accepted and pending answers, server time, device session and submission are untouched. The old room's Proctor loses the participant at commit and the new room's Proctor gains them. Teacher-managed exams are unchanged |
 | Owner decisions | **Approved inputs:**<br>• O05-1 to O05-6 and A04-1 to A04-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); this Task uses O05-4, O05-5, A04-2 and A04-3;<br>• OP-1 to OP-9 and OB-1 ([ASSESS-INSTITUTION-001 §3.1](ASSESS-INSTITUTION-001.md));<br>• OB-2, RP-1 to RP-5 and OB-3 ([ASSESS-INSTITUTION-002 §3.1](ASSESS-INSTITUTION-002.md));<br>• OC-1 to OC-6 ([ASSESS-INSTITUTION-003 §3.1](ASSESS-INSTITUTION-003.md));<br>• OR-1 to OR-5 and the OR-3 supplement, decided 2026-11-10 (§3.1).<br>**Open:** none. The Owner confirmed the corrected OR-5 case list I-6 to I-15 on 2026-11-10 (§3.1).<br>Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task. It is also the A04 assessment/security reviewer named in ASSESS-QUESTION-001:57 (F8) |
 | Execution authority | DEC-048 (00.13). Not eligible yet (below) |
@@ -763,3 +763,20 @@ Review 1 was given by the standing Owner-designated read-only subagent reviewer,
   - Manifest, built as in ASSESS-QUESTION-004 §10 over the `workspace-question-*` and `workspace-institution-*` captures: SHA-256 a594c3a1b442631f319066c784795d4a050156f9c1b41a60274c01e42dff2cad.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs, and no push while the previous commit's CI runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 17, IN_PROGRESS 1, VERIFYING 0, BLOCKED 15.
+
+## 11. Implementation checkpoint — 2026-11-09
+
+- **Registration CI:** pending.
+- **Candidate:** every changed path is in §6 rows 5–22 (18 paths, the frozen allowlist exactly). Status IN_PROGRESS → VERIFYING. 99k records the §10 baseline.
+- **Local checks** (8 GB executor; typechecks and targeted units only):
+  - secure-assessment, web and e2e typecheck clean;
+  - runtime units: school-exam-monitoring 10/10, route-parity, metrics, teacher-readiness, institution-rooms and institution-exams, all passing;
+  - web units: schoolExamMonitoring 19/19, plus participantTime, startAttempt, examMonitoring, examMessages, examPause, TeacherReadinessView, institutionExams, institutionRooms, assignedExamDiscovery, teacherOperations and designSystemGuard, all passing.
+  - The real-PostgreSQL integration file (I-1 to I-19, the §4.9 N-ids, migration 0064) and the 99j journey and captures run in CI only.
+- **Implementer departures, for the implementation review:**
+  1. The 0064 entry guard lets a state outside the allowed set reach its named CHECK (`…entry_previous` / `…_resulting`), so I-18 sees those constraint names.
+  2. E16 fixture: only the exam windows move to now; the session rows stay append-only, so the session times shown remain the placed later day. 99j's fixture SQL also ends any earlier-spec exam overlapping now that shares the students or Proctors (otherwise opening is refused for a schedule conflict), and inserts a second SCHEDULED exam so the session dialog has an unaffected exam.
+  3. The 44 px targets, the narrowFirst summary and wrapping rows in ExamMonitoringView, AddTimeDialog and BroadcastComposer apply with the Operator source only, so the earlier supervisor captures stay pixel-identical. Retry focus after a failed message send is also Operator-only.
+  4. The broadcast target object must carry exactly its scope's keys.
+  5. I-14 asserts "never waits" as finishing within 5 s, not with a 1 s `lock_timeout`.
+  6. The session dialog's "Akan terkena / Tidak terkena" lists are predicted on the client; the server decides, and the success notice lists the actual skips.

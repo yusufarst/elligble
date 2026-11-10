@@ -43,6 +43,9 @@ export interface MonitoredParticipant {
     addedSeconds: number;
     /** Each addition, oldest first; only for the managing teacher and the School Operator. */
     timeAdditions?: TimeAddition[];
+    /** The current room row and its version, for the School Operator's room transfer only (ASSESS-ROOM-001 E10). */
+    roomId?: string | null;
+    assignmentVersion?: number | null;
 }
 
 export interface TimeAddition {
@@ -66,7 +69,8 @@ export interface ExamMonitoring {
     summary: { participants: number; notStarted: number; active: number; submitted: number };
     participants: MonitoredParticipant[];
     /** Rooms of a room-based exam within the viewer's scope (broadcast targets). */
-    rooms: Array<{ roomId: string; label: string }>;
+    /** supervised: an active Proctor is mapped to the room, for the School Operator's room transfer only (E10). */
+    rooms: Array<{ roomId: string; label: string; supervised?: boolean }>;
     /** Broadcast messages that reached participants in the viewer's scope, newest first. */
     broadcasts: BroadcastRecord[];
 }
@@ -130,6 +134,11 @@ export interface MonitoringViewer {
      * addition, with its reason only where the viewer made it) or 'none' (a proctor).
      */
     timeAdditions: 'with_reasons' | 'own_reasons' | 'none';
+    /**
+     * The School Operator's room transfer fields (ASSESS-ROOM-001 E10): each participant's current room id and
+     * assignment version, and whether each room has an active mapped Proctor. Ignored for every other scope.
+     */
+    roomTransfer?: boolean;
 }
 
 /**
@@ -161,7 +170,7 @@ export async function readMonitoringProjection(
         [actor.tenantId, examInstanceId]
     );
     const participants = await client.query(
-        `SELECT p.id AS participant_id, p.person_id, er.display_label AS room_label, a.id AS attempt_id,
+        `SELECT p.id AS participant_id, p.person_id, er.display_label AS room_label, pra.exam_room_id AS room_id, pra.assignment_version, a.id AS attempt_id,
                 (SELECT l.locked_at FROM secure_assessment_attempt_locks l
                  WHERE l.tenant_id = p.tenant_id AND l.exam_attempt_id = a.id AND l.unlocked_at IS NULL) AS locked_at,
                 t.started_at,
@@ -232,7 +241,21 @@ export async function readMonitoringProjection(
     }
     const actorIds = [...new Set([...additions.values()].flat().map(a => a.actor).filter((id): id is string => id !== null))];
     const elligbleIds = await listElligbleIds(client, [...participants.rows.map(r => r.person_id as string), ...actorIds]);
-    const rooms = viewer.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
+    const transfer = scope === 'OPERATOR' && viewer.roomTransfer === true;
+    const scopeRooms = viewer.roomBased ? await readScopeRooms(client, actor.tenantId, examInstanceId, roomFilter) : [];
+    let rooms: ExamMonitoring['rooms'] = scopeRooms;
+    if (transfer && scopeRooms.length > 0) {
+        // E10: an active Proctor assignment mapped to the room row (O05-4), by its own query; readScopeRooms is unchanged.
+        const supervised = await client.query(
+            `SELECT DISTINCT m.exam_room_id FROM secure_assessment_exam_proctor_room_assignments m
+             JOIN secure_assessment_proctor_assignments pa
+               ON pa.id = m.proctor_assignment_id AND pa.tenant_id = m.tenant_id AND pa.exam_instance_id = m.exam_instance_id
+             WHERE m.tenant_id = $1 AND m.exam_instance_id = $2 AND pa.revoked_at IS NULL`,
+            [actor.tenantId, examInstanceId]
+        );
+        const covered = new Set(supervised.rows.map(r => r.exam_room_id as string));
+        rooms = scopeRooms.map(r => ({ ...r, supervised: covered.has(r.roomId) }));
+    }
     const broadcasts = await readBroadcastHistory(client, actor, examInstanceId, roomFilter);
 
     const list: MonitoredParticipant[] = participants.rows.map(r => {
@@ -261,6 +284,10 @@ export async function readMonitoringProjection(
                     ...(viewer.timeAdditions === 'with_reasons' || a.actor === actor.personId ? { reason: a.reason } : {}),
                     by: { elligbleId: a.actor ? elligbleIds.get(a.actor) ?? null : null, you: a.actor === actor.personId },
                 })),
+            } : {}),
+            ...(transfer ? {
+                roomId: r.room_id ?? null,
+                assignmentVersion: r.assignment_version === null || r.assignment_version === undefined ? null : Number(r.assignment_version),
             } : {}),
         };
     });

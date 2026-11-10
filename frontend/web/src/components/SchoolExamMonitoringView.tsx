@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ApiError, getInstitutionSupervision, getInstitutionSupervisionExam, postInstitutionSupervisionBroadcast, postInstitutionSupervisionLock,
-  postInstitutionSupervisionTime, postInstitutionSupervisionTransition,
+  postInstitutionRoomTransfer, postInstitutionSupervisionTime, postInstitutionSupervisionTransition,
 } from '../api/assessment-client.ts';
 import type {
   InstitutionReadiness, InstitutionSupervision, SupervisedExam, SupervisionAction, SupervisionSessionExamResult, SupervisionSkipCode,
@@ -44,6 +44,11 @@ export const OPERATOR_SOURCE: MonitoringSource = {
     return postInstitutionSupervisionBroadcast({ examInstanceId, target, message, ...intent });
   },
   messageNeedsReason: true,
+  // ASSESS-ROOM-001 E13: the room transfer of a running exam; its other refusals keep the control copy (§4.5).
+  transfer: {
+    move: input => postInstitutionRoomTransfer(input),
+    failureMessages: err => controlFailureMessages(err, new Map()),
+  },
 };
 
 const count = (value: number) => new Intl.NumberFormat('id-ID').format(value);

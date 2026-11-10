@@ -79,6 +79,7 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         postInstitutionSupervisionLock: m => m.postInstitutionSupervisionLock({ examInstanceId: ID, participantId: ID, action: 'lock', reason: 'Perangkat bermasalah', confirmed: true, actionKey: ID }),
         postInstitutionSupervisionTime: m => m.postInstitutionSupervisionTime({ examInstanceId: ID, participantId: ID, minutes: 5, reason: 'Gangguan listrik', actionKey: ID }),
         postInstitutionSupervisionBroadcast: m => m.postInstitutionSupervisionBroadcast({ examInstanceId: ID, target: { scope: 'EXAM' }, message: 'Harap tetap di tempat duduk.', reason: 'Pengumuman ruang', confirmed: true, actionKey: ID }),
+        postInstitutionRoomTransfer: m => m.postInstitutionRoomTransfer({ examInstanceId: ID, participantId: ID, targetRoomId: ID, expectedAssignmentVersion: 1, reason: 'Perangkat ruang bermasalah', confirmed: true, actionKey: ID }),
         postTeacherExamContentPreview: m => m.postTeacherExamContentPreview({ examInstanceId: ID, questionsCsv: 'no', sourceFileName: null }),
         postTeacherExamContent: m => m.postTeacherExamContent({ examInstanceId: ID, questionsCsv: 'no', sourceFileName: null }, { importKey: ID, expectedSha256: '0'.repeat(64) }),
     },

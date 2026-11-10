@@ -64,6 +64,8 @@ import type {
   SupervisionLockResult,
   SupervisionBroadcastInput,
   SupervisionBroadcastResult,
+  ParticipantRoomTransferInput,
+  ParticipantRoomTransferResult,
 } from '../types/assessment.ts';
 import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
@@ -417,6 +419,15 @@ export async function postInstitutionSupervisionTime(input: TimeAdditionInput): 
 export async function postInstitutionSupervisionBroadcast(input: SupervisionBroadcastInput): Promise<SupervisionBroadcastResult> {
   const res = await apiFetch('/api/v1/assessment/institution-exams/supervision/broadcast', { method: 'POST', json: input });
   return handleResponse<SupervisionBroadcastResult>(res);
+}
+
+/**
+ * Moves one participant of a running institution exam to another room of the same exam (ASSESS-ROOM-001). The current
+ * room version guards against a stale move; the same action key returns the earlier receipt.
+ */
+export async function postInstitutionRoomTransfer(input: ParticipantRoomTransferInput): Promise<ParticipantRoomTransferResult> {
+  const res = await apiFetch('/api/v1/assessment/institution-exams/supervision/room-transfer', { method: 'POST', json: input });
+  return handleResponse<ParticipantRoomTransferResult>(res);
 }
 
 /** Checks the question file of an institution exam without keeping anything; a 422 carries the problems (ApiError.data). */
