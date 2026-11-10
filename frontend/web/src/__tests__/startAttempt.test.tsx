@@ -71,7 +71,7 @@ describe('student exam entry', () => {
   it('waits for the teacher or proctor when the exam is scheduled but not opened', async () => {
     vi.mocked(getAssignedExams).mockResolvedValue({ serverNow: NOW, assignments: [exam({ lifecycleState: 'READY' })] });
     render(<AssignedExamDiscovery />);
-    expect(await screen.findByText('Menunggu guru atau pengawas membuka ujian.')).toBeDefined();
+    expect(await screen.findByText('Menunggu petugas ujian membuka ujian.')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Mulai Ujian' })).toBeNull();
   });
 

@@ -32,6 +32,7 @@ import {
     INSTITUTION_CONTENT_BODY_LIMIT_BYTES, handleInstitutionExamRoute, parseContentRequest, runInstitutionContent, sendInstitutionContentOutcome,
 } from './institution-exams.ts';
 import { handleInstitutionRoomRoute } from './institution-rooms.ts';
+import { handleSupervisionRoute } from './school-exam-monitoring.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
@@ -675,6 +676,20 @@ export function createServer(deps: ServerDependencies): http.Server {
                 return;
             }
             return handleInstitutionRoomRoute(req, res, url, deps.pool, security.cookie);
+        }
+
+        if (pathname === '/api/v1/assessment/institution-exams/supervision'
+            || pathname === '/api/v1/assessment/institution-exams/supervision/exam'
+            || pathname === '/api/v1/assessment/institution-exams/supervision/transition'
+            || pathname === '/api/v1/assessment/institution-exams/supervision/participant-lock'
+            || pathname === '/api/v1/assessment/institution-exams/supervision/add-time'
+            || pathname === '/api/v1/assessment/institution-exams/supervision/broadcast') {
+            // The School Operator supervises and controls running institution exams (ASSESS-INSTITUTION-003 §4.2/§4.3).
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            return handleSupervisionRoute(req, res, url, deps.pool, security.cookie);
         }
 
         if (pathname === '/api/v1/assessment/teacher-exams/reschedule') {

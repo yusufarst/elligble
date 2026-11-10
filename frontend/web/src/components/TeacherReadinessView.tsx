@@ -331,24 +331,32 @@ export const TeacherReadinessView: React.FC<{
                 )}
               </ExamFacts>
 
-              {DELIVERY_STATES.has(lifecycle) && exam.progress ? (
+              {/* The pause notice also shows without progress: a running institution exam has none (ASSESS-INSTITUTION-003 E2). */}
+              {lifecycle === 'PAUSED' && (exam.progress || institution) && (
+                <Alert variant="warning">
+                  <IconInfo aria-hidden="true" />
+                  <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
+                  <AlertDescription className={institution ? "min-w-0 break-words" : undefined}>Sisa waktu setiap peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.</AlertDescription>
+                </Alert>
+              )}
+
+              {institution && (lifecycle === 'ACTIVE' || lifecycle === 'PAUSED') && !exam.progress ? (
+                // D04.4-26D (LOCKED): the subject Teacher does not monitor a running institution exam; the School
+                // Operator and the room Proctors do. Progress returns once the exam has ended (E2, F3).
+                <p className="m-0 text-sm text-muted-foreground">
+                  Ujian ini sedang dilaksanakan. Pemantauan dilakukan operator sekolah dan pengawas ruang. Kemajuan peserta tampil setelah ujian berakhir.
+                </p>
+              ) : DELIVERY_STATES.has(lifecycle) && exam.progress ? (
                 <>
-                {lifecycle === 'PAUSED' && (
-                  <Alert variant="warning">
-                    <IconInfo aria-hidden="true" />
-                    <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
-                    <AlertDescription>Sisa waktu setiap peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.</AlertDescription>
-                  </Alert>
-                )}
                 <MetricList aria-label="Kemajuan pelaksanaan ujian">
                   <Metric label="Peserta" value={exam.progress.participants} />
                   <Metric label="Sudah mulai" value={exam.progress.started} />
                   <Metric label="Dikumpulkan" value={exam.progress.submitted} />
                   {exam.progress.running !== undefined && <Metric label="Masih mengerjakan" value={exam.progress.running} />}
                 </MetricList>
-                {(onOpenResults || onOpenMonitoring || (onOpenEssays && (exam.essayCount ?? 0) > 0)) && (
+                {(onOpenResults || (onOpenMonitoring && !institution) || (onOpenEssays && (exam.essayCount ?? 0) > 0)) && (
                   <ActionGroup>
-                    {onOpenMonitoring && (
+                    {onOpenMonitoring && !institution && (
                       <Button variant="secondary" onClick={() => onOpenMonitoring(exam.examInstanceId)}>Pantau Peserta</Button>
                     )}
                     {onOpenEssays && (exam.essayCount ?? 0) > 0 && (

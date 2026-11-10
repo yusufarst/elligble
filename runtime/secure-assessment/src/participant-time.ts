@@ -11,7 +11,8 @@ import { resolveSupervisionScope } from './supervision-scope.ts';
 // Until the permission matrix (PB05) says otherwise, only the teacher who manages the exam
 // adds time: the authority that also pauses, resumes and ends it (D04.4-26A; higher-impact
 // actions need stronger authority, D04.6-46/48). An assigned proctor sees an addition on the
-// participant list but does not make one. Time goes to the participant's open attempt while
+// participant list but does not make one. The School Operator adds time to institution exams through
+// the same core, applyTimeAddition (ASSESS-INSTITUTION-003 OC-1, E3). Time goes to the participant's open attempt while
 // the exam is ACTIVE or PAUSED and the attempt still has time left: an attempt whose time ran
 // out is being finalized and is not reopened (D04.5-47/49), and an ENDED exam keeps every
 // attempt's own remaining time (Owner decision 2026-09-30). One request makes one addition:
@@ -94,9 +95,8 @@ export async function addParticipantTime(
     request: TimeAdditionRequest,
     transaction?: pg.PoolClient
 ): Promise<TimeAdditionResult> {
-    const { examInstanceId, participantId, minutes, reason, actionKey } = request;
+    const { examInstanceId, participantId, actionKey } = request;
     if (!UUID_REGEX.test(actor.tenantId) || !UUID_REGEX.test(actor.personId)) return { type: 'forbidden' };
-    const seconds = minutes * 60;
     let client: pg.PoolClient;
     try {
         client = transaction ?? await pool.connect();
@@ -124,83 +124,9 @@ export async function addParticipantTime(
             return { type: 'forbidden' };
         }
 
-        const earlier = await client.query(
-            `SELECT adj.timer_state_id, adj.adjustment_seconds, adj.reason, adj.actor_person_id, adj.created_at, a.exam_participant_id
-             FROM secure_assessment_timer_adjustments adj
-             JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id AND t.tenant_id = adj.tenant_id
-             JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id AND a.tenant_id = t.tenant_id
-             WHERE adj.tenant_id = $1 AND adj.action_key = $2`,
-            [actor.tenantId, actionKey]
-        );
-        if (earlier.rows.length === 1) {
-            const row = earlier.rows[0];
-            const same = row.exam_participant_id === participantId && row.actor_person_id === actor.personId
-                && Number(row.adjustment_seconds) === seconds && row.reason === reason;
-            if (!same) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'action_key_reused' };
-            }
-            const totals = await readTotals(client, actor.tenantId, row.timer_state_id);
-            if (!transaction) await client.query('ROLLBACK');
-            return {
-                type: 'ok', participantId, addedSeconds: seconds, ...totals,
-                addedAt: new Date(row.created_at).toISOString(), replayed: true,
-            };
-        }
-
-        if (!TIME_STATES.has(supervision.lifecycleState)) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'invalid_state', currentState: supervision.lifecycleState };
-        }
-        // The participant's open (first unsubmitted) attempt, locked against its writers.
-        const attempt = await client.query(
-            `SELECT a.id FROM secure_assessment_exam_attempts a
-             WHERE a.tenant_id = $1 AND a.exam_participant_id = $2
-               AND NOT EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id)
-             ORDER BY a.created_at ASC, a.id ASC
-             LIMIT 1
-             FOR UPDATE OF a`,
-            [actor.tenantId, participantId]
-        );
-        if (attempt.rows.length !== 1) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'no_active_attempt' };
-        }
-        // Read after the attempt lock, in a statement of its own: a submission committed while
-        // this request waited for the lock is seen here.
-        const timer = await client.query(
-            `SELECT t.id, t.started_at,
-                    EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = t.tenant_id AND s.exam_attempt_id = t.exam_attempt_id) AS submitted,
-                    secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) AS remaining
-             FROM secure_assessment_timer_state t
-             WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2`,
-            [actor.tenantId, attempt.rows[0].id]
-        );
-        const state = timer.rows[0];
-        if (state?.submitted) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'no_active_attempt' };
-        }
-        if (!state?.started_at) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'not_started' };
-        }
-        if (Number(state.remaining) <= 0) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'time_up' };
-        }
-        const created = await client.query(
-            `INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason, actor_person_id, action_key, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, statement_timestamp())
-             RETURNING created_at`,
-            [actor.tenantId, state.id, seconds, reason, actor.personId, actionKey]
-        );
-        const totals = await readTotals(client, actor.tenantId, state.id);
-        if (!transaction) await client.query('COMMIT');
-        return {
-            type: 'ok', participantId, addedSeconds: seconds, ...totals,
-            addedAt: new Date(created.rows[0].created_at).toISOString(), replayed: false,
-        };
+        const { result } = await applyTimeAddition(client, actor.tenantId, actor.personId, request, supervision.lifecycleState);
+        if (!transaction) await client.query(result.type === 'ok' && !result.replayed ? 'COMMIT' : 'ROLLBACK');
+        return result;
     } catch (err) {
         if (!transaction) await client.query('ROLLBACK').catch(() => {});
         // The same key used at the same moment for another participant: the index decides.
@@ -210,4 +136,97 @@ export async function addParticipantTime(
     } finally {
         if (!transaction) client.release();
     }
+}
+
+/**
+ * The added-time core after authority (ASSESS-INSTITUTION-003 E3): the replay of an action key already in the timer
+ * ledger, the state rule, the open attempt FOR UPDATE, the timer checks and the 0050 row with its reason, actor and
+ * key. The caller holds the exam row FOR KEY SHARE, has checked the participant, and owns the transaction: it commits
+ * a new addition and rolls back every other result. The attempt is returned beside the result.
+ */
+export async function applyTimeAddition(
+    client: pg.PoolClient,
+    tenantId: string,
+    actorPersonId: string,
+    request: TimeAdditionRequest,
+    lifecycleState: string
+): Promise<{ result: TimeAdditionResult; attemptId: string | null }> {
+    const { participantId, minutes, reason, actionKey } = request;
+    const seconds = minutes * 60;
+    const earlier = await client.query(
+        `SELECT adj.timer_state_id, adj.adjustment_seconds, adj.reason, adj.actor_person_id, adj.created_at, a.exam_participant_id
+         FROM secure_assessment_timer_adjustments adj
+         JOIN secure_assessment_timer_state t ON t.id = adj.timer_state_id AND t.tenant_id = adj.tenant_id
+         JOIN secure_assessment_exam_attempts a ON a.id = t.exam_attempt_id AND a.tenant_id = t.tenant_id
+         WHERE adj.tenant_id = $1 AND adj.action_key = $2`,
+        [tenantId, actionKey]
+    );
+    if (earlier.rows.length === 1) {
+        const row = earlier.rows[0];
+        const same = row.exam_participant_id === participantId && row.actor_person_id === actorPersonId
+            && Number(row.adjustment_seconds) === seconds && row.reason === reason;
+        if (!same) {
+            return { result: { type: 'action_key_reused' }, attemptId: null };
+        }
+        const totals = await readTotals(client, tenantId, row.timer_state_id);
+        return {
+            result: {
+                type: 'ok', participantId, addedSeconds: seconds, ...totals,
+                addedAt: new Date(row.created_at).toISOString(), replayed: true,
+            },
+            attemptId: null,
+        };
+    }
+
+    if (!TIME_STATES.has(lifecycleState)) {
+        return { result: { type: 'invalid_state', currentState: lifecycleState }, attemptId: null };
+    }
+    // The participant's open (first unsubmitted) attempt, locked against its writers.
+    const attempt = await client.query(
+        `SELECT a.id FROM secure_assessment_exam_attempts a
+         WHERE a.tenant_id = $1 AND a.exam_participant_id = $2
+           AND NOT EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id)
+         ORDER BY a.created_at ASC, a.id ASC
+         LIMIT 1
+         FOR UPDATE OF a`,
+        [tenantId, participantId]
+    );
+    if (attempt.rows.length !== 1) {
+        return { result: { type: 'no_active_attempt' }, attemptId: null };
+    }
+    const attemptId: string = attempt.rows[0].id;
+    // Read after the attempt lock, in a statement of its own: a submission committed while
+    // this request waited for the lock is seen here.
+    const timer = await client.query(
+        `SELECT t.id, t.started_at,
+                EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = t.tenant_id AND s.exam_attempt_id = t.exam_attempt_id) AS submitted,
+                secure_assessment_attempt_remaining_seconds(t.tenant_id, t.exam_attempt_id, statement_timestamp()) AS remaining
+         FROM secure_assessment_timer_state t
+         WHERE t.tenant_id = $1 AND t.exam_attempt_id = $2`,
+        [tenantId, attempt.rows[0].id]
+    );
+    const state = timer.rows[0];
+    if (state?.submitted) {
+        return { result: { type: 'no_active_attempt' }, attemptId };
+    }
+    if (!state?.started_at) {
+        return { result: { type: 'not_started' }, attemptId };
+    }
+    if (Number(state.remaining) <= 0) {
+        return { result: { type: 'time_up' }, attemptId };
+    }
+    const created = await client.query(
+        `INSERT INTO secure_assessment_timer_adjustments (tenant_id, timer_state_id, adjustment_seconds, reason, actor_person_id, action_key, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, statement_timestamp())
+         RETURNING created_at`,
+        [tenantId, state.id, seconds, reason, actorPersonId, actionKey]
+    );
+    const totals = await readTotals(client, tenantId, state.id);
+    return {
+        result: {
+            type: 'ok', participantId, addedSeconds: seconds, ...totals,
+            addedAt: new Date(created.rows[0].created_at).toISOString(), replayed: false,
+        },
+        attemptId,
+    };
 }

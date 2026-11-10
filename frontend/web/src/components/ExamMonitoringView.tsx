@@ -1,8 +1,11 @@
 import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
 import { newActionKey } from '../lib/action-key.ts';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, getExamMonitoring, postParticipantLock } from '../api/assessment-client.ts';
-import type { ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus, ParticipantLockAction, ParticipantLockResponse } from '../types/assessment.ts';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ApiError, getExamMonitoring, postBroadcast, postParticipantLock, postParticipantTime } from '../api/assessment-client.ts';
+import type {
+  BroadcastSendResponse, BroadcastTarget, ExamMonitoringResponse, MonitoredParticipant, MonitoringStatus, ParticipantLockAction, ParticipantLockResponse,
+  PermissionIntent, TimeAdditionInput, TimeAdditionResponse,
+} from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -27,8 +30,30 @@ import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 // answer and does not stop that participant's time (D04.6-40). Messages to participants
 // are sent and reviewed here too (D04.6-49..55). The teacher who manages the exam adds time
 // for one working participant (D04.6-41); every supervisor sees that time was added.
+// One supervision screen for every role (plan §10.1): the School Operator of an institution exam
+// uses it through its own source (ASSESS-INSTITUTION-003 E15), over the whole exam, and gives a
+// reason with every message (OC-4). Without a source it reads and acts as it always did.
 
 const DEFAULT_REFRESH_MS = 20000;
+
+/** Where the supervision screen reads and acts: the supervisor routes, or the School Operator's (E15). */
+export interface MonitoringSource {
+  load(examInstanceId: string): Promise<ExamMonitoringResponse>;
+  lock(examInstanceId: string, participantId: string, action: ParticipantLockAction, intent: PermissionIntent): Promise<ParticipantLockResponse>;
+  addTime(input: TimeAdditionInput): Promise<TimeAdditionResponse>;
+  /** intent: the reason, confirmation and action key, when messageNeedsReason; null otherwise. */
+  broadcast(examInstanceId: string, target: BroadcastTarget, message: string, intent: PermissionIntent | null): Promise<BroadcastSendResponse>;
+  messageNeedsReason: boolean;
+}
+
+/** The supervisor routes, exactly as the screen has always called them. */
+export const SUPERVISOR_SOURCE: MonitoringSource = {
+  load: examInstanceId => getExamMonitoring(examInstanceId),
+  lock: (examInstanceId, participantId, action, intent) => postParticipantLock(examInstanceId, participantId, action, intent),
+  addTime: input => postParticipantTime(input),
+  broadcast: (examInstanceId, target, message) => postBroadcast(examInstanceId, target, message),
+  messageNeedsReason: false,
+};
 
 type Filter = 'ALL' | 'NOT_STARTED' | 'ACTIVE' | 'SUBMITTED';
 const FILTERS: Array<{ value: Filter; label: string }> = [
@@ -97,7 +122,8 @@ export const ExamMonitoringView: React.FC<{
   onBack(): void;
   backLabel: string;
   refreshIntervalMs?: number;
-}> = ({ examInstanceId, onBack, backLabel, refreshIntervalMs = DEFAULT_REFRESH_MS }) => {
+  source?: MonitoringSource;
+}> = ({ examInstanceId, onBack, backLabel, refreshIntervalMs = DEFAULT_REFRESH_MS, source = SUPERVISOR_SOURCE }) => {
   const [data, setData] = useState<ExamMonitoringResponse | null>(null);
   const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -113,19 +139,38 @@ export const ExamMonitoringView: React.FC<{
   const loadingRef = useRef(false);
   const lockTrigger = useRef<HTMLButtonElement | null>(null);
   const refreshButton = useRef<HTMLButtonElement | null>(null);
+  const backButton = useRef<HTMLButtonElement | null>(null);
+  const timeTrigger = useRef<HTMLButtonElement | null>(null);
+  const messageTrigger = useRef<HTMLButtonElement | null>(null);
+  const pendingFocus = useRef<HTMLButtonElement | null>(null);
+  const restoreFocus = useCallback((opener: HTMLButtonElement | null): boolean => {
+    const target = [opener, refreshButton.current, backButton.current].find(button => button?.isConnected && !button.disabled);
+    if (!target) return false;
+    target.focus();
+    return document.activeElement === target;
+  }, []);
+
+  // A completed Operator action can refresh away its opener. Keep a logical keyboard
+  // destination after that DOM update, without moving focus the user has already placed.
+  useLayoutEffect(() => {
+    const opener = pendingFocus.current;
+    if (!opener || source === SUPERVISOR_SOURCE) return;
+    pendingFocus.current = null;
+    if (!document.activeElement || document.activeElement === document.body) restoreFocus(opener);
+  }, [data, error, source, restoreFocus]);
 
   const load = useCallback(async () => {
     if (loadingRef.current) return;
     loadingRef.current = true;
     try {
-      setData(await getExamMonitoring(examInstanceId));
+      setData(await source.load(examInstanceId));
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError && err.status === 403 ? 'forbidden' : 'failed');
     } finally {
       loadingRef.current = false;
     }
-  }, [examInstanceId]);
+  }, [examInstanceId, source]);
 
   useEffect(() => {
     void load();
@@ -140,17 +185,26 @@ export const ExamMonitoringView: React.FC<{
     };
   }, [load, refreshIntervalMs]);
 
+  // The Operator's "Perbarui" gives focus back after its own refresh (rendered review F1); the
+  // supervisor screens keep their behaviour and captures.
+  const refocusRefresh = useRef(false);
   const refresh = async () => {
+    refocusRefresh.current = source !== SUPERVISOR_SOURCE && document.activeElement === refreshButton.current;
     setRefreshing(true);
     await load();
     setRefreshing(false);
   };
+  useLayoutEffect(() => {
+    if (refreshing || !refocusRefresh.current) return;
+    refocusRefresh.current = false;
+    if (!document.activeElement || document.activeElement === document.body) refreshButton.current?.focus();
+  }, [refreshing]);
 
   const runLockAction = async (participant: MonitoredParticipant, action: ParticipantLockAction) => {
     const id = participant.elligbleId ?? 'peserta';
     setLockPending(true);
     try {
-      const result = await postParticipantLock(examInstanceId, participant.participantId, action, { reason, confirmed: true, actionKey: newActionKey() });
+      const result = await source.lock(examInstanceId, participant.participantId, action, { reason, confirmed: true, actionKey: newActionKey() });
       setNotice({ failed: false, text: lockOutcomeMessage(id, result) });
     } catch (err) {
       setNotice({ failed: true, text: lockFailureMessage(err) });
@@ -162,13 +216,18 @@ export const ExamMonitoringView: React.FC<{
     }
   };
 
+  // The School Operator's level meets the 44 px target gate (ASSESS-INSTITUTION-003 C07); the supervisor screens
+  // keep their rendering unchanged, so their earlier captures stay identical.
+  const comfortable = source !== SUPERVISOR_SOURCE;
+  const small = comfortable ? 'h-auto min-h-11 whitespace-normal py-2' : undefined;
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return (data?.participants ?? []).filter(p => matches(filter, p.status) && (!needle || (p.elligbleId ?? '').includes(needle)));
   }, [data, filter, query]);
 
   const back = (
-    <Button variant="ghost" size="sm" className="-ml-3 self-start" onClick={onBack}>
+    <Button ref={backButton} variant="ghost" size="sm" className={comfortable ? '-ml-3 h-auto min-h-11 max-w-full self-start whitespace-normal py-2 text-left' : '-ml-3 self-start'} onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       {backLabel}
     </Button>
@@ -181,7 +240,7 @@ export const ExamMonitoringView: React.FC<{
           <LoadingState>Memuat daftar peserta...</LoadingState>
         ) : error === 'forbidden' ? (
           <LoadErrorState kind="refused" title="Akses Ditolak">
-            Daftar peserta hanya dapat dilihat oleh pengawas yang ditugaskan atau guru yang mengelola ujian ini.
+            Daftar peserta hanya dapat dilihat oleh petugas yang berwenang atas ujian ini.
           </LoadErrorState>
         ) : (
           <LoadErrorState kind="failed" title="Gagal Memuat Daftar Peserta" onRetry={refresh} retrying={refreshing}>
@@ -195,14 +254,14 @@ export const ExamMonitoringView: React.FC<{
   const { exam, summary, questionCount } = data;
   const supervised = SUPERVISED_STATES.has(exam.lifecycleState);
   // A proctor limited to rooms addresses only their rooms (D04.1-77B), as on the server.
-  const wholeExam = data.scope === 'TEACHER' || !exam.roomBased;
+  const wholeExam = data.scope === 'TEACHER' || data.scope === 'OPERATOR' || !exam.roomBased;
 
   return (
     <Page>
       {back}
       <PageHeader
         title={SCREEN_TITLE.examMonitoring}
-        actions={supervised && <Button onClick={() => setComposerOpen(true)}>Kirim Pesan</Button>}
+        actions={supervised && <Button onClick={event => { pendingFocus.current = null; messageTrigger.current = event.currentTarget; setComposerOpen(true); }}>Kirim Pesan</Button>}
       >
         <p className="m-0 text-lg font-medium">{exam.subjectLabel ?? 'Informasi mata pelajaran tidak tersedia'}</p>
         <p className="m-0 text-sm text-muted-foreground" aria-live="polite">
@@ -214,7 +273,7 @@ export const ExamMonitoringView: React.FC<{
         <Alert variant="warning">
           <IconInfo aria-hidden="true" />
           <AlertTitle>{exam.pausedAt ? `Ujian dijeda sejak ${formatTime(exam.pausedAt)}` : 'Ujian dijeda'}</AlertTitle>
-          <AlertDescription>Sisa waktu peserta berhenti dan jawaban tidak dapat diubah sampai guru melanjutkan ujian.</AlertDescription>
+          <AlertDescription>Sisa waktu peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.</AlertDescription>
         </Alert>
       )}
       {exam.lifecycleState === 'ENDED' && (
@@ -231,27 +290,27 @@ export const ExamMonitoringView: React.FC<{
         </StaleDataNotice>
       )}
 
-      <MetricList aria-label="Ringkasan peserta">
-        <Metric label="Peserta" value={summary.participants} />
-        <Metric label="Belum mulai" value={summary.notStarted} />
-        <Metric label="Mengerjakan" value={summary.active} />
-        <Metric label="Dikumpulkan" value={summary.submitted} />
+      <MetricList aria-label="Ringkasan peserta" layout={comfortable ? 'narrowFirst' : 'default'}>
+        <Metric className={comfortable ? 'min-w-0' : undefined} label="Peserta" value={summary.participants} />
+        <Metric className={comfortable ? 'min-w-0' : undefined} label="Belum mulai" value={summary.notStarted} />
+        <Metric className={comfortable ? 'min-w-0' : undefined} label="Mengerjakan" value={summary.active} />
+        <Metric className={comfortable ? 'min-w-0' : undefined} label="Dikumpulkan" value={summary.submitted} />
       </MetricList>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Saring status peserta">
           {FILTERS.map(f => (
-            <Button key={f.value} variant={filter === f.value ? 'default' : 'secondary'} size="sm" aria-pressed={filter === f.value} onClick={() => setFilter(f.value)}>
+            <Button key={f.value} variant={filter === f.value ? 'default' : 'secondary'} size="sm" className={small} aria-pressed={filter === f.value} onClick={() => setFilter(f.value)}>
               {f.label}
             </Button>
           ))}
         </div>
-        <div className="flex items-end gap-2">
-          <label className="flex flex-col gap-1 text-sm font-medium">
+        <div className={comfortable ? 'flex min-w-0 flex-wrap items-end gap-2' : 'flex items-end gap-2'}>
+          <label className={comfortable ? 'flex min-w-0 flex-1 flex-col gap-1 text-sm font-medium' : 'flex flex-col gap-1 text-sm font-medium'}>
             Cari ELLIGBLE ID
-            <Input value={query} onChange={e => setQuery(e.target.value)} className="h-9 w-full sm:w-56" autoComplete="off" spellCheck={false} />
+            <Input value={query} onChange={e => setQuery(e.target.value)} className={comfortable ? 'w-full min-w-0 sm:w-56' : 'h-9 w-full sm:w-56'} autoComplete="off" spellCheck={false} />
           </label>
-          <Button ref={refreshButton} variant="secondary" size="sm" onClick={refresh} disabled={refreshing}>
+          <Button ref={refreshButton} variant="secondary" size="sm" className={small} onClick={refresh} disabled={refreshing}>
             {refreshing ? 'Memperbarui...' : 'Perbarui'}
           </Button>
         </div>
@@ -310,6 +369,7 @@ export const ExamMonitoringView: React.FC<{
                             <Button
                               variant="secondary"
                               size="sm"
+                              className={small}
                               aria-label={`${lockAction === 'lock' ? 'Kunci' : 'Buka Kunci'} pengerjaan ${shownId}`}
                               onClick={event => { lockTrigger.current = event.currentTarget; setConfirmLock({ participant: p, action: lockAction }); }}
                               disabled={lockPending}
@@ -318,7 +378,7 @@ export const ExamMonitoringView: React.FC<{
                             </Button>
                           )}
                           {canAddTime && (
-                            <Button variant="secondary" size="sm" aria-label={`Tambah waktu ${shownId}`} onClick={() => setAddTimeFor(p)}>
+                            <Button variant="secondary" size="sm" className={small} aria-label={`Tambah waktu ${shownId}`} onClick={event => { pendingFocus.current = null; timeTrigger.current = event.currentTarget; setAddTimeFor(p); }}>
                               Tambah Waktu
                             </Button>
                           )}
@@ -349,7 +409,7 @@ export const ExamMonitoringView: React.FC<{
       {(data.broadcasts?.length ?? 0) > 0 && <BroadcastHistory broadcasts={data.broadcasts!} />}
 
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
-        Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan. "Kunci" menghentikan pengerjaan satu peserta tanpa menghentikan waktunya; jawaban yang sudah dipilih tetap tersimpan. "Waktu ditambah" berarti guru yang mengelola ujian menambah waktu pengerjaan peserta itu.
+        Status berasal dari server: jawaban yang sudah diterima, waktu ujian server, dan sesi ujian. Jawaban yang masih tersimpan di perangkat siswa karena koneksi terputus belum terlihat di sini. "Pindah perangkat" berarti sesi ujian dilanjutkan di perangkat atau tab lain; ini bukan tuduhan kecurangan. "Kunci" menghentikan pengerjaan satu peserta tanpa menghentikan waktunya; jawaban yang sudah dipilih tetap tersimpan. "Waktu ditambah" berarti petugas yang berwenang menambah waktu pengerjaan peserta itu.
       </p>
 
       <BroadcastComposer
@@ -359,7 +419,11 @@ export const ExamMonitoringView: React.FC<{
         wholeExam={wholeExam}
         rooms={data.rooms ?? []}
         participants={data.participants}
+        source={source}
+        comfortable={comfortable}
+        restoreFocus={comfortable ? () => restoreFocus(messageTrigger.current) : undefined}
         onSent={result => {
+          if (comfortable) pendingFocus.current = messageTrigger.current;
           setComposerOpen(false);
           setNotice({ failed: false, text: `Pesan terkirim ke ${result.recipients} peserta.` });
           void load();
@@ -371,8 +435,12 @@ export const ExamMonitoringView: React.FC<{
         participant={addTimeFor}
         examInstanceId={examInstanceId}
         examState={exam.lifecycleState}
+        source={source}
+        comfortable={comfortable}
         onClose={() => setAddTimeFor(null)}
+        restoreFocus={comfortable ? () => restoreFocus(timeTrigger.current) : undefined}
         onDone={outcome => {
+          if (comfortable) pendingFocus.current = timeTrigger.current;
           setAddTimeFor(null);
           setNotice(outcome);
           void load();

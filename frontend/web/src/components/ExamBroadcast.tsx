@@ -1,17 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, postBroadcast } from '../api/assessment-client.ts';
-import type { BroadcastRecord, BroadcastSendResponse, BroadcastTarget, MonitoredParticipant } from '../types/assessment.ts';
+import type { BroadcastRecord, BroadcastSendResponse, BroadcastTarget, MonitoredParticipant, PermissionIntent } from '../types/assessment.ts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatTime } from '../lib/format.ts';
 import { participantStatus } from '../lib/status.ts';
+import { useActionKey } from '../hooks/useDialogAction.ts';
+import { ActionReasonField, permissionDialogClass, validActionReason } from './ActionReasonField.tsx';
 
 // Supervisor messages to participants (D04.1-77A..F, D04.6-49..55): the composer asks only
 // for the target and the message (D04.6-50), offers the quick messages of D04.6-51, and
 // never offers a target outside the supervisor's scope (a room proctor sees only their
 // rooms, D04.1-77B). The history shows who sent what to whom and when, and how many
-// devices confirmed receiving it: never that it was read (D04.6-53/54).
+// devices confirmed receiving it: never that it was read (D04.6-53/54). The School Operator of an
+// institution exam sends through its own source and gives a reason with every message, with one
+// action key per opening kept on every retry (ASSESS-INSTITUTION-003 OC-4, E15).
 
 export const QUICK_MESSAGES = [
   'Ujian tersisa 15 menit.',
@@ -35,6 +39,7 @@ function sendFailureMessage(err: unknown): string {
       case 'invalid_state': return 'Status ujian telah berubah, pesan tidak dikirim. Data ditampilkan ulang.';
       case 'forbidden': return 'Anda tidak berwenang mengirim pesan ke tujuan ini.';
       case 'invalid_request': return 'Pesan tidak dapat dikirim. Tulis 1 sampai 200 karakter.';
+      case 'action_key_reused': return 'Pesan tadi mungkin sudah terkirim. Periksa Pesan Terkirim sebelum mengirim lagi.';
     }
   }
   return 'Gagal mengirim pesan. Periksa koneksi internet Anda dan coba lagi.';
@@ -51,7 +56,16 @@ export const BroadcastComposer: React.FC<{
   onSent(result: BroadcastSendResponse): void;
   /** The exam changed under the composer: the list is read again. */
   onStale(): void;
-}> = ({ open, onClose, examInstanceId, wholeExam, rooms, participants, onSent, onStale }) => {
+  /** Where the message is sent; the supervisor route, without a reason, by default. */
+  source?: {
+    broadcast(examInstanceId: string, target: BroadcastTarget, message: string, intent: PermissionIntent | null): Promise<BroadcastSendResponse>;
+    messageNeedsReason: boolean;
+  };
+  /** 44 px targets (the School Operator's level, ASSESS-INSTITUTION-003 C07). */
+  comfortable?: boolean;
+  /** Return focus to the Operator action, or its surviving list control. */
+  restoreFocus?(): boolean;
+}> = ({ open, onClose, examInstanceId, wholeExam, rooms, participants, onSent, onStale, source, comfortable = false, restoreFocus }) => {
   const reachable = useMemo(() => participants.filter(p => p.status !== 'SUBMITTED'), [participants]);
   const defaultTarget = wholeExam ? 'EXAM' : rooms.length > 0 ? `ROOM:${rooms[0].roomId}` : 'PARTICIPANTS';
   const [target, setTarget] = useState<string>(defaultTarget);
@@ -59,6 +73,9 @@ export const BroadcastComposer: React.FC<{
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
+  const needsReason = source?.messageNeedsReason === true;
+  const key = useActionKey(open);
 
   // Every opening starts empty.
   useEffect(() => {
@@ -66,12 +83,20 @@ export const BroadcastComposer: React.FC<{
     setTarget(defaultTarget);
     setSelected(new Set());
     setMessage('');
+    setReason('');
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const text = message.trim();
-  const ready = text.length > 0 && text.length <= BROADCAST_MAX_LENGTH && (target !== 'PARTICIPANTS' || selected.size > 0);
+  const ready = text.length > 0 && text.length <= BROADCAST_MAX_LENGTH && (target !== 'PARTICIPANTS' || selected.size > 0)
+    && (!needsReason || validActionReason(reason));
+
+  // The School Operator's composer: after a failed send the action is enabled again and takes the focus back.
+  const sendButton = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (needsReason && open && error && !sending && sendButton.current && !sendButton.current.disabled) sendButton.current.focus();
+  }, [needsReason, open, error, sending]);
 
   const send = async () => {
     if (!ready || sending) return;
@@ -81,7 +106,9 @@ export const BroadcastComposer: React.FC<{
     setSending(true);
     setError(null);
     try {
-      onSent(await postBroadcast(examInstanceId, chosen, text));
+      onSent(source
+        ? await source.broadcast(examInstanceId, chosen, text, needsReason ? { reason, confirmed: true, actionKey: key.current } : null)
+        : await postBroadcast(examInstanceId, chosen, text));
     } catch (err) {
       setError(sendFailureMessage(err));
       if (err instanceof ApiError && err.code === 'invalid_state') onStale();
@@ -100,7 +127,7 @@ export const BroadcastComposer: React.FC<{
   };
 
   const radio = (value: string, label: string) => (
-    <label key={value} className="flex min-h-9 items-center gap-2 text-sm">
+    <label key={value} className={comfortable ? 'flex min-h-11 items-center gap-2 text-sm' : 'flex min-h-9 items-center gap-2 text-sm'}>
       <input type="radio" name="broadcast-target" value={value} checked={target === value} onChange={() => setTarget(value)} className="size-4 accent-primary" />
       {label}
     </label>
@@ -109,7 +136,7 @@ export const BroadcastComposer: React.FC<{
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !sending) onClose(); }}>
       {open && (
-        <DialogContent aria-describedby="broadcast-description" className="max-h-[90dvh] overflow-y-auto">
+        <DialogContent aria-describedby="broadcast-description" onCloseAutoFocus={event => { if (restoreFocus?.()) event.preventDefault(); }} className={comfortable ? `max-h-[90dvh] overflow-y-auto ${permissionDialogClass}` : 'max-h-[90dvh] overflow-y-auto'}>
           <DialogHeader>
             <DialogTitle>Kirim Pesan ke Peserta</DialogTitle>
             <DialogDescription id="broadcast-description">
@@ -129,7 +156,7 @@ export const BroadcastComposer: React.FC<{
               {reachable.length === 0 ? (
                 <p className="m-0 text-sm text-muted-foreground">Semua peserta sudah mengumpulkan.</p>
               ) : reachable.map(p => (
-                <label key={p.participantId} className="flex min-h-9 items-center gap-2 text-sm">
+                <label key={p.participantId} className={comfortable ? 'flex min-h-11 items-center gap-2 text-sm' : 'flex min-h-9 items-center gap-2 text-sm'}>
                   <input type="checkbox" checked={selected.has(p.participantId)} onChange={() => toggle(p.participantId)} className="size-4 accent-primary" />
                   <span className="font-mono text-[13px] [overflow-wrap:anywhere]">{p.elligbleId ?? 'Tanpa ELLIGBLE ID'}</span>
                   <span className="text-xs text-muted-foreground">{participantStatus(p).label}</span>
@@ -162,11 +189,13 @@ export const BroadcastComposer: React.FC<{
             </div>
           </div>
 
+          {needsReason && <ActionReasonField value={reason} onChange={setReason} disabled={sending} />}
+
           {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
 
           <DialogFooter>
             <Button variant="secondary" onClick={onClose} disabled={sending}>Batal</Button>
-            <Button onClick={send} disabled={!ready || sending}>{sending ? 'Mengirim...' : 'Kirim Pesan'}</Button>
+            <Button ref={sendButton} onClick={send} disabled={!ready || sending}>{sending ? 'Mengirim...' : 'Kirim Pesan'}</Button>
           </DialogFooter>
         </DialogContent>
       )}

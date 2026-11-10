@@ -58,55 +58,9 @@ export async function performParticipantLockAction(
             if (!transaction) await client.query('ROLLBACK');
             return { type: 'forbidden' };
         }
-        if (!SUPERVISED_STATES.has(supervision.lifecycleState)) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'invalid_state', currentState: supervision.lifecycleState };
-        }
-        // The participant's open (first unsubmitted) attempt, locked against its writers.
-        const attempt = await client.query(
-            `SELECT a.id FROM secure_assessment_exam_attempts a
-             WHERE a.tenant_id = $1 AND a.exam_participant_id = $2
-               AND NOT EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id)
-             ORDER BY a.created_at ASC, a.id ASC
-             LIMIT 1
-             FOR UPDATE OF a`,
-            [actor.tenantId, participantId]
-        );
-        if (attempt.rows.length !== 1) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'no_active_attempt' };
-        }
-        const attemptId: string = attempt.rows[0].id;
-        const open = await client.query(
-            `SELECT id, locked_at FROM secure_assessment_attempt_locks
-             WHERE tenant_id = $1 AND exam_attempt_id = $2 AND unlocked_at IS NULL`,
-            [actor.tenantId, attemptId]
-        );
-        if (action === 'lock') {
-            if (open.rows.length === 1) {
-                if (!transaction) await client.query('ROLLBACK');
-                return { type: 'ok', participantId, locked: true, changed: false, lockedAt: new Date(open.rows[0].locked_at).toISOString() };
-            }
-            // The boundary is taken after the attempt row lock: a save in flight lands before it.
-            const created = await client.query(
-                `INSERT INTO secure_assessment_attempt_locks (tenant_id, exam_attempt_id, locked_at, locked_by_person_id)
-                 VALUES ($1, $2, statement_timestamp(), $3) RETURNING locked_at`,
-                [actor.tenantId, attemptId, actor.personId]
-            );
-            if (!transaction) await client.query('COMMIT');
-            return { type: 'ok', participantId, locked: true, changed: true, lockedAt: new Date(created.rows[0].locked_at).toISOString() };
-        }
-        if (open.rows.length === 0) {
-            if (!transaction) await client.query('ROLLBACK');
-            return { type: 'ok', participantId, locked: false, changed: false, lockedAt: null };
-        }
-        await client.query(
-            `UPDATE secure_assessment_attempt_locks SET unlocked_at = statement_timestamp(), unlocked_by_person_id = $3
-             WHERE tenant_id = $1 AND id = $2 AND unlocked_at IS NULL`,
-            [actor.tenantId, open.rows[0].id, actor.personId]
-        );
-        if (!transaction) await client.query('COMMIT');
-        return { type: 'ok', participantId, locked: false, changed: true, lockedAt: null };
+        const { result } = await applyParticipantLock(client, actor.tenantId, participantId, actor.personId, supervision.lifecycleState, action);
+        if (!transaction) await client.query(result.type === 'ok' && result.changed ? 'COMMIT' : 'ROLLBACK');
+        return result;
     } catch (transactionError) {
         if (!transaction) await client.query('ROLLBACK').catch(() => {});
         if (transaction) throw transactionError;
@@ -114,4 +68,63 @@ export async function performParticipantLockAction(
     } finally {
         if (!transaction) client.release();
     }
+}
+
+/**
+ * The lock core after authority (ASSESS-INSTITUTION-003 E3): the state rule, the open attempt FOR UPDATE, then the
+ * idempotent lock or unlock with its actor (0046). The caller holds the exam row FOR KEY SHARE, has checked the
+ * participant, and owns the transaction: it commits a change and rolls back every other result. The attempt the
+ * action applies to is returned beside the result. Shared by the supervisor route and the School Operator.
+ */
+export async function applyParticipantLock(
+    client: pg.PoolClient,
+    tenantId: string,
+    participantId: string,
+    actorPersonId: string,
+    lifecycleState: string,
+    action: ParticipantLockAction
+): Promise<{ result: ParticipantLockResult; attemptId: string | null }> {
+    if (!SUPERVISED_STATES.has(lifecycleState)) {
+        return { result: { type: 'invalid_state', currentState: lifecycleState }, attemptId: null };
+    }
+    // The participant's open (first unsubmitted) attempt, locked against its writers.
+    const attempt = await client.query(
+        `SELECT a.id FROM secure_assessment_exam_attempts a
+         WHERE a.tenant_id = $1 AND a.exam_participant_id = $2
+           AND NOT EXISTS (SELECT 1 FROM secure_assessment_exam_submissions s WHERE s.tenant_id = a.tenant_id AND s.exam_attempt_id = a.id)
+         ORDER BY a.created_at ASC, a.id ASC
+         LIMIT 1
+         FOR UPDATE OF a`,
+        [tenantId, participantId]
+    );
+    if (attempt.rows.length !== 1) {
+        return { result: { type: 'no_active_attempt' }, attemptId: null };
+    }
+    const attemptId: string = attempt.rows[0].id;
+    const open = await client.query(
+        `SELECT id, locked_at FROM secure_assessment_attempt_locks
+         WHERE tenant_id = $1 AND exam_attempt_id = $2 AND unlocked_at IS NULL`,
+        [tenantId, attemptId]
+    );
+    if (action === 'lock') {
+        if (open.rows.length === 1) {
+            return { result: { type: 'ok', participantId, locked: true, changed: false, lockedAt: new Date(open.rows[0].locked_at).toISOString() }, attemptId };
+        }
+        // The boundary is taken after the attempt row lock: a save in flight lands before it.
+        const created = await client.query(
+            `INSERT INTO secure_assessment_attempt_locks (tenant_id, exam_attempt_id, locked_at, locked_by_person_id)
+             VALUES ($1, $2, statement_timestamp(), $3) RETURNING locked_at`,
+            [tenantId, attemptId, actorPersonId]
+        );
+        return { result: { type: 'ok', participantId, locked: true, changed: true, lockedAt: new Date(created.rows[0].locked_at).toISOString() }, attemptId };
+    }
+    if (open.rows.length === 0) {
+        return { result: { type: 'ok', participantId, locked: false, changed: false, lockedAt: null }, attemptId };
+    }
+    await client.query(
+        `UPDATE secure_assessment_attempt_locks SET unlocked_at = statement_timestamp(), unlocked_by_person_id = $3
+         WHERE tenant_id = $1 AND id = $2 AND unlocked_at IS NULL`,
+        [tenantId, open.rows[0].id, actorPersonId]
+    );
+    return { result: { type: 'ok', participantId, locked: false, changed: true, lockedAt: null }, attemptId };
 }

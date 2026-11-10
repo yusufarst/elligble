@@ -1,3 +1,13 @@
+> **ASSESS-INSTITUTION-003 return of execution control, 2026-11-10 (00.13 §11.5):** the Owner ended the temporary Codex assignment and returned exclusive execution control to Claude Code. Branch head 1af11ad and its CI #244 (run 42686933488, attempt 1: Web, Runtime/PostgreSQL and Container SUCCESS; five browser jobs FAILURE in 99j only) preserved; the uncommitted Codex corrections (Operator dialog focus restoration and a single-pass 200 % text calibration in 99j) preserved, completed and published within the frozen allowlist ([record §11.0.3](tasks/ASSESS-INSTITUTION-003.md)). The Owner designated the original Claude reviewer for the final-content and rendered review. DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
+> **ASSESS-INSTITUTION-003 controlled continuation, 2026-11-10:** GOV-EXEC-002 landed through PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9; exact-main CI #243 eight SUCCESS attempt 1 makes 00.13 §11 effective. Existing Task remains VERIFYING; CI #240 failure diagnosed as the seven-Student fixture versus stale six-Student test oracle, corrected within row 35 ([record §11.0.2](tasks/ASSESS-INSTITUTION-003.md)). Original contract/reviews/OC-1–OC-6/31 paths/0064 preserved. DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16; 78 edges unchanged. Final candidate CI and designated independent delta/rendered review pending; PB05/PB12 OPEN, production NOT READY.
+
+> **ASSESS-INSTITUTION-003 implementation checkpoint, 2026-11-09 (DEC-048):** registration CI #238 (run 42634196523, 89515a0) attempt 1 eight SUCCESS; implementation candidate published for exact-content CI and the independent implementation and rendered review ([record §11](tasks/ASSESS-INSTITUTION-003.md)). DONE 16/33 (48.48%), VERIFYING 1, BLOCKED 16, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
+> **ASSESS-INSTITUTION-003 READY / Build checkpoint, 2026-11-09 (DEC-048):** Owner decisions OC-1 (School Operator opens, pauses, resumes and ends institution exams per exam or per session, and locks, messages and adds time; room Proctors keep lock and message in their room), OC-2 (the Operator opens at the session time with readiness re-checked), OC-3–OC-6 (all recommended defaults); contract review chain STOP → PASS by the Owner-designated reviewer; formal READY PASS, frozen 31-path allowlist, reserved migration 0064; rendered baseline = exact-main CI #237 artifacts (3450 pairs, manifest recorded) ([record §10](tasks/ASSESS-INSTITUTION-003.md)). DONE 16/33 (48.48%), IN_PROGRESS 1, BLOCKED 16, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
+> **ASSESS-INSTITUTION-002 landing and ASSESS-INSTITUTION-003 contract checkpoint, 2026-11-09 (DEC-048):** ASSESS-INSTITUTION-002 DONE / MERGED: PR #36 squash main e1f2ec46826930862bc69ce76a55c2b251a9cd25 (tree equal to evidence head c11ab1f), PR-head CI #236 and post-merge main CI #237 attempt 1 eight SUCCESS; final record §12 (Delegated Acceptance). ASSESS-INSTITUTION-003 is eligible (00.13 §4.1); its contract was prepared and reviewed (STOP → PASS) with Owner decisions OC-1–OC-6. DONE 16/33 (48.48%), VERIFYING 0, BLOCKED 17, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
+
 > **Temporary executor-transfer proposal, 2026-11-09:** [GOV-EXEC-002](tasks/GOV-EXEC-002.md) prepares the narrow 00.13 §11 amendment and specific replacement reviewer. Owner approval and publication/activation gates PENDING; Codex standing delegation NOT EFFECTIVE. Existing ASSESS-INSTITUTION-003 remains VERIFYING at 5409e847d2debbb40a2aa76153e2d82fa3f6dc34; CI #240 is preserved without rerun; completed reviews/OC-1–OC-6/31-path allowlist/0064 unchanged. No baseline successor or parallel implementation.
 
 > **ASSESS-INSTITUTION-002 implementation checkpoint, 2026-11-09 (DEC-048):** registration CI #230 attempt 1 eight SUCCESS; implementation candidate published for exact-content CI and the independent implementation and rendered review ([record §11](tasks/ASSESS-INSTITUTION-002.md)). DONE 15/33 (45.45%), VERIFYING 1, BLOCKED 17, others 0; 78 edges unchanged. PB05 and PB12 OPEN; production NOT READY.
@@ -1151,7 +1161,7 @@ Done: full unit test gate; reusable disposable PostgreSQL harness (`test/support
 ## 13. Next engineering work
 > DEC-045: one Owner-authorized bounded Task at a time; planning acceptance is not feature/deployment authority.
 
-Current Task **AUTH-002 IN_PROGRESS under DEC-048 (record §12)**. Preparation history follows: Local four-document package records ADMIN-001 landing/CI #131 and DONE 3/33 (9.09%), BLOCKED 30/READY 0/IN_PROGRESS 0/VERIFYING 0, 78 edges preserved. [AUTH-002 §4/§10](tasks/AUTH-002.md) consolidates remaining Task-specific decisions and formal READY gates; do not repeat completed reviews. No publication, Build, CI execution, migration, real data or successor authorized.
+Current Task **ASSESS-INSTITUTION-003 VERIFYING under effective DEC-048 / 00.13 §11 (record §11.0.2)**; exact corrected-content CI and the designated independent final delta/rendered review are next. Historical AUTH-002 preparation context follows: Local four-document package records ADMIN-001 landing/CI #131 and DONE 3/33 (9.09%), BLOCKED 30/READY 0/IN_PROGRESS 0/VERIFYING 0, 78 edges preserved. [AUTH-002 §4/§10](tasks/AUTH-002.md) consolidates remaining Task-specific decisions and formal READY gates; do not repeat completed reviews. No publication, Build, CI execution, migration, real data or successor authorized.
 
 Historical registration of **GOV-REALIGN-006**, HIGH, PRE-P11 / PRE-BASELINE, NOT COUNTED IN P11 BASELINE: one finite unapproved/inactive P11 candidate. Four-file contract in `tasks/GOV-REALIGN-006.md`; candidate `TASK_PLAN.md` registers 33 BLOCKED Tasks, no implementation READY or baseline DONE. Final P11 approval remains BLOCKED on P1 §8 applicable gates, explicitly P5/O09 and P6 numeric/workload O07 approval, plus Independent HIGH-risk and Owner reviews. Own exact-content CI/publication pending; after CI STOP for those reviews/final P11 decision, no evidence commit or successor authorization.
 
@@ -1172,6 +1182,37 @@ UI-SYSTEM-004 Part 3 implementation entry: baseline `1d2fcea8961ef1e19c920e6fff0
 UI-SYSTEM-004 Part 3 targeted correction: content `d1ac5da16b9c2e44c1efe14416cc5ac35d14796c`, CI #76 (40485141852), push attempt 1, terminal FAILURE: web typecheck PASS, 343/344 tests (paused participantTime notification missing), build/browser/image skipped; runtime/PostgreSQL SUCCESS. Failure DOM retains initial 42:10. Read-only assessment supports an asynchronous test-readiness race, exact CI interleaving unproven. Owner explicitly authorizes one correction only in participantTime.test.tsx and the two records: async initial act, ready UI, one online event, new timer-request assertion, unchanged 3-minute/45:10 assertions. No Student/UI/E2E/fixture/workflow change, timeout/sleep/retry or #76 rerun. Baseline #75 retained; own new full CI and matched after evidence mandatory; Part 3 NOT DONE. Task record §9.4.
 
 ## 14. Continuity checkpoint
+
+Current checkpoint, 2026-11-10 (00.13 §11.5 return): the Owner returned exclusive execution control from Codex to Claude Code; the temporary §11 assignment has ended. No Codex process writes to the repository.
+
+| Item | Current state |
+|---|---|
+| Active Task | ASSESS-INSTITUTION-003 VERIFYING; contract, READY, Build and completed review history preserved |
+| Physical worktree | C:\Projects\ELLIGBLE-institution-003; task/assess-institution-003; last pushed head 1af11ad286dfc64e9d5dd1cc0412766246370536 (after main merge 72b9632); the uncommitted Codex corrections in five allowlisted paths preserved and published by the next correction commit |
+| Last verified main | 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9; CI #243 eight SUCCESS attempt 1 |
+| Current gate | CI #244 (run 42686933488, 1af11ad) FAILURE preserved: 99j focus after adding time and 200 % text capture overflow; corrected within rows 22, 23, 26, 31 and 35 (record §11.0.3); new exact-content CI, then final-content and rendered review |
+| Delegation / reviewer | 00.13 §§1–10 with Claude Code as executor; RENDERED-ASSESS-INSTITUTION-003-CODEX-01 lost its context with no verdict on a candidate; the Owner designated the original Claude reviewer (contract, implementation and 5409e84 correction reviews) for the remaining reviews; no open STOP |
+| Frozen scope | 31 paths (§6 rows 5–35) plus four Task-flow paths; OC-1–OC-6 and migration 0064 unchanged |
+| Counters | Baseline/Current 33, DONE 16 (48.48%), VERIFYING 1, BLOCKED 16, other statuses 0; 78 edges unchanged |
+| Next safe action | exact-content CI of the correction commit; same-reviewer final-content delta and rendered review; evidence commit, PR, PR-head CI, delegated squash merge, exact-main CI; then the next eligible Task |
+
+Previous checkpoint, 2026-11-10: temporary governance transfer EFFECTIVE after PR #37/main 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9 and [exact-main CI #243](https://github.com/yusufarst/elligble/actions/runs/42681365739), eight SUCCESS attempt 1.
+
+| Item | Current state |
+|---|---|
+| Active Task | ASSESS-INSTITUTION-003 VERIFYING; existing contract/READY/Build and completed review history preserved |
+| Physical worktree | C:\Projects\ELLIGBLE-institution-003; task/assess-institution-003; original content 5409e847d2debbb40a2aa76153e2d82fa3f6dc34, normal main merge 72b963206b3f6c7ab13b18ac9f00fb23cf23a341; bounded test-oracle correction in preparation |
+| Last verified main | 40c8a53d0d0918e0ec9a7f00c08fb4d79c7716b9; CI #243/run 42681365739, attempt 1 eight SUCCESS, tree equal to PR #37 evidence head |
+| Current gate | CI #240 FAILURE preserved; its seven-Student fixture/count mismatch corrected only in existing 99j; new exact-content CI and final delta/rendered review pending |
+| Delegation / reviewer | 00.13 §11 effective; Owner-designated RENDERED-ASSESS-INSTITUTION-003-CODEX-01, same fresh-context read-only reviewer for corrections; all old verdicts/SHA anchors retained, no unresolved STOP bypass |
+| Frozen scope | 31 paths (§6 rows 5–35) plus four Task-flow paths; OC-1–OC-6 and migration 0064 unchanged |
+| Counters | Baseline/Current 33, DONE 16 (48.48%), VERIFYING 1, BLOCKED 16, other statuses 0; 78 edges unchanged |
+| Preserved local work | Main checkout remains 056a154 with its four historical AUTH-002 working changes; untouched. Other pre-existing worktrees preserved |
+| Release | PB05/PB12 OPEN; G1–G10 not passed; no production deployment or real student data action |
+| Next safe action | Targeted local typecheck, scope/hash guards, genuine correction content commit and normal push only after prior CI terminal; then exact-SHA CI and required independent review. No Task successor before DONE/merge/exact-main CI PASS |
+
+### Historical AUTH-002 continuity snapshot — 2026-11-04
+
 
 > **Temporary executor-transfer proposal, 2026-11-09:** [GOV-EXEC-002](tasks/GOV-EXEC-002.md) prepares the narrow 00.13 §11 amendment and specific replacement reviewer. Owner approval and publication/activation gates PENDING; Codex standing delegation NOT EFFECTIVE. Existing ASSESS-INSTITUTION-003 remains VERIFYING at 5409e847d2debbb40a2aa76153e2d82fa3f6dc34; CI #240 is preserved without rerun; completed reviews/OC-1–OC-6/31-path allowlist/0064 unchanged. No baseline successor or parallel implementation.
 
