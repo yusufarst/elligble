@@ -146,6 +146,26 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                     accessibilitySnapshot: await root().ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
                 }, null, 2));
                 captureWritten = true;
+                // The calibrated DOM must survive until the screenshot and metrics are taken: a self-refresh
+                // between the calibration check and the screenshot left unscaled nodes in it (CI #249, webkit-390).
+                if (calibration) {
+                    const afterCapture = await calibration.evaluate(snapshot => {
+                        const calibrated = new Set(snapshot.nodes.map(({ node }) => node));
+                        const current = [document.body, ...document.body.querySelectorAll<HTMLElement>('*')].filter((node): node is HTMLElement => node instanceof HTMLElement);
+                        return {
+                            detachedElements: snapshot.nodes.filter(({ node }) => !node.isConnected).length,
+                            unscaledElements: current.filter(node => !calibrated.has(node)).length,
+                            fontMismatches: snapshot.nodes.filter(({ node, font }) => node.isConnected && Number.isFinite(font) && Math.abs(parseFloat(getComputedStyle(node).fontSize) - font * 2) > 0.02).length,
+                        };
+                    });
+                    const metadata: Record<string, unknown> = JSON.parse(readFileSync(metadataPath, 'utf8'));
+                    writeFileSync(metadataPath, JSON.stringify({ ...metadata, captureAttempt: attempt, textIntegrityAfterCapture: afterCapture }, null, 2));
+                    if ((afterCapture.detachedElements > 0 || afterCapture.unscaledElements > 0 || afterCapture.fontMismatches > 0) && attempt < 3) {
+                        retryVariant = true;
+                        continue;
+                    }
+                    expect(afterCapture, 'The calibrated DOM stayed unchanged through the screenshot and metrics').toEqual({ detachedElements: 0, unscaledElements: 0, fontMismatches: 0 });
+                }
                 expect.soft(metrics.scrollWidth, `${scenario} ${v.width}x${v.height} text${v.text}: overflow ${JSON.stringify(metrics.overflowing)}`).toBeLessThanOrEqual(metrics.clientWidth);
                 expect.soft(metrics.targets.filter(t => t.width < 43.5 || t.height < 43.5), `${scenario} ${v.width}x${v.height} text${v.text}: targets below 44 px`).toEqual([]);
                 expect.soft(metrics.metricWraps, `${scenario} ${v.width}x${v.height} text${v.text}: mid-word metric labels`).toEqual([]);
