@@ -363,6 +363,8 @@ async function refreshSupervision(page: Page): Promise<void> {
     const button = page.getByRole('button', { name: 'Perbarui', exact: true });
     await button.click();
     await expect(button).toBeEnabled();
+    // Focus stays on "Perbarui" through its own refresh, never BODY (rendered review F1).
+    await expect(button).toBeFocused();
 }
 
 const focusIsOnBody = (page: Page) => page.evaluate(() => document.activeElement === document.body || document.activeElement === null);

@@ -185,11 +185,20 @@ export const ExamMonitoringView: React.FC<{
     };
   }, [load, refreshIntervalMs]);
 
+  // The Operator's "Perbarui" gives focus back after its own refresh (rendered review F1); the
+  // supervisor screens keep their behaviour and captures.
+  const refocusRefresh = useRef(false);
   const refresh = async () => {
+    refocusRefresh.current = source !== SUPERVISOR_SOURCE && document.activeElement === refreshButton.current;
     setRefreshing(true);
     await load();
     setRefreshing(false);
   };
+  useLayoutEffect(() => {
+    if (refreshing || !refocusRefresh.current) return;
+    refocusRefresh.current = false;
+    if (!document.activeElement || document.activeElement === document.body) refreshButton.current?.focus();
+  }, [refreshing]);
 
   const runLockAction = async (participant: MonitoredParticipant, action: ParticipantLockAction) => {
     const id = participant.elligbleId ?? 'peserta';

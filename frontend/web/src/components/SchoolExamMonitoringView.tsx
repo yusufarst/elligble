@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ApiError, getInstitutionSupervision, getInstitutionSupervisionExam, postInstitutionSupervisionBroadcast, postInstitutionSupervisionLock,
   postInstitutionSupervisionTime, postInstitutionSupervisionTransition,
@@ -385,11 +385,20 @@ export const SchoolExamMonitoringView: React.FC<{
     return () => observer.disconnect();
   }, [monitored]);
 
+  // "Perbarui" is disabled while it reads, which drops the browser's focus to BODY; a manual
+  // refresh that started from it gives focus back once it is enabled again (rendered review F1).
+  const refocusReload = useRef(false);
   const refresh = async () => {
+    refocusReload.current = document.activeElement === reloadButton.current;
     setRefreshing(true);
     await load();
     setRefreshing(false);
   };
+  useLayoutEffect(() => {
+    if (refreshing || !refocusReload.current) return;
+    refocusReload.current = false;
+    if (!document.activeElement || document.activeElement === document.body) reloadButton.current?.focus();
+  }, [refreshing]);
 
   const restoreFocus = () => {
     // Controlled dialogs have no Radix trigger: return to the opener; after a completed control, to its notice,

@@ -449,6 +449,25 @@ describe('the subject Teacher card of an institution exam (E2)', () => {
 
 
 describe('controlled Operator dialog focus', () => {
+  it('"Perbarui" on the session screen keeps focus through its own refresh (rendered review F1)', async () => {
+    await openScreen();
+    const button = screen.getByRole('button', { name: 'Perbarui' });
+    button.focus();
+    fireEvent.click(button);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Perbarui' })).toHaveProperty('disabled', false));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Perbarui' })));
+  });
+
+  it('"Perbarui" on the Operator participant level keeps focus through its own refresh (rendered review F1)', async () => {
+    vi.mocked(getInstitutionSupervisionExam).mockResolvedValue(monitoring());
+    render(<ExamMonitoringView examInstanceId={EXAM} backLabel="Kembali ke Pelaksanaan Sesi" onBack={() => {}} source={OPERATOR_SOURCE} />);
+    const button = await screen.findByRole('button', { name: 'Perbarui' });
+    button.focus();
+    fireEvent.click(button);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Perbarui' })).toHaveProperty('disabled', false));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Perbarui' })));
+  });
+
   it('returns add-time focus to its opener, then to refresh if the refreshed row loses that action', async () => {
     let resolveRead: (value: ExamMonitoringResponse) => void = () => { throw new Error('Refresh not requested'); };
     const refreshed = new Promise<ExamMonitoringResponse>(resolve => { resolveRead = resolve; });
