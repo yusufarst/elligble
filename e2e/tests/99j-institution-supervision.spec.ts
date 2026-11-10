@@ -43,7 +43,8 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
     const browser = page.context().browser();
     if (!original || !browser) throw new Error('A real browser and viewport are required');
     try {
-        for (const v of variants) {
+        for (const v of variants) for (let attempt = 1; ; attempt++) {
+            let retryVariant = false;
             await page.setViewportSize({ width: v.width, height: v.height });
             const name = ['workspace-institution-supervision', scenario, `${v.width}x${v.height}`, `text${v.text}`, test.info().project.name].join('-');
             const metadataPath = test.info().outputPath(`${name}.json`);
@@ -88,6 +89,13 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                         rootUnchanged: document.documentElement.getAttribute('style') === snapshot.rootStyle && getComputedStyle(document.documentElement).fontSize === snapshot.rootFont,
                     };
                 }) : undefined;
+                // The Operator screens refresh themselves every 20 s. A refresh that replaces elements during a
+                // 200 % capture invalidates its snapshot (CI #248, webkit-390), so the variant starts again from a
+                // fresh snapshot, at most three times; the exact assertions below then decide.
+                if (textCalibration && (textCalibration.detachedElements > 0 || textCalibration.unscaledElements > 0) && attempt < 3) {
+                    retryVariant = true;
+                    continue;
+                }
                 if (textCalibration) {
                     expect(textCalibration.elements).toBeGreaterThan(0);
                     expect(textCalibration.detachedElements, 'No calibrated element was replaced before capture').toBe(0);
@@ -163,6 +171,7 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                     } finally { await calibration.dispose(); }
                 }
             }
+            if (!retryVariant) break;
         }
     } finally { await page.setViewportSize(original); }
 }

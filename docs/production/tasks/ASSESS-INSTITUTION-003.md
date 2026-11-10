@@ -878,3 +878,10 @@ Every gate C01–C09 has PASSED with recorded evidence. The independent contract
 **Residual risks and limits:** R15 (role-dependent supervision styling; the Teacher and Proctor rendering keeps existing targets under 44 px), R16 (the contrived same-key deadlock), R17 (99h and 99i still use the compounding 200 % step), R18 (the disabled-while-refreshing focus pattern in earlier screens), END of a PAUSED exam needs a resume first, and the reason-retention item of A06. Room transfer during running exams belongs to ASSESS-ROOM-001. PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
 
 **Landing:** a delegated squash merge under 00.13 §6, after PR-head CI (this evidence commit) shows eight SUCCESS on attempt 1, followed by post-merge main CI. The next Task's first change records the landing, with DONE 17/33 (51.52%).
+
+### 12.5 PR-head CI of the evidence commit and its correction — 2026-11-10
+
+- **PR #38** opened on evidence head 061009e. **PR-head CI #248** (run 42790115737, attempt 1): FAILURE in webkit-390 only; Web, Runtime (real PostgreSQL), Container and the four other browser jobs SUCCESS. Not merged; no re-run.
+- **Cause:** the flake the reviewer foresaw in §11.0.4. During a 200 % capture (99j:457), the Operator screen's 20 s self-refresh replaced three elements, so the calibration's exact assertion "No calibrated element was replaced before capture" received 3. No product behaviour is involved; the same frontend tree passed every browser in CI #247.
+- **Correction** (row 35 only): when a text2 snapshot finds replaced or unscaled elements, the variant starts again from a fresh snapshot, at most three times, after restoring every inline style; the exact calibration, restoration, overflow, target and focus assertions are unchanged and decide the final attempt. Local: e2e typecheck clean.
+- **Consequence:** §12.1–§12.4 describe content 0da10b3. The final content becomes this correction commit; its exact-content CI, the reviewer's delta and rendered confirmation, and a new evidence entry are recorded below before the merge.
