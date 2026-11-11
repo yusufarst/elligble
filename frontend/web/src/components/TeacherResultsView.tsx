@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom';
 import { newActionKey } from '../lib/action-key.ts';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, getTeacherExamResults, postTeacherResultsExport } from '../api/assessment-client.ts';
 import type { ParticipantResult, TeacherExamResultsResponse } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -77,6 +77,26 @@ export function useFocusRestore(fallbacks: () => Array<HTMLElement | null>) {
   }), []);
 }
 
+/**
+ * RESULT-004 E12 (rendered review, as ASSESS-ROOM-001 §11.0.2): the opener of the screen is gone after navigation,
+ * so once the screen has first settled (loaded or refused), its title takes focus when nothing else holds it, in the
+ * layout phase so no input reaches the screen first.
+ */
+export function useEntryTitleFocus(settled: boolean) {
+  const done = useRef(false);
+  useLayoutEffect(() => {
+    if (!settled || done.current) return;
+    done.current = true;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) return;
+    const title = document.querySelector<HTMLHeadingElement>('h1[data-slot="page-title"]');
+    if (!title) return;
+    title.tabIndex = -1;
+    title.classList.add('outline-none');
+    title.focus();
+  }, [settled]);
+}
+
 export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): void }> = ({ examInstanceId, onBack }) => {
   const [data, setData] = useState<TeacherExamResultsResponse | null>(null);
   const [error, setError] = useState<'forbidden' | 'running' | 'failed' | null>(null);
@@ -90,6 +110,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   const refreshButton = useRef<HTMLButtonElement>(null);
   const backButton = useRef<HTMLButtonElement>(null);
   const focus = useFocusRestore(() => [refreshButton.current, backButton.current]);
+  useEntryTitleFocus(data !== null || error !== null);
 
   const load = useCallback(async () => {
     try {

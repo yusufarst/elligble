@@ -10,7 +10,7 @@ import { Page, PageHeader } from '@/components/ui/page';
 import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatDateTime } from '../lib/format.ts';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
-import { useFocusRestore, WRAPPING_BUTTON } from './TeacherResultsView.tsx';
+import { useEntryTitleFocus, useFocusRestore, WRAPPING_BUTTON } from './TeacherResultsView.tsx';
 
 // Essay grading by the managing teacher (ASSESS-QUESTION-008 §4.6; Owner O02-9/O02-10, E1-E3).
 // Every answered essay of the first submitted attempts, by ELLIGBLE ID, with the rubric. Each
@@ -41,6 +41,7 @@ export const TeacherEssayGradingView: React.FC<{ examInstanceId: string; onBack(
   const backButton = useRef<HTMLButtonElement>(null);
   const saveButtons = useRef(new Map<string, HTMLButtonElement>());
   const focus = useFocusRestore(() => [reloadButton.current, backButton.current]);
+  useEntryTitleFocus(data !== null || error !== null);
 
   const load = useCallback(async () => {
     setError(null);

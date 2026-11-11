@@ -618,6 +618,8 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
     await refreshTeacher(teacher);
     await teacherCard.getByRole('button', { name: 'Lihat Hasil' }).click();
     await expect(teacher.getByText('Hasil sementara', { exact: true })).toBeVisible();
+    // Its opener is gone after navigation: the screen title holds focus, not BODY (rendered review, as ASSESS-ROOM-001).
+    await expect(teacher.getByRole('heading', { level: 1, name: 'Hasil Ujian' })).toBeFocused();
     await teacher.getByRole('button', { name: 'Tampilkan Nilai' }).click();
     const resultRow = (id: string) => teacher.getByRole('row').filter({ has: teacher.getByText(id, { exact: true }) });
     for (const id of [STUDENT_A[0], STUDENT_B[0]]) await expect(resultRow(id)).toContainText('Belum dinilai: 2');
@@ -642,7 +644,7 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
 
     // "Nilai Esai": the essay and the manual short answer of both Students; "Simpan Nilai" gets its focus back (E12).
     await teacherCard.getByRole('button', { name: 'Nilai Esai' }).click();
-    await expect(teacher.getByRole('heading', { level: 1, name: 'Penilaian Esai' })).toBeVisible();
+    await expect(teacher.getByRole('heading', { level: 1, name: 'Penilaian Esai' })).toBeFocused();
     await expect(teacher.getByText('Belum dinilai: 4 dari 4 jawaban')).toBeVisible();
     await capture(teacher, 'grading', main(teacher));
     for (const [no, id, max, value] of [[8, STUDENT_A[0], '2', '2'], [9, STUDENT_A[0], '5', '5'], [8, STUDENT_B[0], '2', '0'], [9, STUDENT_B[0], '5', '2,5']] as Array<[number, string, string, string]>) {

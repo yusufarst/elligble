@@ -476,3 +476,39 @@ describe('RESULT-004 grading screen (§4.5, E7, E12)', () => {
     expect(document.activeElement).toBe(field);
   });
 });
+
+describe('RESULT-004 entry focus (E12, rendered review; as ASSESS-ROOM-001 §11.0.2)', () => {
+  afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+  const title = (name: string) => screen.getByRole('heading', { level: 1, name });
+
+  it('the results screen title takes focus once it has loaded or been refused, never leaving BODY', async () => {
+    vi.mocked(getTeacherExamResults).mockResolvedValueOnce(teacherManaged());
+    const { unmount } = render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
+    await loaded();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 })));
+    expect((document.activeElement as HTMLElement).tabIndex).toBe(-1);
+    unmount();
+    vi.mocked(getTeacherExamResults).mockRejectedValueOnce(running());
+    render(<TeacherResultsView examInstanceId={EXAM} onBack={() => {}} />);
+    expect(await screen.findByText(RESULTS_RUNNING_TITLE)).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 })));
+  });
+
+  it('the grading screen title takes focus once it has loaded; focus already elsewhere is left alone', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(worklist())));
+    const { unmount } = render(<TeacherEssayGradingView examInstanceId={EXAM} onBack={() => {}} />);
+    await screen.findByRole('group', { name: 'Soal 9 · x4' });
+    await waitFor(() => expect(document.activeElement).toBe(title('Penilaian Esai')));
+    unmount();
+    const pending = deferred<Response>();
+    vi.stubGlobal('fetch', vi.fn(() => pending.promise));
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    render(<TeacherEssayGradingView examInstanceId={EXAM} onBack={() => {}} />);
+    outside.focus();
+    pending.resolve(json(worklist()));
+    await screen.findByRole('group', { name: 'Soal 9 · x4' });
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+});
