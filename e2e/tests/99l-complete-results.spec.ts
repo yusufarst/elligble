@@ -700,11 +700,11 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
     await teacher.context().close();
 
     // The Operator: the session view shows "Hasil Final" and no score; its own request for the results is refused.
+    // The Operator is still on "Pelaksanaan Sesi" (the navigation item is already active there), so its own "Perbarui" reads the new state.
     await page.bringToFront();
-    await openInstitution(page);
-    await reload.click();
-    await expect(reload).toBeEnabled();
-    await openSupervision(page);
+    const refreshSession = page.getByRole('button', { name: 'Perbarui', exact: true });
+    await refreshSession.click();
+    await expect(refreshSession).toBeEnabled();
     await expect(card).toContainText('Hasil Final');
     const view = await inPage(page, `/api/v1/assessment/institution-exams/supervision?sessionId=${sessionId}`);
     expect(view.status).toBe(200);
