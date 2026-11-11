@@ -419,6 +419,8 @@ async function openProctorList(page: Page, room: string): Promise<void> {
     await expect(card).toHaveCount(1);
     await card.getByRole('button', { name: 'Lihat Peserta', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Pemantauan Peserta' })).toBeVisible();
+    // The opener is gone after the navigation: the screen title takes focus, never BODY (CI #255).
+    await expect(page.getByRole('heading', { level: 1, name: 'Pemantauan Peserta' })).toBeFocused();
 }
 
 /** "Pindahkan Ruang" of the Student: the dialog with its state text, the target, the reason; "Pindahkan Peserta". */

@@ -791,3 +791,9 @@ Review 1 was given by the standing Owner-designated read-only subagent reviewer,
   - Row 23, a path-only addition under 00.13 §5.2 with the reviewer's CONFIRM: schoolExamMonitoring.test.tsx:392 asserted the old Operator-only styling and now asserts `min-h-11` on the supervisor back button.
   - **C07 exception approved by the Owner:** earlier captures of the supervisor screen (the SEC-001 `workspace-sec001-c14-proctor-lock` and `-unlock` captures) change with this styling; every other earlier-capture rule of C07 stands.
   - Reviewer: path-only addition CONFIRM; ExamMonitoringView change PASS. Local: web typecheck clean; the eight monitoring-related web test files 84/84.
+
+### 11.0.2 Exact-content CI of 1b53171 and the Proctor entry focus
+
+- **CI #255** (run 42929866843, 1b53171): attempt 1, eight SUCCESS.
+- **Captures** (validated as each artifact arrived): 200 `workspace-room-transfer-*` pairs in the four finished browsers at 1b53171; zero overflow, zero targets under 44 px (the Owner's 44 px Proctor screen holds). One C07 defect: `proctor-new-room` recorded focus on BODY in all 40 captures. The Proctor opens the list from a "Ruang Ujian" card whose "Lihat Peserta" trigger the navigation removes, and the supervisor entry had no focus target (the Operator's entry is focused by its own screen).
+- **Correction** (rows 15 and 22): when the Proctor or Teacher list has first loaded and focus is on BODY, the screen title takes focus (`tabIndex=-1`); the Operator source is unchanged. 99k asserts that "Pemantauan Peserta" is focused after `openProctorList`. Local: web typecheck clean; the eight monitoring-related web test files 84/84; e2e typecheck clean.

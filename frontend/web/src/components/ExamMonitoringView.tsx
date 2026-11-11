@@ -143,6 +143,8 @@ export const ExamMonitoringView: React.FC<{
   const [addTimeFor, setAddTimeFor] = useState<MonitoredParticipant | null>(null);
   const [transferFor, setTransferFor] = useState<MonitoredParticipant | null>(null);
   const loadingRef = useRef(false);
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const titleFocused = useRef(false);
   const transferTrigger = useRef<HTMLButtonElement | null>(null);
   const lockTrigger = useRef<HTMLButtonElement | null>(null);
   const refreshButton = useRef<HTMLButtonElement | null>(null);
@@ -201,6 +203,19 @@ export const ExamMonitoringView: React.FC<{
     await load();
     setRefreshing(false);
   };
+  // Entry from the Proctor or Teacher list: the opener is gone after navigation, so once the list has loaded the
+  // screen title takes focus when nothing else holds it (the Operator's entry is focused by its own screen).
+  useEffect(() => {
+    if (!data || titleFocused.current || source !== SUPERVISOR_SOURCE) return;
+    titleFocused.current = true;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    const title = pageRef.current?.querySelector<HTMLHeadingElement>('h1');
+    if (!title) return;
+    title.tabIndex = -1;
+    title.classList.add('outline-none');
+    title.focus();
+  }, [data, source]);
+
   useLayoutEffect(() => {
     if (refreshing || !refocusRefresh.current) return;
     refocusRefresh.current = false;
@@ -267,7 +282,7 @@ export const ExamMonitoringView: React.FC<{
   const wholeExam = data.scope === 'TEACHER' || data.scope === 'OPERATOR' || !exam.roomBased;
 
   return (
-    <Page>
+    <Page ref={pageRef}>
       {back}
       <PageHeader
         title={SCREEN_TITLE.examMonitoring}
