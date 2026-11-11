@@ -68,6 +68,13 @@ const CELLS_B = '2;0 (salah);0 (salah);0 (salah);0 (salah);2;1;0 (dinilai guru);
 const QUESTION_HEADERS = ['Soal 1 (PG, maks 2)', 'Soal 2 (PGK, maks 3)', 'Soal 3 (BS, maks 1)', 'Soal 4 (MJ, maks 4)', 'Soal 5 (UR, maks 2)',
     'Soal 6 (IA, maks 2)', 'Soal 7 (IS, maks 1)', 'Soal 8 (IS, maks 2)', 'Soal 9 (ES, maks 5)'];
 
+/**
+ * The config sets no action timeout, so a click on a control that never appears waited for the whole 45-minute test
+ * (CI #260, the removed "Kembali" click). Every page of this journey bounds each action and wait to two minutes instead;
+ * assertions keep their own timeouts.
+ */
+const STEP_TIMEOUT = 120_000;
+
 /** The school-zone (WIB) date `days` from today. */
 const wibDay = (days: number) => wib(days * 24 * 60).slice(0, 10);
 
@@ -428,6 +435,7 @@ async function inPage(page: Page, path: string, body?: Record<string, unknown>, 
 async function openTeacher(page: Page): Promise<Page> {
     const context = await page.context().browser()!.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC', reducedMotion: 'reduce' });
     const teacher = await context.newPage();
+    teacher.setDefaultTimeout(STEP_TIMEOUT);
     await login(teacher, ...TEACHER);
     await teacher.getByRole('navigation', { name: 'Ruang kerja' }).getByRole('button', { name: 'Pelaksanaan Ujian', exact: true }).click();
     await expect(teacher.getByRole('heading', { level: 1, name: 'Pelaksanaan Ujian' })).toBeVisible();
@@ -446,6 +454,7 @@ test.afterAll(async () => operatorAssignment('REVOKE'));
 
 test('RESULT-004 journey and captures: the golden content in a school exam, no results or grading while it runs, grading, finalization and the per-question CSV', async ({ page, browser }) => {
     test.setTimeout(45 * 60_000);
+    page.setDefaultTimeout(STEP_TIMEOUT);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await login(page, ...OPERATOR);
     await openInstitution(page);
@@ -466,8 +475,8 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
     await expect(teacher.getByText('Soal siap disimpan')).toBeVisible();
     await teacher.getByRole('button', { name: 'Simpan Soal' }).click();
     await teacher.getByRole('dialog', { name: 'Simpan Soal Ujian Sekolah?' }).getByRole('button', { name: 'Simpan Soal' }).click();
+    // Saving returns the Teacher to the exam list with the notice (as in 99h).
     await expect(notice(teacher, 'Soal ujian sekolah tersimpan:')).toBeVisible();
-    await teacher.getByRole('button', { name: 'Kembali ke Pelaksanaan Ujian' }).click();
     const snapshots = await snapshotsOf(examId);
     expect(snapshots.map(s => s.content.prompt)).toEqual(PROMPTS);
 
@@ -501,6 +510,7 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
     const content = snapshots.map(s => s.content);
     const studentContext = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC', reducedMotion: 'reduce' });
     const student = await studentContext.newPage();
+    student.setDefaultTimeout(STEP_TIMEOUT);
     await login(student, ...STUDENT_A);
     await student.getByTestId(`assignment-${examId}`).getByRole('button', { name: 'Mulai Ujian' }).click();
     await student.getByRole('button', { name: 'Mulai Ujian Sekarang' }).click();
@@ -522,7 +532,8 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
     await next(2);
     await option(student, 0).click();
     await option(student, 2).click();
-    await saved(2, { selectedOptionIds: [optionIds(1)[0], optionIds(1)[2]] });
+    // The client sends a selection in canonical form, its ids sorted (types/assessment.ts canonicalSelection), not in option order.
+    await saved(2, { selectedOptionIds: [optionIds(1)[0], optionIds(1)[2]].sort() });
     await next(3);
     await student.locator('.options-list label').filter({ has: student.getByRole('radio', { name: 'Benar', exact: true }) }).click();
     await saved(3, { value: true });
@@ -562,6 +573,7 @@ test('RESULT-004 journey and captures: the golden content in a school exam, no r
     // siswa.e2e.01 saves through its own signed-in page (x2 of §5), then submits.
     const otherContext = await browser.newContext({ viewport: page.viewportSize() ?? undefined, locale: 'id-ID', timezoneId: 'UTC', reducedMotion: 'reduce' });
     const other = await otherContext.newPage();
+    other.setDefaultTimeout(STEP_TIMEOUT);
     await login(other, ...STUDENT_B);
     await expect(other.getByTestId(`assignment-${examId}`)).toBeVisible();
     const started = await inPage(other, '/api/v1/assessment/attempts/start', { examInstanceId: examId });
