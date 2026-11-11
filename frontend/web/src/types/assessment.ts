@@ -682,6 +682,9 @@ export interface MonitoredParticipant {
   addedSeconds?: number;
   /** Each addition, oldest first; only for the managing teacher and the School Operator. */
   timeAdditions?: TimeAddition[];
+  /** The current room row and its version; for the School Operator only (ASSESS-ROOM-001 E10). */
+  roomId?: string | null;
+  assignmentVersion?: number | null;
 }
 
 export interface TimeAddition {
@@ -771,8 +774,8 @@ export interface ExamMonitoringResponse {
   questionCount: number;
   summary: { participants: number; notStarted: number; active: number; submitted: number };
   participants: MonitoredParticipant[];
-  /** Rooms of a room-based exam within the viewer's scope. */
-  rooms?: Array<{ roomId: string; label: string }>;
+  /** Rooms of a room-based exam within the viewer's scope; supervised for the School Operator only (ASSESS-ROOM-001 E10). */
+  rooms?: Array<{ roomId: string; label: string; supervised?: boolean }>;
   /** Messages that reached participants in the viewer's scope, newest first. */
   broadcasts?: BroadcastRecord[];
 }
@@ -1009,6 +1012,27 @@ export interface InstitutionSupervision {
 }
 
 export type SupervisionTransitionInput = ({ examInstanceId: string } | { sessionId: string }) & PermissionIntent & { action: SupervisionAction };
+
+/** One participant moved to another room of a running institution exam (ASSESS-ROOM-001 §4.3). */
+export interface ParticipantRoomTransferInput extends PermissionIntent {
+  examInstanceId: string;
+  participantId: string;
+  targetRoomId: string;
+  /** The version of the participant's current room row as read; a changed row refuses with stale_assignment. */
+  expectedAssignmentVersion: number;
+}
+
+/** The receipt of a transfer; a retry with the same action key returns it with replayed true. Never the reason. */
+export interface ParticipantRoomTransferResult {
+  examInstanceId: string;
+  participantId: string;
+  fromRoomLabel: string;
+  roomLabel: string;
+  assignmentVersion: number;
+  transferredAt: string;
+  revision: number;
+  replayed: boolean;
+}
 
 export interface SupervisionExamTransitionResult { examInstanceId: string; lifecycleState: string; changed: boolean; replayed: boolean }
 

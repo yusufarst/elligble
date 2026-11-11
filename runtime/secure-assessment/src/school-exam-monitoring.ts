@@ -738,6 +738,8 @@ async function readSupervisionExam(client: pg.PoolClient, actor: InstitutionActo
     const monitoring = await readMonitoringProjection(client, actor, examInstanceId, {
         scope: 'OPERATOR', roomFilter: null, roomBased: exam.room_based === true, lifecycleState: exam.lifecycle_state,
         canAddTime: true, timeAdditions: 'own_reasons',
+        // ASSESS-ROOM-001 E10: the current room id and version and the room coverage the transfer dialog needs.
+        roomTransfer: true,
     });
     return { status: 200, body: monitoring };
 }

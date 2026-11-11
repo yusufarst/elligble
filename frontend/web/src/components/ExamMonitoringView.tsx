@@ -19,6 +19,7 @@ import { LOCKED_PARTICIPANT_STATUS, participantStatus } from '../lib/status.ts';
 import { formatClockTime, formatTime } from '../lib/format.ts';
 import { BroadcastComposer, BroadcastHistory } from './ExamBroadcast.tsx';
 import { AddTimeDialog, TIME_STATES, timeAddedLabel } from './ParticipantTime.tsx';
+import { ParticipantRoomTransferDialog, canTransfer, transferNotice, type RoomTransferSource } from './ParticipantRoomTransferDialog.tsx';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 
 // Exam-day participant list (D04.6-01/02/03/04/10/17/18/60/61): who is expected, who has
@@ -33,6 +34,8 @@ import { SCREEN_TITLE } from '../lib/screen-titles.ts';
 // One supervision screen for every role (plan §10.1): the School Operator of an institution exam
 // uses it through its own source (ASSESS-INSTITUTION-003 E15), over the whole exam, and gives a
 // reason with every message (OC-4). Without a source it reads and acts as it always did.
+// The Operator's source alone carries the room transfer (ASSESS-ROOM-001 E13): "Pindahkan Ruang" moves one participant
+// of a running exam to another room with a Proctor; every other source renders as before.
 
 const DEFAULT_REFRESH_MS = 20000;
 
@@ -44,6 +47,8 @@ export interface MonitoringSource {
   /** intent: the reason, confirmation and action key, when messageNeedsReason; null otherwise. */
   broadcast(examInstanceId: string, target: BroadcastTarget, message: string, intent: PermissionIntent | null): Promise<BroadcastSendResponse>;
   messageNeedsReason: boolean;
+  /** The School Operator's room transfer (ASSESS-ROOM-001); absent for every other source. */
+  transfer?: RoomTransferSource;
 }
 
 /** The supervisor routes, exactly as the screen has always called them. */
@@ -136,7 +141,11 @@ export const ExamMonitoringView: React.FC<{
   const [notice, setNotice] = useState<{ failed: boolean; text: string } | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [addTimeFor, setAddTimeFor] = useState<MonitoredParticipant | null>(null);
+  const [transferFor, setTransferFor] = useState<MonitoredParticipant | null>(null);
   const loadingRef = useRef(false);
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const titleFocused = useRef(false);
+  const transferTrigger = useRef<HTMLButtonElement | null>(null);
   const lockTrigger = useRef<HTMLButtonElement | null>(null);
   const refreshButton = useRef<HTMLButtonElement | null>(null);
   const backButton = useRef<HTMLButtonElement | null>(null);
@@ -194,6 +203,19 @@ export const ExamMonitoringView: React.FC<{
     await load();
     setRefreshing(false);
   };
+  // Entry from the Proctor or Teacher list: the opener is gone after navigation, so once the list has loaded the
+  // screen title takes focus when nothing else holds it (the Operator's entry is focused by its own screen).
+  useEffect(() => {
+    if (!data || titleFocused.current || source !== SUPERVISOR_SOURCE) return;
+    titleFocused.current = true;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    const title = pageRef.current?.querySelector<HTMLHeadingElement>('h1');
+    if (!title) return;
+    title.tabIndex = -1;
+    title.classList.add('outline-none');
+    title.focus();
+  }, [data, source]);
+
   useLayoutEffect(() => {
     if (refreshing || !refocusRefresh.current) return;
     refocusRefresh.current = false;
@@ -218,7 +240,10 @@ export const ExamMonitoringView: React.FC<{
 
   // The School Operator's level meets the 44 px target gate (ASSESS-INSTITUTION-003 C07); the supervisor screens
   // keep their rendering unchanged, so their earlier captures stay identical.
-  const comfortable = source !== SUPERVISOR_SOURCE;
+  // 44 px targets, wrapping and the narrow-first summary for every role, Proctor and Teacher included
+  // (Owner decision, ASSESS-ROOM-001 C07; closes ASSESS-INSTITUTION-003 R15). Focus restoration stays Operator-only.
+  const comfortable = true;
+  const operatorSource = source !== SUPERVISOR_SOURCE;
   const small = comfortable ? 'h-auto min-h-11 whitespace-normal py-2' : undefined;
 
   const visible = useMemo(() => {
@@ -257,7 +282,7 @@ export const ExamMonitoringView: React.FC<{
   const wholeExam = data.scope === 'TEACHER' || data.scope === 'OPERATOR' || !exam.roomBased;
 
   return (
-    <Page>
+    <Page ref={pageRef}>
       {back}
       <PageHeader
         title={SCREEN_TITLE.examMonitoring}
@@ -348,6 +373,7 @@ export const ExamMonitoringView: React.FC<{
                 const canAddTime = Boolean(data.canAddTime) && TIME_STATES.has(exam.lifecycleState) && p.status === 'ACTIVE';
                 const added = timeAddedLabel(p);
                 const shownId = p.elligbleId ?? 'Tanpa ELLIGBLE ID';
+                const movable = source.transfer !== undefined && canTransfer(p, exam, data.rooms ?? []);
                 return (
                   <tr key={p.elligbleId ?? `tanpa-id-${index}`} className="border-t border-border align-top">
                     <th scope="row" className="px-3 py-3 text-left font-normal">
@@ -363,7 +389,7 @@ export const ExamMonitoringView: React.FC<{
                       {p.sessionMoves > 0 && (
                         <span className="mt-1 block text-xs text-warning-ink">Pindah perangkat {p.sessionMoves} kali</span>
                       )}
-                      {(lockAction || canAddTime) && (
+                      {(lockAction || canAddTime || movable) && (
                         <span className="mt-2 flex flex-wrap gap-2">
                           {lockAction && (
                             <Button
@@ -380,6 +406,11 @@ export const ExamMonitoringView: React.FC<{
                           {canAddTime && (
                             <Button variant="secondary" size="sm" className={small} aria-label={`Tambah waktu ${shownId}`} onClick={event => { pendingFocus.current = null; timeTrigger.current = event.currentTarget; setAddTimeFor(p); }}>
                               Tambah Waktu
+                            </Button>
+                          )}
+                          {movable && (
+                            <Button variant="secondary" size="sm" className={small} aria-label={`Pindahkan ruang ${shownId}`} onClick={event => { pendingFocus.current = null; transferTrigger.current = event.currentTarget; setTransferFor(p); }}>
+                              Pindahkan Ruang
                             </Button>
                           )}
                         </span>
@@ -421,9 +452,9 @@ export const ExamMonitoringView: React.FC<{
         participants={data.participants}
         source={source}
         comfortable={comfortable}
-        restoreFocus={comfortable ? () => restoreFocus(messageTrigger.current) : undefined}
+        restoreFocus={operatorSource ? () => restoreFocus(messageTrigger.current) : undefined}
         onSent={result => {
-          if (comfortable) pendingFocus.current = messageTrigger.current;
+          if (operatorSource) pendingFocus.current = messageTrigger.current;
           setComposerOpen(false);
           setNotice({ failed: false, text: `Pesan terkirim ke ${result.recipients} peserta.` });
           void load();
@@ -438,14 +469,33 @@ export const ExamMonitoringView: React.FC<{
         source={source}
         comfortable={comfortable}
         onClose={() => setAddTimeFor(null)}
-        restoreFocus={comfortable ? () => restoreFocus(timeTrigger.current) : undefined}
+        restoreFocus={operatorSource ? () => restoreFocus(timeTrigger.current) : undefined}
         onDone={outcome => {
-          if (comfortable) pendingFocus.current = timeTrigger.current;
+          if (operatorSource) pendingFocus.current = timeTrigger.current;
           setAddTimeFor(null);
           setNotice(outcome);
           void load();
         }}
       />
+
+      {source.transfer && (
+        <ParticipantRoomTransferDialog
+          participant={transferFor}
+          examInstanceId={examInstanceId}
+          examState={exam.lifecycleState}
+          rooms={data.rooms ?? []}
+          source={source.transfer}
+          onClose={() => setTransferFor(null)}
+          restoreFocus={() => restoreFocus(transferTrigger.current)}
+          onDone={result => {
+            // The row action keeps the focus; when the refresh removed it, "Perbarui" or the back button does.
+            pendingFocus.current = transferTrigger.current;
+            setTransferFor(null);
+            setNotice({ failed: false, text: transferNotice(transferFor?.elligbleId ?? 'Peserta', result) });
+            void load();
+          }}
+        />
+      )}
 
       <Dialog open={confirmLock !== null} onOpenChange={open => { if (!open && !lockPending) setConfirmLock(null); }}>
         {confirmLock && (

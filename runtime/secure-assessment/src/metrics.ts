@@ -62,6 +62,7 @@ const COMPONENT_BY_PATH: Record<string, Component> = {
     '/api/v1/assessment/institution-exams/supervision/transition': 'monitoring',
     '/api/v1/assessment/institution-exams/supervision/participant-lock': 'monitoring',
     '/api/v1/assessment/institution-exams/supervision/add-time': 'monitoring',
+    '/api/v1/assessment/institution-exams/supervision/room-transfer': 'monitoring',
     '/api/v1/assessment/institution-exams/supervision/broadcast': 'broadcast',
     '/api/v1/assessment/broadcasts/inbox': 'broadcast',
     '/api/v1/assessment/teacher-exams/results': 'reporting',

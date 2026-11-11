@@ -47,7 +47,8 @@ export const INSTITUTION_ROOM_ROUTES = {
     participants: '/api/v1/assessment/institution-exams/participants',
 } as const;
 
-export type RoomActionKind = 'ROOM_PARTICIPANTS' | 'ROOM_PROCTORS' | 'PARTICIPANT_ADDITION';
+/** PARTICIPANT_TRANSFER: a running-exam move (ASSESS-ROOM-001), recorded in the same 0063 history (E18). */
+export type RoomActionKind = 'ROOM_PARTICIPANTS' | 'ROOM_PROCTORS' | 'PARTICIPANT_ADDITION' | 'PARTICIPANT_TRANSFER';
 
 export type RoomProblemCode =
     | 'room_label_invalid' | 'participant_unknown' | 'already_in_room' | 'room_conflict' | 'room_unknown'
@@ -326,7 +327,7 @@ export async function lockSession(client: pg.PoolClient, actor: InstitutionActor
 }
 
 /** The session revision: the number of room actions recorded for the session (E5). */
-async function sessionRevision(client: pg.PoolClient, tenantId: string, sessionId: string): Promise<number> {
+export async function sessionRevision(client: pg.PoolClient, tenantId: string, sessionId: string): Promise<number> {
     const res = await client.query(
         'SELECT coalesce(max(revision), 0)::int AS revision FROM secure_assessment_institution_room_actions WHERE tenant_id = $1 AND session_id = $2',
         [tenantId, sessionId]);
@@ -546,10 +547,10 @@ async function recordAction(
             entries.map(e => e.assignmentId), entries.map(e => e.fromLabel), entries.map(e => e.label)]);
 }
 
-interface RecordedAction { id: string; kind: string; actorPersonId: string; digest: string; revision: number; demoted: string[]; sessionId: string }
+export interface RecordedAction { id: string; kind: string; actorPersonId: string; digest: string; revision: number; demoted: string[]; sessionId: string }
 
 /** The earlier action of this key, for the replay (§4.2 step 3). */
-async function findAction(client: pg.PoolClient, tenantId: string, actionKey: string): Promise<RecordedAction | null> {
+export async function findAction(client: pg.PoolClient, tenantId: string, actionKey: string): Promise<RecordedAction | null> {
     const res = await client.query(
         `SELECT id, kind, actor_person_id, request_digest, revision, demoted_exam_instance_ids, session_id
          FROM secure_assessment_institution_room_actions WHERE tenant_id = $1 AND action_key = $2`, [tenantId, actionKey]);
@@ -560,7 +561,7 @@ async function findAction(client: pg.PoolClient, tenantId: string, actionKey: st
     } : null;
 }
 
-function sameAction(earlier: RecordedAction, kind: RoomActionKind, actor: InstitutionActor, digest: string): void {
+export function sameAction(earlier: RecordedAction, kind: RoomActionKind, actor: InstitutionActor, digest: string): void {
     if (earlier.kind !== kind || earlier.actorPersonId !== actor.personId || earlier.digest !== digest) refuse(409, 'action_key_reused');
 }
 

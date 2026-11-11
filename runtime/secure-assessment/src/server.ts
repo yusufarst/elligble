@@ -33,6 +33,7 @@ import {
 } from './institution-exams.ts';
 import { handleInstitutionRoomRoute } from './institution-rooms.ts';
 import { handleSupervisionRoute } from './school-exam-monitoring.ts';
+import { handleRoomTransferRoute } from './participant-room-transfer.ts';
 import { performParticipantLockAction } from './participant-lock.ts';
 import { addParticipantTime, parseTimeAdditionRequest } from './participant-time.ts';
 import { handleBroadcastInbox, normalizeBroadcastMessage, parseBroadcastTarget, sendExamBroadcast } from './exam-broadcast.ts';
@@ -690,6 +691,15 @@ export function createServer(deps: ServerDependencies): http.Server {
                 return;
             }
             return handleSupervisionRoute(req, res, url, deps.pool, security.cookie);
+        }
+
+        if (pathname === '/api/v1/assessment/institution-exams/supervision/room-transfer') {
+            // The School Operator moves a participant of a running institution exam to another room (ASSESS-ROOM-001 §4.2/§4.3).
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            return handleRoomTransferRoute(req, res, deps.pool, security.cookie);
         }
 
         if (pathname === '/api/v1/assessment/teacher-exams/reschedule') {

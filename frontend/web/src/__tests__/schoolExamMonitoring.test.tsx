@@ -389,7 +389,7 @@ describe('the participant level with the Operator source', () => {
     expect(await screen.findByText('Sisa waktu peserta berhenti dan jawaban tidak dapat diubah sampai ujian dilanjutkan.')).toBeTruthy();
     expect(screen.getByText(/"Waktu ditambah" berarti petugas yang berwenang menambah waktu pengerjaan peserta itu\./)).toBeTruthy();
     expect(getInstitutionSupervisionExam).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Kembali' }).className).not.toContain('min-h-11');
+    expect(screen.getByRole('button', { name: 'Kembali' }).className).toContain('min-h-11');
   });
 
   it('a refused participant list says who may see it, in role-neutral words', async () => {
