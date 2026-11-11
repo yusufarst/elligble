@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P0 / transfer integrity; HIGH risk; R03, R04, R06, R22, R23; P8 V03, V05, V06, V07, V11, V15 |
-| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10). Owner decisions OR-1 to OR-5 decided 2026-11-10 (§3.1); contract review chain STOP → STOP → PASS (§9); A04 Owner and reviewer halves recorded** |
+| Status | **VERIFYING under DEC-048: final evidence and Delegated Acceptance (§12); implementation and reviews (§11); formal READY PASS (§10). Owner decisions OR-1 to OR-5 decided 2026-11-10 (§3.1); contract review chain STOP → STOP → PASS (§9); A04 Owner and reviewer halves recorded** |
 | Objective | During a running institution exam (ACTIVE or PAUSED), the School Operator moves one participant from their current exam room to another room of the same exam that has an active Proctor. The move:<br>• needs a reason and an on-screen confirmation;<br>• compares the participant's `assignment_version` and is safe to replay;<br>• changes only the current room row and appends one attributable history entry.<br>Person, Participant, Attempt, question snapshot and randomization, accepted and pending answers, server time, device session and submission are untouched. The old room's Proctor loses the participant at commit and the new room's Proctor gains them. Teacher-managed exams are unchanged |
 | Owner decisions | **Approved inputs:**<br>• O05-1 to O05-6 and A04-1 to A04-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md)); this Task uses O05-4, O05-5, A04-2 and A04-3;<br>• OP-1 to OP-9 and OB-1 ([ASSESS-INSTITUTION-001 §3.1](ASSESS-INSTITUTION-001.md));<br>• OB-2, RP-1 to RP-5 and OB-3 ([ASSESS-INSTITUTION-002 §3.1](ASSESS-INSTITUTION-002.md));<br>• OC-1 to OC-6 ([ASSESS-INSTITUTION-003 §3.1](ASSESS-INSTITUTION-003.md));<br>• OR-1 to OR-5 and the OR-3 supplement, decided 2026-11-10 (§3.1).<br>**Open:** none. The Owner confirmed the corrected OR-5 case list I-6 to I-15 on 2026-11-10 (§3.1).<br>Reviewer: the standing Owner-designated read-only subagent reviewer, a fresh one for this Task. It is also the A04 assessment/security reviewer named in ASSESS-QUESTION-001:57 (F8) |
 | Execution authority | DEC-048 (00.13). Not eligible yet (below) |
@@ -797,3 +797,55 @@ Review 1 was given by the standing Owner-designated read-only subagent reviewer,
 - **CI #255** (run 42929866843, 1b53171): attempt 1, eight SUCCESS.
 - **Captures** (validated as each artifact arrived): 200 `workspace-room-transfer-*` pairs in the four finished browsers at 1b53171; zero overflow, zero targets under 44 px (the Owner's 44 px Proctor screen holds). One C07 defect: `proctor-new-room` recorded focus on BODY in all 40 captures. The Proctor opens the list from a "Ruang Ujian" card whose "Lihat Peserta" trigger the navigation removes, and the supervisor entry had no focus target (the Operator's entry is focused by its own screen).
 - **Correction** (rows 15 and 22): when the Proctor or Teacher list has first loaded and focus is on BODY, the screen title takes focus (`tabIndex=-1`); the Operator source is unchanged. 99k asserts that "Pemantauan Peserta" is focused after `openProctorList`. Local: web typecheck clean; the eight monitoring-related web test files 84/84; e2e typecheck clean.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on the working tree published unchanged as 0368185 (departures 1–9 accepted); PASS on the ExamMonitoringView change for every role and CONFIRM of the path-only row 23 (§11.0.1); the 22c09e2 focus change checked in the rendered review.
+- **Rendered review by the same reviewer:** PASS on 22c09e2 (CI #256 artifacts, all five browsers), with no material finding: 250 transfer pairs with no overflow, 44 px targets and focus never on BODY (the new room's Proctor list focuses its title); the dialog, refusal, success notice and Proctor list rendered correctly at 200 % text; every earlier-capture change within C07 or the Owner-approved supervisor-screen exception.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-11
+
+### 12.1 Content and CI
+
+**Final content:** 22c09e2f3f48c0491e84deebae6670202e13e217. The registration was 91e9010. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #256 (run 42935875871), push, attempt 1, eight SUCCESS: runtime typecheck and units, real PostgreSQL 16 integration I-1 to I-23 including the Owner- and reviewer-approved races I-6 to I-15 and the 0065 migration upgrade, rollback and repeat; web typecheck, tests and build; container build and smoke; every E2E spec in mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390, including the 99k journey (C06) and captures (C07).
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 42935875871, fetched in parallel with the resumable, size- and `unzip -t`-checked transfer: 250 `workspace-room-transfer-*` pairs at 22c09e2 (frontend tree 572923ca5dc42ed4a9c713cdb61eedb7f8e774f0); every hash matches; zero overflow; zero targets under 44 px; exact single-pass 200 % calibration, restoration and post-capture integrity; focus never on BODY (the new room's Proctor list focuses its title). Manifest SHA-256 8cca85c088b2714c9fb0519b54d33936982f0554fc30ed9231732cb6ff7b5601. Earlier captures against the #252 baseline change only as C07 allows plus the Owner-approved supervisor-screen exception (§11.0.1), times, IDs and known full-page swings.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #253 (91e9010, registration) | attempt 1, eight SUCCESS |
+| CI #254 (0368185) | attempt 1, FAILURE: 99k Proctor list under 44 px (§11.0.1) |
+| CI #255 (1b53171) | attempt 1, eight SUCCESS; captures showed the Proctor entry focus on BODY (§11.0.2) |
+| CI #256 (22c09e2) | attempt 1, eight SUCCESS |
+
+### 12.2 Independent review (Owner-designated standing reviewer, also the A04 reviewer half)
+
+1. **Contract:** STOP (F1–F9), STOP (F1, Owner confirmation of I-6 to I-15), then PASS (§9).
+2. **Implementation:** PASS (§11.1), with the §11.0.1 change PASS and the row 23 CONFIRM.
+3. **Rendered:** PASS on 22c09e2 (§11.1).
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: transfer body parsing, eligibility order, receipts without reason, error mapping (units) |
+| C02 | PASS: reuse of the 0032 current row, the 0063 ledger and the Operator write path; no duplication |
+| C03 | PASS on real PostgreSQL (CI #256): I-1 to I-23, the approved races I-6 to I-15, 0065 upgrade, rollback and repeat, tenant isolation and the P5 trace |
+| C04 | PASS: regression with only the §4.8 assertions and the row 23 path-only change |
+| C05 | PASS: the transfer dialog, refusals with retry focus, the success notice, the 44 px supervision screen for every role |
+| C06 | PASS: the five-browser 99k journey: move with a pending answer, Proctors follow, stale tab refused, move back, no move after submission |
+| C07 | PASS: the #252 baseline and the after captures; no overflow; 44 px; focus never on BODY; rendered review PASS; the Owner-approved supervisor-screen exception |
+| C08 | PASS: every changed path within §6 rows 1–23 (row 23 by §5.2 CONFIRM); 33 Tasks and 78 edges; exact-SHA attempt-1 CI with no re-run |
+| C09 | PASS: review chains PASS; both A04 halves recorded; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C09 has PASSED with recorded evidence, and the independent contract, implementation and rendered reviews PASSED on the final content SHA. ASSESS-ROOM-001 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:** the broadcast-history effect after a move is accepted by the Owner (OR-3 supplement); moves while READY stay on the room screen (OR-1); no Proctor change after opening (OC-6); the refresh-focus pattern in earlier screens (ASSESS-INSTITUTION-003 R18); WebKit desktop text autosizing (R19). PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI on this evidence commit shows eight SUCCESS on attempt 1, followed by post-merge main CI. DONE 18/33 (54.55%).
