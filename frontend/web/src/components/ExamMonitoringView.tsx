@@ -225,7 +225,10 @@ export const ExamMonitoringView: React.FC<{
 
   // The School Operator's level meets the 44 px target gate (ASSESS-INSTITUTION-003 C07); the supervisor screens
   // keep their rendering unchanged, so their earlier captures stay identical.
-  const comfortable = source !== SUPERVISOR_SOURCE;
+  // 44 px targets, wrapping and the narrow-first summary for every role, Proctor and Teacher included
+  // (Owner decision, ASSESS-ROOM-001 C07; closes ASSESS-INSTITUTION-003 R15). Focus restoration stays Operator-only.
+  const comfortable = true;
+  const operatorSource = source !== SUPERVISOR_SOURCE;
   const small = comfortable ? 'h-auto min-h-11 whitespace-normal py-2' : undefined;
 
   const visible = useMemo(() => {
@@ -434,9 +437,9 @@ export const ExamMonitoringView: React.FC<{
         participants={data.participants}
         source={source}
         comfortable={comfortable}
-        restoreFocus={comfortable ? () => restoreFocus(messageTrigger.current) : undefined}
+        restoreFocus={operatorSource ? () => restoreFocus(messageTrigger.current) : undefined}
         onSent={result => {
-          if (comfortable) pendingFocus.current = messageTrigger.current;
+          if (operatorSource) pendingFocus.current = messageTrigger.current;
           setComposerOpen(false);
           setNotice({ failed: false, text: `Pesan terkirim ke ${result.recipients} peserta.` });
           void load();
@@ -451,9 +454,9 @@ export const ExamMonitoringView: React.FC<{
         source={source}
         comfortable={comfortable}
         onClose={() => setAddTimeFor(null)}
-        restoreFocus={comfortable ? () => restoreFocus(timeTrigger.current) : undefined}
+        restoreFocus={operatorSource ? () => restoreFocus(timeTrigger.current) : undefined}
         onDone={outcome => {
-          if (comfortable) pendingFocus.current = timeTrigger.current;
+          if (operatorSource) pendingFocus.current = timeTrigger.current;
           setAddTimeFor(null);
           setNotice(outcome);
           void load();

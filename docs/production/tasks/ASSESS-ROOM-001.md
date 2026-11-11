@@ -622,6 +622,7 @@ What each N-id means here:
 | 20 | runtime/secure-assessment/test/route-parity.test.ts | §4.7 only |
 | 21 | frontend/web/src/__tests__/participantRoomTransfer.test.tsx | Row action, dialog, copy per state, focus, other sources unchanged (new) |
 | 22 | e2e/tests/99k-room-transfer.spec.ts | Five-browser journey and captures (new) |
+| 23 | frontend/web/src/__tests__/schoolExamMonitoring.test.tsx | Path-only addition under 00.13 §5.2 (reviewer CONFIRM, 2026-11-11, §11.0.1): line 392 only, the supervisor back button now has `min-h-11` |
 
 Rows 1–4 are Task-flow paths. The allowlist is rows 5–22, 18 paths. No row depends on an open point.
 
@@ -780,3 +781,13 @@ Review 1 was given by the standing Owner-designated read-only subagent reviewer,
   7. Race ordering uses held locks (mainly the target room row FOR UPDATE, which pauses a transfer that already holds the Attempt); "submit first" runs the submit statements in a held transaction, and "finalizer first" runs the real `finalizeExpiredAttempts` in a held transaction (it also finalizes s4 after I-4 checked it).
   8. The I-4 ENDED, FALSE/FALSE and no-row cases use exams built by fixture SQL; E1 ENDED is checked at the end in I-23.
   9. The I-20 forbidden-key check covers the transfer receipts and the Operator participant projection; the session drill-down carries `session.sessionId` by design.
+
+### 11.0.1 Exact-content CI of 0368185 and the Owner's decision on the Proctor screen — 2026-11-11
+
+- **CI #254** (run 42882157390, 0368185, attempt 1): FAILURE in the five browser jobs; Web, Runtime (unit and real PostgreSQL 16 integration, including the approved races I-6 to I-15 and the 0065 migration test) and Container SUCCESS. Every journey passed; in every browser only the 99k capture `proctor-new-room` failed: the new room's Proctor list (the supervisor rendering of ExamMonitoringView) had targets under 44 px in every condition, and at 390x844 text2 the no-wrap "Kembali ke Monitoring Ujian" button overflowed to 403 px. This is ASSESS-INSTITUTION-003 residual R15. C07 here requires 44 px and no overflow on that capture, but also that no other earlier capture changes, so the frozen contract contradicted itself.
+- **Owner decision** (chat, 2026-11-11). Question: "ASSESS-ROOM-001: kontrak (C07) mewajibkan tangkapan daftar peserta milik pengawas ruang baru memenuhi target 44 px dan tanpa overflow. Layar pengawas yang sudah ada (dipakai Guru dan Pengawas sejak SEC-001) masih memakai tombol 36 px dan tombol Kembali yang tidak membungkus (sisa R15 dari ASSESS-INSTITUTION-003), sehingga CI gagal. Bagaimana menyelesaikannya?" Answer: "Perbaiki layar pengawas (Recommended)", option text "Tombol layar pengawas untuk semua peran menjadi 44 px dan membungkus (satu sistem desain). Tangkapan lama layar pengawas SEC-001 ikut berubah dan dicatat; perubahan dalam path yang sudah diizinkan."
+- **Correction:**
+  - Row 15 (ExamMonitoringView.tsx): the 44 px targets, wrapping, narrow-first summary and comfortable dialogs apply to every role; focus restoration stays Operator-only (`operatorSource`). This closes ASSESS-INSTITUTION-003 R15 for the supervision screen.
+  - Row 23, a path-only addition under 00.13 §5.2 with the reviewer's CONFIRM: schoolExamMonitoring.test.tsx:392 asserted the old Operator-only styling and now asserts `min-h-11` on the supervisor back button.
+  - **C07 exception approved by the Owner:** earlier captures of the supervisor screen (the SEC-001 `workspace-sec001-c14-proctor-lock` and `-unlock` captures) change with this styling; every other earlier-capture rule of C07 stands.
+  - Reviewer: path-only addition CONFIRM; ExamMonitoringView change PASS. Local: web typecheck clean; the eight monitoring-related web test files 84/84.
