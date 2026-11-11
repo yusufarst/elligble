@@ -1,9 +1,17 @@
 import type * as pg from 'pg';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
 import type { FinalizationSource } from './submission.ts';
-import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, type ScorableQuestion } from './scoring.ts';
-import { gradeScores, isTeacherGradedQuestion, readCurrentGrades } from './essay-grading.ts';
-import { readFinalizedResults } from './result-finalization.ts';
+import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, type AttemptScore, type CompositeAttemptScore, type ScorableQuestion } from './scoring.ts';
+import { gradeScores, isRunningInstitutionExam, isTeacherGradedQuestion, readCurrentGrades } from './essay-grading.ts';
+import { readFinalizedResults, type FinalizedResultRow } from './result-finalization.ts';
+import { classifyFrozenContent, V1_SINGLE_CHOICE_KEY, V1_SINGLE_CHOICE_RULE } from './question-contract.ts';
+import { ESSAY_KEY, ESSAY_RULE } from './question-types/essay.ts';
+import { MATCHING_KEY, MATCHING_RULE } from './question-types/matching.ts';
+import { MULTIPLE_RESPONSE_KEY, MULTIPLE_RESPONSE_RULE } from './question-types/multiple-response.ts';
+import { NUMERIC_ANSWER_KEY, NUMERIC_ANSWER_RULE } from './question-types/numeric-answer.ts';
+import { ORDERING_KEY, ORDERING_RULE } from './question-types/ordering.ts';
+import { SHORT_ANSWER_KEY, SHORT_ANSWER_RULE } from './question-types/short-answer.ts';
+import { TRUE_FALSE_KEY, TRUE_FALSE_RULE } from './question-types/true-false.ts';
 
 // Provisional results of a teacher-managed exam for the teacher who manages it (D04.4-26A/C,
 // D04.8). Scores are computed on read from the frozen snapshots and the answers the server
@@ -14,8 +22,97 @@ import { readFinalizedResults } from './result-finalization.ts';
 // When a participant has more than one attempt, the original (first) attempt is shown.
 // Once the exam is finalized (D04.8-17/20) the frozen results are shown instead, exactly
 // as stored at finalization; a participant who did not work on it is ABSENT.
+//
+// RESULT-004 (E6, E8): the subject Teacher of an institution exam sees no results while the exam is
+// ACTIVE or PAUSED (D04.4-26D: no whole-exam monitoring); and every response carries the item
+// projection of RS-1: `questions` ({no, typeCode, maxScore}, in display order) and, on each row with a
+// score, `items` ({no, outcome, score}). PROVISIONAL items come from the same scoreAttempt call as the
+// totals; FINAL items and questions come only from the frozen item outcomes (never recomputed,
+// D04.8-20). No prompt, option, key, accepted form, tolerance or rubric is projected.
 
 export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'ABSENT';
+
+/** The v2 import type code of a question (question-import.ts ImportQuestionType). */
+export type ResultTypeCode = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'IS' | 'ES';
+
+/** One question of the item projection (RS-1, E8). */
+export interface ResultQuestion {
+    no: number;
+    typeCode: ResultTypeCode;
+    maxScore: number;
+}
+
+/** One item of a scored row (RS-1, E8): the earned points; 0 for UNGRADED. */
+export interface ResultItem {
+    no: number;
+    outcome: string;
+    score: number;
+}
+
+const TYPE_CODE_BY_CONTENT_KEY: ReadonlyMap<string, ResultTypeCode> = new Map([
+    [V1_SINGLE_CHOICE_KEY, 'PG'], [MULTIPLE_RESPONSE_KEY, 'PGK'], [TRUE_FALSE_KEY, 'BS'], [MATCHING_KEY, 'MJ'],
+    [ORDERING_KEY, 'UR'], [NUMERIC_ANSWER_KEY, 'IA'], [SHORT_ANSWER_KEY, 'IS'], [ESSAY_KEY, 'ES'],
+]);
+
+const TYPE_CODE_BY_RULE: ReadonlyMap<string, ResultTypeCode> = new Map([
+    [V1_SINGLE_CHOICE_RULE, 'PG'], [MULTIPLE_RESPONSE_RULE, 'PGK'], [TRUE_FALSE_RULE, 'BS'], [MATCHING_RULE, 'MJ'],
+    [ORDERING_RULE, 'UR'], [NUMERIC_ANSWER_RULE, 'IA'], [SHORT_ANSWER_RULE, 'IS'], [ESSAY_RULE, 'ES'],
+]);
+
+/** The type code of a frozen question's content key (automatic and manual short answers alike are IS). */
+export function typeCodeOfContent(frozenContent: unknown): ResultTypeCode {
+    const kind = classifyFrozenContent(frozenContent);
+    const code = kind.kind === 'v1' || kind.kind === 'registered' ? TYPE_CODE_BY_CONTENT_KEY.get(kind.key) : undefined;
+    if (!code) throw new Error('A scorable question has no type code');
+    return code;
+}
+
+/** The type code of a frozen item outcome's rule; an entry without ruleId is a v1 single choice. */
+export function typeCodeOfRule(ruleId: string | undefined): ResultTypeCode {
+    const code = TYPE_CODE_BY_RULE.get(ruleId ?? V1_SINGLE_CHOICE_RULE);
+    if (!code) throw new Error(`A frozen item outcome has an unknown rule ${ruleId}`);
+    return code;
+}
+
+const MICRO = 1_000_000;
+
+/** PROVISIONAL questions: the snapshots in display order, each with the maximum the scoring gives it. */
+export function provisionalQuestions(questions: readonly ScorableQuestion[], score: AttemptScore | CompositeAttemptScore): ResultQuestion[] {
+    const contentOf = new Map(questions.map(q => [q.id, q.frozenContent]));
+    return score.items.map((item, index) => ({
+        no: index + 1,
+        typeCode: typeCodeOfContent(contentOf.get(item.questionSnapshotId)),
+        maxScore: isCompositeScore(score) ? Number(score.items[index].maxScoreMicro) / MICRO : item.maxScore,
+    }));
+}
+
+/** PROVISIONAL items of one scored attempt, from the same score that gives its totals, matched by snapshot id. */
+export function provisionalItems(score: AttemptScore | CompositeAttemptScore, noBySnapshot: ReadonlyMap<string, number>): ResultItem[] {
+    return score.items.map(item => {
+        const no = noBySnapshot.get(item.questionSnapshotId);
+        if (no === undefined) throw new Error('A scored item has no question');
+        const earned = 'scoreMicro' in item ? Number(item.scoreMicro) / MICRO : item.score;
+        return { no, outcome: item.outcome, score: earned };
+    });
+}
+
+type FrozenItem = NonNullable<FinalizedResultRow['itemOutcomes']>[number];
+
+/** FINAL questions: the frozen order, maxima and rules of the item outcomes of one SUBMITTED row. */
+export function finalQuestions(itemOutcomes: readonly FrozenItem[]): ResultQuestion[] {
+    return itemOutcomes.map((item, index) => ({ no: index + 1, typeCode: typeCodeOfRule(item.ruleId), maxScore: Number(item.maxScoreMicro) / MICRO }));
+}
+
+/** FINAL items of one SUBMITTED row: each frozen outcome matched to its question by snapshot id. */
+export function finalItems(itemOutcomes: readonly FrozenItem[], noBySnapshot: ReadonlyMap<string, number>): ResultItem[] {
+    return itemOutcomes
+        .map(item => {
+            const no = noBySnapshot.get(item.questionSnapshotId);
+            if (no === undefined) throw new Error('A frozen item outcome has no question');
+            return { no, outcome: item.outcome, score: Number(item.scoreMicro) / MICRO };
+        })
+        .sort((a, b) => a.no - b.no);
+}
 
 export interface ParticipantScore {
     /** D1 (ASSESS-QUESTION-008): automatically scored items only. */
@@ -37,6 +134,8 @@ export interface ParticipantResult {
     finalizationSource: FinalizationSource | null;
     submittedAt: string | null;
     score: ParticipantScore | null;
+    /** RS-1: present only on a row with a score, one entry per question. */
+    items?: ResultItem[];
 }
 
 export interface TeacherExamResults {
@@ -56,11 +155,15 @@ export interface TeacherExamResults {
     finalizedAt: string | null;
     summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
     participants: ParticipantResult[];
+    /** RS-1: one entry per question in display order; [] when the exam cannot be scored. */
+    questions: ResultQuestion[];
 }
 
 export type TeacherExamResultsOutcome =
     | { type: 'ok'; results: TeacherExamResults }
     | { type: 'forbidden' }
+    /** E6 (D04.4-26D): an institution exam in ACTIVE or PAUSED; nothing about its participants. */
+    | { type: 'institution_exam_running'; currentState: string }
     | { type: 'unavailable' };
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -99,6 +202,7 @@ export async function readTeacherExamResults(
         if (!transaction) await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
         const exam = await client.query(
             `SELECT i.id, i.lifecycle_state, i.window_starts_at, i.window_ends_at,
+                    (to_jsonb(i) ->> 'institution_session_id') AS institution_session_id,
                     s.display_label AS subject_label, g.display_label AS group_label, at.display_label AS assessment_type_label
              FROM secure_assessment_exam_instances i
              JOIN academic_core_teaching_assignments ata
@@ -119,6 +223,11 @@ export async function readTeacherExamResults(
             return { type: 'forbidden' };
         }
         const examRow = exam.rows[0];
+        // E6: placed after the authority check and before any participant is read.
+        if (isRunningInstitutionExam(examRow.institution_session_id ?? null, examRow.lifecycle_state)) {
+            if (!transaction) await client.query('ROLLBACK');
+            return { type: 'institution_exam_running', currentState: examRow.lifecycle_state };
+        }
         const examInfo = {
             examInstanceId,
             subjectLabel: examRow.subject_label ?? null,
@@ -143,24 +252,40 @@ export async function readTeacherExamResults(
         if (finalized) {
             const ids = await listElligbleIds(client, finalized.rows.map(row => row.personId));
             if (!transaction) await client.query('COMMIT');
-            const list: ParticipantResult[] = finalized.rows.map(row => ({
-                elligbleId: ids.get(row.personId) ?? null,
-                status: row.standing === 'SUBMITTED' ? 'SUBMITTED' : 'ABSENT',
-                finalizationSource: (row.finalizationSource as FinalizationSource | null) ?? null,
-                submittedAt: row.submittedAt,
-                score: row.standing === 'SUBMITTED'
-                    ? {
-                        correct: row.correct ?? 0,
-                        incorrect: row.incorrect ?? 0,
-                        unanswered: row.unanswered ?? 0,
-                        graded: (row.itemOutcomes ?? []).filter(item => item.outcome === 'GRADED').length,
-                        ungraded: 0,
-                        rawScore: row.rawScore ?? 0,
-                        maxScore: row.maxScore ?? 0,
-                        scaledScore: row.scaledScore ?? 0,
-                    }
-                    : null,
-            }));
+            // E8 FINAL: only frozen data. The questions follow the frozen item order of a SUBMITTED row
+            // (every SUBMITTED row of one finalization has the same order and maxima); with none, the
+            // snapshots give them as for a provisional read, and no row has item cells.
+            const firstSubmitted = finalized.rows.find(row => row.standing === 'SUBMITTED' && Array.isArray(row.itemOutcomes));
+            let finalQuestionList: ResultQuestion[];
+            if (firstSubmitted) {
+                finalQuestionList = finalQuestions(firstSubmitted.itemOutcomes!);
+            } else {
+                const probe = scoreAttempt(questions, new Map());
+                finalQuestionList = probe.type === 'scored' ? provisionalQuestions(questions, probe.score) : [];
+            }
+            const finalNo = new Map((firstSubmitted?.itemOutcomes ?? []).map((item, index) => [item.questionSnapshotId, index + 1]));
+            const list: ParticipantResult[] = finalized.rows.map(row => {
+                const result: ParticipantResult = {
+                    elligbleId: ids.get(row.personId) ?? null,
+                    status: row.standing === 'SUBMITTED' ? 'SUBMITTED' : 'ABSENT',
+                    finalizationSource: (row.finalizationSource as FinalizationSource | null) ?? null,
+                    submittedAt: row.submittedAt,
+                    score: row.standing === 'SUBMITTED'
+                        ? {
+                            correct: row.correct ?? 0,
+                            incorrect: row.incorrect ?? 0,
+                            unanswered: row.unanswered ?? 0,
+                            graded: (row.itemOutcomes ?? []).filter(item => item.outcome === 'GRADED').length,
+                            ungraded: 0,
+                            rawScore: row.rawScore ?? 0,
+                            maxScore: row.maxScore ?? 0,
+                            scaledScore: row.scaledScore ?? 0,
+                        }
+                        : null,
+                };
+                if (result.score) result.items = finalItems(row.itemOutcomes ?? [], finalNo);
+                return result;
+            });
             sortByElligbleId(list);
             return {
                 type: 'ok',
@@ -176,6 +301,7 @@ export async function readTeacherExamResults(
                         submitted: list.filter(r => r.status === 'SUBMITTED').length,
                     },
                     participants: list,
+                    questions: finalQuestionList,
                 },
             };
         }
@@ -219,9 +345,13 @@ export async function readTeacherExamResults(
         // selects the composite rule.
         const probe = scoreAttempt(questions, new Map());
         const scoringAvailable = probe.type === 'scored';
+        // E8 PROVISIONAL: the snapshots in display order; [] when the content cannot be scored.
+        const questionList = probe.type === 'scored' ? provisionalQuestions(questions, probe.score) : [];
+        const noBySnapshot = new Map(questions.map((q, index) => [q.id, index + 1]));
         const results: ParticipantResult[] = participants.rows.map(row => {
             const status: ParticipantResultStatus = row.submitted_at ? 'SUBMITTED' : row.started_at ? 'IN_PROGRESS' : 'NOT_STARTED';
             let score: ParticipantScore | null = null;
+            let items: ResultItem[] | undefined;
             if (status === 'SUBMITTED' && scoringAvailable) {
                 const scored = scoreAttempt(questions, answersByAttempt.get(row.attempt_id) ?? new Map(), undefined, gradeScores(grades.get(row.attempt_id)));
                 if (scored.type === 'scored') {
@@ -229,15 +359,19 @@ export async function readTeacherExamResults(
                     const graded = isCompositeScore(scored.score) ? scored.score.gradedCount : 0;
                     const ungraded = isCompositeScore(scored.score) ? scored.score.ungradedCount : 0;
                     score = { correct, incorrect, unanswered, graded, ungraded, rawScore, maxScore, scaledScore };
+                    // The same score gives the totals and the items, so they cannot disagree.
+                    items = provisionalItems(scored.score, noBySnapshot);
                 }
             }
-            return {
+            const result: ParticipantResult = {
                 elligbleId: elligbleIds.get(row.person_id) ?? null,
                 status,
                 finalizationSource: status === 'SUBMITTED' ? (row.finalization_source ?? null) : null,
                 submittedAt: status === 'SUBMITTED' ? isoOrNull(row.submitted_at) : null,
                 score,
             };
+            if (score && items) result.items = items;
+            return result;
         });
         sortByElligbleId(results);
 
@@ -258,6 +392,7 @@ export async function readTeacherExamResults(
                 finalizedAt: null,
                 summary: { participants: results.length, notStarted: count('NOT_STARTED'), inProgress: count('IN_PROGRESS'), submitted: count('SUBMITTED') },
                 participants: results,
+                questions: questionList,
             },
         };
     } catch (transactionError) {

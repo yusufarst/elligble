@@ -20,6 +20,11 @@ import { SHORT_ANSWER_KEY, isManualShortAnswer, shortTextOf } from './question-t
 // UPDATE: a grade either commits before finalization locks the exam, or waits and then sees
 // FINALIZED. A per-answer advisory lock (tenant, attempt, snapshot) serializes revisions, and
 // the expected revision makes a stale form an explicit refusal.
+//
+// RESULT-004 E7 (D04.4-26D, LOCKED; Owner RS-2): the worklist of a running institution exam would
+// show, per ELLIGBLE ID, who has submitted and their answers as they arrive, which is whole-exam
+// monitoring its subject Teacher does not hold. The worklist and the grade write of an institution
+// exam therefore open only once it has ended; teacher-managed exams keep ACTIVE, PAUSED and ENDED.
 
 const MICRO = 1_000_000n;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,6 +32,16 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const SCORE_FORMAT = /^\d{1,4}([.,]\d{1,2})?$/;
 const GRADING_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED']);
 const READABLE_STATES = new Set(['ACTIVE', 'PAUSED', 'ENDED', 'FINALIZED']);
+
+const RUNNING_STATES = new Set(['ACTIVE', 'PAUSED']);
+
+/**
+ * RESULT-004 E6/E7: an institution exam (one with a session) that is ACTIVE or PAUSED. Its results,
+ * export, worklist and grade write are refused to its subject Teacher with institution_exam_running.
+ */
+export function isRunningInstitutionExam(institutionSessionId: string | null | undefined, lifecycleState: string): boolean {
+    return typeof institutionSessionId === 'string' && institutionSessionId.length > 0 && RUNNING_STATES.has(lifecycleState);
+}
 
 export interface CurrentGrade {
     scoreMicro: bigint;
@@ -120,6 +135,7 @@ export interface EssayWorklist {
 export type EssayWorklistOutcome =
     | { type: 'ok'; worklist: EssayWorklist }
     | { type: 'forbidden' }
+    | { type: 'institution_exam_running'; currentState: string }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'unavailable' };
 
@@ -148,6 +164,10 @@ export async function readEssayWorklist(pool: pg.Pool, actor: { tenantId: string
         await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
         const exam = await readManagedExam(client, actor, examInstanceId);
         if (!exam) { await client.query('ROLLBACK'); return { type: 'forbidden' }; }
+        if (isRunningInstitutionExam(exam.institution_session_id, exam.lifecycle_state)) {
+            await client.query('ROLLBACK');
+            return { type: 'institution_exam_running', currentState: exam.lifecycle_state };
+        }
         if (!READABLE_STATES.has(exam.lifecycle_state)) { await client.query('ROLLBACK'); return { type: 'invalid_state', currentState: exam.lifecycle_state }; }
         const snapshots = await client.query(
             `SELECT id, frozen_content FROM secure_assessment_exam_question_snapshots
@@ -225,6 +245,7 @@ export interface GradeEssayRequest {
 export type GradeEssayOutcome =
     | { type: 'ok'; revision: number; score: string; gradedAt: string }
     | { type: 'forbidden' }
+    | { type: 'institution_exam_running'; currentState: string }
     | { type: 'invalid_state'; currentState: string }
     | { type: 'not_gradable' }
     | { type: 'invalid_score' }
@@ -265,6 +286,10 @@ export async function gradeEssay(
         if (!(await reauthenticate(client))) return await refuse({ type: 'forbidden' });
         const exam = await lockManagedExam(client, actor, request.examInstanceId, true);
         if (!exam) return await refuse({ type: 'forbidden' });
+        // E7: the exam row is held FOR KEY SHARE, so END cannot commit between this check and the write.
+        if (isRunningInstitutionExam(exam.institution_session_id, exam.lifecycle_state)) {
+            return await refuse({ type: 'institution_exam_running', currentState: exam.lifecycle_state });
+        }
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`sa-essay-grade:${actor.tenantId}:${request.attemptId}:${request.snapshotId}`]);
         if (!(await reauthenticate(client))) return await refuse({ type: 'forbidden' });
 
