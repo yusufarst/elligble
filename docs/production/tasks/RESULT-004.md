@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / trustworthy complete results; HIGH risk; R25, R26; P8 V09, V11, V12 |
-| Status | **IN_PROGRESS under DEC-048: formal READY PASS (§10). Owner decisions RS-1 to RS-3, the RS-1 cell format and the O02/O05 reviewer half decided (§3.1); contract review chain STOP → PASS (§9)** |
+| Status | **VERIFYING under DEC-048: final evidence and Delegated Acceptance (§12); implementation and reviews (§11); formal READY PASS (§10). Owner decisions RS-1 to RS-3, the RS-1 cell format and the O02/O05 reviewer half decided (§3.1); contract review chain STOP → PASS (§9)** |
 | Objective | Make the Teacher results complete and trustworthy for every question type and for institution exams, by reusing the delivered scoring, human grading and finalization rather than adding policy:<br>• golden vectors over one exam that holds all eight types, including the manual short answer, prove per-type scoring, the composite aggregation, the absent, ungraded, unanswered and zero distinctions, idempotent finalization and the frozen, reconstructable raw, maximum and scaled totals, for a teacher-managed exam and an institution subject exam alike;<br>• the results, the export and the grading of an institution exam are not available to its subject Teacher while the exam is ACTIVE or PAUSED (D04.4-26D, LOCKED), and are per subject ExamInstance afterwards (O05-1);<br>• the CSV carries per-question points with an explanation for every 0 (RS-1) and stays spreadsheet-safe;<br>• the results and grading screens never leave focus on BODY;<br>• concurrency, wrong-subject, tamper and full-type export negatives are proven on real PostgreSQL and in a five-browser journey.<br>No new scoring rule, grade policy, correction, publication, route, table, column or School Operator score access |
 | Owner decisions | **Approved inputs:**<br>• O02-1, O02-2, O02-9, O02-10, O05-1 and O05-6 (boundary only), A01-2 and A01-3, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md));<br>• D1 and D4 of [ASSESS-QUESTION-008 §3](ASSESS-QUESTION-008.md) (graded essays counted apart; the two appended CSV columns);<br>• D1 of [ASSESS-QUESTION-006 §3](ASSESS-QUESTION-006.md) (manual mode by empty accepted forms);<br>• OD-07, OD-07b and OD-09 (00.11 §12);<br>• RS-1 (with its cell-format follow-up), RS-2, RS-3 and the O02/O05 reviewer half, decided in chat 2026-11-10/11 (§3.1).<br>**Open:** none.<br>**Reviewer:** the standing Owner-designated read-only subagent reviewer, a fresh one for this Task. It is the A01 architecture/assessment reviewer named at ASSESS-QUESTION-001:57, and, by the Owner's answer of §3.1, the reviewer half of O02 and O05 for this Task |
 | Execution authority | DEC-048 (00.13). Not eligible yet (below) |
@@ -577,3 +577,87 @@ Review 1 was given by the standing Owner-designated read-only subagent reviewer,
   - Manifest, built as in ASSESS-QUESTION-004 §10 over the `workspace-question-*`, `workspace-institution-*` and `workspace-room-transfer-*` captures: SHA-256 1f7b4598df8c46e2ec23d76291ac317f4a462808ff5f9a0e0c7146a0b635d22c.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs, and no push while the previous commit's CI runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 18, IN_PROGRESS 1, VERIFYING 0, BLOCKED 14.
+
+## 11. Implementation checkpoint — 2026-11-11
+
+- **Registration CI:** CI #259 (run 42987509303, eec2e45) attempt 1 eight SUCCESS.
+- **Candidate:** d062029; every changed path is in §6 rows 5–17 (13 paths, the frozen allowlist exactly); `5-lifecycle.spec.ts` changes only `(;){12}` to `(;){15}` (§4.7). No migration. Status IN_PROGRESS → VERIFYING.
+- **Implementer departures, for the implementation review:**
+  1. I-7 pins `score` to the eight delivered count keys and scans every other key for answer-key fields, stricter than a name list.
+  2. 99l sets the deadline through the product rather than fixture SQL.
+  3. The second Student saves by an in-page request on its own signed-in page (the 99f pattern of C07).
+  4. 99l's `BASELINE` gains the #258 run and manifest at registration; `frontendTree` is unchanged.
+  5. Additions: focus restore on "Muat Ulang" and "Coba Lagi"; a running refusal clears the screen (the stricter reading of D04.4-26D); `useFocusRestore` and `WRAPPING_BUTTON` are exported from `TeacherResultsView.tsx` and shared with the grading screen, since `hooks/` is outside the allowlist.
+  6. T-2 proves the CSV unchanged through a byte-identical results JSON; `buildResultsCsv` is a pure function of it.
+  7. `buildResultsCsv` also throws on a scored row without its item, as E9's closed-set defect handling.
+- **RS-2 pointer wording:** the CBT_DOMAIN_RULES_SPECIFICATION line attributes the results and export refusal to the E6 reading of D04.4-26D, not to RS-2 (reviewer note).
+
+### 11.0.1 Exact-content CI of d062029, e7607a6 and dbc1d66 (99l corrections)
+
+- **CI #260 (run 42994036834, d062029):** attempt 1, FAILURE in the five E2E jobs only; runtime with real PostgreSQL, web and container SUCCESS, and every other E2E spec passed. 99l waited for "Kembali ke Pelaksanaan Ujian" after "Simpan Soal", which returns the Teacher to the exam list with its notice (as in 99h), and hung until the 45-minute test timeout.
+- **Correction e7607a6** (row 16 only): the stale click is removed; every 99l page gets a 120 s default step timeout, so a missing control fails in minutes; the stored PGK selection is compared sorted, as the client stores it.
+- **CI #261 (run 43006617433, e7607a6):** attempt 1, FAILURE in the five E2E jobs at the Operator's last step only (99l:704); the journey through grading, finalization, CSV and print passed in every browser. The "Ujian Sekolah" navigation is already active on "Pelaksanaan Sesi", so its click did not navigate.
+- **Correction dbc1d66** (row 16 only): the Operator's session screen refreshes in place with its own "Perbarui", then shows "Hasil Final"; the in-app refresh only, never a browser reload (E14).
+
+### 11.0.2 Exact-content CI of dbc1d66 and the entry focus (C08)
+
+- **CI #262 (run 43011946196, dbc1d66):** attempt 1, eight SUCCESS. Its 200 `workspace-complete-results-*` pairs had no overflow and no target under 44 px (manifest SHA-256 8297dd9713d9d6542e1582624bd8ddf144e23c956ac140a8334addf8b6f33016), but focus was on BODY in all 50 `grading` captures: the "Nilai Esai" opener is gone after navigation.
+- **Correction b86e1fe** (rows 11, 12, 15 and 16): `useEntryTitleFocus`, exported from `TeacherResultsView.tsx`, gives the screen title focus (`tabIndex=-1`) once the results or grading screen has first loaded or been refused, only when focus is on BODY or nowhere, in the layout phase so no input reaches the screen first (a passive effect let `essay.test.tsx` type before the focus move). Pattern of ASSESS-ROOM-001 §11.0.2. Two unit tests cover load, refusal and focus already elsewhere; 99l asserts the focused "Hasil Ujian" and "Penilaian Esai" titles.
+- **Local checks** (8 GB executor; typechecks and targeted units only): web and e2e typecheck clean; web units 54/54 (completeResults, essay, short-answer, teacherResults). Runtime units, real-PostgreSQL integration and every E2E spec run in CI.
+
+### 11.1 Reviews of the candidate
+
+- **Implementation review by the same reviewer:** PASS on the d062029 working tree (departures 1–7 accepted, departure 4 conditioned on the `BASELINE` delta, checked and confirmed); CONFIRM of the 99l corrections e7607a6 and dbc1d66 and of the b86e1fe code change (scope rows 11, 12, 15 and 16).
+- **Non-material notes recorded:** a CSV build defect (R3a) shows the existing generic export failure copy "Izin ekspor belum diterima" although the intent was audited ISSUED, and the kept key replays the same failure on retry; no production path produces such an outcome. `useFocusRestore` and `useEntryTitleFocus` live in a component file; moving them to `hooks/` belongs to a later UI-SYSTEM Task.
+- **Rendered review by the same reviewer:** PASS on b86e1fe (CI #263 artifacts, all five browsers), with no material finding: the focused title without outline is acceptable (tabindex -1, not in the tab order; the ASSESS-ROOM-001 pattern), and keyboard focus rings show where they matter; grading, results and finalize-refused layouts are correct at 200 % text, with no page overflow and 44 px targets; the E12 wrapping differences are accepted. Limitation recorded: the two WebKit 200 % finalize-refused viewport captures do not show the target card (a later harness change should scroll the root into view before the viewport fallback). Non-material: the WebKit sticky header covers the top of full-page captures (a known capture artifact); the results back button centres its wrapped label at 200 % while the grading one is left-aligned, which predates this Task and goes to a UI-SYSTEM consistency Task.
+
+## 12. Final evidence and Delegated Acceptance — 2026-11-11
+
+### 12.1 Content and CI
+
+**Final content:** b86e1fe3fc563a74072b2630b8b9d3c21d36f305. The registration was eec2e45. Every commit has the Owner as author and committer, with no trailers or AI/tool attribution.
+
+**Exact-content CI:** CI #263 (run 43031767935), push, attempt 1, eight SUCCESS: runtime typecheck and units, real PostgreSQL 16 integration (G-1 to G-7, I-1 to I-7, every §4.8 N-id, K-1 to K-6, T-1 and T-2); web typecheck, tests and build; container build and smoke; every E2E spec in mobile-360, tablet-768, desktop-1280, firefox-1280 and webkit-390, including 4-results, 5-lifecycle, 99f, 99g and the 99l journey (C07) and captures (C08).
+
+**Rendered evidence:** the five `workspace-visual-*` artifacts of run 43031767935, fetched in parallel with the resumable, size- and `unzip -t`-checked transfer: 200 `workspace-complete-results-*` pairs at b86e1fe (frontend tree 6851be1471d706593b43d6a844fe4d815c4aeb4d), 40 per browser over four scenarios (results-provisional, finalize-refused, grading, results-final); every hash matches; zero overflow; zero targets under 44 px; exact single-pass 200 % calibration, restoration and post-capture integrity; focus never on BODY (grading: the title, 50 of 50; the other scenarios: their button). The five WebKit finalize-refused captures are viewport-only (the 99h WebKit fallback): the three at 100 % text show the refused card; the two at 200 % text show neighbouring cards because the fallback does not scroll the capture root into view, so they are a recorded limitation, not visual evidence (their metrics on the right root pass, and the other four browsers render the card at 200 %). Manifest SHA-256 3032f91e5c3594cbde398d5250c5281a00ab0a639613a0f235bc361eb1f26413.
+
+**Earlier captures** against the #258 baseline (5424 PNG pairs, none missing or extra): 2251 byte-identical; every other pair has the same accessibility snapshot once times, dates, durations and IDs are normalized. Dimensions change consistently in all five browsers only at 200 % text on the results and grading screens (es/is grading +40 px at 390×844 and +4 at 1280×800; es/is results +126 and +42; sec001 final results +57 at 360×780): the E12 wrapping classes, as C08 allows. The remaining dimension changes are single-browser full-page swings of the known kind.
+
+**All runs, preserved without re-run:**
+
+| Run | Result |
+|---|---|
+| CI #259 (eec2e45, registration) | attempt 1, eight SUCCESS |
+| CI #260 (d062029) | attempt 1, FAILURE: 99l stale back click after saving (§11.0.1) |
+| CI #261 (e7607a6) | attempt 1, FAILURE: 99l Operator navigation no-op at the last step (§11.0.1) |
+| CI #262 (dbc1d66) | attempt 1, eight SUCCESS; captures showed the grading entry focus on BODY (§11.0.2) |
+| CI #263 (b86e1fe) | attempt 1, eight SUCCESS |
+
+### 12.2 Independent review (Owner-designated standing reviewer, also the A01 and O02/O05 reviewer half)
+
+1. **Contract:** STOP, then PASS (§9).
+2. **Implementation:** PASS, with CONFIRM of every correction (§11.1).
+3. **Rendered:** PASS on b86e1fe (§11.1).
+
+### 12.3 Acceptance gates
+
+| Gate | Disposition |
+|---|---|
+| C01 | PASS: type-code maps, the item projection and its invariants, the E6/E7 predicate, `buildResultsCsv` with every E9 cell string, the closed-set throw, the formula guard and a response without `questions` (units) |
+| C02 | PASS on real PostgreSQL (CI #263): golden vectors G-1 to G-7 for E1 and TM-G, every §5 value exact |
+| C03 | PASS on real PostgreSQL through the production-wired server: I-1 to I-7 and every §4.8 N-id with before/after counts (V09, V11) |
+| C04 | PASS on real PostgreSQL: K-1 to K-6, T-1 and T-2, each race within 5 s and no 40P01 |
+| C05 | PASS: regression with only the §4.7 change; every runtime, web and E2E suite passing |
+| C06 | PASS: refusal states and copy with no em dash; focus after "Perbarui Data", "Unduh CSV", "Cetak" and "Simpan Nilai" and on screen entry, never left on BODY; the wrapping classes; X-1 and X-2; unchanged rendering without the new fields |
+| C07 | PASS: the five-browser 99l journey, from the running refusals through grading, finalization, the per-question CSV and print to the Operator's "Hasil Final" without scores and 403 |
+| C08 | PASS: the #258 baseline and the after captures; no overflow; 44 px; focus never on BODY; wrapping; earlier captures change only by times, IDs, the E12 wrapping and known full-page swings; four scenarios; rendered review PASS |
+| C09 | PASS: every changed path within §6 rows 1–17; 33 Tasks and 78 edges; exact-SHA attempt-1 eight-job CI with no re-run |
+| C10 | PASS: review chains PASS; the reviewer's contract approval is the A01 and O02/O05 reviewer half, anchored to eec2e45; Delegated Acceptance below |
+
+### 12.4 Delegated Acceptance (DEC-048, 00.13 §5.4)
+
+Every gate C01–C10 has PASSED with recorded evidence, and the independent contract, implementation and rendered reviews PASSED on the final content SHA. RESULT-004 is accepted under DEC-048 and is DONE under 00.12 §5. The Owner may reopen it at any time.
+
+**Residual risks and limits:** R1 to R10 of §7 stand, including no item remedy after opening (RS-3), the varying CSV column count (RS-1), the export digest change for keys issued before deployment, the builder failure after the audit (R3a, with the copy noted in §11.1), and no early view of institution results (E6, E7). PB05 and PB12 are OPEN. G7 comes before real data. There is no deployment or release claim.
+
+**Landing:** a delegated squash merge under 00.13 §6, after PR-head CI on this evidence commit shows eight SUCCESS on attempt 1, followed by post-merge main CI. DONE 19/33 (57.58%) after the merge.
