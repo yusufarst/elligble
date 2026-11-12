@@ -431,6 +431,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                     case 'ok':
                         sendJson(res, 200, result.worklist);
                         return;
+                    case 'institution_exam_running':
+                        sendJson(res, 409, { error: 'institution_exam_running', currentState: result.currentState });
+                        return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
                         return;
@@ -480,6 +483,9 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');
+                        return;
+                    case 'institution_exam_running':
+                        sendJson(res, 409, { error: 'institution_exam_running', currentState: result.currentState });
                         return;
                     case 'invalid_state':
                         sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
@@ -1152,6 +1158,10 @@ export function createServer(deps: ServerDependencies): http.Server {
                         return;
                     case 'forbidden':
                         sendError(res, 403, 'forbidden');
+                        return;
+                    case 'institution_exam_running':
+                        // E6 (D04.4-26D): no participant, count or score; the export wrote no audit row.
+                        sendJson(res, 409, { error: 'institution_exam_running', currentState: result.currentState });
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

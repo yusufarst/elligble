@@ -633,12 +633,32 @@ export interface ParticipantScore {
   scaledScore: number;
 }
 
+/** RESULT-004 (RS-1): the v2 import type code of a question in the results. */
+export type ResultTypeCode = 'PG' | 'PGK' | 'BS' | 'MJ' | 'UR' | 'IA' | 'IS' | 'ES';
+/** The closed outcome set of a result item; anything else is a defect (E9). */
+export type ResultItemOutcome = 'CORRECT' | 'INCORRECT' | 'UNANSWERED' | 'GRADED' | 'UNGRADED';
+
+export interface ResultQuestion {
+  no: number;
+  typeCode: ResultTypeCode;
+  maxScore: number;
+}
+
+export interface ResultItem {
+  no: number;
+  outcome: ResultItemOutcome;
+  /** Earned points; 0 for UNGRADED. */
+  score: number;
+}
+
 export interface ParticipantResult {
   elligbleId: string | null;
   status: ParticipantResultStatus;
   finalizationSource: FinalizationSource | null;
   submittedAt: string | null;
   score: ParticipantScore | null;
+  /** RS-1: present only on a row with a score (absent from an older server). */
+  items?: ResultItem[];
 }
 
 /** Results of a teacher-managed exam: provisional, or frozen once finalized; never shown to students. */
@@ -659,6 +679,8 @@ export interface TeacherExamResultsResponse {
   finalizedAt?: string | null;
   summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
   participants: ParticipantResult[];
+  /** RS-1: one entry per question in display order; absent from an older server. */
+  questions?: ResultQuestion[];
 }
 
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';

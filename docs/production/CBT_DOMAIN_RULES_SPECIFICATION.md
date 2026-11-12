@@ -179,3 +179,12 @@ The Owner approved the O02 type rules (O02-1 to O02-12) and the O05 institution 
 - Each type, institution, transfer and result Task implements its own rows and freezes its expected vectors before its READY.
 
 This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## RESULT-004 decision checkpoint — 2026-11-11
+
+The Owner decided RS-1 to RS-3 for complete results in chat on 2026-11-10/11:
+- RS-1: item detail is one column per question in the result CSV; a cell holds the earned points and a 0 is never bare ("0 (salah)", "0 (tidak dijawab)", "0 (dinilai guru)"; "Belum dinilai" for an ungraded answer). The screen and print keep totals only.
+- RS-2: the subject Teacher of an institution exam grades essays and manual short answers only after the exam has ended. Separately, by the E6 reading of D04.4-26D, its results and export are unavailable to that Teacher while it is ACTIVE or PAUSED.
+- RS-3: no item void, full-credit remedy or correction after an answer key is found wrong in CBT-R1 (O02-10).
+
+Their exact text, the contract and the expected vectors are recorded once, in [RESULT-004 §3.1](tasks/RESULT-004.md). This is a pointer, not a release PASS. PB05 stays OPEN.

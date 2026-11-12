@@ -1,4 +1,4 @@
-import type { ParticipantResult, TeacherExamResultsResponse } from '../types/assessment.ts';
+import type { ParticipantResult, ResultItem, ResultQuestion, TeacherExamResultsResponse } from '../types/assessment.ts';
 import { formatSheetDate, formatSheetDateTime, zoneLabel } from './format.ts';
 import { resultStatus } from './status.ts';
 
@@ -28,6 +28,38 @@ function integer(value: number | null | undefined): string {
   return value === null || value === undefined ? '' : String(value);
 }
 
+// RESULT-004 (Owner RS-1, "Poin dengan keterangan"): after the 19 fixed columns, one column per
+// question. A cell holds the earned points; a 0 is never bare, so an incorrect, an unanswered and a
+// graded-zero item stay apart, and an ungraded answer is never 0. A participant without a score has
+// empty cells (absent is not zero, D04.4-12). The outcome set is closed: anything else is a defect and
+// no file is built.
+const ITEM_INCORRECT = '0 (salah)';
+const ITEM_UNANSWERED = '0 (tidak dijawab)';
+const ITEM_GRADED_ZERO = '0 (dinilai guru)';
+const ITEM_UNGRADED = 'Belum dinilai';
+
+function questionHeader(question: ResultQuestion): string {
+  return `Soal ${question.no} (${question.typeCode}, maks ${decimal(question.maxScore)})`;
+}
+
+function itemCell(item: ResultItem | undefined): string {
+  if (!item) throw new Error('A scored row has no item for a question');
+  switch (item.outcome) {
+    case 'CORRECT': return decimal(item.score);
+    case 'INCORRECT': return ITEM_INCORRECT;
+    case 'UNANSWERED': return ITEM_UNANSWERED;
+    case 'GRADED': return item.score > 0 ? decimal(item.score) : ITEM_GRADED_ZERO;
+    case 'UNGRADED': return ITEM_UNGRADED;
+    default: throw new Error(`Unknown result item outcome ${String((item as { outcome: unknown }).outcome)}`);
+  }
+}
+
+function itemCells(row: ParticipantResult, questions: readonly ResultQuestion[]): string[] {
+  if (!row.score) return questions.map(() => '');
+  const byNo = new Map((row.items ?? []).map(item => [item.no, item]));
+  return questions.map(q => text(itemCell(byNo.get(q.no))));
+}
+
 function participantStatus(row: ParticipantResult): string {
   return resultStatus(row).label;
 }
@@ -44,12 +76,15 @@ function submittedBy(row: ParticipantResult): string {
 
 export function buildResultsCsv(data: TeacherExamResultsResponse): string {
   const zone = zoneLabel();
+  const questions = data.questions ?? [];
   const header = [
     'Mata pelajaran', 'Kelas', 'Jenis penilaian', 'Status hasil', `Waktu finalisasi (${zone})`,
     'ELLIGBLE ID', 'Status peserta', 'Cara pengumpulan', `Waktu pengumpulan (${zone})`, 'Percobaan',
     'Benar', 'Salah', 'Tidak dijawab', 'Skor', 'Skor maksimum', 'Nilai (0-100)', 'Aturan penilaian',
     // ASSESS-QUESTION-008 (Owner D4): appended, so the 17 columns above keep their positions.
     'Dinilai guru', 'Belum dinilai',
+    // RESULT-004 (RS-1): appended after the 19 fixed columns; none from an older server.
+    ...questions.map(questionHeader),
   ];
   const final = data.resultState === 'FINAL';
   const exam = data.exam;
@@ -77,6 +112,7 @@ export function buildResultsCsv(data: TeacherExamResultsResponse): string {
       text(score ? data.scoring.rule : ''),
       integer(score?.graded),
       integer(score?.ungraded),
+      ...itemCells(row, questions),
     ].join(SEPARATOR));
   }
   return `﻿${lines.join('\r\n')}\r\n`;

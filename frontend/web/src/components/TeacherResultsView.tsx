@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom';
 import { newActionKey } from '../lib/action-key.ts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, getTeacherExamResults, postTeacherResultsExport } from '../api/assessment-client.ts';
 import type { ParticipantResult, TeacherExamResultsResponse } from '../types/assessment.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,9 +39,67 @@ const Hidden: React.FC = () => (
   <span aria-label="Disembunyikan" className="tracking-widest text-muted-foreground">••••</span>
 );
 
+/** RESULT-004 E12: the wrapping form of a toolbar button ("Tampilkan Nilai" already uses it). */
+export const WRAPPING_BUTTON = 'h-auto min-h-11 max-w-full whitespace-normal py-2';
+
+/** RESULT-004 E6: the results of a running institution exam are not available to its subject Teacher. */
+export const RESULTS_RUNNING_TITLE = 'Hasil Belum Tersedia';
+export const RESULTS_RUNNING_TEXT = 'Hasil ujian sekolah dapat dilihat setelah ujian berakhir. Selama ujian berlangsung, pemantauan dilakukan operator sekolah dan pengawas ruang.';
+export const RESULTS_EXPORT_RUNNING_TEXT = 'Hasil ujian sekolah dapat diekspor setelah ujian berakhir. Tidak ada berkas atau cetakan dibuat.';
+
+/**
+ * RESULT-004 E12: a control that disables itself while its request runs loses focus to BODY. When the
+ * request settles, and only when focus is still on BODY, focus returns to that control once it is
+ * enabled again, otherwise to the first enabled fallback. Focus the user moved elsewhere is left alone.
+ */
+export function useFocusRestore(fallbacks: () => Array<HTMLElement | null>) {
+  const target = useRef<HTMLElement | null>(null);
+  const fallbackList = useRef(fallbacks);
+  fallbackList.current = fallbacks;
+  const [settled, setSettled] = useState(0);
+  useEffect(() => {
+    if (settled === 0) return;
+    const trigger = target.current;
+    target.current = null;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) return;
+    for (const candidate of [trigger, ...fallbackList.current()]) {
+      if (!candidate || !candidate.isConnected || (candidate as HTMLButtonElement).disabled) continue;
+      candidate.focus();
+      if (document.activeElement === candidate) return;
+    }
+  }, [settled]);
+  return useMemo(() => ({
+    /** Records the control that started the request. */
+    begin(trigger: Element | null) { target.current = trigger instanceof HTMLElement ? trigger : null; },
+    /** Call when the request settled, in the same update that enables the control again. */
+    settle() { setSettled(n => n + 1); },
+  }), []);
+}
+
+/**
+ * RESULT-004 E12 (rendered review, as ASSESS-ROOM-001 §11.0.2): the opener of the screen is gone after navigation,
+ * so once the screen has first settled (loaded or refused), its title takes focus when nothing else holds it, in the
+ * layout phase so no input reaches the screen first.
+ */
+export function useEntryTitleFocus(settled: boolean) {
+  const done = useRef(false);
+  useLayoutEffect(() => {
+    if (!settled || done.current) return;
+    done.current = true;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) return;
+    const title = document.querySelector<HTMLHeadingElement>('h1[data-slot="page-title"]');
+    if (!title) return;
+    title.tabIndex = -1;
+    title.classList.add('outline-none');
+    title.focus();
+  }, [settled]);
+}
+
 export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): void }> = ({ examInstanceId, onBack }) => {
   const [data, setData] = useState<TeacherExamResultsResponse | null>(null);
-  const [error, setError] = useState<'forbidden' | 'failed' | null>(null);
+  const [error, setError] = useState<'forbidden' | 'running' | 'failed' | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const activeExam = useRef(examInstanceId);
   activeExam.current = examInstanceId;
@@ -49,12 +107,22 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   const [exportError, setExportError] = useState<string | null>(null);
   const exportKeys = useRef<Partial<Record<'csv' | 'print', string>>>({});
   const [showScores, setShowScores] = useState(false);
+  const refreshButton = useRef<HTMLButtonElement>(null);
+  const backButton = useRef<HTMLButtonElement>(null);
+  const focus = useFocusRestore(() => [refreshButton.current, backButton.current]);
+  useEntryTitleFocus(data !== null || error !== null);
 
   const load = useCallback(async () => {
     try {
       setData(await getTeacherExamResults(examInstanceId));
       setError(null);
     } catch (err) {
+      // E6: nothing about a running institution exam stays on the screen.
+      if (err instanceof ApiError && err.code === 'institution_exam_running') {
+        setData(null);
+        setError('running');
+        return;
+      }
       setError(err instanceof ApiError && err.status === 403 ? 'forbidden' : 'failed');
     }
   }, [examInstanceId]);
@@ -63,14 +131,17 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
     void load();
   }, [load]);
 
-  const refresh = async () => {
+  const refresh = async (trigger: Element | null = document.activeElement) => {
+    focus.begin(trigger);
     setRefreshing(true);
     await load();
     setRefreshing(false);
+    focus.settle();
   };
 
-  const exportResults = async (format: 'csv' | 'print') => {
+  const exportResults = async (format: 'csv' | 'print', trigger: Element | null) => {
     if (exportPending) return;
+    focus.begin(trigger);
     setExportPending(true); setExportError(null);
     try {
       const key = exportKeys.current[format] ??= newActionKey();
@@ -85,13 +156,17 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       if (terminal) delete exportKeys.current[format];
       setExportError(err instanceof ApiError && err.code === 'forbidden'
         ? 'Akses ekspor ditolak. Tidak ada berkas atau cetakan dibuat.'
+        : err instanceof ApiError && err.code === 'institution_exam_running' ? RESULTS_EXPORT_RUNNING_TEXT
         : terminal ? 'Data atau permintaan berubah. Periksa hasil terbaru sebelum meminta ekspor lagi.'
         : 'Izin ekspor belum diterima. Periksa koneksi, lalu coba lagi. Tidak ada berkas atau cetakan dibuat.');
-    } finally { setExportPending(false); }
+    } finally {
+      setExportPending(false);
+      focus.settle();
+    }
   };
 
   const back = (
-    <Button variant="ghost" size="sm" className="-ml-3 min-h-11 min-w-11 self-start whitespace-normal print:hidden" onClick={onBack}>
+    <Button ref={backButton} variant="ghost" size="sm" className="-ml-3 min-h-11 min-w-11 self-start whitespace-normal print:hidden" onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
       Kembali ke Pelaksanaan Ujian
     </Button>
@@ -103,9 +178,11 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
         {error === null ? (
           <LoadingState>Memuat hasil ujian...</LoadingState>
         ) : error === 'forbidden' ? (
-          <LoadErrorState kind="refused" title="Akses Ditolak">Hasil ujian hanya dapat dilihat oleh guru yang mengelola ujian ini.</LoadErrorState>
+          <LoadErrorState kind="refused" title="Akses Ditolak">Hasil ujian hanya dapat dilihat oleh guru mata pelajaran ujian ini.</LoadErrorState>
+        ) : error === 'running' ? (
+          <LoadErrorState kind="refused" title={RESULTS_RUNNING_TITLE}>{RESULTS_RUNNING_TEXT}</LoadErrorState>
         ) : (
-          <LoadErrorState kind="failed" title="Gagal Memuat Hasil Ujian" onRetry={refresh} retrying={refreshing}>
+          <LoadErrorState kind="failed" title="Gagal Memuat Hasil Ujian" onRetry={() => void refresh()} retrying={refreshing}>
             Periksa koneksi internet Anda, lalu coba lagi.
           </LoadErrorState>
         )}
@@ -168,13 +245,14 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
           {showScores ? <IconEyeOff aria-hidden="true" /> : <IconEye aria-hidden="true" />}
           {showScores ? 'Sembunyikan Nilai' : 'Tampilkan Nilai'}
         </Button>
-        <Button variant="secondary" onClick={refresh} disabled={refreshing}>
+        {/* RESULT-004 E12: the same wrapping form, so no label widens the page at 200 % text. */}
+        <Button ref={refreshButton} variant="secondary" className={WRAPPING_BUTTON} onClick={event => void refresh(event.currentTarget)} disabled={refreshing}>
           {refreshing ? 'Memperbarui...' : 'Perbarui Data'}
         </Button>
-        <Button variant="secondary" onClick={() => void exportResults('csv')} disabled={exportPending || participants.length === 0}>
+        <Button variant="secondary" className={WRAPPING_BUTTON} onClick={event => void exportResults('csv', event.currentTarget)} disabled={exportPending || participants.length === 0}>
           Unduh CSV
         </Button>
-        <Button variant="secondary" onClick={() => void exportResults('print')} disabled={exportPending}>Cetak</Button>
+        <Button variant="secondary" className={WRAPPING_BUTTON} onClick={event => void exportResults('print', event.currentTarget)} disabled={exportPending}>Cetak</Button>
       </div>
       <p className="m-0 text-xs text-muted-foreground print:hidden">
         Berkas CSV memakai titik koma sebagai pemisah kolom dan koma sebagai tanda desimal, sesuai pengaturan Indonesia pada Excel dan Google Sheets. Berkas berisi nilai; simpan hanya di perangkat sekolah.
