@@ -313,7 +313,8 @@ export const TeacherReadinessView: React.FC<{
                   </p>
                 )}
                 {lifecycle === 'FINALIZED' && exam.progress && (
-                  <p>{exam.finalizedAt ? `Hasil difinalisasi ${formatDateTime(exam.finalizedAt)}.` : 'Hasil telah difinalisasi.'} Nilai tidak ditampilkan kepada siswa.</p>
+                  // RESULT-003 §4.5: while the result is published, the card says when; otherwise unchanged.
+                  <p>{exam.finalizedAt ? `Hasil difinalisasi ${formatDateTime(exam.finalizedAt)}.` : 'Hasil telah difinalisasi.'} {exam.publishedAt ? `Hasil dipublikasikan kepada siswa ${formatDateTime(exam.publishedAt)}.` : 'Nilai tidak ditampilkan kepada siswa.'}</p>
                 )}
                 {institution && (
                   <>

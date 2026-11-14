@@ -46,6 +46,8 @@ const CALLS: Record<string, Record<string, (m: Module) => Promise<unknown>>> = {
         getTeacherReadiness: m => m.getTeacherReadiness(),
         postTeacherResultsExport: m => m.postTeacherResultsExport(ID, 'csv', ID),
         getTeacherExamResults: m => m.getTeacherExamResults(ID),
+        postResultPublication: m => m.postResultPublication({ examInstanceId: ID, action: 'publish', expectedRevision: 0, reason: 'Hasil siap dibagikan', confirmed: true, actionKey: ID }),
+        getMyResults: m => m.getMyResults(),
         getExamMonitoring: m => m.getExamMonitoring(ID),
         postParticipantLock: m => m.postParticipantLock(ID, ID, 'lock'),
         postParticipantTime: m => m.postParticipantTime({ examInstanceId: ID, participantId: ID, minutes: 5, reason: 'Gangguan listrik', actionKey: ID }),

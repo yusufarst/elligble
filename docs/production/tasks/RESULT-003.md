@@ -5,7 +5,7 @@
 | Field | Disposition |
 |---|---|
 | Classification | Active P11 Task; P1 / result delivery; HIGH risk; R27, R26; P8 V09, V11, V12 |
-| Status | **IN_PROGRESS under DEC-048: formal READY PASS (§10). Owner decisions RP-1 and RP-2 decided (§3.1); contract review chain STOP → PASS (§9)** |
+| Status | **VERIFYING under DEC-048: implementation candidate (§11); formal READY PASS (§10), RP-1/RP-2 and original STOP → PASS (§9) preserved. Exact-content CI and designated implementation/rendered review pending** |
 | Objective | Let the Teacher who holds an exam's teaching assignment publish its finalized result, withdraw the publication and publish it again, each with reason, confirmation and an append-only record; and let each Student see only their own published result of each exam, never a peer's, a ranking or a key. Reuse the delivered finalization, frozen rows, authority and reason/confirmation pattern:<br>• publication is per exam (per subject ExamInstance for an institution exam) and only of a FINALIZED exam; END and finalization never publish (OD-09, D04.8-21);<br>• withdrawal hides the result again and the Student sees "Hasil belum tersedia"; republication shows the same frozen result (O05-6);<br>• a finalized result is never corrected (O02-10);<br>• replay, stale-state, role, tenant, subject, peer and not-finalized negatives are proven on real PostgreSQL and in a five-browser journey, with cache, DOM, storage and export privacy evidence.<br>No new scoring, grading, finalization or correction rule; no School Operator, Proctor or Homeroom result access; no notification, ranking, analytics, per-question review or Student export |
 | Owner decisions | **Approved inputs:**<br>• OD-09, OD-07, OD-07b (00.11 §12);<br>• O02-10, O05-1 and O05-6, decided 2026-11-07 ([ASSESS-QUESTION-001 §4](ASSESS-QUESTION-001.md));<br>• RS-2 and E6 of [RESULT-004 §3](RESULT-004.md) (running institution exams; not reached here, since publication needs FINALIZED).<br>**Decided in chat, 2026-11-12:** RP-1 "Nilai akhir saja (Recommended)" and RP-2 "Setujui (Recommended)" (§3.1).<br>**Reviewer:** the Owner-designated standing read-only subagent reviewer of RESULT-004, which also holds the O05 reviewer half of this Task (RP-2) |
 | Execution authority | DEC-048 (00.13). Eligible; formal READY §10 |
@@ -592,3 +592,32 @@ On SHA-256 2aa63dabd6cc91fa2707cbb2ff68288dac31666349c1d262333fcdd7a8825f0c (553
   - Manifest, built as in ASSESS-QUESTION-004 §10 over the `workspace-question-*`, `workspace-institution-*`, `workspace-room-transfer-*` and `workspace-complete-results-*` captures: SHA-256 2705bbe681110fb241baa47ec16c8f7b78e39653b64037c7a94454a857f5f7dc.
 - **CI-first order:** as frozen in §7. This registration is step 1. No re-runs without the Owner's authorization naming the run, and no push while the previous commit's CI runs.
 - **Status:** BLOCKED → IN_PROGRESS. Counters: DONE 19, IN_PROGRESS 1, VERIFYING 0, BLOCKED 13.
+
+## 11. Implementation and controlled continuity — 2026-11-14
+
+### 11.1 Activation and preserved history
+
+GOV-EXEC-003 effective: approved manifest f409aa92f1179af2b1919a80655a708a7f90eea9f230ce7453f2ee9f41f63bf7; content 8f1c02a7b249c2f0f78b62d799d86fa199ed6625 / CI #267 (43597727336); sole record-only evidence 368ef9e117e64a4c2538ece45da6db0ab973242f / exact PR-head CI #268 (43601358663); PR #41 squash main 0144d6a317cb7964ed94e335c0535a9b42e32fb2 / exact-main CI #269 (43604483479). Each automatic run: attempt 1, eight SUCCESS. Main/PR-head tree 26691b3a7519f65723323daab2d054a0404db598; Owner author, expected committer, explicit raw message/no-attribution checked. Exact-main PASS observed 2026-11-14 22:01 WIB, before baseline edits.
+
+Registration 152a4b365de52f3e334c0d273ab88c7433bf8dd4 / CI #266 (43191912009), attempt 1 eight SUCCESS, and sixteen partial paths were preserved. No repeated contract, formal READY, Build or accepted review. RP-1/RP-2, §9 STOP/PASS exact hashes, nineteen frozen paths, 0066 and baseline manifest remain unchanged. Normal merge 0358f8d899f98b06bf97b42700b767707a0968e7 integrated published governance, resolving only additive live-plan/manifest checkpoint conflicts; Owner author/committer/raw message checked. Main checkout 056a154d4ae2eb9c5a7c7923c6737496f396990d retains its four dirty paths, and all other worktrees including RESULT-004's untracked nul remain preserved.
+
+The Owner designated REVIEW-RESULT-003-CODEX-01, a separate fresh-context read-only reviewer, for implementation, actual rendered evidence and corrections. Its readiness reconstruction is complete; no candidate verdict is claimed. Original fulfilled RP-2/O05 authority and every prior verdict remain preserved; this designation grants no new §8 authority.
+
+### 11.2 Implementation and verification
+
+- Continue the preserved ledger/state machine/routes/metrics/Teacher projections/shared reveal/dialog/Student card implementation; complete the remaining real-PostgreSQL test, 99m journey and decision pointer. No scoring, grading, finalization, dependency, shared helper or older test rewrite; route-parity adds only the two calls.
+- Engineering detail P-3/R6: temporarily hand the SAME TM teaching assignment to T2 for actor-only action-key reuse, then restore T1 in finally. An unauthorized Teacher would stop at 403 and not prove actor/digest reuse.
+- Real PostgreSQL coverage: P-1–P-7, S-1–S-5, I-1–I-4/applicable N-ids and exact frozen values, before/after write invariants, K-1–K-4 real locks/snapshot with 5 s bounds, T-1/T-2 append-only/order/key/FK/frozen-source tampering, X-1 export digest, M-1 populated 0001–0065 upgrade/rollback/idempotence. Typechecked locally; execution is CI-only and not yet PASS.
+- 99m uses shared navigation and the final 99l capture algorithm unchanged except prefix/Task ID (E13). Five conceptual scenarios contain six capture states: published Student masked/revealed are one scenario. Six states × ten frozen conditions × five browser projects = 300 new PNG/JSON pairs. Three synthetic participants yield 90/55/ABSENT. Fixture SQL opens the window and ends only overlapping earlier fixture exams. Teacher uses in-app actions; Student reloadPage only while idle. No local E2E or rendered PASS.
+- Existing #265 baseline revalidated read-only: 4400 pairs; five ZIP sizes/GitHub digests, every PNG hash, commit/tree, overflow/target checks and unchanged manifest 2705bbe681110fb241baa47ec16c8f7b78e39653b64037c7a94454a857f5f7dc. Baseline provenance is not new visual quality.
+- Installed react-typescript-vite skill verified SHA-256 450285288fba41f497991f074f100a43ed2d714e51818caae3294663e5ccd558. Repository/locked components remain authoritative.
+- Local checks: runtime, web and E2E typechecks PASS; runtime publication/route-parity/metrics units 17/17 PASS; corrected publication web suite including CSV 12/12 PASS. Initial new test queried an intentionally aria-hidden background during a modal; corrected only that assertion with hidden:true, retaining modal accessibility and non-optimistic behavior. A root-directory npm exec invocation resolved no web alias and ran no tests; correct npm --prefix frontend/web test passes. New browser helper arguments corrected to the existing zero-based index API.
+- Full regression/PostgreSQL/browser CI, exact-content independent implementation/security and rendered review, Delegated Acceptance, sole record-only evidence commit, exact PR-head CI, squash and exact-main CI remain pending. No rerun/cancel/dispatch, gate weakening, production or real data action.
+
+### 11.3 Named prior evidence exception
+
+The preserved prior-executor note dated 2026-11-12 records Owner response "Terima, catat (Recommended)" for the named RESULT-004 f15fa1f10da113a6514f9b918cb3ea639c151ef0 four-file evidence exception, to annotate at the next RESULT-003 change. Note SHA-256 8c77043ee359be5140197412c4d1ebc00d7d5bb0e92955528f0a6b641f6ef648. Preserve that reported acceptance/provenance without history rewrite or a standing exception. The local note alone does not authenticate the original chat; no new RESULT-003 gate relies on it.
+
+### 11.4 Current checkpoint
+
+IN_PROGRESS → VERIFYING; DONE 19/33 (57.58%), VERIFYING 1, BLOCKED 13; 33 IDs/78 edges unchanged. Production NO-GO, PB05/PB12 OPEN. Next: genuine candidate automatic exact-content CI, then the same designated reviewer after eight SUCCESS attempt 1.

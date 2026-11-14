@@ -9,17 +9,20 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadErrorState, LoadingState, PageStateFrame, StaleDataNotice } from '@/components/ui/page-state';
 import { Page, PageHeader } from '@/components/ui/page';
 import { Metric, MetricList } from '@/components/ui/metric';
-import { IconChevronLeft, IconEye, IconEyeOff, IconInfo } from '@/components/icons';
+import { IconChevronLeft, IconInfo } from '@/components/icons';
 import { formatDateTime, formatTime, formatWindow } from '../lib/format.ts';
 import { buildResultsCsv, downloadTextFile, resultsCsvFileName } from '../lib/results-export.ts';
 import { resultStatus, type StatusView } from '../lib/status.ts';
 import { SCREEN_TITLE } from '../lib/screen-titles.ts';
+import { HiddenScore, ScoreRevealToggle } from './ScoreReveal.tsx';
+import { ResultPublicationDialog, type PublicationDialogAction } from './ResultPublicationDialog.tsx';
 
 // Results for the teacher who manages the exam (D04.8): provisional until the exam is
 // finalized, then the frozen final results (D04.8-17/20). Scores come only from submitted
 // attempts; a participant who never started has no score (absent is not zero, D04.4-12). Rows follow the ELLIGBLE ID, never the score (D04.8-51). Scores stay hidden
 // until the teacher shows them, so a shared or projected screen does not expose them
-// (FRONTEND_DESIGN_SYSTEM §58).
+// (FRONTEND_DESIGN_SYSTEM §58). RESULT-003: once FINAL, the Teacher publishes the result to the exam's Students,
+// withdraws the publication and publishes it again; the state line follows the server only (U04).
 
 const scoreFormat = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 
@@ -35,9 +38,16 @@ function statusOf(row: ParticipantResult): StatusView & { note: string | null } 
   return { ...resultStatus(row), note };
 }
 
-const Hidden: React.FC = () => (
-  <span aria-label="Disembunyikan" className="tracking-widest text-muted-foreground">••••</span>
-);
+/** RESULT-003 §4.5: the publication state line of a FINAL result. */
+export function publicationStateText(publication: { published: boolean; revision: number; changedAt: string | null }): string {
+  if (publication.published && publication.changedAt) {
+    return `Dipublikasikan kepada siswa ${formatDateTime(publication.changedAt)}. Setiap siswa hanya melihat nilainya sendiri.`;
+  }
+  if (publication.revision > 0 && publication.changedAt) {
+    return `Publikasi ditarik ${formatDateTime(publication.changedAt)}. Siswa melihat "Hasil belum tersedia".`;
+  }
+  return 'Belum dipublikasikan. Siswa belum dapat melihat nilai.';
+}
 
 /** RESULT-004 E12: the wrapping form of a toolbar button ("Tampilkan Nilai" already uses it). */
 export const WRAPPING_BUTTON = 'h-auto min-h-11 max-w-full whitespace-normal py-2';
@@ -107,8 +117,10 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   const [exportError, setExportError] = useState<string | null>(null);
   const exportKeys = useRef<Partial<Record<'csv' | 'print', string>>>({});
   const [showScores, setShowScores] = useState(false);
+  const [publicationAction, setPublicationAction] = useState<PublicationDialogAction | null>(null);
   const refreshButton = useRef<HTMLButtonElement>(null);
   const backButton = useRef<HTMLButtonElement>(null);
+  const publicationButton = useRef<HTMLButtonElement>(null);
   const focus = useFocusRestore(() => [refreshButton.current, backButton.current]);
   useEntryTitleFocus(data !== null || error !== null);
 
@@ -165,6 +177,21 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
     }
   };
 
+  // RESULT-003 E11: the dialog closes after the server's 200 and the results are read again; focus returns to the action
+  // button (its label has changed), or to the existing fallbacks, never to BODY.
+  const restorePublicationFocus = () => {
+    const button = publicationButton.current;
+    if (!button || !button.isConnected || button.disabled) return false;
+    button.focus();
+    return document.activeElement === button;
+  };
+  const publicationDone = async () => {
+    focus.begin(publicationButton.current);
+    setPublicationAction(null);
+    await load();
+    focus.settle();
+  };
+
   const back = (
     <Button ref={backButton} variant="ghost" size="sm" className="-ml-3 min-h-11 min-w-11 self-start whitespace-normal print:hidden" onClick={onBack}>
       <IconChevronLeft aria-hidden="true" />
@@ -196,6 +223,9 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
   // D1 (ASSESS-QUESTION-008): with essays, "Benar" counts the automatically scored questions only and
   // a "Dinilai guru" column shows the graded essays; exams without essays render as before.
   const withEssays = (scoring.essayCount ?? 0) > 0;
+  // RESULT-003 §4.5: publication controls only on a FINAL result whose server sends the publication state.
+  const publication = final && data.publication && typeof data.publication === 'object' ? data.publication : null;
+  const published = publication?.published === true;
 
   return (
     <Page>
@@ -213,7 +243,7 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
           <IconInfo aria-hidden="true" />
           <AlertTitle>Hasil final</AlertTitle>
           <AlertDescription>
-            {data.finalizedAt ? `Difinalisasi ${formatDateTime(data.finalizedAt)}. ` : ''}Nilai dibekukan dan tidak berubah oleh perubahan data berikutnya. Hasil ini tidak ditampilkan kepada siswa.
+            {data.finalizedAt ? `Difinalisasi ${formatDateTime(data.finalizedAt)}. ` : ''}Nilai dibekukan dan tidak berubah oleh perubahan data berikutnya. {published ? 'Setiap siswa dapat melihat nilainya sendiri.' : 'Hasil ini tidak ditampilkan kepada siswa.'}
           </AlertDescription>
         </Alert>
       ) : (
@@ -224,6 +254,19 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
             Nilai dihitung otomatis dari jawaban yang diterima server. Hasil ini belum difinalisasi dan tidak ditampilkan kepada siswa.
           </AlertDescription>
         </Alert>
+      )}
+
+      {publication && (
+        <div className="flex min-w-0 flex-col gap-2">
+          <p role="status" className="m-0 text-sm [overflow-wrap:anywhere]">{publicationStateText(publication)}</p>
+          <div className="flex flex-wrap gap-2 print:hidden">
+            {/* E11: the wrapping form, so no label widens the page at 200 % text. */}
+            <Button ref={publicationButton} variant={published ? 'secondary' : 'default'} className={WRAPPING_BUTTON}
+              onClick={() => setPublicationAction(published ? 'withdraw' : 'publish')}>
+              {published ? 'Tarik Publikasi' : 'Publikasikan Hasil'}
+            </Button>
+          </div>
+        </div>
       )}
 
       <MetricList className={final ? 'sm:grid-cols-3' : undefined} aria-label="Ringkasan peserta">
@@ -240,11 +283,8 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       </MetricList>
 
       <div className="flex flex-wrap gap-2 print:hidden">
-        {/* At 200 % text on a phone the label wraps instead of widening the page (ASSESS-QUESTION-008 C07). */}
-        <Button variant="secondary" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" aria-pressed={showScores} onClick={() => setShowScores(s => !s)} disabled={!scoring.available}>
-          {showScores ? <IconEyeOff aria-hidden="true" /> : <IconEye aria-hidden="true" />}
-          {showScores ? 'Sembunyikan Nilai' : 'Tampilkan Nilai'}
-        </Button>
+        {/* The shared reveal control (RESULT-003 E7a), moved unchanged to ScoreReveal.tsx. */}
+        <ScoreRevealToggle pressed={showScores} onToggle={() => setShowScores(s => !s)} disabled={!scoring.available} />
         {/* RESULT-004 E12: the same wrapping form, so no label widens the page at 200 % text. */}
         <Button ref={refreshButton} variant="secondary" className={WRAPPING_BUTTON} onClick={event => void refresh(event.currentTarget)} disabled={refreshing}>
           {refreshing ? 'Memperbarui...' : 'Perbarui Data'}
@@ -299,13 +339,13 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
                     {row.score ? (
                       <>
                         <td className="px-3 py-3 text-right tabular-nums">
-                          {showScores ? `${row.score.correct}/${withEssays ? scoring.autoScoredCount : scoring.questionCount}` : <Hidden />}
+                          {showScores ? `${row.score.correct}/${withEssays ? scoring.autoScoredCount : scoring.questionCount}` : <HiddenScore />}
                         </td>
                         {withEssays && (
-                          <td className="px-3 py-3 text-right tabular-nums">{showScores ? row.score.graded : <Hidden />}</td>
+                          <td className="px-3 py-3 text-right tabular-nums">{showScores ? row.score.graded : <HiddenScore />}</td>
                         )}
                         <td className="px-3 py-3 text-right font-semibold tabular-nums">
-                          {showScores ? formatScore(row.score.scaledScore) : <Hidden />}
+                          {showScores ? formatScore(row.score.scaledScore) : <HiddenScore />}
                           {withEssays && (row.score.ungraded ?? 0) > 0 && (
                             <span className="mt-1 block text-xs font-normal text-warning-ink">Belum dinilai: {row.score.ungraded}</span>
                           )}
@@ -325,6 +365,18 @@ export const TeacherResultsView: React.FC<{ examInstanceId: string; onBack(): vo
       <p className="m-0 text-sm leading-relaxed text-muted-foreground">
         Nilai adalah poin benar dibagi poin maksimum ({scoring.maxScore !== null ? formatScore(scoring.maxScore) : 'tidak tersedia'}), dikali 100, dan dibulatkan dua angka di belakang koma. Soal yang tidak dijawab bernilai 0. {final ? 'Peserta yang tidak mengerjakan tidak diberi nilai, bukan bernilai 0.' : 'Peserta yang belum mulai tidak diberi nilai.'} Jika waktu habis saat perangkat siswa tidak terhubung, hanya jawaban yang sudah diterima server yang dihitung.{withEssays ? ' Poin soal yang dinilai guru ikut masuk ke Nilai.' : ''}
       </p>
+
+      {publication && (
+        <ResultPublicationDialog
+          action={publicationAction}
+          examInstanceId={examInstanceId}
+          expectedRevision={publication.revision}
+          onClose={() => setPublicationAction(null)}
+          onDone={() => void publicationDone()}
+          onStale={() => void load()}
+          restoreFocus={restorePublicationFocus}
+        />
+      )}
     </Page>
   );
 };

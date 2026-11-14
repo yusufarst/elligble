@@ -22,6 +22,7 @@ import { handleAttemptStart } from './attempt-start.ts';
 import { TEACHER_EXAM_ACTIONS, performTeacherExamAction, type TeacherExamAction } from './exam-lifecycle-operations.ts';
 import { executePermissionAction } from './permission-action-audit.ts';
 import { readTeacherExamResults } from './teacher-results.ts';
+import { executeResultPublication, parseResultPublicationRequest, readMyResults, type ResultPublicationOutcome } from './result-publication.ts';
 import { parseTeacherExamImportRequest, readTeacherExamSetup, runTeacherExamImport } from './teacher-exam-import.ts';
 import { readTeacherExamPreview } from './teacher-exam-preview.ts';
 import { parseRescheduleRequest, rescheduleTeacherExam } from './teacher-exam-schedule.ts';
@@ -1162,6 +1163,93 @@ export function createServer(deps: ServerDependencies): http.Server {
                     case 'institution_exam_running':
                         // E6 (D04.4-26D): no participant, count or score; the export wrote no audit row.
                         sendJson(res, 409, { error: 'institution_exam_running', currentState: result.currentState });
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/result-publications') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'POST') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                let body: Record<string, unknown>;
+                try { body = await readJsonObject(req); }
+                catch (err) { sendError(res, err instanceof HttpError ? err.statusCode : 400, 'invalid_request'); return; }
+                // RESULT-003 §4.2: the exact six-key body, the normalized reason and the confirmation, before any database effect.
+                const request = parseResultPublicationRequest(body);
+                if (!request) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const actor = getContext()!;
+                let result: ResultPublicationOutcome;
+                try {
+                    result = await executeResultPublication(deps.pool, actor, request, async client => {
+                        const current = await buildAuthenticatedContext(req, deps.pool, { cookie: security.cookie, client, mutation: true });
+                        return !!current && current.personId === actor.personId && current.tenantId === actor.tenantId;
+                    });
+                } catch (err) {
+                    if (err instanceof AuthenticationError) sendError(res, err.statusCode, err.message);
+                    else sendError(res, 503, 'persistence_unavailable');
+                    return;
+                }
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, result.receipt);
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
+                        return;
+                    case 'action_key_reused':
+                        sendError(res, 409, 'action_key_reused');
+                        return;
+                    case 'invalid_state':
+                        sendJson(res, 409, { error: 'invalid_state', currentState: result.currentState });
+                        return;
+                    case 'publication_changed':
+                        sendJson(res, 409, { error: 'publication_changed', published: result.published, revision: result.revision });
+                        return;
+                    case 'state_changed':
+                        sendError(res, 409, 'state_changed');
+                        return;
+                    case 'unavailable':
+                        sendError(res, 503, 'persistence_unavailable');
+                        return;
+                }
+            });
+        }
+
+        if (pathname === '/api/v1/assessment/my-results') {
+            if (!security) {
+                sendError(res, 404, 'not found');
+                return;
+            }
+            if (req.method !== 'GET') {
+                sendError(res, 405, 'method_not_allowed');
+                return;
+            }
+            return withPersonContext(req, res, undefined, async getContext => {
+                // RESULT-003 E1, N02: the caller's own results only; the read takes no exam, participant or person.
+                if ([...url.searchParams.keys()].length > 0) {
+                    sendError(res, 400, 'invalid_request');
+                    return;
+                }
+                const result = await readMyResults(deps.pool, getContext()!);
+                switch (result.type) {
+                    case 'ok':
+                        sendJson(res, 200, { results: result.results });
+                        return;
+                    case 'forbidden':
+                        sendError(res, 403, 'forbidden');
                         return;
                     case 'unavailable':
                         sendError(res, 503, 'persistence_unavailable');

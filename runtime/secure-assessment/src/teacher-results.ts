@@ -4,6 +4,7 @@ import type { FinalizationSource } from './submission.ts';
 import { BASELINE_SCORING_RULE, isCompositeScore, scoreAttempt, type AttemptScore, type CompositeAttemptScore, type ScorableQuestion } from './scoring.ts';
 import { gradeScores, isRunningInstitutionExam, isTeacherGradedQuestion, readCurrentGrades } from './essay-grading.ts';
 import { readFinalizedResults, type FinalizedResultRow } from './result-finalization.ts';
+import { readPublicationState, teacherPublication, type TeacherPublication } from './result-publication.ts';
 import { classifyFrozenContent, V1_SINGLE_CHOICE_KEY, V1_SINGLE_CHOICE_RULE } from './question-contract.ts';
 import { ESSAY_KEY, ESSAY_RULE } from './question-types/essay.ts';
 import { MATCHING_KEY, MATCHING_RULE } from './question-types/matching.ts';
@@ -29,6 +30,10 @@ import { TRUE_FALSE_KEY, TRUE_FALSE_RULE } from './question-types/true-false.ts'
 // score, `items` ({no, outcome, score}). PROVISIONAL items come from the same scoreAttempt call as the
 // totals; FINAL items and questions come only from the frozen item outcomes (never recomputed,
 // D04.8-20). No prompt, option, key, accepted form, tolerance or rubric is projected.
+//
+// RESULT-003 E9: every response carries `publication`, null while PROVISIONAL and, once FINAL, the publication state
+// of the exam ({published, revision, changedAt}) read in the same snapshot. GET and export keep one projection, so the
+// export digest covers it.
 
 export type ParticipantResultStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'SUBMITTED' | 'ABSENT';
 
@@ -153,6 +158,8 @@ export interface TeacherExamResults {
     resultState: 'PROVISIONAL' | 'FINAL';
     /** When the results were finalized (FINAL only). */
     finalizedAt: string | null;
+    /** RESULT-003 E9: null while PROVISIONAL; the publication state once FINAL. */
+    publication: TeacherPublication | null;
     summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
     participants: ParticipantResult[];
     /** RS-1: one entry per question in display order; [] when the exam cannot be scored. */
@@ -251,6 +258,7 @@ export async function readTeacherExamResults(
         const finalized = await readFinalizedResults(client, actor.tenantId, examInstanceId);
         if (finalized) {
             const ids = await listElligbleIds(client, finalized.rows.map(row => row.personId));
+            const publication = teacherPublication(await readPublicationState(client, actor.tenantId, examInstanceId));
             if (!transaction) await client.query('COMMIT');
             // E8 FINAL: only frozen data. The questions follow the frozen item order of a SUBMITTED row
             // (every SUBMITTED row of one finalization has the same order and maxima); with none, the
@@ -294,6 +302,7 @@ export async function readTeacherExamResults(
                     scoring: { rule: finalized.scoringRule, available: true, questionCount: finalized.questionCount, maxScore: finalized.maxScore, autoScoredCount, essayCount },
                     resultState: 'FINAL',
                     finalizedAt: finalized.finalizedAt,
+                    publication,
                     summary: {
                         participants: list.length,
                         notStarted: list.filter(r => r.status === 'ABSENT').length,
@@ -390,6 +399,7 @@ export async function readTeacherExamResults(
                 },
                 resultState: 'PROVISIONAL',
                 finalizedAt: null,
+                publication: null,
                 summary: { participants: results.length, notStarted: count('NOT_STARTED'), inProgress: count('IN_PROGRESS'), submitted: count('SUBMITTED') },
                 participants: results,
                 questions: questionList,

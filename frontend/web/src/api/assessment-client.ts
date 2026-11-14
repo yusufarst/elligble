@@ -66,6 +66,9 @@ import type {
   SupervisionBroadcastResult,
   ParticipantRoomTransferInput,
   ParticipantRoomTransferResult,
+  ResultPublicationInput,
+  ResultPublicationReceipt,
+  MyResultsResponse,
 } from '../types/assessment.ts';
 import { QUESTION_TYPES_HEADER, SUPPORTED_QUESTION_TYPES } from '../types/assessment.ts';
 import { apiFetch } from './http.ts';
@@ -449,4 +452,22 @@ export async function postTeacherExamContent(
 export async function postTeacherResultsExport(examInstanceId: string, format: 'csv' | 'print', actionKey: string): Promise<TeacherExamResultsResponse & { audit: { id: string; outcome: 'ISSUED'; replayed: boolean }; issuedAt: string }> {
   const res = await apiFetch('/api/v1/assessment/teacher-exams/results', { method: 'POST', json: { examInstanceId, format, actionKey } });
   return handleResponse(res);
+}
+
+/**
+ * Publishes or withdraws the finalized result of one exam (RESULT-003). The revision the screen shows guards against a
+ * stale command; the same action key returns the earlier receipt.
+ */
+export async function postResultPublication(input: ResultPublicationInput): Promise<ResultPublicationReceipt> {
+  const { examInstanceId, action, expectedRevision, reason, confirmed, actionKey } = input;
+  const res = await apiFetch('/api/v1/assessment/result-publications', {
+    method: 'POST', json: { examInstanceId, action, expectedRevision, reason, confirmed, actionKey },
+  });
+  return handleResponse<ResultPublicationReceipt>(res);
+}
+
+/** The signed-in Student's own published results (RESULT-003); the request names no exam or person. */
+export async function getMyResults(): Promise<MyResultsResponse> {
+  const res = await apiFetch('/api/v1/assessment/my-results', { method: 'GET' });
+  return handleResponse<MyResultsResponse>(res);
 }

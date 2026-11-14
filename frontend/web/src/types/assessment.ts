@@ -509,6 +509,8 @@ export interface TeacherExamReadinessProjection {
   pausedAt?: string | null;
   /** When the results were finalized (FINALIZED only). */
   finalizedAt?: string | null;
+  /** RESULT-003: when the result was published to the Students, while it is published; absent or null otherwise. */
+  publishedAt?: string | null;
   /** Essay questions of the exam (ASSESS-QUESTION-008); absent means 0. */
   essayCount?: number;
   /** An exam the School Operator placed (ASSESS-INSTITUTION-001); absent or null for a teacher-managed exam. */
@@ -677,10 +679,51 @@ export interface TeacherExamResultsResponse {
   resultState: 'PROVISIONAL' | 'FINAL';
   /** When the results were finalized (FINAL only). */
   finalizedAt?: string | null;
+  /**
+   * RESULT-003 E9: null while PROVISIONAL; once FINAL, whether Students see their own result. Absent from an older
+   * server, which shows no publication controls.
+   */
+  publication?: ResultPublicationState | null;
   summary: { participants: number; notStarted: number; inProgress: number; submitted: number };
   participants: ParticipantResult[];
   /** RS-1: one entry per question in display order; absent from an older server. */
   questions?: ResultQuestion[];
+}
+
+/** The publication state of a finalized exam (RESULT-003 E9); changedAt is the time of the latest event, null with none. */
+export interface ResultPublicationState {
+  published: boolean;
+  revision: number;
+  changedAt: string | null;
+}
+
+/** Publish or withdraw the finalized result of one exam (RESULT-003 §4.2): exactly these six keys. */
+export interface ResultPublicationInput extends PermissionIntent {
+  examInstanceId: string;
+  action: 'publish' | 'withdraw';
+  /** The revision the screen shows; a stale one refuses with publication_changed. */
+  expectedRevision: number;
+}
+
+/** The receipt of a publication command; a retry with the same action key returns it with replayed true. Never a score. */
+export interface ResultPublicationReceipt {
+  examInstanceId: string;
+  published: boolean;
+  revision: number;
+  changedAt: string;
+  replayed: boolean;
+}
+
+/** A Student's own published result of one exam (RESULT-003 E5, RP-1 "Nilai akhir saja"); ABSENT has no score. */
+export interface MyResultEntry {
+  examInstanceId: string;
+  publishedAt: string;
+  standing: 'SUBMITTED' | 'ABSENT';
+  scaledScore: number | null;
+}
+
+export interface MyResultsResponse {
+  results: MyResultEntry[];
 }
 
 export type MonitoringStatus = 'NOT_STARTED' | 'ACTIVE' | 'TIME_UP' | 'SUBMITTED';

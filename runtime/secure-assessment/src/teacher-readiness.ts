@@ -2,6 +2,7 @@ import * as http from 'node:http';
 import * as pg from 'pg';
 import { evaluateExamReadiness } from './exam-lifecycle-operations.ts';
 import { listElligbleIds } from '../../identity-access/src/directory.ts';
+import { readPublicationState } from './result-publication.ts';
 
 export interface TeacherReadinessContext {
     tenantId: string;
@@ -60,6 +61,8 @@ export interface TeacherExamReadinessProjection {
     pausedAt: string | null;
     /** When the results were finalized (FINALIZED only). */
     finalizedAt: string | null;
+    /** RESULT-003 §4.3: when the result was published, while the latest publication event is a PUBLISH (FINALIZED only). */
+    publishedAt: string | null;
     /** How many essay questions the exam holds (ASSESS-QUESTION-008 §4.6: "Nilai Esai" only when > 0). */
     essayCount: number;
     /** The institution block of an exam the School Operator placed (ASSESS-INSTITUTION-001 §4.5); null for a teacher-managed exam. */
@@ -256,6 +259,7 @@ export async function handleTeacherReadinessGet(
             let progress: TeacherExamProgressProjection | null = null;
             let pausedAt: string | null = null;
             let finalizedAt: string | null = null;
+            let publishedAt: string | null = null;
 
             if (row.cancelled_at) {
                 // Nothing to evaluate for a cancelled exam: it keeps its record only.
@@ -304,6 +308,9 @@ export async function handleTeacherReadinessGet(
                         [context.tenantId, examInstanceId]
                     );
                     finalizedAt = isoOrNull(done.rows[0]?.finalized_at);
+                    // RESULT-003 §4.3: the time of the latest event while it is a PUBLISH, else null.
+                    const publication = await readPublicationState(client, context.tenantId, examInstanceId);
+                    publishedAt = publication.latest === 'PUBLISH' ? publication.changedAt : null;
                 }
             } else {
                 const readiness = await evaluateExamReadiness(client as unknown as pg.PoolClient, context.tenantId, examInstanceId);
@@ -334,6 +341,7 @@ export async function handleTeacherReadinessGet(
                 progress,
                 pausedAt,
                 finalizedAt,
+                publishedAt,
                 essayCount: Number(row.essay_count ?? 0),
                 institution: institutionBlocks.get(examInstanceId) ?? null,
             });

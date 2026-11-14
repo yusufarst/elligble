@@ -188,3 +188,9 @@ The Owner decided RS-1 to RS-3 for complete results in chat on 2026-11-10/11:
 - RS-3: no item void, full-credit remedy or correction after an answer key is found wrong in CBT-R1 (O02-10).
 
 Their exact text, the contract and the expected vectors are recorded once, in [RESULT-004 §3.1](tasks/RESULT-004.md). This is a pointer, not a release PASS. PB05 stays OPEN.
+
+## RESULT-003 decision checkpoint — 2026-11-12
+
+The Owner decided RP-1 "Nilai akhir saja (Recommended)" and RP-2 "Setujui (Recommended)". Each Student sees only their own published final score, masked by default; ABSENT has no score. OD-09/O05-6 govern publication, withdrawal and republication without correction of a finalized result (O02-10). RP-2 assigned the original Task reviewer the O05 reviewer half, fulfilled by the preserved contract review.
+
+Exact decisions, contract and review/evidence anchors: [RESULT-003 §3.1, §9–§11](tasks/RESULT-003.md). Pointer only, no new policy or release PASS. PB05 stays OPEN.
