@@ -128,3 +128,23 @@ The Project Owner explicitly approved GOV-EXEC-003 in chat by the exact external
 - Final governance review: the same `/root/gov_exec_003_review` independently confirmed the final snapshot PASS, no new material finding, 2026-11-14 19:38:20 WIB. The four other files match round 1; approved record prefix is 16,658 LF bytes with SHA-256 420d3d04998bbee60bfe7be9db7e5abe74dc36733922bd57057f3043ba2cd686. The new append-only difference from that reviewed snapshot is this §10 approval evidence only. Exact final attestation and frozen approved files remain in §8's evidence directory.
 
 Publication is now expressly authorized. Delegation remains NOT EFFECTIVE until §12.6 activation completes. No baseline implementation is authorized by this approval before that point.
+
+## 11. Completion evidence and controlled publication — 2026-11-14
+
+**GOV-EXEC-003 content DONE under DEC-045. Exact PR-head CI, the single Owner-authorized bootstrap merge and exact-main CI remain mandatory; the new standing delegation is NOT EFFECTIVE yet.** No baseline counter changes.
+
+- Content commit 8f1c02a7b249c2f0f78b62d799d86fa199ed6625, parent deee8a66d8518544a82b011c5070745a475cc153, exactly five approved documentation paths, 154 insertions and no deletions. Four non-record committed blobs match the approved manifest exactly; this record retains the reviewed/approved 420d3d04998bbee60bfe7be9db7e5abe74dc36733922bd57057f3043ba2cd686 prefix and adds only §10 approval evidence. Content-record LF SHA-256 f95d92877e00a8aff5169561133b57f6454ae3dab07b381c1d480803b26d649d.
+- Exact final independently reviewed five-path manifest: f409aa92f1179af2b1919a80655a708a7f90eea9f230ce7453f2ee9f41f63bf7. Independent governance PASS and final same-reviewer confirmation: §9/§10; no material finding outstanding. Owner exact-content approval, specific reviewer designation and express single bootstrap authorization: §10.
+- Local deterministic guards PASS: approved hashes/appendices, cumulative five paths, unchanged governance prefix/TASK_PLAN/baseline, git diff --check; all 20 original worktree HEAD/statuses and 21 dirty-file raw hashes unchanged. RESULT-003 still registration 152a4b365de52f3e334c0d273ab88c7433bf8dd4 with its 16 uncommitted paths; no baseline edit, local heavy suite, service, installation or production action.
+- Owner author/committer and raw content message verified after commit; no attribution/trailer, authenticated yusufarst account. Normal push and sole PR https://github.com/yusufarst/elligble/pull/41; PR title/body checked without attribution.
+- Automatic exact-content CI #267, run 43597727336, push attempt 1, head 8f1c02a7b249c2f0f78b62d799d86fa199ed6625, COMPLETED / SUCCESS. Exactly eight jobs COMPLETED / SUCCESS:
+  - Runtime (typecheck, unit, PostgreSQL integration).
+  - Web client (typecheck, tests, build).
+  - Container image (build and smoke test).
+  - Browser end-to-end (tablet-768).
+  - Browser end-to-end (webkit-390).
+  - Browser end-to-end (desktop-1280).
+  - Browser end-to-end (mobile-360).
+  - Browser end-to-end (firefox-1280).
+- No CI cancellation, rerun, dispatch, empty/uncorrected retry SHA or gate weakening. This sole evidence commit changes only this Task record relative to the verified content and does not record its own SHA. Its automatic exact-head CI must pass all eight jobs on attempt 1 before bootstrap.
+- Bootstrap remains conditional on exact head/current main mergeability, five-path scope/hash, identity/no-attribution and explicit-message checks. Verify resulting main Owner author, raw message and tree equal PR head, then automatic exact-main CI eight SUCCESS attempt 1. Activation/landing is carried in the next authorized RESULT-003 change rather than a recursive governance evidence commit.
