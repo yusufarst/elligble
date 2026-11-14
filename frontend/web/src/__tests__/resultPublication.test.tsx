@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { IconEye, IconEyeOff } from '@/components/icons';
 import { formatScore } from '../lib/question-import.ts';
 import { buildResultsCsv } from '../lib/results-export.ts';
+import { setDisplayTimeZone } from '../lib/format.ts';
 import {
   ApiError, getAssignedExams, getMyResults, getTeacherExamResults, getTeacherReadiness, postResultPublication,
 } from '../api/assessment-client.ts';
@@ -39,6 +40,10 @@ const LATER = '2026-11-12T05:30:00.000Z';
 /** The ICU data decides between "2026, 10.04" and "2026 pukul 10.04". */
 const time = (hm: string) => `12 November 2026(,| pukul) ${hm} WIB`;
 const EM_DASH = '—';
+
+// The fixture school is in WIB; never inherit the CI runner or device time zone.
+beforeEach(() => setDisplayTimeZone('Asia/Jakarta'));
+afterEach(() => setDisplayTimeZone(null));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

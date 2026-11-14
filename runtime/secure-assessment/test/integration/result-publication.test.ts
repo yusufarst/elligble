@@ -143,10 +143,19 @@ test('RESULT-003 publication: real PostgreSQL, production wiring',{skip:skipWith
         return {exam,questions};
     }
     const E1=await institution(T2.teaching,[1,2]),E2=await institution(T3.teaching,[1,1]);
-    async function answer(c:BrowserLikeClient,exam:string,questions:string[],payloads:unknown[]) {
+    async function optionId(snapshot:string,letter:string):Promise<string> {
+        const row=(await pool.query<{frozen_content:{options:Array<{id:string}>}}> ('SELECT frozen_content FROM secure_assessment_exam_question_snapshots WHERE id=$1',[snapshot])).rows[0];
+        const option=row.frozen_content.options['ABCDE'.indexOf(letter)];assert.ok(option,'fixture option '+letter);return option.id;
+    }
+    async function answer(c:BrowserLikeClient,exam:string,questions:string[],payloads:Array<{selectedOptionId:string}|{selectedOptionIds:string[]}|{essayText:string}>) {
         const {attemptId}=ok<{attemptId:string}>(await post(c,'/api/v1/assessment/attempts/start',{examInstanceId:exam}),201),sessionId=randomUUID();
         ok(await post(c,'/api/v1/assessment/session/activate',{attemptId,sessionId}));ok(await post(c,'/api/v1/assessment/timer/start',{attemptId}));
-        for(const[i,answerPayload]of payloads.entries())ok(await c.request('/api/v1/assessment/answer/save',{method:'POST',headers:TYPES,body:{attemptId,sessionId,snapshotId:questions[i],answerPayload,clientWriteIdentity:randomUUID(),expectedWriteVersion:null}}));
+        for(const[i,payload]of payloads.entries()){
+            // Display letters are fixture notation; production builders use opaque option IDs.
+            const answerPayload='selectedOptionId'in payload?{selectedOptionId:await optionId(questions[i],payload.selectedOptionId)}
+                :'selectedOptionIds'in payload?{selectedOptionIds:await Promise.all(payload.selectedOptionIds.map(letter=>optionId(questions[i],letter)))}:payload;
+            ok(await c.request('/api/v1/assessment/answer/save',{method:'POST',headers:TYPES,body:{attemptId,sessionId,snapshotId:questions[i],answerPayload,clientWriteIdentity:randomUUID(),expectedWriteVersion:null}}));
+        }
         ok(await post(c,'/api/v1/assessment/submit',{attemptId}));return attemptId;
     }
     const a1=await answer(sc1,TM,tmq,[{selectedOptionId:'B'},{selectedOptionIds:['A','C']},{essayText:'Dua alasan yang benar.'}]);
@@ -319,7 +328,7 @@ test('RESULT-003 publication: real PostgreSQL, production wiring',{skip:skipWith
     });
     await t.test('T-2: source answer, grade revision and maxScore changes leave published frozen values identical',async()=>{
         const before=await mine(sc1);
-        await pool.query('UPDATE secure_assessment_exam_answers SET answer_payload=$2 WHERE exam_attempt_id=$1 AND exam_question_snapshot_id=$3',[a1,JSON.stringify({selectedOptionId:'A'}),tmq[0]]);
+        await pool.query('UPDATE secure_assessment_exam_answers SET answer_payload=$2 WHERE exam_attempt_id=$1 AND exam_question_snapshot_id=$3',[a1,JSON.stringify({selectedOptionId:await optionId(tmq[0],'A')}),tmq[0]]);
         await pool.query('INSERT INTO secure_assessment_essay_grade_revisions(tenant_id,exam_attempt_id,exam_question_snapshot_id,revision,score_micro,graded_by_person_id) VALUES($1,$2,$3,2,0,$4)',[tenant,a1,tmq[2],t1.personId]);
         const c=await pool.connect();
         try{await c.query('BEGIN');await c.query('ALTER TABLE secure_assessment_exam_question_snapshots DISABLE TRIGGER trg_prevent_snapshot_mutation');

@@ -621,3 +621,11 @@ The preserved prior-executor note dated 2026-11-12 records Owner response "Terim
 ### 11.4 Current checkpoint
 
 IN_PROGRESS → VERIFYING; DONE 19/33 (57.58%), VERIFYING 1, BLOCKED 13; 33 IDs/78 edges unchanged. Production NO-GO, PB05/PB12 OPEN. Next: genuine candidate automatic exact-content CI, then the same designated reviewer after eight SUCCESS attempt 1.
+
+### 11.5 CI #270 bounded corrections
+
+Exact-content 80a7a6b31e24d8cce5d387acfbd74ecb4003da3b / automatic CI #270 (43611352739), attempt 1: FAILURE. Web 538 PASS/3 FAIL; Runtime PostgreSQL 404 PASS/1 FAIL, no skipped integration tests. Container and the browser matrix were skipped by dependency gating, not passed. Run retained without rerun/cancel/dispatch.
+
+- The three Web failures assumed device WIB. The new test now explicitly sets fixture school Asia/Jakarta and restores it after each case; every original exact date/time/copy assertion remains. Focused publication suite under TZ=UTC: 12/12 PASS.
+- PostgreSQL rejected the new fixture's literal display letter as invalid_answer_payload. Production builders generate opaque option IDs; the new fixture now resolves each display letter from its own frozen snapshot before saving, including the source-tamper vector. Exact 90/55/33.33/100/ABSENT outcomes and production validation remain unchanged. Migration M-1 is not replaced or weakened. No product source change.
+- Next candidate is a genuine bounded test correction; no push while #270 was active. Full automatic CI and independent review remain pending.
