@@ -265,7 +265,7 @@ test('RESULT-003: publish, own masked score, withdraw, republish and privacy',as
     try{
         await login(page,...TEACHER);
         const nav=page.getByRole('navigation',{name:'Ruang kerja'});
-        if(await nav.getByRole('button',{name:'Pelaksanaan Ujian',exact:true}).isVisible())await nav.getByRole('button',{name:'Pelaksanaan Ujian',exact:true}).click();
+        await nav.getByRole('button',{name:'Pelaksanaan Ujian',exact:true}).click();
         await page.getByRole('button',{name:'Buat Ujian'}).first().click();
         await expect(page.getByRole('heading',{name:'Buat Ujian dari Berkas Soal'})).toBeVisible();
         const subject=page.getByRole('radio',{name:/Matematika Wajib.*X-E2E/});
