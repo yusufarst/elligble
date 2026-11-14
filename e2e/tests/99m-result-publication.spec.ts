@@ -278,12 +278,14 @@ test('RESULT-003: publish, own masked score, withdraw, republish and privacy',as
         await page.getByLabel('Berkas CSV').setInputFiles({name:FILE_NAME,mimeType:'text/csv',buffer:Buffer.from(FILE,'utf8')});
         await page.getByRole('button',{name:'Periksa Soal dan Jadwal'}).click();
         const participants=page.getByRole('region',{name:/^Peserta \(/});
+        await expect(participants.getByRole('checkbox',{name:STUDENT_A[0],exact:true})).toBeVisible();
         for(const box of await participants.getByRole('checkbox').all()){
             const label=(await box.evaluate(e=>(e as HTMLInputElement).labels?.[0]?.textContent??'')).trim();
             if([STUDENT_A[0],STUDENT_B[0],ABSENT[0]].some(id=>id===label))await box.check();else if(await box.isChecked())await box.uncheck();
         }
         // Reassert the exact three fixture participants after any "select all" control.
         for(const id of [STUDENT_A[0],STUDENT_B[0],ABSENT[0]])await participants.getByRole('checkbox',{name:id,exact:true}).check();
+        await expect(participants.getByRole('checkbox',{checked:true})).toHaveCount(3);
         await page.getByRole('button',{name:'Periksa Lagi'}).click();
         await expect(page.getByText('Soal dan jadwal siap dijadwalkan')).toBeVisible();
         await page.getByRole('button',{name:'Jadwalkan Ujian'}).click();
@@ -314,6 +316,8 @@ test('RESULT-003: publish, own masked score, withdraw, republish and privacy',as
             await p.getByLabel('Jawaban esai').fill(essay);await expect(saveStatus(p)).toHaveText('Tersimpan');
             await p.getByRole('button',{name:'Selesaikan Ujian'}).click();await p.getByRole('dialog').getByRole('checkbox').check();
             await p.getByRole('button',{name:'Kirim Jawaban Sekarang'}).click();await expect(p.getByText('Ujian Berhasil Dikumpulkan')).toBeVisible();
+            await p.getByRole('button',{name:'Kembali ke Jadwal Ujian',exact:true}).click();
+            await expect(assignment(p,examId)).toBeVisible();
         }
         await complete(a,'B','Hutan menyimpan air dan menghasilkan oksigen.');
         await complete(b,'A','Hutan menyimpan air.');
