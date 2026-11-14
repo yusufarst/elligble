@@ -9,6 +9,7 @@ import { BrowserLikeClient, startProductionWiredServer, type ClientResponse } fr
 import { setSchoolOperator } from '../../../tenant-access/src/school-operator.ts';
 import { buildBaselineFrozenContent, buildEssayFrozenContent, buildMultipleResponseFrozenContent } from '../../src/exam-provisioning.ts';
 import { readMyResults, type MyResultEntry, type ResultPublicationReceipt } from '../../src/result-publication.ts';
+import { permissionDigest } from '../../src/permission-action-audit.ts';
 
 // RESULT-003 §5/C02-C04. Exact values, production-wired negatives, real lock races,
 // append-only/frozen state and populated migration upgrade/rollback. PostgreSQL runs in CI only.
@@ -274,8 +275,12 @@ test('RESULT-003 publication: real PostgreSQL, production wiring',{skip:skipWith
         try{const c=new BrowserLikeClient(server.baseUrl);c.cookie=c1.cookie;c.tenantId=tenant;assert.equal((await c.request(MINE)).status,503);assert.equal((await publish(c,TM)).status,503)}finally{await server.close()}
     });
     await t.test('X-1: GET/export projection equality and safe export-key refusal across withdrawal',async()=>{
-        const body={examInstanceId:TM,format:'csv',actionKey:randomUUID()},before=ok<{participants:unknown}>(await post(c1,RESULTS,body));
-        assert.deepEqual(before,ok(await c1.request(RESULTS+'?examInstanceId='+TM)));
+        const body={examInstanceId:TM,format:'csv',actionKey:randomUUID()},before=ok<Record<string,unknown>&{participants:unknown;audit:{id:string;outcome:string;replayed:boolean};format:string;issuedAt:string}>(await post(c1,RESULTS,body));
+        // The established export envelope adds audit/format/issuedAt outside the exact GET projection.
+        const {audit,format,issuedAt,...projection}=before;
+        assert.deepEqual(projection,ok(await c1.request(RESULTS+'?examInstanceId='+TM)));
+        assert.equal(format,'csv');assert.equal(audit.outcome,'ISSUED');assert.equal(audit.replayed,false);assert.ok(Number.isFinite(Date.parse(issuedAt)));
+        assert.equal((await pool.query('SELECT result_digest FROM secure_assessment_permission_action_events WHERE id=$1',[audit.id])).rows[0].result_digest,permissionDigest(projection));
         ok(await publish(c1,TM,{action:'withdraw',expectedRevision:3}));
         await unchanged(async()=>{const r=await post(c1,RESULTS,body);assert.equal(r.status,409);assert.equal(r.body.error,'export_data_changed')});
         assert.deepEqual(ok<{participants:unknown}>(await post(c1,RESULTS,{...body,actionKey:randomUUID()})).participants,before.participants);

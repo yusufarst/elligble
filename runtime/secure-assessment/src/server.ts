@@ -1237,6 +1237,13 @@ export function createServer(deps: ServerDependencies): http.Server {
                 sendError(res, 405, 'method_not_allowed');
                 return;
             }
+            // RESULT-003 N10 also applies the existing Origin policy to this sensitive GET.
+            // The policy reads only method/headers; this view leaves the real request unchanged.
+            const originRequest = { method: 'POST', headers: req.headers } as http.IncomingMessage;
+            if (!isOriginAllowed(originRequest, security.allowedOrigins)) {
+                sendError(res, 403, 'origin_not_allowed');
+                return;
+            }
             return withPersonContext(req, res, undefined, async getContext => {
                 // RESULT-003 E1, N02: the caller's own results only; the read takes no exam, participant or person.
                 if ([...url.searchParams.keys()].length > 0) {
