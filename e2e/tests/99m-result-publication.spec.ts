@@ -338,6 +338,7 @@ test('RESULT-003: publish, own masked score, withdraw, republish and privacy',as
         await finalization.getByRole('button',{name:'Finalisasi Hasil',exact:true}).click();await expect(card).toContainText('Hasil Final');
         async function studentList(p:Page){
             // No refresh/navigation is in flight: Student has no in-app refresh (E13).
+            await p.bringToFront();
             await reloadPage(p);await expect(assignment(p,examId)).toBeVisible();
         }
         for(const p of[a,b,absent]){
