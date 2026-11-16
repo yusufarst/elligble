@@ -316,10 +316,12 @@ describe('RESULT-003 Student card (E7, E7a, RP-1)', () => {
     expect(screen.queryByTestId(`result-${E1}`)).toBeNull();
     expect(screen.queryByText('Hasil belum tersedia.')).toBeNull();
     expect(screen.queryByText(/Nilai/)).toBeNull();
+    expect(document.activeElement).toBe(document.body);
     pending.resolve({ results: RESULTS });
 
     // V-1: masked, the value element absent, the reveal control not pressed.
     const e1 = await screen.findByTestId(`result-${E1}`);
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1, name: 'Daftar Ujian Siswa' }));
     expect(within(e1).getByLabelText('Disembunyikan').textContent).toBe('••••');
     expect(screen.queryByTestId(`result-value-${E1}`)).toBeNull();
     expect(e1.textContent).not.toContain('90');
@@ -357,6 +359,19 @@ describe('RESULT-003 Student card (E7, E7a, RP-1)', () => {
     expect(within(await screen.findByTestId(`result-${E2}`)).getByLabelText('Disembunyikan')).toBeTruthy();
     expect(screen.queryByTestId(`result-value-${E2}`)).toBeNull();
     expect(screen.queryByTestId(`result-value-${E1}`)).toBeNull();
+  });
+
+  it('keeps focus on the current control when normal finalized-result loading finishes', async () => {
+    vi.mocked(getAssignedExams).mockResolvedValue({ assignments: ASSIGNMENTS });
+    const pending = deferred<{ results: MyResultEntry[] }>();
+    vi.mocked(getMyResults).mockReturnValueOnce(pending.promise);
+    render(<><button>Menu</button><AssignedExamDiscovery /></>);
+    await screen.findByText('Ekonomi');
+    const menu = screen.getByRole('button', { name: 'Menu' });
+    menu.focus();
+    pending.resolve({ results: [] });
+    await within(cardOf(E1)).findByText('Hasil belum tersedia.');
+    expect(document.activeElement).toBe(menu);
   });
 
   it('V-4: a failed load shows no result line, no "Hasil belum tersedia." and no value, only the notice; "Coba Lagi" keeps focus', async () => {

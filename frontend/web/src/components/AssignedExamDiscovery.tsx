@@ -88,7 +88,6 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set());
   const resultsRequest = useRef(0);
   const retryResultsButton = useRef<HTMLButtonElement>(null);
-  const focusAfterRetry = useRef(false);
 
   // E7: "my-results" only when at least one exam is FINALIZED; until it settles no card shows a result line.
   const loadResults = async (retry = false) => {
@@ -97,7 +96,6 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
     try {
       const response = await getMyResults();
       if (request !== resultsRequest.current) return;
-      focusAfterRetry.current = retry;
       setResults({ status: 'ready', byExam: new Map(response.results.map(entry => [entry.examInstanceId, entry])) });
     } catch {
       if (request !== resultsRequest.current) return;
@@ -105,19 +103,17 @@ export const AssignedExamDiscovery: React.FC<AssignedExamDiscoveryProps> = ({
     }
   };
 
-  // The retry control stays enabled (a disabled control would drop focus to BODY): a failed retry keeps focus on it;
-  // after a successful one the notice is gone, so the page title takes focus when nothing else holds it.
+  // After results load, give the page a keyboard starting point if focus is still on the document.
   useEffect(() => {
-    if (results.status !== 'ready' || !focusAfterRetry.current) return;
-    focusAfterRetry.current = false;
+    if (results.status !== 'ready') return;
     const active = document.activeElement;
-    if (active && active !== document.body && active !== document.documentElement) return;
+    if (active !== document.body && active !== document.documentElement) return;
     const title = document.querySelector<HTMLHeadingElement>('h1[data-slot="page-title"]');
     if (!title) return;
     title.tabIndex = -1;
     title.classList.add('outline-none');
     title.focus();
-  }, [results]);
+  }, [results.status]);
 
   const fetchAssignedExams = async () => {
     setPhase('loading');
