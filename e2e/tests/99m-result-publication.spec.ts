@@ -303,7 +303,7 @@ test('RESULT-003: publish, own masked score, withdraw, republish and privacy',as
             const context=await browser.newContext({viewport:page.viewportSize()??undefined,locale:'id-ID',timezoneId:'UTC',reducedMotion:'reduce'});contexts.push(context);
             const p=await context.newPage();p.setDefaultTimeout(120_000);p.setDefaultNavigationTimeout(120_000);await login(p,...credentials);return p;
         }
-        const a=await tab(STUDENT_A),b=await tab(STUDENT_B),absent=await tab(ABSENT),op=await tab(OPERATOR);
+        const a=await tab(STUDENT_A),b=await tab(STUDENT_B),absent=await tab(ABSENT);
         async function complete(p:Page,choice:string,essay:string){
             await assignment(p,examId).getByRole('button',{name:'Mulai Ujian'}).click();
             await p.getByRole('button',{name:'Mulai Ujian Sekarang'}).click();
@@ -389,6 +389,7 @@ test('RESULT-003: publish, own masked score, withdraw, republish and privacy',as
         expect((await request(absent,'/api/v1/assessment/my-results')).body).toEqual({results:[expected(null,'ABSENT')]});
         const count=()=>withDatabase(async c=>Number((await c.query('SELECT count(*) AS n FROM secure_assessment_result_publication_events WHERE exam_instance_id=$1',[examId])).rows[0].n));
         const before=await count();
+        const op=await tab(OPERATOR);
         for(const p of[a,op]){
             const r=await request(p,'/api/v1/assessment/result-publications',{examInstanceId:examId,action:'withdraw',expectedRevision:1,reason:REASON,confirmed:true,actionKey:crypto.randomUUID()});
             expect(r.status).toBe(403);expect(r.body).toEqual({error:'forbidden'});

@@ -1,6 +1,6 @@
 **Status:** ACTIVE (P0, DEC-045; created by GOV-REALIGN-002)
 **Canonical:** YES for the verified state of each tool (00.12 §8). Versions pinned in the repository (`package.json`, `package-lock.json`, `.github/workflows/ci.yml`) win over this record; a Task that changes a tool updates its row.
-**Last Updated:** 2026-10-26
+**Last Updated:** 2026-11-16
 
 # ELLIGBLE Toolchain
 
@@ -15,7 +15,7 @@ Each row says what was verified, where and when, and by which evidence. "Not ava
 | GitHub CLI | gh 2.96.0, authenticated as `yusufarst`; reads runs, jobs and logs through `gh api` | E2E-002 §5.1 (0.5, 0.6) |
 | Temporary directory | Git Bash `/tmp` is `C:\Users\YUSUFS~1\AppData\Local\Temp`; Task gates live there, never in the repository | E2E-002 §5.1 (0.5) |
 | PostgreSQL for tests | a local PostgreSQL 16 for tests only, provided by the Owner; `ELLIGBLE_TEST_DATABASE_URL` and `PGPASSWORD` set in the session, values never recorded | E2E-002 §5.1 (D2 closed 2026-10-24) |
-| Playwright | 1.56.1 (`e2e/package.json`), Chromium headless shell 141.0.7390.37 (build v1194) installed under the E2E-002 authorization; Firefox and WebKit not installed: their evidence comes from CI only | E2E-002 §5.1, §5.2 |
+| Playwright | RESULT-003 pins 1.57.0 in `e2e/package.json`. The installed playwright-core manifest for Ubuntu 24.04 lists WebKit 26.0 (2227), Chromium headless shell 143.0.7499.4 (1200) and Firefox 144.0.2 (1497). | RESULT-003 §11.17, 2026-11-16; previous Windows installation: E2E-002 §5.1, §5.2 |
 | TypeScript | 7.0.2 in `e2e/` and the runtime packages; the web client pins its own version in `frontend/web/package.json` | package files |
 | actionlint | not installed; a Task that changes `.github/workflows/` installs it under its authorization or states how the workflow is checked | E2E-002 §5.1 |
 | Context7 | not available in the executor sessions so far; the official documentation of the exact version is used instead and cited in the Task record | E2E-002 §5.1 (0.6) |
