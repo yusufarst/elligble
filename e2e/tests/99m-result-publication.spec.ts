@@ -21,7 +21,7 @@ const STUDENT_A = ['siswa.e2e.06', 'bintang-kejora-2026'] as const;
 const STUDENT_B = ['siswa.e2e.01', 'bintang-kejora-2026'] as const;
 const FULL = [360, 390, 430, 768, 1024, 1280, 1440].map(width => ({ width, height: 800, text: 1 })).concat([{ width: 640, height: 360, text: 1 }, { width: 390, height: 844, text: 2 }, { width: 1280, height: 800, text: 2 }]);
 
-async function capture(page: Page, scenario: string, root: () => Locator, variants = FULL): Promise<void> {
+async function capture(page: Page, scenario: string, root: () => Locator, variants = FULL, positionStudent?: () => Promise<Record<string, unknown>>): Promise<void> {
     const original = page.viewportSize();
     const browser = page.context().browser();
     if (!original || !browser) throw new Error('A real browser and viewport are required');
@@ -109,22 +109,25 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                     };
                 });
                 const screenshot = `${name}.png`;
+                let studentPosition: Record<string, unknown> | undefined;
                 // The larger of the document and body heights: with a dialog open, WebKit sizes the full page by
                 // the body. A screenshot WebKit still refuses as too large falls back to the viewport, recorded
                 // as fullPage false (as 99h, CI #223).
                 let fullPage = (await page.evaluate(() => Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) * window.devicePixelRatio)) <= 30000;
                 try {
+                    if (positionStudent) studentPosition = await positionStudent();
                     await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
                 } catch (error) {
                     if (!fullPage || !String(error).includes('larger than')) throw error;
                     fullPage = false;
+                    if (positionStudent) studentPosition = await positionStudent();
                     await page.screenshot({ path: test.info().outputPath(screenshot), fullPage, animations: 'disabled', caret: 'hide' });
                 }
                 writeFileSync(metadataPath, JSON.stringify({
                     task: 'RESULT-003', phase: 'after', commit, frontendTree, baseline: BASELINE,
                     fixture: { synthetic: true, globalSetupSha256: fixtureSha256 },
                     browser: { project: test.info().project.name, engine: browser.browserType().name(), version: browser.version() },
-                    viewport: page.viewportSize(), fullPage, textScale: v.text, textCalibration, scenario, screenshot,
+                    viewport: page.viewportSize(), fullPage, textScale: v.text, textCalibration, scenario, screenshot, studentPosition,
                     screenshotSha256: createHash('sha256').update(readFileSync(test.info().outputPath(screenshot))).digest('hex'),
                     accessibilitySnapshot: await root().ariaSnapshot(), metrics, environment: { ci: !!process.env['CI'], physicalDevice: false },
                 }, null, 2));
@@ -157,6 +160,8 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
                     try {
                         const restoration = await calibration.evaluate(snapshot => {
                             for (const { node, originalStyle } of snapshot.nodes) {
+                                // Materialize WebKit's lazy CSSOM attribute before deleting it.
+                                node.getAttribute('style');
                                 if (originalStyle === null) node.removeAttribute('style'); else node.setAttribute('style', originalStyle);
                             }
                             return {
@@ -183,7 +188,7 @@ async function capture(page: Page, scenario: string, root: () => Locator, varian
 // RESULT-003 E13/C07/C08: teacher-managed PG/PGK/ES, two answering Students and one absent.
 // Real product import, answer, grading, finalization, publication/withdrawal/republication.
 // Five conceptual capture scenarios; the Student published scenario has masked/revealed states.
-// The capture function above is copied verbatim from final 99l except its filename prefix/task.
+// The capture function retains final 99l checks plus the Owner-approved Student-positioning hook.
 const FILE_NAME='publikasi-hasil-e2e.csv';
 const ABSENT=['siswa.e2e.02',STUDENT_A[1]] as const;
 const PROMPTS=['Hasil dari 2 + 3 adalah','Bilangan prima adalah','Jelaskan dua manfaat hutan.'];
@@ -247,13 +252,50 @@ async function noStoredResults(page:Page){
     expect(values).not.toMatch(/"scaledScore"|"publishedAt"|"publication"|"revealed"/);
 }
 async function studentCapture(page:Page,id:string,scenario:string){
-    // Preserve the unmodified capture step while ensuring a viewport fallback includes
-    // the new Student card on a long list, at every frozen condition.
+    // The approved E13 hook positions only the Student result, after calibration and before each screenshot.
+    const positionStudent = async () => {
+        const card = assignment(page, id);
+        const result = card.getByTestId('result-' + id);
+        const marker = scenario === 'student-published-masked'
+            ? result.getByLabel('Disembunyikan', { exact: true })
+            : scenario === 'student-published-revealed'
+                ? result.getByTestId('result-value-' + id)
+                : result.getByText('Hasil belum tersedia.', { exact: true });
+        const control = scenario === 'student-withdrawn' ? null : result.getByRole('button', {
+            name: scenario === 'student-published-masked' ? 'Tampilkan Nilai' : 'Sembunyikan Nilai', exact: true,
+        });
+        await result.evaluate(element => element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' }));
+        await expect(marker).toBeVisible();
+        await expect(marker).toBeInViewport({ ratio: 1 });
+        if (control) {
+            await expect(control).toBeVisible();
+            await expect(control).toBeInViewport({ ratio: 1 });
+        }
+        const viewport = page.viewportSize();
+        const header = await page.locator('header').first().boundingBox();
+        const cardBounds = await card.boundingBox();
+        const markerBounds = await marker.boundingBox();
+        const controlBounds = control ? await control.boundingBox() : null;
+        if (!viewport || !cardBounds || !markerBounds || (control && !controlBounds)) throw new Error('Student capture bounds unavailable');
+        const headerBottom = header ? header.y + header.height : 0;
+        expect(cardBounds.y).toBeLessThan(viewport.height);
+        expect(cardBounds.y + cardBounds.height).toBeGreaterThan(0);
+        for (const bounds of [markerBounds, controlBounds]) {
+            if (!bounds) continue;
+            expect(bounds.width).toBeGreaterThan(0);
+            expect(bounds.height).toBeGreaterThan(0);
+            expect(bounds.x).toBeGreaterThanOrEqual(0);
+            expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+            expect(bounds.y, 'The intended result is not covered by the sticky header').toBeGreaterThanOrEqual(headerBottom);
+            expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+        }
+        return { examInstanceId: id, scenario, resultLocator: '[data-testid="result-' + id + '"]', viewport, headerBottom, cardBounds, markerBounds, controlBounds };
+    };
     const original=page.viewportSize();
     try{for(const v of FULL){
         await page.setViewportSize({width:v.width,height:v.height});
         await assignment(page,id).scrollIntoViewIfNeeded();
-        await capture(page,scenario,()=>assignment(page,id),[v]);
+        await capture(page,scenario,()=>assignment(page,id),[v],positionStudent);
     }}finally{if(original)await page.setViewportSize(original)}
 }
 test('RESULT-003: publish, own masked score, withdraw, republish and privacy',async({page,browser})=>{
